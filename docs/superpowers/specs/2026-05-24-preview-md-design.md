@@ -50,10 +50,9 @@ preview-md/                        (cargo workspace root)
 │   ├── src/                       (TypeScript: CodeMirror wiring, mermaid init, scroll sync)
 │   ├── styles/
 │   │   ├── base.css               (shared structure + CSS variable schema)
-│   │   ├── themes/                (one CSS file per bundled theme)
 │   │   └── mermaid-theme.css      (mermaid override layer keyed off CSS variables)
 │   └── vendor/                    (mermaid, katex pinned versions)
-├── themes/                        (one folder per bundled theme: manifest.toml + theme.css + screenshot.png)
+├── themes/                        (single source of truth for themes; one folder per bundled theme: manifest.toml + theme.css + screenshot.png. Loaded at runtime by pmd-app and injected into the webview — not statically bundled into ui/.)
 ├── tests/
 │   ├── golden/                    (fixture .md → expected HTML/SVG/screenshots)
 │   └── corpus/                    (markdown sample set: GFM spec, mermaid samples, edge cases)
@@ -104,7 +103,10 @@ preview-md/                        (cargo workspace root)
 
 ## 5. UI modes
 
-A single window per process. State is owned by `pmd-app` and persisted to `~/.config/preview-md/state.toml` per user (XDG-compliant; falls back to `$HOME/.config` if `XDG_CONFIG_HOME` is unset).
+A single window per process. State is split into two scopes:
+
+- **Global state** (`~/.config/preview-md/state.toml`, XDG-compliant): active theme, theme-mode pair for auto-switching, default startup mode, recent files. Written by any instance; on conflict, last-writer-wins, guarded by an advisory `flock` so concurrent writes don't tear the file.
+- **Per-window state** (in-memory only at v1): current file path, scroll position, cursor location, active mode. Not persisted across restarts in v1; the YAGNI fence covers full session restore.
 
 - **Source mode (monospace):** CodeMirror fills the window; no preview pane.
 - **Split mode:** CodeMirror on the left, preview on the right, scroll-synced via the source-map.
@@ -117,7 +119,7 @@ Mode toggle is a single hotkey cycle (`Ctrl+\`) and a button in the toolbar. Mod
 - **One process per window.** Each `preview-md` invocation opens its own OS process with its own webview. No singleton, no DBus consolidation, no implicit tab-stealing.
 - **Per-window identity:**
   - **Window title:** `<filename> — preview-md` (or `Untitled — preview-md` for a new buffer).
-  - **App ID:** set via Tauri to the constant `dev.preview-md.app`. This is what Wayland compositors use to group windows in the taskbar under one icon.
+  - **App ID:** set via Tauri to a stable reverse-DNS constant (working name `dev.previewmd.App`; final form parked in §17 since hyphenated forms work on some compositors but not all). This is what Wayland compositors use to group windows in the taskbar under one icon.
   - **`StartupWMClass`:** matches the App ID, so KDE Plasma's task manager pairs launcher icons with running windows correctly.
 - **Linux desktop integration files** (live in `packaging/linux/`):
   - `preview-md.desktop` with `Exec=preview-md %F`, `StartupWMClass=dev.preview-md.app`, `MimeType=text/markdown;text/x-markdown;`, and a jumplist entry for "Open recent" (populated from state).
@@ -198,7 +200,9 @@ mono   = "JetBrains Mono"
 serif  = "Source Serif Pro"        # used in reading mode for prose
 ```
 
-The schema is **closed at v1** — themes that add unknown keys are accepted but the unknown keys are ignored. Themes that omit required keys are rejected at load time with a clear error.
+The schema is **closed at v1** — themes that add unknown keys are accepted but the unknown keys are ignored. Themes that omit required palette keys are rejected at load time with a clear error. `[fonts]` is optional; any unset font falls back to the app default (Inter / JetBrains Mono / Source Serif Pro).
+
+**Auto light/dark switching.** Settings store an optional `(light_theme, dark_theme)` pair. When set, the app follows the system theme (via Tauri's `theme` event) and swaps between the two; when unset, the explicit `active_theme` is always used. This costs one settings field and zero runtime complexity beyond the existing `set_theme` path.
 
 ### 7.2 How a theme is applied
 
@@ -260,7 +264,7 @@ Each layer fires during a TDD cycle, fastest first. **No layer is optional.**
 | Golden (regression)         | custom harness                                             | fixture `.md` → expected normalized HTML; CI rejects any unexpected diff                      | `tests/golden/`                       |
 | Functional (IPC)            | `cargo test`                                               | hits Tauri commands directly via in-process `invoke` — no webview                             | `crates/pmd-app/tests/`               |
 | E2E GUI                     | `tauri-driver` + `fantoccini` (Rust webdriver client), running inside `cage` + WebKitGTK in Docker | full app: open file, edit, switch modes, switch themes                                       | `crates/pmd-e2e/tests/`               |
-| Screenshot diff             | `pixelmatch`-equivalent + perceptual diff threshold        | per scenario × {each bundled theme that scenario covers} × {source, split, preview} mode      | `tests/screenshots/baselines/`        |
+| Screenshot diff             | `pixelmatch`-equivalent + perceptual diff threshold        | feature scenarios × **smoke theme set** (GitHub Light, GitHub Dark, Frieren) × {source, split, preview}; plus a single **theme-gallery scenario** that covers all 17 bundled themes in split mode | `tests/screenshots/baselines/`        |
 | Dual-model visual review    | parallel Agent dispatch (Opus 4.7 + GPT-5.5)               | screenshots routed to two subagents for aesthetic and regression critique; results aggregated | `scripts/visual-review.sh` + `crates/pmd-e2e/` |
 
 **TDD discipline.** Every feature starts as a failing golden test plus a failing unit test; implementation follows until both pass. The `test-driven-development` skill is loaded at the top of each slice.
@@ -393,6 +397,7 @@ These are small enough that they belong to the slice that introduces them, not t
 - Whether to ship CodeMirror 6 via an npm-driven build step or pinned vendored files. (Leaning vendored.)
 - Whether `cargo-tauri-bundle`, `cargo-appimage`, or a hand-rolled `linuxdeploy` script wins on simplicity.
 - Whether mermaid is bundled vendored or pulled at build time.
+- Final App ID form: `dev.previewmd.App` (no hyphen, GNOME-conventional) vs `dev.preview-md.App` (matches the project slug). KDE Plasma and Sway accept both; Flatpak accepts both since v1.10. Decided in the packaging slice.
 
 ---
 
