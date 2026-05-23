@@ -123,8 +123,10 @@ Markdown is treated as untrusted. The boundary is layered:
   - `object-src 'none'`, `frame-src 'none'`, `base-uri 'self'`.
   - The Tauri-synthesised final CSP is verified in slice 1's smoke e2e via the response header on `index.html`.
 - **Asset / image path policy.** Markdown image URLs are normalised as follows:
-  - Relative paths (`./img.png`, `images/x.svg`) are resolved against the directory of the currently-opened file, then converted to a Tauri asset-protocol URL via `convertFileSrc()`. The Tauri asset-protocol scope is set to **only** that directory plus its `images/` subtree.
-  - Absolute `file://` URLs are rejected (image fails to load; a `pmd-broken-image` class is applied so themes can style the fallback).
+  - **Static scope** (compile-time): `app.security.assetProtocol.scope` in `tauri.conf.json` is empty by default; v1 does not bake any directories into the manifest.
+  - **Dynamic scope** (runtime): when a file is opened, `pmd-app` calls `app.asset_protocol_scope().allow_directory(dir, recursive=false)` on (a) the file's parent directory and (b) the parent directory's `images/` subdirectory (if it exists). Paths are canonicalised via `std::fs::canonicalize` first so symlinks resolve to their target and `..` traversal segments are eliminated; symlinks that escape the parent directory are rejected. The scope grant for a given directory is released when the last window referencing a file in that directory closes.
+  - Relative paths in markdown (`./img.png`, `images/x.svg`) are resolved against the opened file's directory, canonicalised, checked against the active scope, and converted to a Tauri asset-protocol URL via `convertFileSrc()`. Relative paths that resolve outside the active scope (e.g. `../shared/img.png`) are rejected and styled via the `pmd-broken-image` class.
+  - Absolute `file://` URLs are always rejected (same `pmd-broken-image` fallback).
   - `http://` and `https://` URLs are not loaded (image-src disallows them in v1).
   - Data URIs are allowed for KaTeX and inline SVG.
 - **Tauri command scopes:** all file commands restrict paths to the union of (a) paths returned by Tauri's native open/save dialogs in the current session, (b) the user's recent-files list, and (c) paths passed as command-line arguments at startup. No raw arbitrary-path file ops are exposed.
@@ -360,7 +362,7 @@ ligatures_mono = false              # programming ligatures off by default; opt-
 | Syntax      | all 10 keys under `[palette.syntax]`: `keyword`, `string`, `number`, `function`, `type`, `comment`, `operator`, `punctuation`, `variable`, `constant`                                                                                                                                                                       | —                                                                                                                              |
 | Fonts       | —                                                                                                                                                                                                                                                                                                                          | all `[fonts]` keys (each falls back to the app default)                                                                       |
 
-Total: ~45 keys, of which ~38 required and ~12 optional with documented defaults.
+Total: **48 required** + **~19 optional** keys (canonical source: `schema.rs`).
 
 **Schema posture:** the schema is **forward-compatible with a required core**. Themes that omit *required* keys are rejected at load time with a clear error pinpointing the missing keys. Themes that include *unknown* keys are accepted; the unknown keys are ignored. (This is open/forward-compatible, not "closed" — the earlier draft used the wrong term.)
 
@@ -379,7 +381,7 @@ Total: ~45 keys, of which ~38 required and ~12 optional with documented defaults
 
 ### 7.2.1 Mermaid optional-key derivation
 
-When a theme omits any optional mermaid key, the loader derives it as follows. `mix(a, b, t%)` is RGB linear interpolation at `t%` between colours `a` and `b`.
+When a theme omits any optional mermaid key, the loader derives it as follows. `mix(a, b, t%)` is **sRGB component-wise linear interpolation** at `t%` between colours `a` and `b` — operating on 8-bit channels (not linear-light) and rounding to the nearest integer per channel. This is pinned so the loader, the validator, and any external tooling all agree on derived values byte-for-byte.
 
 - `mermaid_edge_label_bg = bg_elevated`
 - `mermaid_cluster_bg    = mix(bg, fg, 4%)`
@@ -403,10 +405,10 @@ Themes may override colours via the palette but **may not override geometry** un
 
 **Contrast floor:** validation runs the following contrast checks. Failures emit a non-fatal warning in dev builds and a hard validation error in CI's `theme-validate` step (a §12 just target).
 
-- **Text 4.5 : 1** (WCAG AA): `fg` vs `bg`; `link` vs `bg`; `fg_muted` vs `bg`; `inline_code_fg` vs `inline_code_bg`; `code_block_fg` vs `code_block_bg`.
-- **Non-text 3 : 1** (WCAG AA non-text): `accent` vs `bg` (used by the modified-indicator dot, focus ring, and segmented-control highlight); `selection_bg` vs `bg`; `border` vs `bg`.
+- **Text 4.5 : 1** (WCAG AA): `fg` vs `bg`; `link` vs `bg`; `fg_muted` vs `bg`; `inline_code_fg` vs `inline_code_bg`; `code_block_fg` vs `code_block_bg`; `selection_fg` vs `selection_bg` (selected text legibility).
+- **Non-text 3 : 1** (WCAG AA non-text): `accent` vs `bg` (used by the modified-indicator dot and the segmented-control highlight); `focus_ring` vs `bg`; `selection_bg` vs `bg`; `border` vs `bg`.
 
-The non-text floor on `accent` is what guarantees the §5.1 modified dot stays glanceable on every theme.
+The non-text floor on `accent` and `focus_ring` is what guarantees the §5.1 modified dot and the keyboard-focus ring stay glanceable on every theme.
 
 ### 7.3 Bundled themes (v1)
 
@@ -419,7 +421,7 @@ The non-text floor on `accent` is what guarantees the §5.1 modified dot stays g
 5. Dracula
 6. Nord
 7. Tokyo Night
-8. **Rosé Pine Dawn** (light) — swapped in to balance the bundle's dark / light ratio (previously 8/0 → now 6/2 dark/light when combined with the GitHub and Solarized pairs).
+8. **Rosé Pine Dawn** (light) — swapped in to balance the bundle's dark / light ratio (popular set is now 5 dark / 3 light — Dracula, Nord, Tokyo Night, GitHub Dark, Solarized Dark vs GitHub Light, Solarized Light, Rosé Pine Dawn — instead of 6 dark / 2 light).
 
 **Original — inspired by *Sousou no Frieren* (3):**
 
@@ -430,7 +432,7 @@ The non-text floor on `accent` is what guarantees the §5.1 modified dot stays g
 **Original — inspired by *Final Fantasy X* (3):**
 
 12. **Sun and Sea** (light, inspired by Tidus). Bg is sea-blue cream; accents are sunburst orange; sun-yellow appears only as a top divider strip. High-contrast for outdoor readability. Trap: pure yellow bg is unreadable for prose.
-13. **Obsidian Sorcerer** (dark, inspired by Lulu). Near-black bg (`#0a0610`); deep purple panels via `bg_elevated`; crimson is accent only on links and h1. Serif headings. Trap: crimson everywhere reads as error-state.
+13. **Onyx Sorcerer** (dark, inspired by Lulu). Near-black bg (`#0a0610`); deep purple panels via `bg_elevated`; crimson is accent only on links and h1. Serif headings. Trap: crimson everywhere reads as error-state.
 14. **Rust Warden** (dark, inspired by Auron). Ink-black bg; rust-red accent pushed toward brown (not pink, to avoid Dracula collision); parchment fg (`#e8dcc0`). Heavier mono font weight (500+). Trap: pink-rust drift.
 
 **Original — inspired by *Clair Obscur: Expedition 33* (3):**
@@ -477,7 +479,7 @@ Each layer fires during a TDD cycle, fastest first. **No layer is optional at th
 
 **TDD discipline.** Every feature starts as a failing golden test plus a failing unit test; implementation follows until both pass. The `test-driven-development` skill is loaded at the top of each slice.
 
-**Verification gate.** Every slice ends with the `verification-before-completion` skill: `just check`, the relevant e2e subset, the dev-time dual-model visual review (§10), fix all Blockers and Majors, then commit.
+**Verification gate.** Every slice ends with the `verification-before-completion` skill: `just check` and the relevant e2e subset. The **dev-time dual-model visual review (§10) and `/ccc-review-cx` step are owner-driven** — they run before owner commits but are optional for external contributors, who pass on CI's layered tests plus manual PR review (see §16). Blockers and Majors from any review path must clear before commit regardless of authorship.
 
 ## 9. E2E driver setup
 
