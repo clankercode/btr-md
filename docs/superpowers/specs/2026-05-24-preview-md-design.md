@@ -78,7 +78,7 @@ preview-md/                        (cargo workspace root)
 render(version: u64, markdown: String) -> RenderResult { version, html, source_map }
 
 // Files (paths restricted — see §3.3)
-open_file(path: PathBuf) -> FileBuffer        // dialog-selected or recent-list path only
+open_file(path: PathBuf) -> FileBuffer        // dialog-selected, recent-list, or CLI-argv path only
 save_file(path: PathBuf, contents: String) -> ()
 watch_file(path: PathBuf) -> ()               // emits file_changed_on_disk
 
@@ -108,19 +108,26 @@ Render is request/response but back-pressured to avoid the webview applying a st
 - Max in-flight renders = 1. While one is pending, new edits **enqueue at most one** pending request; further edits coalesce into that single pending request (newest-wins).
 - The webview drops any `RenderResult` whose `version` is less than the highest `version` it has already dispatched.
 - v1 does **full-document render**, not block-level dirtying. Block-level dirtying is parked behind a YAGNI fence and revisited only if the v1 latency budget (≤16 ms median, ≤50 ms p99 on a 100 KB doc) is missed.
+- **In-flight renders are not cancelled.** The latency budget above is load-bearing: it makes cancellation unnecessary. If the budget is missed in practice, in-flight cancellation is unparked from §15 and a `CancellationToken` is threaded through `pmd-core`.
 
 ### 3.3 Security boundary
 
 Markdown is treated as untrusted. The boundary is layered:
 
-- **Content Security Policy** (`ui/index.html` `<meta http-equiv="Content-Security-Policy">`):
+- **Content Security Policy** (configured via Tauri's `app.security.csp` field, not via inline `<meta>` — Tauri synthesizes a final CSP that includes its own IPC scheme so client-server IPC keeps working). Starting point, pinned in slice 1:
   - `default-src 'self'`
-  - `script-src 'self' 'wasm-unsafe-eval'` — no inline scripts, no `eval`. (Mermaid's use of the `Function` constructor is sandboxed via mermaid's own `securityLevel`.)
-  - `style-src 'self' 'unsafe-inline'` — themes inject CSS, and KaTeX uses inline styles.
-  - `img-src 'self' data: file:` — local images and KaTeX SVG data URIs only. No network image loading in v1.
-  - `connect-src 'none'` — no fetches from the preview.
+  - `script-src 'self' 'wasm-unsafe-eval'` — no inline scripts, no `eval`. (Mermaid's use of the `Function` constructor stays inside mermaid's own scope, gated by `securityLevel: 'strict'`.)
+  - `style-src 'self' 'unsafe-inline'` — themes inject CSS, and KaTeX uses inline styles. See post-render trust note below.
+  - `img-src 'self' data: asset: http://asset.localhost` — local images via Tauri's `asset:` protocol (scoped — see asset policy below) and KaTeX SVG data URIs only. No network image loading in v1; `file://` absolute URLs in markdown are rejected.
+  - `connect-src 'self' ipc: http://ipc.localhost` — explicitly allow Tauri's IPC transport while denying arbitrary fetches.
   - `object-src 'none'`, `frame-src 'none'`, `base-uri 'self'`.
-- **Tauri command scopes:** all file commands restrict paths to the union of (a) paths returned by Tauri's native open/save dialogs in the current session and (b) the user's recent-files list. No raw arbitrary-path file ops are exposed.
+  - The Tauri-synthesised final CSP is verified in slice 1's smoke e2e via the response header on `index.html`.
+- **Asset / image path policy.** Markdown image URLs are normalised as follows:
+  - Relative paths (`./img.png`, `images/x.svg`) are resolved against the directory of the currently-opened file, then converted to a Tauri asset-protocol URL via `convertFileSrc()`. The Tauri asset-protocol scope is set to **only** that directory plus its `images/` subtree.
+  - Absolute `file://` URLs are rejected (image fails to load; a `pmd-broken-image` class is applied so themes can style the fallback).
+  - `http://` and `https://` URLs are not loaded (image-src disallows them in v1).
+  - Data URIs are allowed for KaTeX and inline SVG.
+- **Tauri command scopes:** all file commands restrict paths to the union of (a) paths returned by Tauri's native open/save dialogs in the current session, (b) the user's recent-files list, and (c) paths passed as command-line arguments at startup. No raw arbitrary-path file ops are exposed.
 - **Mermaid:** `mermaid.initialize({ securityLevel: 'strict', ... })`. This disables HTML in nodes, `<foreignObject>` HTML rendering, and link click interception.
 - **KaTeX:** `katex.render(src, el, { trust: false, strict: 'warn' })`. Disables `\href`, `\url`, and other macros that emit URLs.
 - **Sanitization order** (the canonical pipeline):
@@ -130,6 +137,8 @@ Markdown is treated as untrusted. The boundary is layered:
   4. Webview swaps innerHTML.
   5. Webview runs KaTeX on already-sanitized `<span class="math">` nodes; KaTeX output is trusted (the library is pinned, vendored, and runs with `trust: false`).
   6. Webview runs mermaid on already-sanitized `<pre><code class="language-mermaid">` nodes; mermaid output is trusted (pinned, vendored, `securityLevel: 'strict'`).
+
+  **Trust-boundary note.** Steps 5–6 mean ammonia is **bypassed** for the DOM subtrees rendered by KaTeX and mermaid. The only defences for those subtrees are: (i) vendored, version-pinned libraries; (ii) KaTeX `trust: false, strict: 'warn'`; (iii) mermaid `securityLevel: 'strict'` (which HTML-encodes node text and disables click handlers). Loosening any of (i)–(iii) is a security-review item. Mermaid `securityLevel: 'sandbox'` (iframe isolation — stronger than `strict`) is parked at §15 as a v2 hardening upgrade if we ever open the app to truly untrusted input (e.g., a paste-from-URL feature).
 
 ### 3.4 Data flow (split mode)
 
@@ -185,7 +194,7 @@ State is split into two scopes:
 
 - `preview-md` (no args) opens one untitled window.
 - `preview-md path/to/file.md` opens one window with that file.
-- `preview-md a.md b.md c.md` opens **three** windows, one per path (matches the "one process per window" rule by spawning child processes from the first invocation for additional paths, then exiting the parent if the parent had no work).
+- `preview-md a.md b.md c.md` opens **three** windows, one per path. Implementation: the original invocation `fork+exec`s a fresh `preview-md <path>` for **every** path argument (including the first), then exits immediately. All resulting windows are sibling processes with no parent-child relationship — SIGTERM on one window does not cascade to the others.
 - `.desktop` `Exec=preview-md %F` therefore handles multi-file selections cleanly (open many files from the file manager → many windows).
 
 ## 6. Multi-instance and launcher integration
@@ -194,7 +203,7 @@ State is split into two scopes:
 - **Per-window identity:**
   - **Window title:** `<filename> — preview-md` (or `Untitled — preview-md`), prefixed with a 6 px modified dot when the buffer is dirty.
   - **App ID:** a single, consistent reverse-DNS string `dev.previewmd.App` (no hyphen; chosen for GNOME convention compatibility; final value parked in §17, but the spec uses this string everywhere a placeholder appears so an implementer copy-pasting any section gets a working result).
-  - **Wayland `xdg-toplevel app_id`, X11 `WM_CLASS` (both instance and class), and `.desktop` `StartupWMClass`** are all set to the same value (`dev.previewmd.App`). Slice 7 has an acceptance test that `swaymsg -t get_tree` / `xprop` reports the expected id.
+  - **Wayland `xdg-toplevel app_id`, X11 `WM_CLASS` (both instance and class), and `.desktop` `StartupWMClass`** are all set to the same value (`dev.previewmd.App`). Slice 8 has an acceptance test that `swaymsg -t get_tree` / `xprop` reports the expected id.
 - **`.desktop` file** (`packaging/linux/dev.previewmd.App.desktop`):
   - `Exec=preview-md %F`
   - `StartupWMClass=dev.previewmd.App`
@@ -217,6 +226,7 @@ Backed by the `notify` crate (which handles atomic-rename-replace via inotify `I
 
 - Contract: "notify on content change at this path, surviving atomic rename-replace (vim / VS Code save patterns)."
 - Polling fallback is **explicitly disabled** in v1 — only the native inotify backend is used. A polling toggle is on the v2 roadmap for network-mounted paths.
+- **Non-local filesystem warning.** At file-open time the app calls `statfs` on the parent directory and, if the magic number indicates NFS / CIFS / SSHFS / FUSE, logs a one-time `WARN` per path noting that external changes to that file may not generate inotify events. Surfaced in the status bar as a small badge while the warning is active.
 
 ## 7. Theming
 
@@ -338,6 +348,20 @@ serif = ["Source Serif Pro", "Noto Serif", "DejaVu Serif"]
 ligatures_mono = false              # programming ligatures off by default; opt-in per theme
 ```
 
+**Required vs optional palette keys** (canonical source: `crates/pmd-core/src/theme/schema.rs`):
+
+| Group       | Required                                                                                                                                                                                                                                                                                                                  | Optional                                                                                                                       |
+| ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------| ------------------------------------------------------------------------------------------------------------------------------ |
+| Surfaces    | `bg`, `bg_elevated`, `fg`, `fg_muted`, `accent`, `link`, `border`                                                                                                                                                                                                                                                          | —                                                                                                                              |
+| Editor      | `selection_bg`, `selection_fg`, `focus_ring`, `caret`, `scrollbar_thumb`, `scrollbar_track`                                                                                                                                                                                                                                | —                                                                                                                              |
+| Headings    | —                                                                                                                                                                                                                                                                                                                          | `h1`, `h2`, `h3`, `h4`, `h5`, `h6` (each falls back to `fg`)                                                                  |
+| Markdown    | `inline_code_bg`, `inline_code_fg`, `code_block_bg`, `code_block_fg`, `code_block_border`, `blockquote_bar`, `blockquote_fg`, `hr`, `table_header_bg`, `table_row_alt`, `table_border`, `admonition_note`, `admonition_warn`, `admonition_tip`, `kbd_bg`, `kbd_fg`, `kbd_border`, `link_hover`, `link_visited`, `image_caption` | —                                                                                                                              |
+| Mermaid     | `mermaid_primary`, `mermaid_primary_text`, `mermaid_secondary`, `mermaid_tertiary`, `mermaid_line`                                                                                                                                                                                                                         | `mermaid_edge_label_bg`, `mermaid_cluster_bg`, `mermaid_note_bg`, `mermaid_note_border`, `mermaid_actor_bg`, `mermaid_error` (derived per §7.2.1 if absent) |
+| Syntax      | all 10 keys under `[palette.syntax]`: `keyword`, `string`, `number`, `function`, `type`, `comment`, `operator`, `punctuation`, `variable`, `constant`                                                                                                                                                                       | —                                                                                                                              |
+| Fonts       | —                                                                                                                                                                                                                                                                                                                          | all `[fonts]` keys (each falls back to the app default)                                                                       |
+
+Total: ~45 keys, of which ~38 required and ~12 optional with documented defaults.
+
 **Schema posture:** the schema is **forward-compatible with a required core**. Themes that omit *required* keys are rejected at load time with a clear error pinpointing the missing keys. Themes that include *unknown* keys are accepted; the unknown keys are ignored. (This is open/forward-compatible, not "closed" — the earlier draft used the wrong term.)
 
 **Required vs optional matrix** lives in `crates/pmd-core/src/theme/schema.rs` as the canonical source of truth.
@@ -350,8 +374,19 @@ ligatures_mono = false              # programming ligatures off by default; opt-
 2. **Parse + validate** (`pmd-core::theme`): pure functions, unit-testable, no I/O. `parse_manifest(s: &str) -> Result<Theme, ThemeError>`; `validate(t: &Theme) -> Result<(), ValidationError>` (checks required keys, contrast floor — see below).
 3. **CSS assembly** (`pmd-app::theme`): generate a `:root { … }` block setting one CSS custom property per palette key (`--pmd-bg`, `--pmd-mermaid-primary`, etc.); concatenate the theme's `theme.css` file.
 4. **Inject** (`pmd-app::theme` via Tauri command): replace the active theme `<style id="pmd-theme">` node in the webview.
-5. **Re-run renderers on existing DOM**: the webview's theme-change handler walks all existing math and mermaid nodes and **re-renders them in place** so already-drawn diagrams pick up the new palette. (Mermaid is also re-initialised with `themeVariables` so any *future* renders use the new palette too.)
+5. **Re-run renderers on existing DOM**: the webview's theme-change handler walks all existing math and mermaid nodes and **re-renders them in place** so already-drawn diagrams pick up the new palette. Re-renders are **yielded across `requestAnimationFrame` ticks** (one diagram per frame) so theme-switch on a mermaid-heavy document never freezes the UI. Mermaid is also re-initialised with new `themeVariables` so any *future* renders use the new palette.
 6. **Auto-switch**: if `auto_switch=true` and a `(light, dark)` pair is configured, the active theme follows `system_theme_changed` events; otherwise the explicit `active_theme` is always used.
+
+### 7.2.1 Mermaid optional-key derivation
+
+When a theme omits any optional mermaid key, the loader derives it as follows. `mix(a, b, t%)` is RGB linear interpolation at `t%` between colours `a` and `b`.
+
+- `mermaid_edge_label_bg = bg_elevated`
+- `mermaid_cluster_bg    = mix(bg, fg, 4%)`
+- `mermaid_note_bg       = bg_elevated`
+- `mermaid_note_border   = accent`
+- `mermaid_actor_bg      = mix(accent, bg, 30%)`
+- `mermaid_error         = #e77878`  (fixed fallback; themes overriding the error colour pick something distinguishable from `accent` and `link`)
 
 `base.css` defines the structural layout and references **only** `var(--pmd-…)` — never hard-coded colours. CI runs a `theme-completeness` test (§8) that fails if any required CSS variable is unreferenced or any required palette key is omitted by a bundled theme.
 
@@ -366,7 +401,12 @@ ligatures_mono = false              # programming ligatures off by default; opt-
 
 Themes may override colours via the palette but **may not override geometry** unless they declare `[mermaid.geometry]` explicitly (parked for v2; not in v1).
 
-**Contrast floor:** validation runs WCAG AA contrast checks on `fg` vs `bg` and `link` vs `bg`. Failures emit a non-fatal warning in dev builds and a hard validation error in CI's `theme-validate` step (a §12 just target).
+**Contrast floor:** validation runs the following contrast checks. Failures emit a non-fatal warning in dev builds and a hard validation error in CI's `theme-validate` step (a §12 just target).
+
+- **Text 4.5 : 1** (WCAG AA): `fg` vs `bg`; `link` vs `bg`; `fg_muted` vs `bg`; `inline_code_fg` vs `inline_code_bg`; `code_block_fg` vs `code_block_bg`.
+- **Non-text 3 : 1** (WCAG AA non-text): `accent` vs `bg` (used by the modified-indicator dot, focus ring, and segmented-control highlight); `selection_bg` vs `bg`; `border` vs `bg`.
+
+The non-text floor on `accent` is what guarantees the §5.1 modified dot stays glanceable on every theme.
 
 ### 7.3 Bundled themes (v1)
 
@@ -390,8 +430,8 @@ Themes may override colours via the palette but **may not override geometry** un
 **Original — inspired by *Final Fantasy X* (3):**
 
 12. **Sun and Sea** (light, inspired by Tidus). Bg is sea-blue cream; accents are sunburst orange; sun-yellow appears only as a top divider strip. High-contrast for outdoor readability. Trap: pure yellow bg is unreadable for prose.
-13. **Black Mage** (dark, inspired by Lulu). Near-black bg (`#0a0610`); deep purple panels via `bg_elevated`; crimson is accent only on links and h1. Serif headings. Trap: crimson everywhere reads as error-state.
-14. **Red Guardian** (dark, inspired by Auron). Ink-black bg; rust-red accent pushed toward brown (not pink, to avoid Dracula collision); parchment fg (`#e8dcc0`). Heavier mono font weight (500+). Trap: pink-rust drift.
+13. **Obsidian Sorcerer** (dark, inspired by Lulu). Near-black bg (`#0a0610`); deep purple panels via `bg_elevated`; crimson is accent only on links and h1. Serif headings. Trap: crimson everywhere reads as error-state.
+14. **Rust Warden** (dark, inspired by Auron). Ink-black bg; rust-red accent pushed toward brown (not pink, to avoid Dracula collision); parchment fg (`#e8dcc0`). Heavier mono font weight (500+). Trap: pink-rust drift.
 
 **Original — inspired by *Clair Obscur: Expedition 33* (3):**
 
@@ -399,9 +439,15 @@ Themes may override colours via the palette but **may not override geometry** un
 16. **Rose Melancholy** (dark, inspired by Maelle). Deep rose-tinted black bg (`#1a1014`); somber violet accents; atelier-charcoal `bg_elevated`. h2/h3 italic to feel melancholic. Trap: pink overload — keep rose subliminal in the bg only.
 17. **Cobalt Bone** (dark, inspired by Verso). Cobalt-blue dark bg; bone-white fg; raw-umber on code blocks and tables — the umber on code is the distinguishing move. Trap: pure blue reads as a Nord knockoff without the umber.
 
-Total at v1: **17 themes** (7 popular, 10 originals).
+Total at v1: **17 themes** (8 popular, 9 originals).
 
-**IP / naming policy.** Original themes are **named with descriptive archetypes**, not with the proper names of characters from copyrighted works. The structured `[meta.inspired_by]` field documents the homage. The bundle contains only colour palettes (uncopyrightable) and one-paragraph design rationales (original prose). No artwork, logos, or proper names from the source works are bundled. This policy is conservative for AppStream / Flatpak distribution. If a rights-holder objects to a specific homage, the affected theme is renamed (or dropped); the colours stay.
+**IP / naming policy.** Original theme *names* use descriptive archetypes (e.g., "Twilight Mage", not "Frieren"), so the names themselves are original. The structured `[meta.inspired_by]` field names the source work and character as **nominative attribution** — analogous to liner notes that read "inspired by Beethoven". The bundle contains only:
+
+- colour palettes (uncopyrightable arrangements of colour values);
+- short original design-rationale prose in `[meta.notes]`;
+- structured attribution metadata in `[meta.inspired_by]` naming the work and character.
+
+No artwork, logos, or other trade dress from the source works is bundled. If a rights-holder objects to a specific homage, the affected theme's `inspired_by` field is cleared and the theme retained under its archetype name alone; the colours stay.
 
 ### 7.4 User themes
 
@@ -413,6 +459,7 @@ User themes placed in `~/.config/preview-md/themes/<slug>/` are loaded with the 
 - A pinned top row shows `Auto (light: X, dark: Y)` with an enabled / disabled toggle. When auto is on, the currently *resolved* theme card gets a subtle ring; the configured-pair cards each show a small "L" or "D" badge.
 - On hover, each card shows the `inspired_by` work + character and the `meta.notes` rationale.
 - A "Set as light" / "Set as dark" mini-action appears on hover.
+- **Keyboard navigation:** arrow keys move focus across the grid; `/` focuses a filter input that fuzzy-matches against name, `inspired_by.work`, and `inspired_by.character`; `Enter` applies the focused theme; `Esc` exits the picker.
 
 ## 8. Testing strategy
 
@@ -440,7 +487,7 @@ The e2e harness runs in Docker so it is reproducible on any developer machine an
 - **Determinism env vars:** `WEBKIT_DISABLE_COMPOSITING_MODE=1` (force software compositing inside the container so antialiasing matches the dev-time baselines), `LIBGL_ALWAYS_SOFTWARE=1` (llvmpipe).
 - **Invocation pattern** (correct Tauri model):
   1. `cage -- tauri-driver --port 4444` starts inside the container.
-  2. The test on the host (or another container) connects WebDriver to `localhost:4444`.
+  2. The Docker container is launched with `--network=host` so the host's WebDriver client reaches `localhost:4444` directly. (If host networking is undesirable — e.g., when CI runs in a restricted environment — fall back to `-p 4444:4444` and connect to the mapped port.) The choice is wired through `scripts/e2e.sh` with `PMD_E2E_NETWORK=host|bridge` (default `host`).
   3. The test creates a session with `tauri:options` capabilities — `{"application": "/usr/local/bin/preview-md", "args": ["..."]}` — and `tauri-driver` spawns the app, attaches the WebDriver session to its webview.
   4. The app does **not** expose its own `--webdriver-port` flag; tauri-driver handles that.
 - **Why cage, not Xvfb:** the dev machine is KDE Plasma on Wayland; cage gives a deterministic, single-window, undecorated Wayland compositor — closer environment parity for screenshot stability.
@@ -553,22 +600,25 @@ Every command longer than ~5 lines lives under `scripts/` rather than being inli
 - `[mermaid.geometry]` per-theme geometry overrides.
 - Polling fallback for the file watcher.
 - Block-level incremental render.
+- In-flight render cancellation (added if §3.2's latency budget is missed in practice).
+- Mermaid `securityLevel: 'sandbox'` (iframe isolation) — v2 hardening upgrade if paste-from-URL or other untrusted-input surfaces are added.
 
 ## 16. Implementation slicing (handed to `writing-plans` next)
 
-Eight PR-sized increments, each with its own TDD → e2e → visual review → `ccc-review-cx` → commit cycle:
+Nine PR-sized increments, each with its own TDD → e2e → CI pixel-diff gate → commit cycle. The dev-time dual-model visual review and `ccc-review-cx` step are **owner-driven**: when the project owner authors a slice, both run before the commit. External contributors merge on the CI gate plus manual PR review; the AI-subagent steps are optional for them.
 
-1. **Scaffold:** cargo workspace, justfile, CI skeleton, Docker e2e harness (with pinned fonts and determinism env), smoke e2e that opens an empty Tauri window through tauri-driver and screenshots it.
+1. **Scaffold:** cargo workspace, justfile, CI skeleton, Docker e2e harness (with pinned fonts and determinism env), smoke e2e that opens an empty Tauri window through tauri-driver and screenshots it. Includes pinning the final CSP in `tauri.conf.json` and verifying it in the smoke test.
 2. **`pmd-core` core pipeline:** parser → HTML emitter (with `data-src-start` / `data-src-end`) → ammonia sanitizer (allowlist pinned in this slice) → source-map → theme manifest parse + validate + contrast check + theme-completeness test. Unit, property, golden, theme tests. No UI yet.
-3. **`pmd-app` shell, read-only preview mode, GitHub Light / Dark themes, file open / save with restricted path scopes, render-IPC versioning + back-pressure.** First user-visible milestone. (Linux desktop integration files deferred to slice 8.)
-4. **Monospace mode** with CodeMirror 6 + mode chrome (toolbar segmented control, modified dot, status bar, hotkey overlay) + theme switching + state persistence (debounced flock RMW) + auto-switch follow.
+3. **`pmd-app` shell, read-only preview mode, GitHub Light / Dark themes, file open / save with restricted path scopes (dialog + recents + CLI argv), render-IPC versioning + back-pressure, asset-path normalisation.** First user-visible milestone. (Linux desktop integration files deferred to slice 9.)
+4. **Monospace mode** with CodeMirror 6 + mode chrome (toolbar segmented control, modified dot, status bar, hotkey overlay) + theme switching + state persistence (debounced flock RMW; recents in a separate file) + auto-switch follow.
 5a. **Render integration:** full split-mode layout with the version-coalescing render path and morphdom-style DOM diff. No scroll sync yet. Tests cover full-document render correctness and version-drop staleness.
 5b. **Scroll sync** via `data-src-start` / `data-src-end` source-map (forward only). Includes goldens for lists, tables, nested blockquotes, fenced code with multi-line info strings.
-6. **Mermaid + KaTeX + syntax highlighting + custom mermaid theme override + mermaid stylistic baseline (8 px / 1.5 px / no shadows / inherited font / chip edge labels)**. All 17 bundled themes shipped, including the 10 originals with their full `meta.notes` rationales. Theme switching re-renders existing mermaid / math nodes.
-7. **Theme polish slice:** picker UX (Auto row, hover rationales, "Set as light/dark" mini-actions), screenshot regeneration for all themes, palette completeness for the optional keys (mermaid optional set, kbd, image_caption, etc.), WCAG contrast warnings surfaced in dev builds.
-8. **Packaging + multi-instance polish:** `.desktop`, MIME XML, AppStream metainfo, icons at all sizes, AppImage recipe, Flatpak manifest, `xdg-mime` install scripts, multi-file CLI (`%F` → multiple windows), `StartupWMClass` verification test, recent-files in the File menu, final full-corpus `review-and-fix` pass.
+6a. **Mermaid + KaTeX + syntax highlighting + custom mermaid theme override + mermaid stylistic baseline** (8 px corner radius / 1.5 px stroke / no shadows / inherited font / chip edge labels). One theme exercises mermaid end-to-end; broader theme bundle deferred to 6b.
+6b. **Theme bundle delivery:** all 17 bundled themes shipped with full `meta.notes` rationales, theme-completeness CI test passing for all, theme-switch re-render (rAF-chunked) integrated, `[meta.inspired_by]` rendered in picker.
+7. **Theme polish slice:** picker UX (Auto row, hover rationales, "Set as light/dark" mini-actions, keyboard nav + filter), screenshot regeneration for all 17 themes, palette completeness for the optional keys, WCAG contrast warnings surfaced in dev builds.
+8. (renumbered from prior slice 8) **Packaging + multi-instance polish:** `.desktop`, MIME XML, AppStream metainfo, icons at all sizes, AppImage recipe, Flatpak manifest, `xdg-mime` install scripts, multi-file CLI (`%F` → multiple windows via fork+exec → parent exits), `StartupWMClass` / Wayland `app_id` / X11 `WM_CLASS` verification test, recent-files in the File menu, final full-corpus `review-and-fix` pass.
 
-Each slice ends with: TDD → e2e → dev-time dual-model visual review → `ccc-review-cx` → fix Blockers and Majors → commit → `postcommit-status-and-continue`.
+Each owner-authored slice ends with: TDD → e2e → dev-time dual-model visual review → `ccc-review-cx` → fix Blockers and Majors → commit → `postcommit-status-and-continue`. Each contributor-authored slice ends with: TDD → e2e → manual PR review → fix Blockers and Majors → commit.
 
 ## 17. Open questions parked to the plan / slice stage
 
@@ -583,7 +633,7 @@ Each slice ends with: TDD → e2e → dev-time dual-model visual review → `ccc
 
 ## Summary
 
-- **What it is.** A Linux-first Rust + Tauri markdown preview app with three modes (monospace source, split, read-only preview), GFM + mermaid + KaTeX + syntax highlighting, 17 bundled themes (7 popular + 10 originals inspired by *Frieren*, *FFX*, and *Clair Obscur: Expedition 33*), multi-instance with first-class taskbar integration, distributed as AppImage + Flatpak (CI) and `cargo install` (local).
+- **What it is.** A Linux-first Rust + Tauri markdown preview app with three modes (monospace source, split, read-only preview), GFM + mermaid + KaTeX + syntax highlighting, 17 bundled themes (8 popular + 9 originals inspired by *Frieren*, *FFX*, and *Clair Obscur: Expedition 33*), multi-instance with first-class taskbar integration, distributed as AppImage + Flatpak (CI) and `cargo install` (local).
 - **Architecture.** Cargo workspace: `pmd-core` (parser, emit, sanitize, source-map, theme parse+validate — pure), `pmd-app` (Tauri shell, IPC, theme discovery+injection, state, platform hooks — impure), `pmd-e2e` (webdriver harness). Webview owns CodeMirror 6, mermaid, KaTeX, and theme reapplication. Node only as a dev-time sidecar for golden mermaid SVGs.
 - **IPC + security.** Render IPC is versioned with newest-wins coalescing (max 1 in flight). Strict CSP, scoped file commands, mermaid `securityLevel: strict`, KaTeX `trust: false`. Sanitization is `parse → emit → sanitize` (corrected from the earlier draft); mermaid/KaTeX run client-side on already-sanitized nodes.
 - **Source-map.** Block-level `data-src-start` + `data-src-end` attributes (matching the prose). Forward editor → preview sync only at v1; reverse direction YAGNI'd.
