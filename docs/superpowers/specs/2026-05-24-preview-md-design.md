@@ -525,7 +525,7 @@ The agent executing the implementation plan loads, in order:
 - `review-and-fix` — after every screenshot batch and after every PR-sized slice.
 - `dispatching-parallel-agents` — inside `review-and-fix` for the dual-model visual leg.
 - `ccc-review-cx` — invoked per phase against the diff (`PASS` / `MINOR_ISSUES_ONLY` / `NEEDS_FIXES`); Blockers and Majors must clear before commit.
-- **The plan's final instruction is literally:** _"load `postcommit-status-and-continue` and continue."_
+- **The plan's final instruction is literally:** _"run the `postcommit-status-and-continue` skill and continue."_
 
 ## 12. Justfile (the discoverability index)
 
@@ -642,6 +642,6 @@ Each owner-authored slice ends with: TDD → e2e → dev-time dual-model visual 
 - **Multi-instance.** One process per window, single consistent App ID (`dev.previewmd.App`) wired through Wayland `app_id`, X11 `WM_CLASS`, and `.desktop` `StartupWMClass`. Multi-file CLI opens one window per path. State writes are `flock`-protected read-modify-write merges; recents in a separate file.
 - **Theming.** Pure data (`manifest.toml` + `theme.css` + screenshot). Schema is open / forward-compatible with required core keys; **48 required + ~19 optional** palette keys covering markdown surfaces, mermaid (with sRGB-rounded derivation rule for optional keys), syntax (1:1 tree-sitter names), editor chrome (selection_bg/fg, focus_ring, caret, scrollbar), and typography (UI/mono/serif/heading + fallback chains + ligatures-off). Pinned mermaid stylistic baseline (8 px / 1.5 px / no shadows). WCAG AA contrast floor enforced at load time (text 4.5:1 and non-text 3:1, covering selection legibility and focus ring). 17 bundled themes; originals use descriptive archetype names with structured `inspired_by` homage and full 3-5 line design rationales.
 - **Testing.** TDD-first, layered: unit → property → golden → theme-completeness → IPC functional → e2e in `cage` + WebKitGTK Docker (with pinned fonts and software compositing) → screenshot pixel diff at threshold `0.10`, fail `>0.5%`. All 17 themes × 3 modes covered for feature scenarios. CI gates on these alone — **the dual-model visual review is a dev-time author loop, not a CI gate** — keeping the project shippable by contributors without AI access.
-- **Workflow.** `writing-plans` next; slices delegated via `subagent-driven-development`; each slice ends with `review-and-fix`, `ccc-review-cx`, and finally **"load `postcommit-status-and-continue` and continue."**
+- **Workflow.** `writing-plans` next; slices delegated via `subagent-driven-development`; each slice ends with `review-and-fix`, `ccc-review-cx`, and finally **"run the `postcommit-status-and-continue` skill and continue."**
 - **Repo norms.** `justfile` is the index, long commands in `scripts/`. Single binary distribution: AppImage + Flatpak from CI, `cargo install` locally.
 - **YAGNI'd.** Multi-tab, plugins, non-Linux builds, cloud, PDF export, runnable code blocks, custom protocol handlers, raw-HTML toggle, reverse scroll sync, session restore, mermaid geometry overrides, polling watcher fallback, block-level incremental render.

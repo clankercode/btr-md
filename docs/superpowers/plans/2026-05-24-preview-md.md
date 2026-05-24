@@ -1,6 +1,6 @@
 # preview-md Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use `superpowers:subagent-driven-development` (recommended) or `superpowers:executing-plans` to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking. After every commit, the agent **must load `postcommit-status-and-continue` and continue.** That instruction is the plan's final word — see the end of this document.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use `superpowers:subagent-driven-development` (recommended) or `superpowers:executing-plans` to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking. After every commit, the agent **must run the `postcommit-status-and-continue` skill and continue.** That instruction is the plan's final word — see the end of this document.
 
 **Goal:** Ship v1 of `preview-md` — a Linux-first Rust + Tauri markdown preview app whose sole goal is to be the best markdown preview renderer on Linux. Three modes (monospace source / split / read-only preview), GFM + mermaid + KaTeX + syntax highlighting, 17 bundled themes, multi-instance with first-class taskbar integration, distributed as AppImage + Flatpak (CI) and `cargo install` (local).
 
@@ -24,7 +24,7 @@ Each phase below is one PR. Each phase ends with this **owner-commit gate** (con
 3. **Owner only:** `/ccc-review-cx` against `git diff <phase-base>...HEAD`. Verdict must be `PASS` or `MINOR_ISSUES_ONLY`; all Blockers and Majors fixed before commit.
 4. `just check` once more.
 5. Commit (one commit per phase, no `--no-verify`, no `--amend`).
-6. **Load `postcommit-status-and-continue` and continue.**
+6. **Run the `postcommit-status-and-continue` skill and continue.**
 
 Phases marked **owner-driven** are gated additionally by the AI subagent steps; phases marked **contributor-okay** are gated only by CI + PR review.
 
@@ -696,7 +696,7 @@ EOF
 )"
 ```
 
-- [ ] **Step 1.15: Load `postcommit-status-and-continue` and continue.**
+- [ ] **Step 1.15: Run the `postcommit-status-and-continue` skill and continue.**
 
 ---
 
@@ -1213,7 +1213,7 @@ EOF
 )"
 ```
 
-- [ ] **Step 2.14: Load `postcommit-status-and-continue` and continue.**
+- [ ] **Step 2.14: Run the `postcommit-status-and-continue` skill and continue.**
 
 ---
 
@@ -1565,7 +1565,7 @@ EOF
 )"
 ```
 
-- [ ] **Step 3.15: Load `postcommit-status-and-continue` and continue.**
+- [ ] **Step 3.15: Run the `postcommit-status-and-continue` skill and continue.**
 
 ---
 
@@ -1631,7 +1631,7 @@ Run: `just check && just e2e`
 git commit -m "phase 4: monospace mode + mode chrome + theme switching"
 ```
 
-- [ ] **Step 4.11: Load `postcommit-status-and-continue` and continue.**
+- [ ] **Step 4.11: Run the `postcommit-status-and-continue` skill and continue.**
 
 ---
 
@@ -1657,7 +1657,7 @@ Add `ui/src/dom_diff.ts` with a 60-line implementation: walk old & new DOM in ta
 git commit -m "phase 5a: split layout + DOM-diff render integration"
 ```
 
-- [ ] **Step 5a.5: Load `postcommit-status-and-continue` and continue.**
+- [ ] **Step 5a.5: Run the `postcommit-status-and-continue` skill and continue.**
 
 ---
 
@@ -1700,7 +1700,7 @@ export function attachScrollSync(view: EditorView, preview: HTMLElement) {
 git commit -m "phase 5b: scroll sync via data-src-start/end (editor → preview)"
 ```
 
-- [ ] **Step 5b.5: Load `postcommit-status-and-continue` and continue.**
+- [ ] **Step 5b.5: Run the `postcommit-status-and-continue` skill and continue.**
 
 ---
 
@@ -1755,7 +1755,7 @@ Pre-render code blocks server-side. Spec §4. Wire into `emit.rs` when an info-s
 git commit -m "phase 6a: mermaid + KaTeX + syntax highlighting + mermaid baseline"
 ```
 
-- [ ] **Step 6a.8: Load `postcommit-status-and-continue` and continue.**
+- [ ] **Step 6a.8: Run the `postcommit-status-and-continue` skill and continue.**
 
 ---
 
@@ -1796,7 +1796,7 @@ export async function rerenderForThemeChange(root: HTMLElement, ctx: { vars: Rec
 git commit -m "phase 6b: 17-theme bundle + mermaid derivation + rAF re-render"
 ```
 
-- [ ] **Step 6b.6: Load `postcommit-status-and-continue` and continue.**
+- [ ] **Step 6b.6: Run the `postcommit-status-and-continue` skill and continue.**
 
 ---
 
@@ -1818,7 +1818,7 @@ git commit -m "phase 6b: 17-theme bundle + mermaid derivation + rAF re-render"
 git commit -m "phase 7: theme picker UX + screenshot regeneration"
 ```
 
-- [ ] **Step 7.6: Load `postcommit-status-and-continue` and continue.**
+- [ ] **Step 7.6: Run the `postcommit-status-and-continue` skill and continue.**
 
 ---
 
@@ -1912,7 +1912,7 @@ git commit -m "phase 8: packaging (AppImage + Flatpak) + multi-instance polish +
 git tag -a v0.1.0 -m "preview-md v0.1.0 — first releasable build"
 ```
 
-- [ ] **Step 8.15: Load `postcommit-status-and-continue` and continue.**
+- [ ] **Step 8.15: Run the `postcommit-status-and-continue` skill and continue.**
 
 ---
 
@@ -1939,4 +1939,4 @@ Type consistency: `RenderResult { version, html, source_map }` is the same shape
 
 ---
 
-**Load `postcommit-status-and-continue` and continue.**
+**Run the `postcommit-status-and-continue` skill and continue.**
