@@ -1,0 +1,64 @@
+[meta]
+name = "GitHub Dark"
+slug = "github-dark"
+author = "GitHub"
+mode = "dark"
+version = "1.0.0"
+
+[palette]
+# Surfaces
+bg = "#0d1117"
+bg_elevated = "#161b22"
+fg = "#e6edf3"
+fg_muted = "#8b949e"
+accent = "#2f81f7"
+link = "#2f81f7"
+border = "#6e7781"
+
+# Editor - adjusted to meet 4.5:1 for selection_fg vs selection_bg
+selection_bg = "#f0f3f6"
+selection_fg = "#0d1117"
+focus_ring = "#2f81f7"
+caret = "#e6edf3"
+scrollbar_thumb = "#30363d"
+scrollbar_track = "#0d1117"
+
+# Markdown
+inline_code_bg = "#161b22"
+inline_code_fg = "#e6edf3"
+code_block_bg = "#161b22"
+code_block_fg = "#e6edf3"
+code_block_border = "#6e7781"
+blockquote_bar = "#6e7781"
+blockquote_fg = "#8b949e"
+hr = "#6e7781"
+
+# Tables
+table_header_bg = "#161b22"
+table_row_alt = "#0d1117"
+table_border = "#6e7781"
+
+# Admonitions
+admonition_note = "#2f81f7"
+admonition_warn = "#d29922"
+admonition_tip = "#1f883d"
+
+# Kbd
+kbd_bg = "#161b22"
+kbd_fg = "#e6edf3"
+kbd_border = "#6e7781"
+
+# Links
+link_hover = "#388bfd"
+link_visited = "#a371f7"
+image_caption = "#8b949e"
+
+# Mermaid
+mermaid_primary = "#e6edf3"
+mermaid_primary_text = "#e6edf3"
+mermaid_secondary = "#8b949e"
+mermaid_tertiary = "#6e7781"
+mermaid_line = "#8b949e"
+
+# Syntax (GitHub Dark syntax colors)
+syntax = { keyword = "#ff7b72", string = "#a5d6ff", number = "#79c0ff", function = "#d2a8ff", type = "#ffa657", comment = "#8b949e", operator = "#e6edf3", punctuation = "#e6edf3", variable = "#ffa657", constant = "#79c0ff" }

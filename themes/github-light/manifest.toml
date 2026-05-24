@@ -1,0 +1,64 @@
+[meta]
+name = "GitHub Light"
+slug = "github-light"
+author = "GitHub"
+mode = "light"
+version = "1.0.0"
+
+[palette]
+# Surfaces
+bg = "#ffffff"
+bg_elevated = "#f6f8fa"
+fg = "#1f2328"
+fg_muted = "#656d76"
+accent = "#0969da"
+link = "#0969da"
+border = "#6e7781"
+
+# Editor
+selection_bg = "#1f2328"
+selection_fg = "#ffffff"
+focus_ring = "#0969da"
+caret = "#1f2328"
+scrollbar_thumb = "#d1d9e0"
+scrollbar_track = "#f6f8fa"
+
+# Markdown
+inline_code_bg = "#f6f8fa"
+inline_code_fg = "#1f2328"
+code_block_bg = "#f6f8fa"
+code_block_fg = "#1f2328"
+code_block_border = "#6e7781"
+blockquote_bar = "#6e7781"
+blockquote_fg = "#656d76"
+hr = "#6e7781"
+
+# Tables
+table_header_bg = "#f6f8fa"
+table_row_alt = "#f6f8fa"
+table_border = "#6e7781"
+
+# Admonitions
+admonition_note = "#0969da"
+admonition_warn = "#bf8700"
+admonition_tip = "#1a7f37"
+
+# Kbd
+kbd_bg = "#f6f8fa"
+kbd_fg = "#1f2328"
+kbd_border = "#6e7781"
+
+# Links
+link_hover = "#0550ae"
+link_visited = "#8250df"
+image_caption = "#656d76"
+
+# Mermaid
+mermaid_primary = "#1f2328"
+mermaid_primary_text = "#1f2328"
+mermaid_secondary = "#656d76"
+mermaid_tertiary = "#6e7781"
+mermaid_line = "#656d76"
+
+# Syntax (GitHub Light syntax colors)
+syntax = { keyword = "#cf222e", string = "#0a3069", number = "#0550ae", function = "#8250df", type = "#953800", comment = "#6e7781", operator = "#1f2328", punctuation = "#1f2328", variable = "#953800", constant = "#0550ae" }

@@ -1,0 +1,8 @@
+A mermaid diagram:
+
+```mermaid
+graph TD
+    A[Start] --> B{Decision}
+    B -->|Yes| C[Result 1]
+    B -->|No| D[Result 2]
+```

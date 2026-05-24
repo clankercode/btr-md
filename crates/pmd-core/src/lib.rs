@@ -5,6 +5,7 @@
 #![warn(clippy::all)]
 
 pub mod emit;
+pub mod escape;
 pub mod parse;
 pub mod sanitize;
 pub mod source_map;

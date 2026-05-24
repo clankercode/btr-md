@@ -1,0 +1,1 @@
+~~strikethrough~~ and **bold with `code`** inside

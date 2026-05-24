@@ -1,0 +1,2 @@
+- [ ] Task item unchecked
+- [x] Task item checked
