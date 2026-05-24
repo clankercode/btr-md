@@ -1,4 +1,4 @@
-use pmd_app_lib::{cli, cmd, path_scope::PathScope, AppState};
+use pmd_app_lib::{cli, cmd, path_scope::PathScope, watcher::FileWatcher, AppState};
 use tauri::Emitter;
 
 fn main() {

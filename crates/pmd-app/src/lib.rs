@@ -2,6 +2,7 @@ pub mod cli;
 pub mod cmd;
 pub mod path_scope;
 pub mod state;
+pub mod watcher;
 
 use std::path::PathBuf;
 

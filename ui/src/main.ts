@@ -36,6 +36,47 @@ const hotkeyOverlay = createOverlay();
 hotkeyOverlay.hidden = true;
 document.body.appendChild(hotkeyOverlay);
 
+document.body.addEventListener('dragover', (e) => {
+  e.preventDefault();
+  e.stopPropagation();
+});
+
+document.body.addEventListener('drop', async (e) => {
+  e.preventDefault();
+  e.stopPropagation();
+
+  const files = e.dataTransfer?.files;
+  if (!files || files.length === 0) return;
+
+  const file = files[0];
+  if (!file.name.endsWith('.md') && !file.name.endsWith('.markdown')) {
+    console.log('Not a markdown file:', file.name);
+    return;
+  }
+
+  const path = (file as any).path;
+  if (path) {
+    openFile(path);
+  } else {
+    const contents = await file.text();
+    currentFilePath = null;
+    isModified = true;
+    chrome.setFilename(file.name);
+    chrome.setModified(true);
+
+    if (!editor) {
+      editor = await mountEditor(editorPane, (md) => {
+        isModified = true;
+        chrome.setModified(true);
+        renderMarkdown(md);
+      });
+      attachScrollSync(editor.view, previewPane);
+    }
+    editor.setValue(contents);
+    await renderMarkdown(contents);
+  }
+});
+
 let editor: Awaited<ReturnType<typeof mountEditor>> | null = null;
 let currentFilePath: string | null = null;
 let isModified = false;
