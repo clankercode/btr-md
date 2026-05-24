@@ -137,19 +137,20 @@ async function loadRecentFiles(): Promise<void> {
   try {
     const files = await invoke<string[]>('get_recent_files');
     chrome.setRecentFiles(files);
-    chrome.onRecentFileSelect((path: string) => {
-      openFile(path);
-    });
-    chrome.onClearRecentFiles(async () => {
-      await invoke('clear_recent_files');
-      chrome.setRecentFiles([]);
-    });
   } catch (e) {
     console.error('loadRecentFiles failed:', e);
   }
 }
 
 loadRecentFiles();
+
+chrome.onRecentFileSelect((path: string) => {
+  openFile(path);
+});
+chrome.onClearRecentFiles(async () => {
+  await invoke('clear_recent_files');
+  chrome.setRecentFiles([]);
+});
 
 async function applyTheme(slug: string) {
   try {

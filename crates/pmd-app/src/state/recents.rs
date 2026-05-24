@@ -41,7 +41,6 @@ pub fn push(file_path: &PathBuf) -> Result<()> {
         .read(true)
         .write(true)
         .create(true)
-        .truncate(true)
         .open(recents_path())?;
     f.lock_exclusive()?;
     let mut s = String::new();
@@ -81,7 +80,6 @@ pub fn get() -> Result<Vec<PathBuf>> {
         .read(true)
         .write(true)
         .create(true)
-        .truncate(true)
         .open(recents_path())?;
     #[allow(clippy::incompatible_msrv)]
     f.lock_shared()?;
