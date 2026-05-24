@@ -73,10 +73,16 @@ function renderPicker(state: PickerState): HTMLElement {
     }
 
     const preview = document.createElement('div');
-    preview.className = `pmd-picker-preview pmd-picker-preview--${theme.mode}`;
+    preview.className = 'pmd-picker-preview';
     preview.innerHTML = `
-      <div class="pmd-picker-preview-text">Aa</div>
-      <div class="pmd-picker-preview-code">code</div>
+      <div class="pmd-picker-preview-swatches">
+        <div class="pmd-picker-preview-swatch pmd-picker-preview-swatch--light">
+          <span>Aa</span>
+        </div>
+        <div class="pmd-picker-preview-swatch pmd-picker-preview-swatch--dark">
+          <span>Aa</span>
+        </div>
+      </div>
     `;
     card.appendChild(preview);
 
@@ -133,10 +139,16 @@ function updateGrid(state: PickerState): void {
     }
 
     const preview = document.createElement('div');
-    preview.className = `pmd-picker-preview pmd-picker-preview--${theme.mode}`;
+    preview.className = 'pmd-picker-preview';
     preview.innerHTML = `
-      <div class="pmd-picker-preview-text">Aa</div>
-      <div class="pmd-picker-preview-code">code</div>
+      <div class="pmd-picker-preview-swatches">
+        <div class="pmd-picker-preview-swatch pmd-picker-preview-swatch--light">
+          <span>Aa</span>
+        </div>
+        <div class="pmd-picker-preview-swatch pmd-picker-preview-swatch--dark">
+          <span>Aa</span>
+        </div>
+      </div>
     `;
     card.appendChild(preview);
 
