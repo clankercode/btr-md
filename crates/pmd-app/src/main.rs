@@ -1,6 +1,5 @@
 use pmd_app_lib::{cli, cmd, path_scope::PathScope, AppState};
 use tauri::Emitter;
-use tauri_plugin_dialog::DialogExt;
 
 fn main() {
     let scope = PathScope::new();

@@ -50,8 +50,8 @@ pub async fn open_dialog(
         .blocking_pick_file();
 
     if let Some(path) = file_path {
-        let path = path.as_path().map_err(|e| e.to_string())?;
-        let canon = state.scope.allow(path).map_err(|e| e.to_string())?;
+        let canon = path.into_path().map_err(|e| e.to_string())?;
+        let canon = state.scope.allow(&canon).map_err(|e| e.to_string())?;
         let contents = std::fs::read_to_string(&canon).map_err(|e| e.to_string())?;
         crate::state::recents::push(&canon).map_err(|e| e.to_string())?;
         Ok(Some(FileBuffer {
@@ -77,8 +77,8 @@ pub async fn save_dialog(
         .blocking_save_file();
 
     if let Some(path) = file_path {
-        let path = path.as_path().map_err(|e| e.to_string())?;
-        let canon = state.scope.allow(path).map_err(|e| e.to_string())?;
+        let canon = path.into_path().map_err(|e| e.to_string())?;
+        let canon = state.scope.allow(&canon).map_err(|e| e.to_string())?;
         Ok(Some(canon))
     } else {
         Ok(None)
