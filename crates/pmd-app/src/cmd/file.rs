@@ -1,5 +1,6 @@
 use serde::Serialize;
 use std::path::PathBuf;
+use tauri_plugin_dialog::DialogExt;
 
 #[derive(Serialize)]
 pub struct FileBuffer {
