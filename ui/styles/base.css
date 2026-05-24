@@ -160,6 +160,23 @@ body[data-mode="preview"] #preview-pane {
   background: rgba(0, 0, 0, 0.1);
 }
 
+.pmd-theme-btn {
+  border: 1px solid var(--pmd-border);
+  background: transparent;
+  color: var(--pmd-fg);
+  padding: 0.25rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background 120ms, border-color 120ms;
+}
+
+.pmd-theme-btn:hover {
+  background: rgba(0, 0, 0, 0.1);
+  border-color: var(--pmd-accent);
+}
+
 .pmd-file-dropdown {
   position: absolute;
   top: 40px;

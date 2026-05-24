@@ -12,7 +12,9 @@ export interface ChromeInstance {
   setFilename: (filename: string | null) => void;
   setModified: (modified: boolean) => void;
   setStatus: (text: string) => void;
+  setRecentFiles: (files: string[]) => void;
   onModeChange: (handler: (mode: Mode) => void) => void;
+  onRecentFileSelect: (handler: (path: string) => void) => void;
   onThemePickerClick: (handler: () => void) => void;
   destroy: () => void;
 }
@@ -105,6 +107,13 @@ export function createChrome(parent: HTMLElement): ChromeInstance {
   toolbar.appendChild(titleSection);
   toolbar.appendChild(modeGroup);
 
+  const themeBtn = document.createElement('button');
+  themeBtn.className = 'pmd-theme-btn';
+  themeBtn.textContent = 'Theme';
+  themeBtn.type = 'button';
+  themeBtn.title = 'Change theme (Ctrl+T)';
+  toolbar.appendChild(themeBtn);
+
   const statusBar = document.createElement('div');
   statusBar.className = 'pmd-status-bar';
   const statusText = document.createElement('span');
@@ -137,7 +146,13 @@ export function createChrome(parent: HTMLElement): ChromeInstance {
 
   modeGroup.addEventListener('click', handleModeClick);
 
+  themeBtn.addEventListener('click', () => {
+    themePickerHandlers.forEach((h) => h());
+  });
+
   setMode(currentMode);
+
+  let themePickerHandlers: (() => void)[] = [];
 
   return {
     el: container,
@@ -179,6 +194,9 @@ export function createChrome(parent: HTMLElement): ChromeInstance {
     },
     onRecentFileSelect: (handler: (path: string) => void) => {
       recentFileHandlers.push(handler);
+    },
+    onThemePickerClick: (handler: () => void) => {
+      themePickerHandlers.push(handler);
     },
     destroy: () => {
       container.remove();

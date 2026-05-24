@@ -43,24 +43,49 @@ chrome.onModeChange((mode) => {
   currentMode = mode;
 });
 
-async function loadRecentFiles() {
+let cachedThemes: ThemeInfo[] = [];
+
+async function loadThemes(): Promise<ThemeInfo[]> {
+  if (cachedThemes.length > 0) return cachedThemes;
   try {
-    const files = await invoke<string[]>('get_recent_files');
-    chrome.setRecentFiles(files);
+    cachedThemes = await invoke<ThemeInfo[]>('list_themes');
   } catch (e) {
-    console.error('loadRecentFiles failed:', e);
+    console.error('loadThemes failed:', e);
+    cachedThemes = [];
   }
+  return cachedThemes;
 }
 
-chrome.onRecentFileSelect((path) => {
-  openFile(path);
+async function showThemePicker(): Promise<void> {
+  if (isPickerOpen()) {
+    closeThemePicker();
+    return;
+  }
+  const themes = await loadThemes();
+  openThemePicker(themes, async (slug) => {
+    await applyTheme(slug);
+  });
+}
+
+chrome.onThemePickerClick(() => {
+  showThemePicker();
+});
+
+document.addEventListener('keydown', (e: KeyboardEvent) => {
+  if (e.ctrlKey && e.key === 't') {
+    e.preventDefault();
+    showThemePicker();
+  }
 });
 
 loadRecentFiles();
 
 async function applyTheme(slug: string) {
   try {
-    const bundle = await invoke<{ css: string; mermaid_vars: Record<string, string> }>('set_theme', { slug });
+    const bundle = await invoke<{ css: string; mermaid_vars: Record<string, string>; warnings?: string[] }>('set_theme', { slug });
+    if (bundle.warnings && bundle.warnings.length > 0) {
+      bundle.warnings.forEach((w: string) => console.warn(`[preview-md] Theme "${slug}": ${w}`));
+    }
     let style = document.getElementById('pmd-theme-styles') as HTMLStyleElement;
     if (!style) {
       style = document.createElement('style');

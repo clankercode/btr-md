@@ -13,6 +13,8 @@ pub struct ThemeInfo {
 pub struct ThemeBundle {
     pub css: String,
     pub mermaid_vars: BTreeMap<String, String>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub warnings: Vec<String>,
 }
 
 fn theme_dirs() -> Vec<std::path::PathBuf> {
@@ -102,6 +104,11 @@ pub fn set_theme(slug: String) -> Result<ThemeBundle, String> {
     let theme = pmd_core::theme::parse_manifest(&manifest_content)
         .map_err(|e| format!("parse manifest: {}", e))?;
 
+    let mut warnings = Vec::new();
+    if let Err(e) = pmd_core::theme::validate::validate(&theme) {
+        warnings.push(format!("WCAG contrast issue: {}", e));
+    }
+
     let theme_dir = manifest_path.parent().unwrap();
     let css_path = theme_dir.join("theme.css");
     let extra_css = if css_path.exists() {
@@ -139,7 +146,7 @@ pub fn set_theme(slug: String) -> Result<ThemeBundle, String> {
             if let Some(v) = derive_mermaid("mermaid_edge_label_bg", Some(bg_elevated)) {
                 css_vars.push_str(&format!("  --pmd-mermaid_edge_label_bg: {};\n", v));
             }
-            if derive_mermaid("mermaid_cluster_bg", None).is_some() {
+            if !theme.palette.colours.contains_key("mermaid_cluster_bg") {
                 let mixed = pmd_core::theme::mix::mix(bg_rgb, fg_rgb, 0.04);
                 css_vars.push_str(&format!(
                     "  --pmd-mermaid_cluster_bg: {};\n",
@@ -152,7 +159,7 @@ pub fn set_theme(slug: String) -> Result<ThemeBundle, String> {
             if let Some(v) = derive_mermaid("mermaid_note_border", Some(accent)) {
                 css_vars.push_str(&format!("  --pmd-mermaid_note_border: {};\n", v));
             }
-            if derive_mermaid("mermaid_actor_bg", None).is_some() {
+            if !theme.palette.colours.contains_key("mermaid_actor_bg") {
                 let mixed = pmd_core::theme::mix::mix(accent_rgb, bg_rgb, 0.30);
                 css_vars.push_str(&format!(
                     "  --pmd-mermaid_actor_bg: {};\n",
@@ -185,6 +192,7 @@ pub fn set_theme(slug: String) -> Result<ThemeBundle, String> {
     Ok(ThemeBundle {
         css: css_vars,
         mermaid_vars,
+        warnings,
     })
 }
 
