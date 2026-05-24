@@ -17,6 +17,11 @@ path = "src/main.rs"
 [build-dependencies]
 tauri-build.workspace = true
 
+[dev-dependencies]
+tokio.workspace = true
+tempfile.workspace = true
+tauri.workspace = true
+
 [dependencies]
 pmd-core = { path = "../pmd-core" }
 serde.workspace = true

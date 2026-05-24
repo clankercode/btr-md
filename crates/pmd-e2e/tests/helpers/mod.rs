@@ -11,18 +11,37 @@ use std::time::Duration;
 const WEBDRIVER_ADDR: &str = "127.0.0.1:4444";
 const APPLICATION_PATH: &str = "/work/target/release/preview-md";
 
+#[allow(dead_code)]
 pub struct WebDriverSession {
     id: String,
 }
 
+#[allow(dead_code)]
 impl WebDriverSession {
     pub fn new() -> Result<Self> {
+        Self::with_args(&[])
+    }
+
+    pub fn with_args(args: &[&str]) -> Result<Self> {
+        let mut tauri_opts = serde_json::Map::new();
+        tauri_opts.insert(
+            "application".to_string(),
+            serde_json::Value::String(APPLICATION_PATH.to_string()),
+        );
+        if !args.is_empty() {
+            tauri_opts.insert(
+                "args".to_string(),
+                serde_json::Value::Array(
+                    args.iter()
+                        .map(|s| serde_json::Value::String(s.to_string()))
+                        .collect(),
+                ),
+            );
+        }
         let payload = json!({
             "capabilities": {
                 "alwaysMatch": {
-                    "tauri:options": {
-                        "application": APPLICATION_PATH
-                    }
+                    "tauri:options": serde_json::Value::Object(tauri_opts)
                 }
             }
         });

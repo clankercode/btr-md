@@ -58,8 +58,8 @@ fn smoke_window_opens_renders_app_text_and_emits_required_csp() {
 
     let source = session.source().expect("read page source");
     assert!(
-        source.contains(r#"<div id="app">preview-md scaffold ok</div>"#),
-        "page source missing scaffold app text: {source}"
+        source.contains(r#"<main id="preview-pane""#),
+        "page source missing preview pane: {source}"
     );
 
     session
