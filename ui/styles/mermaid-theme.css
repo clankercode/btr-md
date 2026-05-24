@@ -1,15 +1,22 @@
+/* ============================================
+   Mermaid Theme Styles
+   Styles for Mermaid diagrams and math rendering
+   ============================================ */
+
 .pmd-mermaid-error {
-  background-color: var(--pmd-mermaid-error, #e77878);
-  color: white;
-  padding: 1em;
-  border-radius: 4px;
+  background-color: var(--pmd-error-bg, #fef2f2);
+  color: var(--pmd-error, #ef4444);
+  padding: var(--pmd-space-3);
+  border-radius: var(--pmd-radius-md);
   overflow-x: auto;
+  font-size: var(--pmd-text-sm);
 }
 
 .pmd-math-error {
-  background-color: #fee;
-  border: 1px solid #fdd;
-  color: #c00;
-  padding: 0.5em;
-  border-radius: 4px;
+  background-color: var(--pmd-error-bg, #fef2f2);
+  border: 1px solid var(--pmd-error, #ef4444);
+  color: var(--pmd-error, #ef4444);
+  padding: 0.1em 0.3em;
+  border-radius: var(--pmd-radius-sm);
+  font-size: 0.9em;
 }
