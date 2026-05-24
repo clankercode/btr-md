@@ -76,7 +76,31 @@ document.addEventListener('keydown', (e: KeyboardEvent) => {
     e.preventDefault();
     showThemePicker();
   }
+  if (e.ctrlKey && e.key === 'n') {
+    e.preventDefault();
+    newFile();
+  }
+  if (e.ctrlKey && e.key === 'o') {
+    e.preventDefault();
+    openFileDialog();
+  }
+  if (e.ctrlKey && e.key === 's') {
+    e.preventDefault();
+    saveCurrentFile();
+  }
 });
+
+async function loadRecentFiles(): Promise<void> {
+  try {
+    const files = await invoke<string[]>('get_recent_files');
+    chrome.setRecentFiles(files);
+    chrome.onRecentFileSelect((path: string) => {
+      openFile(path);
+    });
+  } catch (e) {
+    console.error('loadRecentFiles failed:', e);
+  }
+}
 
 loadRecentFiles();
 
@@ -143,7 +167,47 @@ function renderMarkdown(markdown: string): Promise<void> {
   });
 }
 
+async function newFile(): Promise<void> {
+  currentFilePath = null;
+  isModified = false;
+  chrome.setFilename('Untitled');
+  chrome.setModified(false);
+
+  if (!editor) {
+    editor = await mountEditor(editorPane, (md) => {
+      isModified = true;
+      chrome.setModified(true);
+      renderMarkdown(md);
+    });
+    attachScrollSync(editor.view, previewPane);
+  }
+  editor.setValue('');
+  await renderMarkdown('');
+}
+
+async function openFileDialog(): Promise<void> {
+  console.log('Open dialog not yet implemented');
+}
+
+async function saveCurrentFile(): Promise<void> {
+  if (!currentFilePath) {
+    console.log('Save As not yet implemented');
+    return;
+  }
+  try {
+    const content = getCurrentMarkdown();
+    await invoke('save_file', { path: currentFilePath, contents: content });
+    isModified = false;
+    chrome.setModified(false);
+  } catch (e) {
+    console.error('Save failed:', e);
+  }
+}
+
 async function openFile(path: string) {
+  const welcome = document.querySelector('.pmd-welcome');
+  if (welcome) welcome.remove();
+
   try {
     const file = await invoke<{ contents: string; path: string }>('open_file', { path });
     currentFilePath = path;
@@ -205,9 +269,27 @@ listen<string>('mode-change', (event) => {
 document.body.dataset.mode = 'split';
 chrome.setStatus('Ready');
 
+function showWelcomeScreen(): void {
+  previewPane.innerHTML = `
+    <div class="pmd-welcome">
+      <h1>preview-md</h1>
+      <p>Best-in-class markdown preview for Linux</p>
+      <div class="pmd-welcome-actions">
+        <button id="pmd-welcome-open" class="pmd-welcome-btn">Open File</button>
+        <button id="pmd-welcome-new" class="pmd-welcome-btn">New File</button>
+      </div>
+      <p class="pmd-welcome-hint">or press Ctrl+O to open, Ctrl+N to create</p>
+    </div>
+  `;
+  document.getElementById('pmd-welcome-open')?.addEventListener('click', () => openFileDialog());
+  document.getElementById('pmd-welcome-new')?.addEventListener('click', () => newFile());
+}
+
 invoke<string | null>('get_initial_path').then((path) => {
   if (path) {
     openFile(path);
+  } else {
+    showWelcomeScreen();
   }
 });
 

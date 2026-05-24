@@ -1,5 +1,6 @@
 use pmd_app_lib::{cli, cmd, path_scope::PathScope, AppState};
 use tauri::Emitter;
+use tauri_plugin_dialog::DialogExt;
 
 fn main() {
     let scope = PathScope::new();
@@ -8,6 +9,7 @@ fn main() {
     let initial_path = initial.path.clone();
 
     tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
         .manage(AppState {
             scope,
             initial_path: std::sync::Mutex::new(initial_path),
@@ -16,6 +18,8 @@ fn main() {
             cmd::render::render_cmd,
             cmd::file::open_file,
             cmd::file::save_file,
+            cmd::file::open_dialog,
+            cmd::file::save_dialog,
             cmd::theme::list_themes,
             cmd::theme::set_theme,
             cmd::settings::get_settings,

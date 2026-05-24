@@ -466,3 +466,53 @@ kbd {
   max-width: 100%;
   height: auto;
 }
+
+.pmd-welcome {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  text-align: center;
+  padding: 2rem;
+  color: var(--pmd-fg, #333);
+}
+
+.pmd-welcome h1 {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.pmd-welcome p {
+  color: var(--pmd-fg-muted, #666);
+  margin-bottom: 1.5rem;
+}
+
+.pmd-welcome-actions {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.pmd-welcome-btn {
+  padding: 0.75rem 1.5rem;
+  border: 1px solid var(--pmd-border, #ccc);
+  background: var(--pmd-bg, #fff);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background 0.15s;
+}
+
+.pmd-welcome-btn:hover {
+  background: var(--pmd-bg-elevated, #f5f5f5);
+}
+
+.pmd-welcome-hint {
+  font-size: 0.875rem;
+}
+
+.pmd-welcome h1 + p {
+  margin-top: -0.5rem;
+}

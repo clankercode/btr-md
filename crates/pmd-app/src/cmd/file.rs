@@ -36,3 +36,50 @@ pub async fn save_file(
 pub fn get_initial_path(state: tauri::State<'_, crate::AppState>) -> Option<PathBuf> {
     state.initial_path.lock().unwrap().take()
 }
+
+#[tauri::command]
+pub async fn open_dialog(
+    app: tauri::AppHandle,
+    state: tauri::State<'_, crate::AppState>,
+) -> Result<Option<FileBuffer>, String> {
+    let file_path = app
+        .dialog()
+        .file()
+        .add_filter("Markdown", &["md", "markdown", "mdown", "mkd"])
+        .blocking_pick_file();
+
+    if let Some(path) = file_path {
+        let path = path.as_path().map_err(|e| e.to_string())?;
+        let canon = state.scope.allow(path).map_err(|e| e.to_string())?;
+        let contents = std::fs::read_to_string(&canon).map_err(|e| e.to_string())?;
+        crate::state::recents::push(&canon).map_err(|e| e.to_string())?;
+        Ok(Some(FileBuffer {
+            path: canon,
+            contents,
+        }))
+    } else {
+        Ok(None)
+    }
+}
+
+#[tauri::command]
+pub async fn save_dialog(
+    app: tauri::AppHandle,
+    state: tauri::State<'_, crate::AppState>,
+    suggested_name: String,
+) -> Result<Option<PathBuf>, String> {
+    let file_path = app
+        .dialog()
+        .file()
+        .set_file_name(&suggested_name)
+        .add_filter("Markdown", &["md"])
+        .blocking_save_file();
+
+    if let Some(path) = file_path {
+        let path = path.as_path().map_err(|e| e.to_string())?;
+        let canon = state.scope.allow(path).map_err(|e| e.to_string())?;
+        Ok(Some(canon))
+    } else {
+        Ok(None)
+    }
+}
