@@ -69,7 +69,7 @@ function renderPicker(state: PickerState): HTMLElement {
     card.ariaSelected = String(index === state.selectedIndex);
 
     if (index === state.selectedIndex) {
-      card.classList.add('pmd-picker-card--selected');
+      card.dataset.selected = 'true';
     }
 
     const preview = document.createElement('div');
@@ -129,7 +129,7 @@ function updateGrid(state: PickerState): void {
     card.ariaSelected = String(index === state.selectedIndex);
 
     if (index === state.selectedIndex) {
-      card.classList.add('pmd-picker-card--selected');
+      card.dataset.selected = 'true';
     }
 
     const preview = document.createElement('div');
@@ -188,7 +188,7 @@ function moveSelection(delta: number): void {
 
 function scrollSelectedIntoView(): void {
   const grid = document.getElementById('theme-grid');
-  const selected = grid?.querySelector('.pmd-picker-card--selected');
+  const selected = grid?.querySelector('[data-selected="true"]');
   selected?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
 }
 
