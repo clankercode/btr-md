@@ -5,52 +5,8 @@
     <title>preview-md</title>
     <link rel="stylesheet" href="./styles/base.css">
   </head>
-  <body>
+  <body data-mode="split">
     <main id="preview-pane" class="pmd-preview">Loading...</main>
-    <script type="module">
-      const { invoke } = window.__TAURI__.core;
-
-      let renderQueue = [];
-      let rendering = false;
-      let currentVersion = 0;
-
-      async function processRenderQueue() {
-        if (rendering || renderQueue.length === 0) return;
-        rendering = true;
-        const { markdown, resolve, reject } = renderQueue.shift();
-        try {
-          currentVersion++;
-          const result = await invoke('render_cmd', { version: currentVersion, markdown });
-          document.getElementById('preview-pane').innerHTML = result.html;
-          resolve(result);
-        } catch (e) {
-          reject(e);
-        } finally {
-          rendering = false;
-          processRenderQueue();
-        }
-      }
-
-      function renderMarkdown(markdown) {
-        return new Promise((resolve, reject) => {
-          renderQueue.push({ markdown, resolve, reject });
-          processRenderQueue();
-        });
-      }
-
-      async function openFile(path) {
-        try {
-          const file = await invoke('open_file', { path });
-          await renderMarkdown(file.contents);
-        } catch (e) {
-          document.getElementById('preview-pane').innerHTML = `<pre>Error: ${e}</pre>`;
-        }
-      }
-
-      const { listen } = window.__TAURI__.event;
-      listen('open-file', (event) => {
-        openFile(event.payload);
-      });
-    </script>
+    <script type="module" src="./dist/bundle.js"></script>
   </body>
 </html>

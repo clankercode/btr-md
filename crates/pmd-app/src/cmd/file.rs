@@ -31,3 +31,8 @@ pub async fn save_file(
     }
     std::fs::write(&path, contents).map_err(|e| e.to_string())
 }
+
+#[tauri::command]
+pub fn get_initial_path(state: tauri::State<'_, crate::AppState>) -> Option<PathBuf> {
+    state.initial_path.lock().unwrap().take()
+}

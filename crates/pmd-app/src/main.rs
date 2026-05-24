@@ -5,8 +5,13 @@ fn main() {
     let scope = PathScope::new();
     let initial = cli::parse_argv(&scope);
 
+    let initial_path = initial.path.clone();
+
     tauri::Builder::default()
-        .manage(AppState { scope })
+        .manage(AppState {
+            scope,
+            initial_path: std::sync::Mutex::new(initial_path),
+        })
         .invoke_handler(tauri::generate_handler![
             cmd::render::render_cmd,
             cmd::file::open_file,
@@ -19,6 +24,7 @@ fn main() {
             cmd::settings::set_auto_switch,
             cmd::settings::get_recent_files,
             cmd::settings::add_recent_file,
+            cmd::file::get_initial_path,
         ])
         .setup(move |app| {
             if let Some(ref p) = initial.path {

@@ -13,7 +13,7 @@ const APPLICATION_PATH: &str = "/work/target/release/preview-md";
 
 #[allow(dead_code)]
 pub struct WebDriverSession {
-    id: String,
+    pub id: String,
 }
 
 #[allow(dead_code)]
@@ -152,6 +152,15 @@ impl WebDriverSession {
     pub fn close(self) -> Result<()> {
         webdriver_request("DELETE", &self.path(""), None)?;
         Ok(())
+    }
+
+    pub fn execute_script(&self, script: &str, args: &[Value]) -> Result<Value> {
+        let payload = json!({ "script": script, "args": args });
+        let response = webdriver_request("POST", &self.path("execute/async"), Some(&payload))?;
+        response
+            .get("value")
+            .ok_or_else(|| anyhow!("execute script response missing value: {response}"))
+            .cloned()
     }
 
     fn path(&self, suffix: &str) -> String {

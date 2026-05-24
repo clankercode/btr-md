@@ -35,6 +35,13 @@
   --pmd-image-caption: #656d76;
 
   --pmd-bg-elevated: #f6f8fa;
+
+  --pmd-toolbar-bg: var(--pmd-bg-elevated);
+  --pmd-toolbar-border: var(--pmd-border);
+  --pmd-statusbar-bg: var(--pmd-bg-elevated);
+  --pmd-statusbar-fg: var(--pmd-fg-muted);
+  --pmd-mode-btn-active-bg: var(--pmd-accent);
+  --pmd-mode-btn-active-fg: #ffffff;
 }
 
 * {
@@ -50,6 +57,199 @@ body {
     sans-serif;
   background-color: var(--pmd-bg);
   color: var(--pmd-fg);
+}
+
+#app-container {
+  display: flex;
+  height: 100%;
+  width: 100%;
+}
+
+#editor-pane {
+  flex: 1;
+  display: none;
+  overflow: hidden;
+}
+
+#editor-pane .cm-editor {
+  height: 100%;
+}
+
+#preview-pane {
+  flex: 1;
+  display: none;
+  overflow: auto;
+  padding: 2rem;
+  max-width: 80ch;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+body[data-mode="source"] #editor-pane {
+  display: block;
+}
+
+body[data-mode="split"] #editor-pane,
+body[data-mode="split"] #preview-pane {
+  display: block;
+  width: 50%;
+}
+
+body[data-mode="preview"] #preview-pane {
+  display: block;
+  width: 100%;
+}
+
+#editor-pane,
+#preview-pane {
+  transition: opacity 120ms ease;
+}
+
+.pmd-chrome {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+}
+
+.pmd-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.25rem 0.75rem;
+  background: var(--pmd-toolbar-bg);
+  border-bottom: 1px solid var(--pmd-toolbar-border);
+  height: 40px;
+}
+
+.pmd-title-section {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.pmd-modified-dot {
+  color: var(--pmd-accent);
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.pmd-filename {
+  font-size: 0.875rem;
+  color: var(--pmd-fg);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pmd-mode-group {
+  display: flex;
+  gap: 2px;
+  background: var(--pmd-border);
+  padding: 2px;
+  border-radius: 6px;
+}
+
+.pmd-mode-btn {
+  border: none;
+  background: transparent;
+  color: var(--pmd-fg);
+  padding: 0.25rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background 120ms, color 120ms;
+}
+
+.pmd-mode-btn:hover {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.pmd-mode-btn.active {
+  background: var(--pmd-mode-btn-active-bg);
+  color: var(--pmd-mode-btn-active-fg);
+}
+
+.pmd-status-bar {
+  display: flex;
+  align-items: center;
+  padding: 0.125rem 0.75rem;
+  background: var(--pmd-statusbar-bg);
+  border-top: 1px solid var(--pmd-toolbar-border);
+  height: 24px;
+}
+
+.pmd-status-text {
+  font-size: 0.75rem;
+  color: var(--pmd-statusbar-fg);
+}
+
+.pmd-hotkey-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.pmd-hotkey-content {
+  background: var(--pmd-bg);
+  border-radius: 8px;
+  padding: 1.5rem;
+  max-width: 400px;
+  width: 90%;
+}
+
+.pmd-hotkey-content h2 {
+  margin: 0 0 1rem;
+  font-size: 1.125rem;
+}
+
+.pmd-hotkey-content table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.pmd-hotkey-content td {
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--pmd-border);
+}
+
+.pmd-hotkey-content td:first-child {
+  white-space: nowrap;
+}
+
+kbd {
+  background-color: var(--pmd-kbd-bg);
+  color: var(--pmd-kbd-fg);
+  border: 1px solid var(--pmd-kbd-border);
+  border-radius: 4px;
+  padding: 0.2em 0.5em;
+  font-family: inherit;
+  font-size: 0.875em;
+}
+
+.pmd-overlay-close {
+  margin-top: 1rem;
+  width: 100%;
+  padding: 0.5rem;
+  background: var(--pmd-accent);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+
+.pmd-overlay-close:hover {
+  opacity: 0.9;
 }
 
 .pmd-preview {
@@ -161,14 +361,4 @@ body {
 .pmd-preview img {
   max-width: 100%;
   height: auto;
-}
-
-kbd {
-  background-color: var(--pmd-kbd-bg);
-  color: var(--pmd-kbd-fg);
-  border: 1px solid var(--pmd-kbd-border);
-  border-radius: 4px;
-  padding: 0.2em 0.5em;
-  font-family: inherit;
-  font-size: 0.875em;
 }

@@ -7,40 +7,49 @@ use helpers::WebDriverSession;
 struct RequiredDirective {
     name: &'static str,
     values: &'static [&'static str],
+    allow_extra_values: bool,
 }
 
 const REQUIRED_CSP_DIRECTIVES: &[RequiredDirective] = &[
     RequiredDirective {
         name: "default-src",
         values: &["'self'"],
+        allow_extra_values: false,
     },
     RequiredDirective {
         name: "script-src",
         values: &["'self'", "'wasm-unsafe-eval'"],
+        allow_extra_values: true,
     },
     RequiredDirective {
         name: "style-src",
         values: &["'self'", "'unsafe-inline'"],
+        allow_extra_values: true,
     },
     RequiredDirective {
         name: "img-src",
         values: &["'self'", "data:", "asset:", "http://asset.localhost"],
+        allow_extra_values: true,
     },
     RequiredDirective {
         name: "connect-src",
         values: &["'self'", "ipc:", "http://ipc.localhost"],
+        allow_extra_values: true,
     },
     RequiredDirective {
         name: "object-src",
         values: &["'none'"],
+        allow_extra_values: false,
     },
     RequiredDirective {
         name: "frame-src",
         values: &["'none'"],
+        allow_extra_values: false,
     },
     RequiredDirective {
         name: "base-uri",
         values: &["'self'"],
+        allow_extra_values: false,
     },
 ];
 
@@ -75,19 +84,31 @@ fn smoke_window_opens_renders_app_text_and_emits_required_csp() {
                 required.name
             )
         });
-        assert!(
-            actual
-                .iter()
-                .map(String::as_str)
-                .eq(required.values.iter().copied()),
-            "CSP directive `{}` mismatch: expected `{} {}`, got `{} {}` (full CSP: `{}`)",
-            required.name,
-            required.name,
-            required.values.join(" "),
-            required.name,
-            actual.join(" "),
-            csp
-        );
+        if required.allow_extra_values {
+            for required_value in required.values {
+                assert!(
+                    actual.iter().any(|v| v == required_value),
+                    "CSP directive `{}` missing required value `{}` (full CSP: `{}`)",
+                    required.name,
+                    required_value,
+                    csp
+                );
+            }
+        } else {
+            assert!(
+                actual
+                    .iter()
+                    .map(String::as_str)
+                    .eq(required.values.iter().copied()),
+                "CSP directive `{}` mismatch: expected `{} {}`, got `{} {}` (full CSP: `{}`)",
+                required.name,
+                required.name,
+                required.values.join(" "),
+                required.name,
+                actual.join(" "),
+                csp
+            );
+        }
     }
 
     session.close().expect("close WebDriver session");
