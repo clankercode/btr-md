@@ -5,7 +5,7 @@ import { attachScrollSync } from './scroll_sync.js';
 import { markAllNodes, rerenderForThemeChange } from './theme_apply.js';
 import { openThemePicker, isPickerOpen, closeThemePicker, type ThemeInfo } from './picker.js';
 
-import './picker.css';
+import '../styles/picker.css';
 
 const { invoke } = window.__TAURI__.core;
 const { listen } = window.__TAURI__.event;
@@ -186,17 +186,44 @@ async function newFile(): Promise<void> {
 }
 
 async function openFileDialog(): Promise<void> {
-  console.log('Open dialog not yet implemented');
+  try {
+    const result = await invoke<{ contents: string; path: string } | null>('open_dialog');
+    if (result) {
+      currentFilePath = result.path;
+      isModified = false;
+      chrome.setFilename(result.path.split('/').pop() || result.path);
+      chrome.setModified(false);
+
+      if (!editor) {
+        editor = await mountEditor(editorPane, (md) => {
+          isModified = true;
+          chrome.setModified(true);
+          renderMarkdown(md);
+        });
+        attachScrollSync(editor.view, previewPane);
+      }
+      editor.setValue(result.contents);
+      await renderMarkdown(result.contents);
+      loadRecentFiles();
+    }
+  } catch (e) {
+    console.error('Open dialog failed:', e);
+  }
 }
 
 async function saveCurrentFile(): Promise<void> {
-  if (!currentFilePath) {
-    console.log('Save As not yet implemented');
-    return;
-  }
   try {
+    let path = currentFilePath;
+    if (!path) {
+      const suggested = editor ? editor.getValue().split('\n')[0].slice(0, 50) || 'Untitled' : 'Untitled';
+      const result = await invoke<string | null>('save_dialog', { suggestedName: suggested + '.md' });
+      if (!result) return;
+      path = result;
+      currentFilePath = path;
+      chrome.setFilename(path.split('/').pop() || path);
+    }
     const content = getCurrentMarkdown();
-    await invoke('save_file', { path: currentFilePath, contents: content });
+    await invoke('save_file', { path, contents: content });
     isModified = false;
     chrome.setModified(false);
   } catch (e) {

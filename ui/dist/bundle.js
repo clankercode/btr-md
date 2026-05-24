@@ -57958,6 +57958,67 @@ var init_codemirror_bundle = __esm({
   }
 });
 
+// src/mermaid_runner.ts
+var mermaid_runner_exports = {};
+__export(mermaid_runner_exports, {
+  ensureInit: () => ensureInit,
+  renderMermaidNodes: () => renderMermaidNodes
+});
+function ensureInit(vars) {
+  if (initialised) {
+    mermaid.initialize({ themeVariables: vars });
+    return;
+  }
+  mermaid.initialize({ startOnLoad: false, securityLevel: "strict", themeVariables: vars });
+  initialised = true;
+}
+async function renderMermaidNodes(root) {
+  const blocks = root.querySelectorAll("pre > code.language-mermaid");
+  for (const code2 of blocks) {
+    try {
+      const id3 = `m-${Math.random().toString(36).slice(2)}`;
+      const { svg: svg2 } = await mermaid.render(id3, code2.textContent ?? "");
+      code2.parentElement.outerHTML = svg2;
+    } catch (e) {
+      code2.parentElement.classList.add("pmd-mermaid-error");
+    }
+  }
+}
+var initialised;
+var init_mermaid_runner = __esm({
+  "src/mermaid_runner.ts"() {
+    initialised = false;
+  }
+});
+
+// src/katex_runner.ts
+var katex_runner_exports = {};
+__export(katex_runner_exports, {
+  renderMathNode: () => renderMathNode,
+  renderMathNodes: () => renderMathNodes
+});
+function renderMathNode(el) {
+  try {
+    katex.render(el.textContent ?? "", el.parentElement, {
+      trust: false,
+      strict: "warn",
+      displayMode: el.classList.contains("math-block")
+    });
+  } catch (e) {
+    el.classList.add("pmd-math-error");
+  }
+}
+function renderMathNodes(root) {
+  const blocks = root.querySelectorAll("code.language-math, .math-block");
+  for (const code2 of blocks) {
+    renderMathNode(code2);
+  }
+}
+var init_katex_runner = __esm({
+  "src/katex_runner.ts"() {
+  }
+});
+
 // src/editor.ts
 init_codemirror_bundle();
 async function mountEditor(el, onChange) {
@@ -58005,7 +58066,8 @@ async function mountEditor(el, onChange) {
       });
     },
     focus: () => view.focus(),
-    destroy: () => view.destroy()
+    destroy: () => view.destroy(),
+    view
   };
 }
 
@@ -58026,6 +58088,39 @@ function createChrome(parent) {
   filenameEl.textContent = "";
   titleSection.appendChild(modifiedDot);
   titleSection.appendChild(filenameEl);
+  const fileMenuBtn = document.createElement("button");
+  fileMenuBtn.className = "pmd-file-menu-btn";
+  fileMenuBtn.textContent = "File";
+  fileMenuBtn.type = "button";
+  const fileDropdown = document.createElement("div");
+  fileDropdown.className = "pmd-file-dropdown";
+  fileDropdown.hidden = true;
+  const recentHeader = document.createElement("div");
+  recentHeader.className = "pmd-dropdown-header";
+  recentHeader.textContent = "Recent Files";
+  fileDropdown.appendChild(recentHeader);
+  const recentList = document.createElement("div");
+  recentList.className = "pmd-recent-list";
+  fileDropdown.appendChild(recentList);
+  const clearBtn = document.createElement("button");
+  clearBtn.className = "pmd-dropdown-clear";
+  clearBtn.textContent = "Clear Recent Files";
+  clearBtn.type = "button";
+  fileDropdown.appendChild(clearBtn);
+  document.addEventListener("click", (e) => {
+    if (!fileMenuBtn.contains(e.target) && !fileDropdown.contains(e.target)) {
+      fileDropdown.hidden = true;
+    }
+  });
+  fileMenuBtn.addEventListener("click", () => {
+    fileDropdown.hidden = !fileDropdown.hidden;
+  });
+  let recentFileHandlers = [];
+  let clearHandlers = [];
+  clearBtn.addEventListener("click", () => {
+    clearHandlers.forEach((h) => h());
+    fileDropdown.hidden = true;
+  });
   const modeGroup = document.createElement("div");
   modeGroup.className = "pmd-mode-group";
   const modes = [
@@ -58042,8 +58137,16 @@ function createChrome(parent) {
     modeGroup.appendChild(btn);
     return btn;
   });
+  toolbar.appendChild(fileMenuBtn);
+  toolbar.appendChild(fileDropdown);
   toolbar.appendChild(titleSection);
   toolbar.appendChild(modeGroup);
+  const themeBtn = document.createElement("button");
+  themeBtn.className = "pmd-theme-btn";
+  themeBtn.textContent = "Theme";
+  themeBtn.type = "button";
+  themeBtn.title = "Change theme (Ctrl+T)";
+  toolbar.appendChild(themeBtn);
   const statusBar = document.createElement("div");
   statusBar.className = "pmd-status-bar";
   const statusText = document.createElement("span");
@@ -58070,7 +58173,11 @@ function createChrome(parent) {
     document.body.dispatchEvent(new CustomEvent("mode-change", { detail: { mode } }));
   }
   modeGroup.addEventListener("click", handleModeClick);
+  themeBtn.addEventListener("click", () => {
+    themePickerHandlers.forEach((h) => h());
+  });
   setMode(currentMode2);
+  let themePickerHandlers = [];
   return {
     el: container,
     setMode,
@@ -58083,8 +58190,37 @@ function createChrome(parent) {
     setStatus: (text) => {
       statusText.textContent = text;
     },
+    setRecentFiles: (files) => {
+      recentList.innerHTML = "";
+      if (files.length === 0) {
+        const empty2 = document.createElement("div");
+        empty2.className = "pmd-recent-empty";
+        empty2.textContent = "No recent files";
+        recentList.appendChild(empty2);
+      } else {
+        files.forEach((file) => {
+          const item = document.createElement("button");
+          item.className = "pmd-recent-item";
+          item.type = "button";
+          const name11 = file.split("/").pop() || file;
+          item.textContent = name11;
+          item.title = file;
+          item.addEventListener("click", () => {
+            recentFileHandlers.forEach((h) => h(file));
+            fileDropdown.hidden = true;
+          });
+          recentList.appendChild(item);
+        });
+      }
+    },
     onModeChange: (handler) => {
       modeHandlers.push(handler);
+    },
+    onRecentFileSelect: (handler) => {
+      recentFileHandlers.push(handler);
+    },
+    onThemePickerClick: (handler) => {
+      themePickerHandlers.push(handler);
     },
     destroy: () => {
       container.remove();
@@ -58143,6 +58279,325 @@ function createOverlay() {
   return overlay;
 }
 
+// src/scroll_sync.ts
+function attachScrollSync(view, preview) {
+  view.dom.addEventListener("scroll", sync);
+  view.dom.addEventListener("input", sync);
+  function sync() {
+    const head = view.state.selection.main.head;
+    const line = view.state.doc.lineAt(head).number;
+    const all = preview.querySelectorAll("[data-src-start]");
+    let chosen = null;
+    for (const el of all) {
+      const s = +el.dataset.srcStart;
+      const e = +el.dataset.srcEnd;
+      if (s <= line && line <= e) {
+        chosen = el;
+        break;
+      }
+      if (s <= line) chosen = el;
+    }
+    if (chosen) {
+      requestAnimationFrame(() => chosen.scrollIntoView({ block: "start", behavior: "instant" }));
+    }
+  }
+}
+
+// src/theme_apply.ts
+function markMermaidNodes(container) {
+  const mermaidBlocks = container.querySelectorAll("pre > code.language-mermaid");
+  mermaidBlocks.forEach((block) => {
+    block.classList.add("pmd-mermaid");
+  });
+}
+function markMathNodes(container) {
+  const mathBlocks = container.querySelectorAll("code.language-math, .math-block");
+  mathBlocks.forEach((block) => {
+    block.classList.add("pmd-math");
+  });
+}
+function markAllNodes(container) {
+  markMermaidNodes(container);
+  markMathNodes(container);
+}
+function ensureInit2(vars) {
+  if (typeof window === "undefined" || !("mermaid" in window)) return;
+  const m = window.mermaid;
+  m.initialize({
+    startOnLoad: false,
+    securityLevel: "strict",
+    themeVariables: vars
+  });
+}
+async function rerenderForThemeChange(root, ctx) {
+  ensureInit2(ctx.vars);
+  const targets = Array.from(root.querySelectorAll(".pmd-mermaid, .pmd-math"));
+  for (const t11 of targets) {
+    await new Promise((r) => requestAnimationFrame(() => r()));
+    if (t11.classList.contains("pmd-mermaid")) {
+      const { renderMermaidNodes: renderMermaidNodes2 } = await Promise.resolve().then(() => (init_mermaid_runner(), mermaid_runner_exports));
+      await renderMermaidNodes2(t11.parentElement);
+    } else {
+      const { renderMathNode: renderMathNode2 } = await Promise.resolve().then(() => (init_katex_runner(), katex_runner_exports));
+      await renderMathNode2(t11);
+    }
+  }
+}
+
+// src/picker.ts
+var currentState = null;
+function renderPicker(state) {
+  const overlay = document.createElement("div");
+  overlay.className = "pmd-picker-overlay";
+  overlay.id = "theme-picker-overlay";
+  const dialog = document.createElement("div");
+  dialog.className = "pmd-picker-dialog";
+  dialog.role = "dialog";
+  dialog.ariaLabel = "Theme picker";
+  const header = document.createElement("div");
+  header.className = "pmd-picker-header";
+  const title = document.createElement("h2");
+  title.className = "pmd-picker-title";
+  title.textContent = "Choose Theme";
+  header.appendChild(title);
+  const searchWrapper = document.createElement("div");
+  searchWrapper.className = "pmd-picker-search-wrapper";
+  const searchInput = document.createElement("input");
+  searchInput.type = "text";
+  searchInput.className = "pmd-picker-search";
+  searchInput.placeholder = "Filter themes... (press / to focus)";
+  searchInput.ariaLabel = "Filter themes";
+  searchInput.value = state.filter;
+  searchInput.id = "theme-filter-input";
+  searchWrapper.appendChild(searchInput);
+  header.appendChild(searchWrapper);
+  const autoRow = document.createElement("div");
+  autoRow.className = "pmd-picker-auto-row";
+  autoRow.innerHTML = '<span class="pmd-picker-auto-label">Auto</span>';
+  header.appendChild(autoRow);
+  dialog.appendChild(header);
+  const grid = document.createElement("div");
+  grid.className = "pmd-picker-grid";
+  grid.setAttribute("role", "listbox");
+  grid.id = "theme-grid";
+  state.filteredThemes.forEach((theme2, index) => {
+    const card = document.createElement("div");
+    card.className = "pmd-picker-card";
+    card.dataset.slug = theme2.slug;
+    card.dataset.index = String(index);
+    card.setAttribute("role", "option");
+    card.ariaSelected = String(index === state.selectedIndex);
+    if (index === state.selectedIndex) {
+      card.classList.add("pmd-picker-card--selected");
+    }
+    const preview = document.createElement("div");
+    preview.className = `pmd-picker-preview pmd-picker-preview--${theme2.mode}`;
+    preview.innerHTML = `
+      <div class="pmd-picker-preview-text">Aa</div>
+      <div class="pmd-picker-preview-code">code</div>
+    `;
+    card.appendChild(preview);
+    const info = document.createElement("div");
+    info.className = "pmd-picker-info";
+    const name11 = document.createElement("span");
+    name11.className = "pmd-picker-name";
+    name11.textContent = theme2.name;
+    info.appendChild(name11);
+    if (theme2.inspired_by) {
+      const rationale = document.createElement("span");
+      rationale.className = "pmd-picker-rationale";
+      rationale.textContent = `Inspired by ${theme2.inspired_by}`;
+      info.appendChild(rationale);
+    }
+    const actions = document.createElement("div");
+    actions.className = "pmd-picker-actions";
+    actions.innerHTML = `
+      <button class="pmd-picker-action pmd-picker-action--light" data-slug="${theme2.slug}" data-mode="light" title="Set as light theme">Light</button>
+      <button class="pmd-picker-action pmd-picker-action--dark" data-slug="${theme2.slug}" data-mode="dark" title="Set as dark theme">Dark</button>
+    `;
+    info.appendChild(actions);
+    card.appendChild(info);
+    grid.appendChild(card);
+  });
+  dialog.appendChild(grid);
+  overlay.appendChild(dialog);
+  return overlay;
+}
+function updateGrid(state) {
+  const grid = document.getElementById("theme-grid");
+  if (!grid) return;
+  grid.innerHTML = "";
+  state.filteredThemes.forEach((theme2, index) => {
+    const card = document.createElement("div");
+    card.className = "pmd-picker-card";
+    card.dataset.slug = theme2.slug;
+    card.dataset.index = String(index);
+    card.setAttribute("role", "option");
+    card.ariaSelected = String(index === state.selectedIndex);
+    if (index === state.selectedIndex) {
+      card.classList.add("pmd-picker-card--selected");
+    }
+    const preview = document.createElement("div");
+    preview.className = `pmd-picker-preview pmd-picker-preview--${theme2.mode}`;
+    preview.innerHTML = `
+      <div class="pmd-picker-preview-text">Aa</div>
+      <div class="pmd-picker-preview-code">code</div>
+    `;
+    card.appendChild(preview);
+    const info = document.createElement("div");
+    info.className = "pmd-picker-info";
+    const name11 = document.createElement("span");
+    name11.className = "pmd-picker-name";
+    name11.textContent = theme2.name;
+    info.appendChild(name11);
+    if (theme2.inspired_by) {
+      const rationale = document.createElement("span");
+      rationale.className = "pmd-picker-rationale";
+      rationale.textContent = `Inspired by ${theme2.inspired_by}`;
+      info.appendChild(rationale);
+    }
+    const actions = document.createElement("div");
+    actions.className = "pmd-picker-actions";
+    actions.innerHTML = `
+      <button class="pmd-picker-action pmd-picker-action--light" data-slug="${theme2.slug}" data-mode="light" title="Set as light theme">Light</button>
+      <button class="pmd-picker-action pmd-picker-action--dark" data-slug="${theme2.slug}" data-mode="dark" title="Set as dark theme">Dark</button>
+    `;
+    info.appendChild(actions);
+    card.appendChild(info);
+    grid.appendChild(card);
+  });
+}
+function filterThemes(themes, filter) {
+  if (!filter.trim()) return themes;
+  const lower = filter.toLowerCase();
+  return themes.filter(
+    (t11) => t11.name.toLowerCase().includes(lower) || t11.slug.toLowerCase().includes(lower) || t11.inspired_by && t11.inspired_by.toLowerCase().includes(lower)
+  );
+}
+function moveSelection(delta) {
+  if (!currentState) return;
+  const newIndex = currentState.selectedIndex + delta;
+  currentState.selectedIndex = Math.max(0, Math.min(newIndex, currentState.filteredThemes.length - 1));
+  updateGrid(currentState);
+  scrollSelectedIntoView();
+}
+function scrollSelectedIntoView() {
+  const grid = document.getElementById("theme-grid");
+  const selected = grid?.querySelector(".pmd-picker-card--selected");
+  selected?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+}
+function selectCurrent() {
+  if (!currentState) return;
+  const theme2 = currentState.filteredThemes[currentState.selectedIndex];
+  if (theme2) {
+    currentState.onSelect(theme2.slug);
+    closePicker();
+  }
+}
+function closePicker() {
+  const overlay = document.getElementById("theme-picker-overlay");
+  if (overlay) {
+    overlay.remove();
+  }
+  document.removeEventListener("keydown", handlePickerKeydown);
+  currentState = null;
+}
+function handlePickerKeydown(e) {
+  if (!currentState) return;
+  if (e.key === "/") {
+    e.preventDefault();
+    const searchInput = document.getElementById("theme-filter-input");
+    searchInput?.focus();
+    searchInput?.select();
+    return;
+  }
+  switch (e.key) {
+    case "ArrowDown":
+      e.preventDefault();
+      moveSelection(1);
+      break;
+    case "ArrowUp":
+      e.preventDefault();
+      moveSelection(-1);
+      break;
+    case "ArrowRight":
+      e.preventDefault();
+      moveSelection(3);
+      break;
+    case "ArrowLeft":
+      e.preventDefault();
+      moveSelection(-3);
+      break;
+    case "Enter":
+      e.preventDefault();
+      selectCurrent();
+      break;
+    case "Escape":
+      e.preventDefault();
+      closePicker();
+      break;
+  }
+}
+function openThemePicker(themes, onSelect) {
+  if (currentState) {
+    closePicker();
+  }
+  const filteredThemes = filterThemes(themes, "");
+  currentState = {
+    themes,
+    filteredThemes,
+    selectedIndex: 0,
+    filter: "",
+    onSelect,
+    onClose: closePicker
+  };
+  const overlay = renderPicker(currentState);
+  document.body.appendChild(overlay);
+  const searchInput = document.getElementById("theme-filter-input");
+  searchInput?.focus();
+  searchInput?.addEventListener("input", () => {
+    if (!currentState) return;
+    currentState.filter = searchInput.value;
+    currentState.filteredThemes = filterThemes(currentState.themes, currentState.filter);
+    currentState.selectedIndex = 0;
+    updateGrid(currentState);
+  });
+  overlay.addEventListener("click", (e) => {
+    const target = e.target;
+    if (target.classList.contains("pmd-picker-action--light") || target.classList.contains("pmd-picker-action--dark")) {
+      e.stopPropagation();
+      const slug = target.dataset.slug;
+      if (slug) {
+        onSelect(slug);
+        closePicker();
+      }
+      return;
+    }
+    const card = target.closest(".pmd-picker-card");
+    if (card) {
+      const index = parseInt(card.getAttribute("data-index") || "0", 10);
+      if (!isNaN(index) && currentState) {
+        currentState.selectedIndex = index;
+        updateGrid(currentState);
+        selectCurrent();
+      }
+      return;
+    }
+    if (target.classList.contains("pmd-picker-overlay")) {
+      closePicker();
+    }
+  });
+  document.addEventListener("keydown", handlePickerKeydown);
+}
+function isPickerOpen() {
+  return currentState !== null && document.getElementById("theme-picker-overlay") !== null;
+}
+function closeThemePicker() {
+  if (currentState) {
+    closePicker();
+  }
+}
+
 // src/main.ts
 var { invoke } = window.__TAURI__.core;
 var { listen } = window.__TAURI__.event;
@@ -58169,6 +58624,80 @@ var currentMode = "split";
 chrome2.onModeChange((mode) => {
   currentMode = mode;
 });
+var cachedThemes = [];
+async function loadThemes() {
+  if (cachedThemes.length > 0) return cachedThemes;
+  try {
+    cachedThemes = await invoke("list_themes");
+  } catch (e) {
+    console.error("loadThemes failed:", e);
+    cachedThemes = [];
+  }
+  return cachedThemes;
+}
+async function showThemePicker() {
+  if (isPickerOpen()) {
+    closeThemePicker();
+    return;
+  }
+  const themes = await loadThemes();
+  openThemePicker(themes, async (slug) => {
+    await applyTheme(slug);
+  });
+}
+chrome2.onThemePickerClick(() => {
+  showThemePicker();
+});
+document.addEventListener("keydown", (e) => {
+  if (e.ctrlKey && e.key === "t") {
+    e.preventDefault();
+    showThemePicker();
+  }
+  if (e.ctrlKey && e.key === "n") {
+    e.preventDefault();
+    newFile();
+  }
+  if (e.ctrlKey && e.key === "o") {
+    e.preventDefault();
+    openFileDialog();
+  }
+  if (e.ctrlKey && e.key === "s") {
+    e.preventDefault();
+    saveCurrentFile();
+  }
+});
+async function loadRecentFiles() {
+  try {
+    const files = await invoke("get_recent_files");
+    chrome2.setRecentFiles(files);
+    chrome2.onRecentFileSelect((path) => {
+      openFile(path);
+    });
+  } catch (e) {
+    console.error("loadRecentFiles failed:", e);
+  }
+}
+loadRecentFiles();
+async function applyTheme(slug) {
+  try {
+    const bundle = await invoke("set_theme", { slug });
+    if (bundle.warnings && bundle.warnings.length > 0) {
+      bundle.warnings.forEach((w) => console.warn(`[preview-md] Theme "${slug}": ${w}`));
+    }
+    let style = document.getElementById("pmd-theme-styles");
+    if (!style) {
+      style = document.createElement("style");
+      style.id = "pmd-theme-styles";
+      document.head.appendChild(style);
+    }
+    style.textContent = bundle.css;
+    requestAnimationFrame(() => {
+      rerenderForThemeChange(previewPane, { vars: bundle.mermaid_vars });
+    });
+  } catch (e) {
+    console.error("applyTheme failed:", e);
+  }
+}
 function showOverlay() {
   hotkeyOverlay.hidden = false;
 }
@@ -58192,6 +58721,7 @@ async function processRenderQueue() {
       markdown: item.markdown
     });
     previewPane.innerHTML = result.html;
+    markAllNodes(previewPane);
     item.resolve();
   } catch (e) {
     item.reject(e);
@@ -58206,25 +58736,93 @@ function renderMarkdown(markdown2) {
     processRenderQueue();
   });
 }
+async function newFile() {
+  currentFilePath = null;
+  isModified = false;
+  chrome2.setFilename("Untitled");
+  chrome2.setModified(false);
+  if (!editor) {
+    editor = await mountEditor(editorPane, (md) => {
+      isModified = true;
+      chrome2.setModified(true);
+      renderMarkdown(md);
+    });
+    attachScrollSync(editor.view, previewPane);
+  }
+  editor.setValue("");
+  await renderMarkdown("");
+}
+async function openFileDialog() {
+  try {
+    const result = await invoke("open_dialog");
+    if (result) {
+      currentFilePath = result.path;
+      isModified = false;
+      chrome2.setFilename(result.path.split("/").pop() || result.path);
+      chrome2.setModified(false);
+      if (!editor) {
+        editor = await mountEditor(editorPane, (md) => {
+          isModified = true;
+          chrome2.setModified(true);
+          renderMarkdown(md);
+        });
+        attachScrollSync(editor.view, previewPane);
+      }
+      editor.setValue(result.contents);
+      await renderMarkdown(result.contents);
+      loadRecentFiles();
+    }
+  } catch (e) {
+    console.error("Open dialog failed:", e);
+  }
+}
+async function saveCurrentFile() {
+  try {
+    let path = currentFilePath;
+    if (!path) {
+      const suggested = editor ? editor.getValue().split("\n")[0].slice(0, 50) || "Untitled" : "Untitled";
+      const result = await invoke("save_dialog", { suggestedName: suggested + ".md" });
+      if (!result) return;
+      path = result;
+      currentFilePath = path;
+      chrome2.setFilename(path.split("/").pop() || path);
+    }
+    const content11 = getCurrentMarkdown();
+    await invoke("save_file", { path, contents: content11 });
+    isModified = false;
+    chrome2.setModified(false);
+  } catch (e) {
+    console.error("Save failed:", e);
+  }
+}
 async function openFile(path) {
+  const welcome = document.querySelector(".pmd-welcome");
+  if (welcome) welcome.remove();
   try {
     const file = await invoke("open_file", { path });
     currentFilePath = path;
     isModified = false;
     chrome2.setFilename(path.split("/").pop() || path);
     chrome2.setModified(false);
+    invoke("add_recent_file", { path }).catch(() => {
+    });
+    loadRecentFiles();
     if (!editor) {
       editor = await mountEditor(editorPane, (md) => {
         isModified = true;
         chrome2.setModified(true);
         renderMarkdown(md);
       });
+      attachScrollSync(editor.view, previewPane);
     }
     editor.setValue(file.contents);
     await renderMarkdown(file.contents);
   } catch (e) {
     previewPane.innerHTML = `<pre>Error: ${e}</pre>`;
   }
+}
+function getCurrentMarkdown() {
+  return editor ? editor.getValue() : "";
 }
 listen("open-file", (event) => {
   openFile(event.payload);
@@ -58236,7 +58834,7 @@ listen("system_theme_changed", async () => {
       const isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
       const themeSlug = isDark ? settings.dark_theme : settings.light_theme;
       if (themeSlug) {
-        await invoke("set_theme", { slug: themeSlug });
+        await applyTheme(themeSlug);
       }
     }
   } catch (e) {
@@ -58250,9 +58848,25 @@ listen("mode-change", (event) => {
 });
 document.body.dataset.mode = "split";
 chrome2.setStatus("Ready");
+function showWelcomeScreen() {
+  previewPane.innerHTML = `
+    <div class="pmd-welcome">
+      <h1>preview-md</h1>
+      <p>Best-in-class markdown preview for Linux</p>
+      <div class="pmd-welcome-actions">
+        <button id="pmd-welcome-open" class="pmd-welcome-btn">Open File</button>
+        <button id="pmd-welcome-new" class="pmd-welcome-btn">New File</button>
+      </div>
+      <p class="pmd-welcome-hint">or press Ctrl+O to open, Ctrl+N to create</p>
+    </div>
+  `;
+  document.getElementById("pmd-welcome-open")?.addEventListener("click", () => openFileDialog());
+  document.getElementById("pmd-welcome-new")?.addEventListener("click", () => newFile());
+}
 invoke("get_initial_path").then((path) => {
   if (path) {
     openFile(path);
+  } else {
+    showWelcomeScreen();
   }
 });
-//# sourceMappingURL=bundle.js.map
