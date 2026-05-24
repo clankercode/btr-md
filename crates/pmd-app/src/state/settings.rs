@@ -29,7 +29,7 @@ pub fn rmw<F: FnOnce(Settings) -> Settings>(merge: F) -> Result<()> {
         .read(true)
         .write(true)
         .create(true)
-        .truncate(true)
+        .truncate(false)
         .open(path())?;
     f.lock_exclusive()?;
     let mut s = String::new();

@@ -25,9 +25,51 @@ async fn set_theme_returns_css_bundle_for_github_light() {
         "expected CSS variables in bundle"
     );
     assert!(
-        bundle.mermaid_vars.contains_key("primary"),
+        bundle.mermaid_vars.contains_key("primaryColor"),
         "expected mermaid vars"
     );
+}
+
+#[tokio::test]
+async fn set_theme_emits_css_variables_used_by_stylesheets() {
+    let bundle = set_theme("github-light".to_string()).expect("set_theme should succeed");
+    for name in [
+        "--pmd-bg-elevated",
+        "--pmd-fg-muted",
+        "--pmd-inline-code-bg",
+        "--pmd-code-block-fg",
+        "--pmd-mermaid-edge-label-bg",
+    ] {
+        assert!(bundle.css.contains(name), "expected CSS variable {name}");
+    }
+    assert!(
+        !bundle.css.contains("--pmd-bg_elevated"),
+        "theme CSS should use hyphenated custom property names"
+    );
+}
+
+#[tokio::test]
+async fn set_theme_maps_mermaid_vars_to_mermaid_api_names() {
+    let bundle = set_theme("github-light".to_string()).expect("set_theme should succeed");
+    for name in [
+        "primaryColor",
+        "primaryTextColor",
+        "secondaryColor",
+        "tertiaryColor",
+        "lineColor",
+        "background",
+        "edgeLabelBackground",
+        "clusterBkg",
+        "noteBkgColor",
+        "noteBorderColor",
+        "actorBkg",
+        "errorBkgColor",
+    ] {
+        assert!(
+            bundle.mermaid_vars.contains_key(name),
+            "expected Mermaid theme variable {name}"
+        );
+    }
 }
 
 #[tokio::test]

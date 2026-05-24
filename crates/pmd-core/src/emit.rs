@@ -1,4 +1,4 @@
-use pulldown_cmark::{Event, Options, Parser, Tag, TagEnd};
+use pulldown_cmark::{Alignment, Event, Options, Parser, Tag, TagEnd};
 use serde::{Deserialize, Serialize};
 
 use crate::escape::escape_html;
@@ -17,7 +17,22 @@ fn byte_to_line(md: &str) -> impl Fn(usize) -> u32 + '_ {
     move |b| (starts.partition_point(|&s| s <= b)) as u32
 }
 
-fn emit_open_tag(html: &mut String, tag: &Tag, start_line: u32, in_table_head: bool) {
+fn alignment_value(alignment: Alignment) -> Option<&'static str> {
+    match alignment {
+        Alignment::None => None,
+        Alignment::Left => Some("left"),
+        Alignment::Center => Some("center"),
+        Alignment::Right => Some("right"),
+    }
+}
+
+fn emit_open_tag(
+    html: &mut String,
+    tag: &Tag,
+    start_line: u32,
+    in_table_head: bool,
+    cell_alignment: Option<Alignment>,
+) {
     match tag {
         Tag::Paragraph => html.push_str(&format!(
             "<p data-src-start=\"{}\" data-src-end=\"\">",
@@ -82,9 +97,13 @@ fn emit_open_tag(html: &mut String, tag: &Tag, start_line: u32, in_table_head: b
         Tag::TableCell => {
             let tag_name = if in_table_head { "th" } else { "td" };
             html.push_str(&format!(
-                "<{} data-src-start=\"{}\" data-src-end=\"\">",
+                "<{} data-src-start=\"{}\" data-src-end=\"\"",
                 tag_name, start_line
             ));
+            if let Some(alignment) = cell_alignment.and_then(alignment_value) {
+                html.push_str(&format!(" data-align=\"{}\"", alignment));
+            }
+            html.push('>');
         }
         Tag::Emphasis => html.push_str("<em>"),
         Tag::Strong => html.push_str("<strong>"),
@@ -110,6 +129,71 @@ fn emit_open_tag(html: &mut String, tag: &Tag, start_line: u32, in_table_head: b
         Tag::HtmlBlock => {}
         Tag::FootnoteDefinition(_) => {}
         Tag::MetadataBlock(_) => {}
+    }
+}
+
+fn find_block_math_delimiter(text: &str) -> Option<usize> {
+    text.as_bytes().windows(2).position(|pair| pair == b"$$")
+}
+
+fn find_inline_math_delimiter(text: &str, start: usize) -> Option<usize> {
+    let bytes = text.as_bytes();
+    let mut idx = start;
+    while idx < bytes.len() {
+        if bytes[idx] == b'$'
+            && bytes.get(idx.wrapping_sub(1)) != Some(&b'$')
+            && bytes.get(idx + 1) != Some(&b'$')
+        {
+            return Some(idx);
+        }
+        idx += 1;
+    }
+    None
+}
+
+fn emit_inline_math_text(html: &mut String, text: &str) {
+    let mut cursor = 0;
+    while let Some(open) = find_inline_math_delimiter(text, cursor) {
+        let math_start = open + 1;
+        let Some(close) = find_inline_math_delimiter(text, math_start) else {
+            break;
+        };
+        html.push_str(&escape_html(&text[cursor..open]));
+        html.push_str("<span class=\"math-inline\"><code class=\"language-math\">");
+        html.push_str(&escape_html(&text[math_start..close]));
+        html.push_str("</code></span>");
+        cursor = close + 1;
+    }
+    html.push_str(&escape_html(&text[cursor..]));
+}
+
+fn emit_block_math(html: &mut String, math: &str) {
+    html.push_str("<span class=\"math-display\"><code class=\"math-block\">");
+    html.push_str(&escape_html(math.trim()));
+    html.push_str("</code></span>");
+}
+
+fn emit_text_with_math(html: &mut String, text: &str, block_math: &mut Option<String>) {
+    let mut remaining = text;
+    loop {
+        if let Some(buffer) = block_math {
+            let Some(close) = find_block_math_delimiter(remaining) else {
+                buffer.push_str(remaining);
+                return;
+            };
+            buffer.push_str(&remaining[..close]);
+            let math = block_math.take().unwrap();
+            emit_block_math(html, &math);
+            remaining = &remaining[close + 2..];
+        } else {
+            let Some(open) = find_block_math_delimiter(remaining) else {
+                emit_inline_math_text(html, remaining);
+                return;
+            };
+            emit_inline_math_text(html, &remaining[..open]);
+            *block_math = Some(String::new());
+            remaining = &remaining[open + 2..];
+        }
     }
 }
 
@@ -161,6 +245,9 @@ pub fn render_string(md: &str) -> RenderResult {
     let mut source_map = Vec::<(u32, u32)>::new();
     let mut block_stack: Vec<(u32, usize)> = Vec::new();
     let mut in_table_head = false;
+    let mut table_alignments: Vec<Alignment> = Vec::new();
+    let mut table_cell_index = 0;
+    let mut block_math: Option<String> = None;
 
     for (event, range) in parser {
         match event {
@@ -168,9 +255,23 @@ pub fn render_string(md: &str) -> RenderResult {
                 if matches!(tag, Tag::TableHead) {
                     in_table_head = true;
                 }
+                if let Tag::Table(alignments) = &tag {
+                    table_alignments = alignments.clone();
+                    table_cell_index = 0;
+                }
+                if matches!(tag, Tag::TableRow) {
+                    table_cell_index = 0;
+                }
+                let cell_alignment = if matches!(tag, Tag::TableCell) {
+                    let alignment = table_alignments.get(table_cell_index).copied();
+                    table_cell_index += 1;
+                    alignment
+                } else {
+                    None
+                };
                 let line = to_line(range.start);
                 let open_pos = html.len();
-                emit_open_tag(&mut html, &tag, line, in_table_head);
+                emit_open_tag(&mut html, &tag, line, in_table_head, cell_alignment);
                 block_stack.push((line, open_pos));
             }
             Event::End(tag_end) => {
@@ -187,18 +288,33 @@ pub fn render_string(md: &str) -> RenderResult {
                     source_map.push((start_line, end_line));
                     emit_close_tag(&mut html, &tag_end, in_table_head);
                 }
+                if matches!(tag_end, TagEnd::Table) {
+                    table_alignments.clear();
+                    table_cell_index = 0;
+                }
             }
             Event::Text(t) => {
-                let escaped = escape_html(&t);
-                html.push_str(&escaped);
+                emit_text_with_math(&mut html, &t, &mut block_math);
             }
             Event::Code(t) => {
                 html.push_str("<code>");
                 html.push_str(&escape_html(&t));
                 html.push_str("</code>");
             }
-            Event::SoftBreak => html.push(' '),
-            Event::HardBreak => html.push_str("<br>"),
+            Event::SoftBreak => {
+                if let Some(buffer) = &mut block_math {
+                    buffer.push('\n');
+                } else {
+                    html.push(' ');
+                }
+            }
+            Event::HardBreak => {
+                if let Some(buffer) = &mut block_math {
+                    buffer.push('\n');
+                } else {
+                    html.push_str("<br>");
+                }
+            }
             Event::Html(t) => {
                 html.push_str(&t);
             }
@@ -220,6 +336,10 @@ pub fn render_string(md: &str) -> RenderResult {
                 html.push_str(checkbox);
             }
         }
+    }
+    if let Some(math) = block_math {
+        html.push_str("$$");
+        html.push_str(&escape_html(&math));
     }
     let html = crate::sanitize::clean(&html);
     RenderResult {

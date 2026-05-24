@@ -41,7 +41,7 @@ pub fn push(file_path: &PathBuf) -> Result<()> {
         .read(true)
         .write(true)
         .create(true)
-        .truncate(true)
+        .truncate(false)
         .open(recents_path())?;
     f.lock_exclusive()?;
     let mut s = String::new();
@@ -94,4 +94,59 @@ pub fn get() -> Result<Vec<PathBuf>> {
     };
     fs2::FileExt::unlock(&f)?;
     Ok(recents.files.into_iter().collect())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::{
+        env,
+        ffi::OsString,
+        sync::{Mutex, OnceLock},
+    };
+
+    struct ConfigHomeGuard {
+        previous: Option<OsString>,
+        _dir: tempfile::TempDir,
+    }
+
+    impl ConfigHomeGuard {
+        fn new() -> Self {
+            let dir = tempfile::tempdir().expect("create temp config home");
+            let previous = env::var_os("XDG_CONFIG_HOME");
+            env::set_var("XDG_CONFIG_HOME", dir.path());
+            Self {
+                previous,
+                _dir: dir,
+            }
+        }
+    }
+
+    impl Drop for ConfigHomeGuard {
+        fn drop(&mut self) {
+            if let Some(previous) = &self.previous {
+                env::set_var("XDG_CONFIG_HOME", previous);
+            } else {
+                env::remove_var("XDG_CONFIG_HOME");
+            }
+        }
+    }
+
+    fn config_env_lock() -> std::sync::MutexGuard<'static, ()> {
+        static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+        LOCK.get_or_init(|| Mutex::new(())).lock().unwrap()
+    }
+
+    #[test]
+    fn push_persists_multiple_recent_files_in_most_recent_order() {
+        let _lock = config_env_lock();
+        let _config_home = ConfigHomeGuard::new();
+        let first = PathBuf::from("/tmp/first.md");
+        let second = PathBuf::from("/tmp/second.md");
+
+        push(&first).expect("push first recent file");
+        push(&second).expect("push second recent file");
+
+        assert_eq!(get().expect("read recent files"), vec![second, first]);
+    }
 }

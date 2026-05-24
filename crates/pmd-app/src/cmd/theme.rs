@@ -119,10 +119,12 @@ pub fn set_theme(slug: String) -> Result<ThemeBundle, String> {
 
     let mut css_vars = String::from(":root {\n");
     for (k, v) in &theme.palette.colours {
-        css_vars.push_str(&format!("  --pmd-{k}: {v};\n"));
+        let css_key = k.replace('_', "-");
+        css_vars.push_str(&format!("  --pmd-{css_key}: {v};\n"));
     }
     for (k, v) in &theme.palette.syntax {
-        css_vars.push_str(&format!("  --pmd-syntax-{k}: {v};\n"));
+        let css_key = k.replace('_', "-");
+        css_vars.push_str(&format!("  --pmd-syntax-{css_key}: {v};\n"));
     }
 
     let derive_mermaid = |key: &str, fallback: Option<&str>| -> Option<String> {
@@ -144,30 +146,30 @@ pub fn set_theme(slug: String) -> Result<ThemeBundle, String> {
             pmd_core::theme::mix::parse_hex(accent),
         ) {
             if let Some(v) = derive_mermaid("mermaid_edge_label_bg", Some(bg_elevated)) {
-                css_vars.push_str(&format!("  --pmd-mermaid_edge_label_bg: {};\n", v));
+                css_vars.push_str(&format!("  --pmd-mermaid-edge-label-bg: {};\n", v));
             }
             if !theme.palette.colours.contains_key("mermaid_cluster_bg") {
                 let mixed = pmd_core::theme::mix::mix(bg_rgb, fg_rgb, 0.04);
                 css_vars.push_str(&format!(
-                    "  --pmd-mermaid_cluster_bg: {};\n",
+                    "  --pmd-mermaid-cluster-bg: {};\n",
                     pmd_core::theme::mix::to_hex(mixed)
                 ));
             }
             if let Some(v) = derive_mermaid("mermaid_note_bg", Some(bg_elevated)) {
-                css_vars.push_str(&format!("  --pmd-mermaid_note_bg: {};\n", v));
+                css_vars.push_str(&format!("  --pmd-mermaid-note-bg: {};\n", v));
             }
             if let Some(v) = derive_mermaid("mermaid_note_border", Some(accent)) {
-                css_vars.push_str(&format!("  --pmd-mermaid_note_border: {};\n", v));
+                css_vars.push_str(&format!("  --pmd-mermaid-note-border: {};\n", v));
             }
             if !theme.palette.colours.contains_key("mermaid_actor_bg") {
                 let mixed = pmd_core::theme::mix::mix(accent_rgb, bg_rgb, 0.30);
                 css_vars.push_str(&format!(
-                    "  --pmd-mermaid_actor_bg: {};\n",
+                    "  --pmd-mermaid-actor-bg: {};\n",
                     pmd_core::theme::mix::to_hex(mixed)
                 ));
             }
             if derive_mermaid("mermaid_error", Some("#e77878")).is_some() {
-                css_vars.push_str("  --pmd-mermaid_error: #e77878;\n");
+                css_vars.push_str("  --pmd-mermaid-error: #e77878;\n");
             }
         }
     }
@@ -176,17 +178,72 @@ pub fn set_theme(slug: String) -> Result<ThemeBundle, String> {
     css_vars.push_str(&extra_css);
 
     let mut mermaid_vars = BTreeMap::new();
-    for key in [
-        "mermaid_primary",
-        "mermaid_primary_text",
-        "mermaid_secondary",
-        "mermaid_tertiary",
-        "mermaid_line",
-    ] {
-        if let Some(v) = theme.palette.colours.get(key) {
-            let mermaid_key = key.replace("mermaid_", "");
-            mermaid_vars.insert(mermaid_key, v.clone());
+
+    let mermaid_map: [(&str, &str); 5] = [
+        ("mermaid_primary", "primaryColor"),
+        ("mermaid_primary_text", "primaryTextColor"),
+        ("mermaid_secondary", "secondaryColor"),
+        ("mermaid_tertiary", "tertiaryColor"),
+        ("mermaid_line", "lineColor"),
+    ];
+    for (key, mermaid_key) in &mermaid_map {
+        if let Some(v) = theme.palette.colours.get(*key) {
+            mermaid_vars.insert(mermaid_key.to_string(), v.clone());
         }
+    }
+
+    if let Some(bg) = theme.palette.colours.get("bg") {
+        mermaid_vars.insert("background".to_string(), bg.clone());
+    }
+
+    let get_or_derive_str = |key: &str, fallback: Option<&str>| -> Option<String> {
+        if let Some(v) = theme.palette.colours.get(key) {
+            Some(v.clone())
+        } else {
+            fallback.map(|s| s.to_string())
+        }
+    };
+
+    if let Some(v) = get_or_derive_str(
+        "mermaid_edge_label_bg",
+        bg_elevated.as_ref().map(|s| s.as_str()),
+    ) {
+        mermaid_vars.insert("edgeLabelBackground".to_string(), v);
+    }
+    if !mermaid_vars.contains_key("clusterBkg") {
+        if let (Some(bg_elevated), Some(fg)) = (bg_elevated, fg) {
+            if let (Some(bg_rgb), Some(fg_rgb)) = (
+                pmd_core::theme::mix::parse_hex(bg_elevated),
+                pmd_core::theme::mix::parse_hex(fg),
+            ) {
+                let mixed = pmd_core::theme::mix::mix(bg_rgb, fg_rgb, 0.04);
+                mermaid_vars.insert(
+                    "clusterBkg".to_string(),
+                    pmd_core::theme::mix::to_hex(mixed),
+                );
+            }
+        }
+    }
+    if let Some(v) = get_or_derive_str("mermaid_note_bg", bg_elevated.as_ref().map(|s| s.as_str()))
+    {
+        mermaid_vars.insert("noteBkgColor".to_string(), v);
+    }
+    if let Some(v) = get_or_derive_str("mermaid_note_border", accent.as_ref().map(|s| s.as_str())) {
+        mermaid_vars.insert("noteBorderColor".to_string(), v);
+    }
+    if !mermaid_vars.contains_key("actorBkg") {
+        if let (Some(accent), Some(bg)) = (accent, bg) {
+            if let (Some(accent_rgb), Some(bg_rgb)) = (
+                pmd_core::theme::mix::parse_hex(accent),
+                pmd_core::theme::mix::parse_hex(bg),
+            ) {
+                let mixed = pmd_core::theme::mix::mix(accent_rgb, bg_rgb, 0.30);
+                mermaid_vars.insert("actorBkg".to_string(), pmd_core::theme::mix::to_hex(mixed));
+            }
+        }
+    }
+    if let Some(v) = get_or_derive_str("mermaid_error", Some("#e77878")) {
+        mermaid_vars.insert("errorBkgColor".to_string(), v);
     }
 
     Ok(ThemeBundle {

@@ -9,6 +9,32 @@ fn slugs() -> Vec<String> {
 }
 
 #[test]
+fn bundled_theme_set_is_complete() {
+    let mut got = slugs();
+    got.sort();
+    let expected = [
+        "cobalt-bone",
+        "dracula",
+        "github-dark",
+        "github-light",
+        "lavender-forest",
+        "nord",
+        "onyx-sorcerer",
+        "rose-melancholy",
+        "rose-pine-dawn",
+        "rust-warden",
+        "sepia-atelier",
+        "sky-hero",
+        "solarized-dark",
+        "solarized-light",
+        "sun-and-sea",
+        "tokyo-night",
+        "twilight-mage",
+    ];
+    assert_eq!(got, expected);
+}
+
+#[test]
 fn every_bundled_theme_has_required_keys() {
     let req = schema::required_palette_keys();
     let sreq = schema::required_syntax_keys();
