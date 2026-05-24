@@ -58883,4 +58883,3 @@ invoke("get_initial_path").then((path) => {
     showWelcomeScreen();
   }
 });
-//# sourceMappingURL=bundle.js.map
