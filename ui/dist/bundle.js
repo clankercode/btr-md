@@ -58222,6 +58222,9 @@ function createChrome(parent) {
     onThemePickerClick: (handler) => {
       themePickerHandlers.push(handler);
     },
+    onClearRecentFiles: (handler) => {
+      clearHandlers.push(handler);
+    },
     destroy: () => {
       container.remove();
     }
@@ -58343,6 +58346,10 @@ async function rerenderForThemeChange(root, ctx) {
     }
   }
 }
+
+// src/main.ts
+init_mermaid_runner();
+init_katex_runner();
 
 // src/picker.ts
 var currentState = null;
@@ -58673,6 +58680,10 @@ async function loadRecentFiles() {
     chrome2.onRecentFileSelect((path) => {
       openFile(path);
     });
+    chrome2.onClearRecentFiles(async () => {
+      await invoke("clear_recent_files");
+      chrome2.setRecentFiles([]);
+    });
   } catch (e) {
     console.error("loadRecentFiles failed:", e);
   }
@@ -58722,6 +58733,8 @@ async function processRenderQueue() {
     });
     previewPane.innerHTML = result.html;
     markAllNodes(previewPane);
+    await renderMermaidNodes(previewPane);
+    await renderMathNodes(previewPane);
     item.resolve();
   } catch (e) {
     item.reject(e);
@@ -58870,3 +58883,4 @@ invoke("get_initial_path").then((path) => {
     showWelcomeScreen();
   }
 });
+//# sourceMappingURL=bundle.js.map
