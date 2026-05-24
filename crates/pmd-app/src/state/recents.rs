@@ -61,6 +61,18 @@ pub fn push(file_path: &PathBuf) -> Result<()> {
     Ok(())
 }
 
+pub fn path() -> std::io::Result<PathBuf> {
+    Ok(recents_path())
+}
+
+pub fn clear() -> std::io::Result<()> {
+    let path = path()?;
+    if path.exists() {
+        std::fs::remove_file(path)?;
+    }
+    Ok(())
+}
+
 pub fn get() -> Result<Vec<PathBuf>> {
     if let Some(parent) = recents_path().parent() {
         std::fs::create_dir_all(parent).ok();

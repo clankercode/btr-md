@@ -27,6 +27,7 @@ fn main() {
             cmd::settings::set_auto_switch,
             cmd::settings::get_recent_files,
             cmd::settings::add_recent_file,
+            cmd::settings::clear_recent_files,
             cmd::file::get_initial_path,
         ])
         .setup(move |app| {

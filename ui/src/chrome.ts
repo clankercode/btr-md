@@ -16,6 +16,7 @@ export interface ChromeInstance {
   onModeChange: (handler: (mode: Mode) => void) => void;
   onRecentFileSelect: (handler: (path: string) => void) => void;
   onThemePickerClick: (handler: () => void) => void;
+  onClearRecentFiles: (handler: () => void) => void;
   destroy: () => void;
 }
 
@@ -197,6 +198,9 @@ export function createChrome(parent: HTMLElement): ChromeInstance {
     },
     onThemePickerClick: (handler: () => void) => {
       themePickerHandlers.push(handler);
+    },
+    onClearRecentFiles: (handler: () => void) => {
+      clearHandlers.push(handler);
     },
     destroy: () => {
       container.remove();

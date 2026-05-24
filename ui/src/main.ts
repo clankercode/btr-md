@@ -3,6 +3,8 @@ import { createChrome, type Mode } from './chrome.js';
 import { createHotkeyHandler, createOverlay } from './hotkeys.js';
 import { attachScrollSync } from './scroll_sync.js';
 import { markAllNodes, rerenderForThemeChange } from './theme_apply.js';
+import { renderMermaidNodes } from './mermaid_runner.js';
+import { renderMathNodes } from './katex_runner.js';
 import { openThemePicker, isPickerOpen, closeThemePicker, type ThemeInfo } from './picker.js';
 
 import '../styles/picker.css';
@@ -97,6 +99,10 @@ async function loadRecentFiles(): Promise<void> {
     chrome.onRecentFileSelect((path: string) => {
       openFile(path);
     });
+    chrome.onClearRecentFiles(async () => {
+      await invoke('clear_recent_files');
+      chrome.setRecentFiles([]);
+    });
   } catch (e) {
     console.error('loadRecentFiles failed:', e);
   }
@@ -151,6 +157,8 @@ async function processRenderQueue() {
     });
     previewPane.innerHTML = result.html;
     markAllNodes(previewPane);
+    await renderMermaidNodes(previewPane);
+    await renderMathNodes(previewPane);
     item.resolve();
   } catch (e) {
     item.reject(e);

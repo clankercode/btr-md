@@ -73,3 +73,8 @@ pub fn get_recent_files() -> Result<Vec<PathBuf>, String> {
 pub fn add_recent_file(path: PathBuf) -> Result<(), String> {
     recents::push(&path).map_err(|e| e.to_string())
 }
+
+#[tauri::command]
+pub fn clear_recent_files() -> Result<(), String> {
+    recents::clear().map_err(|e| e.to_string())
+}
