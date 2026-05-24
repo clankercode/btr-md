@@ -1,0 +1,338 @@
+/* ============================================
+   preview-md Design System
+   Inspired by shadcn/ui - functional elegance
+   ============================================ */
+
+/* --------------------------------------------
+   1. CSS Custom Properties (Design Tokens)
+   -------------------------------------------- */
+
+:root {
+  /* Typography Scale */
+  --pmd-text-xs: 0.75rem;
+  --pmd-text-sm: 0.875rem;
+  --pmd-text-base: 1rem;
+  --pmd-text-lg: 1.125rem;
+  --pmd-text-xl: 1.25rem;
+  --pmd-text-2xl: 1.5rem;
+
+  /* Font Weights */
+  --pmd-font-normal: 400;
+  --pmd-font-medium: 500;
+  --pmd-font-semibold: 600;
+  --pmd-font-bold: 700;
+
+  /* Spacing (4px base unit) */
+  --pmd-space-1: 0.25rem;
+  --pmd-space-2: 0.5rem;
+  --pmd-space-3: 0.75rem;
+  --pmd-space-4: 1rem;
+  --pmd-space-5: 1.25rem;
+  --pmd-space-6: 1.5rem;
+  --pmd-space-8: 2rem;
+  --pmd-space-10: 2.5rem;
+  --pmd-space-12: 3rem;
+
+  /* Border Radius */
+  --pmd-radius-sm: 4px;
+  --pmd-radius-md: 6px;
+  --pmd-radius-lg: 8px;
+  --pmd-radius-xl: 12px;
+
+  /* Shadows */
+  --pmd-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --pmd-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+  --pmd-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+  --pmd-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+
+  /* Transitions */
+  --pmd-transition-fast: 80ms ease-out;
+  --pmd-transition-base: 120ms ease-out;
+  --pmd-transition-slow: 200ms ease-out;
+
+  /* Font Stacks */
+  --pmd-font-ui: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --pmd-font-mono: "JetBrains Mono", "Fira Code", "SF Mono", "Consolas", monospace;
+  --pmd-font-serif: "Source Serif 4", Georgia, "Times New Roman", serif;
+}
+
+/* --------------------------------------------
+   2. Light Theme Tokens (Default)
+   -------------------------------------------- */
+
+:root,
+[data-theme="light"] {
+  /* Core Surfaces */
+  --pmd-bg: #ffffff;
+  --pmd-bg-elevated: #f8fafc;
+  --pmd-bg-muted: #f1f5f9;
+  --pmd-bg-subtle: #f8fafc;
+
+  /* Text */
+  --pmd-fg: #0f172a;
+  --pmd-fg-muted: #64748b;
+  --pmd-fg-subtle: #94a3b8;
+
+  /* Accent */
+  --pmd-accent: #0ea5e9;
+  --pmd-accent-foreground: #ffffff;
+  --pmd-accent-hover: #0284c7;
+
+  /* Borders */
+  --pmd-border: #e2e8f0;
+  --pmd-border-strong: #cbd5e1;
+  --pmd-ring: rgba(14, 165, 233, 0.3);
+
+  /* Semantic */
+  --pmd-success: #10b981;
+  --pmd-success-bg: #ecfdf5;
+  --pmd-warning: #f59e0b;
+  --pmd-warning-bg: #fffbeb;
+  --pmd-error: #ef4444;
+  --pmd-error-bg: #fef2f2;
+  --pmd-info: #3b82f6;
+  --pmd-info-bg: #eff6ff;
+
+  /* Selection */
+  --pmd-selection-bg: #0ea5e9;
+  --pmd-selection-fg: #ffffff;
+
+  /* Focus */
+  --pmd-focus-ring: #0ea5e9;
+
+  /* Interactive */
+  --pmd-caret: #0ea5e9;
+  --pmd-scrollbar-thumb: #cbd5e1;
+  --pmd-scrollbar-track: #f1f5f9;
+
+  /* Kbd */
+  --pmd-kbd-bg: #f1f5f9;
+  --pmd-kbd-fg: #0f172a;
+  --pmd-kbd-border: #e2e8f0;
+
+  /* Shadows (light mode) */
+  --pmd-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --pmd-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.07);
+  --pmd-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.08);
+  --pmd-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.08);
+}
+
+/* --------------------------------------------
+   3. Dark Theme Tokens
+   -------------------------------------------- */
+
+[data-theme="dark"] {
+  /* Core Surfaces */
+  --pmd-bg: #0f172a;
+  --pmd-bg-elevated: #1e293b;
+  --pmd-bg-muted: #334155;
+  --pmd-bg-subtle: #1e293b;
+
+  /* Text */
+  --pmd-fg: #f1f5f9;
+  --pmd-fg-muted: #94a3b8;
+  --pmd-fg-subtle: #64748b;
+
+  /* Accent */
+  --pmd-accent: #38bdf8;
+  --pmd-accent-foreground: #0f172a;
+  --pmd-accent-hover: #7dd3fc;
+
+  /* Borders */
+  --pmd-border: #334155;
+  --pmd-border-strong: #475569;
+  --pmd-ring: rgba(56, 189, 248, 0.3);
+
+  /* Semantic */
+  --pmd-success: #34d399;
+  --pmd-success-bg: #064e3b;
+  --pmd-warning: #fbbf24;
+  --pmd-warning-bg: #451a03;
+  --pmd-error: #f87171;
+  --pmd-error-bg: #450a0a;
+  --pmd-info: #60a5fa;
+  --pmd-info-bg: #1e3a5f;
+
+  /* Selection */
+  --pmd-selection-bg: #38bdf8;
+  --pmd-selection-fg: #0f172a;
+
+  /* Focus */
+  --pmd-focus-ring: #38bdf8;
+
+  /* Interactive */
+  --pmd-caret: #38bdf8;
+  --pmd-scrollbar-thumb: #475569;
+  --pmd-scrollbar-track: #1e293b;
+
+  /* Kbd */
+  --pmd-kbd-bg: #334155;
+  --pmd-kbd-fg: #f1f5f9;
+  --pmd-kbd-border: #475569;
+
+  /* Shadows (dark mode - more transparent) */
+  --pmd-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --pmd-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -2px rgba(0, 0, 0, 0.4);
+  --pmd-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -4px rgba(0, 0, 0, 0.5);
+  --pmd-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.6), 0 8px 10px -6px rgba(0, 0, 0, 0.6);
+}
+
+/* --------------------------------------------
+   4. Base Reset
+   -------------------------------------------- */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  font-family: var(--pmd-font-ui);
+  font-size: var(--pmd-text-base);
+  background-color: var(--pmd-bg);
+  color: var(--pmd-fg);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* --------------------------------------------
+   5. Typography Base
+   -------------------------------------------- */
+
+h1, h2, h3, h4, h5, h6 {
+  font-weight: var(--pmd-font-semibold);
+  line-height: 1.25;
+  margin: 0;
+}
+
+p {
+  margin: 0;
+}
+
+a {
+  color: var(--pmd-accent);
+  text-decoration: none;
+  transition: color var(--pmd-transition-fast);
+}
+
+a:hover {
+  color: var(--pmd-accent-hover);
+}
+
+code, pre, kbd {
+  font-family: var(--pmd-font-mono);
+}
+
+/* --------------------------------------------
+   6. Focus Styles
+   -------------------------------------------- */
+
+:focus-visible {
+  outline: 2px solid var(--pmd-focus-ring);
+  outline-offset: 2px;
+}
+
+/* --------------------------------------------
+   7. Selection Styles
+   -------------------------------------------- */
+
+::selection {
+  background-color: var(--pmd-selection-bg);
+  color: var(--pmd-selection-fg);
+}
+
+/* --------------------------------------------
+   8. Scrollbar Styles
+   -------------------------------------------- */
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--pmd-scrollbar-track);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--pmd-scrollbar-thumb);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--pmd-border-strong);
+}
+
+/* --------------------------------------------
+   9. Smooth Scrolling
+   -------------------------------------------- */
+
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* --------------------------------------------
+   10. Animations
+   -------------------------------------------- */
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* --------------------------------------------
+   11. Utility Classes
+   -------------------------------------------- */
+
+.pmd-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.pmd-truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

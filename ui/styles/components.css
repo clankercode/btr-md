@@ -1,0 +1,739 @@
+/* ============================================
+   preview-md UI Components
+   shadcn/ui inspired - functional elegance
+   ============================================ */
+
+/* --------------------------------------------
+   1. Buttons
+   -------------------------------------------- */
+
+.pmd-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--pmd-space-2);
+  padding: var(--pmd-space-2) var(--pmd-space-4);
+  font-family: inherit;
+  font-size: var(--pmd-text-sm);
+  font-weight: var(--pmd-font-medium);
+  line-height: 1;
+  border-radius: var(--pmd-radius-md);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all var(--pmd-transition-base);
+  white-space: nowrap;
+  user-select: none;
+}
+
+.pmd-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Primary Button */
+.pmd-btn-primary {
+  background: var(--pmd-accent);
+  color: var(--pmd-accent-foreground);
+  border-color: var(--pmd-accent);
+}
+
+.pmd-btn-primary:hover {
+  background: var(--pmd-accent-hover);
+  border-color: var(--pmd-accent-hover);
+}
+
+/* Secondary Button */
+.pmd-btn-secondary {
+  background: var(--pmd-bg-muted);
+  color: var(--pmd-fg);
+  border-color: var(--pmd-border);
+}
+
+.pmd-btn-secondary:hover {
+  background: var(--pmd-border);
+}
+
+/* Ghost Button (transparent) */
+.pmd-btn-ghost {
+  background: transparent;
+  color: var(--pmd-fg);
+}
+
+.pmd-btn-ghost:hover {
+  background: var(--pmd-bg-muted);
+}
+
+/* Outline Button */
+.pmd-btn-outline {
+  background: transparent;
+  color: var(--pmd-fg);
+  border-color: var(--pmd-border);
+}
+
+.pmd-btn-outline:hover {
+  background: var(--pmd-bg-muted);
+  border-color: var(--pmd-border-strong);
+}
+
+/* Destructive Button */
+.pmd-btn-destructive {
+  background: var(--pmd-error);
+  color: white;
+  border-color: var(--pmd-error);
+}
+
+.pmd-btn-destructive:hover {
+  opacity: 0.9;
+}
+
+/* Icon Button */
+.pmd-btn-icon {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pmd-btn-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* Button Sizes */
+.pmd-btn-sm {
+  padding: var(--pmd-space-1) var(--pmd-space-3);
+  font-size: var(--pmd-text-xs);
+}
+
+.pmd-btn-lg {
+  padding: var(--pmd-space-3) var(--pmd-space-6);
+  font-size: var(--pmd-text-base);
+}
+
+/* --------------------------------------------
+   2. Segmented Control (Mode Toggle)
+   -------------------------------------------- */
+
+.pmd-segmented {
+  display: inline-flex;
+  align-items: center;
+  background: var(--pmd-bg-muted);
+  border-radius: var(--pmd-radius-lg);
+  padding: 2px;
+  gap: 2px;
+}
+
+.pmd-segmented-btn {
+  padding: var(--pmd-space-2) var(--pmd-space-4);
+  font-size: var(--pmd-text-sm);
+  font-weight: var(--pmd-font-medium);
+  color: var(--pmd-fg-muted);
+  background: transparent;
+  border: none;
+  border-radius: var(--pmd-radius-md);
+  cursor: pointer;
+  transition: all var(--pmd-transition-base);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--pmd-space-2);
+}
+
+.pmd-segmented-btn:hover:not([data-active]) {
+  color: var(--pmd-fg);
+}
+
+.pmd-segmented-btn[data-active] {
+  background: var(--pmd-bg);
+  color: var(--pmd-fg);
+  box-shadow: var(--pmd-shadow-sm);
+}
+
+.pmd-segmented-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* --------------------------------------------
+   3. Dropdown Menu
+   -------------------------------------------- */
+
+.pmd-dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.pmd-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 50;
+  background: var(--pmd-bg-elevated);
+  border: 1px solid var(--pmd-border);
+  border-radius: var(--pmd-radius-lg);
+  padding: var(--pmd-space-1);
+  min-width: 180px;
+  box-shadow: var(--pmd-shadow-lg);
+  animation: slideDown 150ms ease-out;
+  list-style: none;
+  margin: 0;
+}
+
+.pmd-dropdown-menu[data-align="end"] {
+  left: auto;
+  right: 0;
+}
+
+.pmd-dropdown-divider {
+  height: 1px;
+  background: var(--pmd-border);
+  margin: var(--pmd-space-1) 0;
+}
+
+.pmd-dropdown-item {
+  padding: var(--pmd-space-2) var(--pmd-space-3);
+  border-radius: var(--pmd-radius-md);
+  font-size: var(--pmd-text-sm);
+  color: var(--pmd-fg);
+  cursor: pointer;
+  transition: background var(--pmd-transition-fast);
+  display: flex;
+  align-items: center;
+  gap: var(--pmd-space-2);
+  user-select: none;
+}
+
+.pmd-dropdown-item:hover,
+.pmd-dropdown-item[data-highlighted] {
+  background: var(--pmd-bg-muted);
+}
+
+.pmd-dropdown-item[data-disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pmd-dropdown-item svg {
+  width: 14px;
+  height: 14px;
+  color: var(--pmd-fg-muted);
+}
+
+.pmd-dropdown-label {
+  padding: var(--pmd-space-2) var(--pmd-space-3);
+  font-size: var(--pmd-text-xs);
+  font-weight: var(--pmd-font-medium);
+  color: var(--pmd-fg-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* --------------------------------------------
+   4. Dialog / Modal Overlay
+   -------------------------------------------- */
+
+.pmd-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  animation: fadeIn 150ms ease-out;
+}
+
+.pmd-dialog {
+  background: var(--pmd-bg-elevated);
+  border-radius: var(--pmd-radius-xl);
+  box-shadow: var(--pmd-shadow-xl);
+  max-width: 90vw;
+  max-height: 85vh;
+  overflow: hidden;
+  animation: scaleIn 150ms ease-out;
+}
+
+.pmd-dialog-header {
+  padding: var(--pmd-space-4) var(--pmd-space-6);
+  border-bottom: 1px solid var(--pmd-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.pmd-dialog-title {
+  font-size: var(--pmd-text-lg);
+  font-weight: var(--pmd-font-semibold);
+  margin: 0;
+}
+
+.pmd-dialog-description {
+  font-size: var(--pmd-text-sm);
+  color: var(--pmd-fg-muted);
+  margin-top: var(--pmd-space-1);
+}
+
+.pmd-dialog-content {
+  padding: var(--pmd-space-6);
+  overflow-y: auto;
+}
+
+.pmd-dialog-footer {
+  padding: var(--pmd-space-4) var(--pmd-space-6);
+  border-top: 1px solid var(--pmd-border);
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--pmd-space-3);
+}
+
+/* --------------------------------------------
+   5. Input Fields
+   -------------------------------------------- */
+
+.pmd-input {
+  width: 100%;
+  padding: var(--pmd-space-2) var(--pmd-space-3);
+  font-family: inherit;
+  font-size: var(--pmd-text-sm);
+  background: var(--pmd-bg);
+  border: 1px solid var(--pmd-border);
+  border-radius: var(--pmd-radius-md);
+  color: var(--pmd-fg);
+  transition: border-color var(--pmd-transition-base), box-shadow var(--pmd-transition-base);
+}
+
+.pmd-input:focus {
+  outline: none;
+  border-color: var(--pmd-accent);
+  box-shadow: 0 0 0 3px var(--pmd-ring);
+}
+
+.pmd-input::placeholder {
+  color: var(--pmd-fg-subtle);
+}
+
+.pmd-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pmd-input-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pmd-space-1);
+}
+
+.pmd-input-label {
+  font-size: var(--pmd-text-sm);
+  font-weight: var(--pmd-font-medium);
+  color: var(--pmd-fg);
+}
+
+/* Search Input */
+.pmd-input-search {
+  padding-left: var(--pmd-space-10);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'%3E%3C/circle%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'%3E%3C/line%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: var(--pmd-space-3) center;
+}
+
+/* --------------------------------------------
+   6. Cards
+   -------------------------------------------- */
+
+.pmd-card {
+  background: var(--pmd-bg);
+  border: 1px solid var(--pmd-border);
+  border-radius: var(--pmd-radius-lg);
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color var(--pmd-transition-base), box-shadow var(--pmd-transition-base), transform var(--pmd-transition-base);
+}
+
+.pmd-card:hover {
+  border-color: var(--pmd-border-strong);
+  box-shadow: var(--pmd-shadow-md);
+}
+
+.pmd-card[data-selected] {
+  border-color: var(--pmd-accent);
+  box-shadow: 0 0 0 2px var(--pmd-accent);
+}
+
+.pmd-card-header {
+  padding: var(--pmd-space-3) var(--pmd-space-4);
+  border-bottom: 1px solid var(--pmd-border);
+}
+
+.pmd-card-title {
+  font-size: var(--pmd-text-sm);
+  font-weight: var(--pmd-font-semibold);
+  margin: 0;
+}
+
+.pmd-card-description {
+  font-size: var(--pmd-text-xs);
+  color: var(--pmd-fg-muted);
+  margin-top: var(--pmd-space-1);
+}
+
+.pmd-card-content {
+  padding: var(--pmd-space-4);
+}
+
+.pmd-card-footer {
+  padding: var(--pmd-space-3) var(--pmd-space-4);
+  border-top: 1px solid var(--pmd-border);
+  display: flex;
+  align-items: center;
+  gap: var(--pmd-space-2);
+}
+
+/* --------------------------------------------
+   7. Badges
+   -------------------------------------------- */
+
+.pmd-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--pmd-space-1) var(--pmd-space-2);
+  font-size: var(--pmd-text-xs);
+  font-weight: var(--pmd-font-medium);
+  border-radius: var(--pmd-radius-sm);
+  background: var(--pmd-bg-muted);
+  color: var(--pmd-fg-muted);
+}
+
+.pmd-badge-primary {
+  background: var(--pmd-accent);
+  color: var(--pmd-accent-foreground);
+}
+
+.pmd-badge-success {
+  background: var(--pmd-success-bg);
+  color: var(--pmd-success);
+}
+
+.pmd-badge-warning {
+  background: var(--pmd-warning-bg);
+  color: var(--pmd-warning);
+}
+
+.pmd-badge-error {
+  background: var(--pmd-error-bg);
+  color: var(--pmd-error);
+}
+
+/* --------------------------------------------
+   8. Tooltips
+   -------------------------------------------- */
+
+.pmd-tooltip {
+  position: relative;
+  display: inline-flex;
+}
+
+.pmd-tooltip-content {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: var(--pmd-space-2) var(--pmd-space-3);
+  font-size: var(--pmd-text-xs);
+  background: var(--pmd-fg);
+  color: var(--pmd-bg);
+  border-radius: var(--pmd-radius-md);
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--pmd-transition-base);
+  z-index: 200;
+}
+
+.pmd-tooltip-content::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 4px solid transparent;
+  border-top-color: var(--pmd-fg);
+}
+
+.pmd-tooltip:hover .pmd-tooltip-content {
+  opacity: 1;
+}
+
+/* --------------------------------------------
+   9. Kbd (Keyboard shortcut display)
+   -------------------------------------------- */
+
+.pmd-kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 var(--pmd-space-1);
+  font-family: var(--pmd-font-mono);
+  font-size: var(--pmd-text-xs);
+  background: var(--pmd-kbd-bg);
+  color: var(--pmd-kbd-fg);
+  border: 1px solid var(--pmd-kbd-border);
+  border-radius: var(--pmd-radius-sm);
+}
+
+/* --------------------------------------------
+   10. Toolbar / Chrome
+   -------------------------------------------- */
+
+.pmd-chrome {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 40;
+  background: var(--pmd-bg-elevated);
+  border-bottom: 1px solid var(--pmd-border);
+  display: flex;
+  align-items: center;
+  height: 44px;
+  padding: 0 var(--pmd-space-3);
+  gap: var(--pmd-space-3);
+}
+
+.pmd-toolbar {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  gap: var(--pmd-space-2);
+}
+
+.pmd-title-section {
+  display: flex;
+  align-items: center;
+  gap: var(--pmd-space-2);
+  padding: 0 var(--pmd-space-2);
+}
+
+.pmd-filename {
+  font-size: var(--pmd-text-sm);
+  color: var(--pmd-fg);
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pmd-modified-dot {
+  color: var(--pmd-accent);
+  font-size: 10px;
+  opacity: 0;
+  transition: opacity var(--pmd-transition-base);
+}
+
+.pmd-modified-dot[data-modified] {
+  opacity: 1;
+}
+
+.pmd-toolbar-divider {
+  width: 1px;
+  height: 20px;
+  background: var(--pmd-border);
+  margin: 0 var(--pmd-space-1);
+}
+
+/* --------------------------------------------
+   11. Status Bar
+   -------------------------------------------- */
+
+.pmd-status-bar {
+  height: 28px;
+  display: flex;
+  align-items: center;
+  padding: 0 var(--pmd-space-3);
+  font-size: var(--pmd-text-xs);
+  color: var(--pmd-fg-muted);
+  gap: var(--pmd-space-4);
+}
+
+.pmd-status-item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--pmd-space-1);
+}
+
+.pmd-status-item svg {
+  width: 12px;
+  height: 12px;
+}
+
+/* --------------------------------------------
+   12. Welcome Screen
+   -------------------------------------------- */
+
+.pmd-welcome {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: var(--pmd-space-8);
+  text-align: center;
+}
+
+.pmd-welcome h1 {
+  font-size: var(--pmd-text-2xl);
+  font-weight: var(--pmd-font-bold);
+  margin-bottom: var(--pmd-space-2);
+  background: linear-gradient(135deg, var(--pmd-accent), var(--pmd-fg));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.pmd-welcome p {
+  color: var(--pmd-fg-muted);
+  margin-bottom: var(--pmd-space-6);
+  max-width: 400px;
+}
+
+.pmd-welcome-actions {
+  display: flex;
+  gap: var(--pmd-space-3);
+  margin-bottom: var(--pmd-space-4);
+}
+
+.pmd-welcome-btn {
+  padding: var(--pmd-space-3) var(--pmd-space-6);
+  font-size: var(--pmd-text-base);
+  font-weight: var(--pmd-font-medium);
+  border-radius: var(--pmd-radius-lg);
+  cursor: pointer;
+  transition: all var(--pmd-transition-base);
+}
+
+.pmd-welcome-hint {
+  font-size: var(--pmd-text-sm);
+  color: var(--pmd-fg-subtle);
+}
+
+/* --------------------------------------------
+   13. Hotkey Overlay
+   -------------------------------------------- */
+
+.pmd-hotkey-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  animation: fadeIn 150ms ease-out;
+}
+
+.pmd-hotkey-content {
+  background: var(--pmd-bg-elevated);
+  border-radius: var(--pmd-radius-xl);
+  padding: var(--pmd-space-6);
+  max-width: 480px;
+  width: 90%;
+  box-shadow: var(--pmd-shadow-xl);
+  animation: scaleIn 150ms ease-out;
+}
+
+.pmd-hotkey-content h2 {
+  font-size: var(--pmd-text-lg);
+  font-weight: var(--pmd-font-semibold);
+  margin-bottom: var(--pmd-space-4);
+}
+
+.pmd-hotkey-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.pmd-hotkey-table tr {
+  border-bottom: 1px solid var(--pmd-border);
+}
+
+.pmd-hotkey-table tr:last-child {
+  border-bottom: none;
+}
+
+.pmd-hotkey-table td {
+  padding: var(--pmd-space-3) 0;
+}
+
+.pmd-hotkey-table td:first-child {
+  display: flex;
+  align-items: center;
+  gap: var(--pmd-space-2);
+}
+
+.pmd-hotkey-table td:last-child {
+  text-align: right;
+  color: var(--pmd-fg-muted);
+  font-size: var(--pmd-text-sm);
+}
+
+.pmd-hotkey-content .pmd-btn {
+  margin-top: var(--pmd-space-4);
+  width: 100%;
+}
+
+/* --------------------------------------------
+   14. App Layout
+   -------------------------------------------- */
+
+#app-container {
+  display: flex;
+  height: calc(100vh - 44px - 28px);
+  margin-top: calc(44px + 28px);
+  width: 100%;
+}
+
+#editor-pane {
+  flex: 1;
+  display: none;
+  overflow: hidden;
+  min-width: 0;
+}
+
+#editor-pane .cm-editor {
+  height: 100%;
+}
+
+#preview-pane {
+  flex: 1;
+  display: none;
+  overflow: auto;
+  padding: var(--pmd-space-8);
+  line-height: 1.75;
+}
+
+body[data-mode="source"] #editor-pane {
+  display: block;
+}
+
+body[data-mode="split"] #editor-pane,
+body[data-mode="split"] #preview-pane {
+  display: block;
+  width: 50%;
+}
+
+body[data-mode="split"] #preview-pane {
+  border-left: 1px solid var(--pmd-border);
+}
+
+body[data-mode="preview"] #preview-pane {
+  display: block;
+  width: 100%;
+  max-width: 75ch;
+  margin: 0 auto;
+}
