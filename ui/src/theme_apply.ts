@@ -39,8 +39,8 @@ export async function rerenderForThemeChange(
       const { renderMermaidNodes } = await import('./mermaid_runner.js');
       await renderMermaidNodes(t.parentElement!);
     } else {
-      const { renderMathNodes } = await import('./katex_runner.js');
-      await renderMathNodes(root);
+      const { renderMathNode } = await import('./katex_runner.js');
+      await renderMathNode(t as HTMLElement);
     }
   }
 }
