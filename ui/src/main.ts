@@ -63,11 +63,13 @@ document.body.addEventListener('drop', async (e) => {
     isModified = true;
     chrome.setFilename(file.name);
     chrome.setModified(true);
+    updateTitle();
 
     if (!editor) {
       editor = await mountEditor(editorPane, (md) => {
         isModified = true;
         chrome.setModified(true);
+        updateTitle();
         renderMarkdown(md);
       });
       attachScrollSync(editor.view, previewPane);
@@ -81,6 +83,12 @@ let editor: Awaited<ReturnType<typeof mountEditor>> | null = null;
 let currentFilePath: string | null = null;
 let isModified = false;
 let currentMode: Mode = 'split';
+
+function updateTitle() {
+  const name = currentFilePath ? currentFilePath.split('/').pop() || currentFilePath : 'Untitled';
+  const title = isModified ? `● ${name} — preview-md` : `${name} — preview-md`;
+  invoke('set_window_title', { title }).catch(() => {});
+}
 
 chrome.onModeChange((mode) => {
   currentMode = mode;
@@ -105,7 +113,14 @@ async function showThemePicker(): Promise<void> {
     return;
   }
   const themes = await loadThemes();
-  openThemePicker(themes, async (slug) => {
+  openThemePicker(themes, async (slug, mode) => {
+    if (mode) {
+      await invoke('set_theme_pair', {
+        light: mode === 'light' ? slug : null,
+        dark: mode === 'dark' ? slug : null,
+      });
+      await invoke('set_auto_switch', { autoSwitch: true });
+    }
     await applyTheme(slug);
   });
 }
@@ -222,11 +237,13 @@ async function newFile(): Promise<void> {
   isModified = false;
   chrome.setFilename('Untitled');
   chrome.setModified(false);
+  updateTitle();
 
   if (!editor) {
     editor = await mountEditor(editorPane, (md) => {
       isModified = true;
       chrome.setModified(true);
+      updateTitle();
       renderMarkdown(md);
     });
     attachScrollSync(editor.view, previewPane);
@@ -243,11 +260,13 @@ async function openFileDialog(): Promise<void> {
       isModified = false;
       chrome.setFilename(result.path.split('/').pop() || result.path);
       chrome.setModified(false);
+      updateTitle();
 
       if (!editor) {
         editor = await mountEditor(editorPane, (md) => {
           isModified = true;
           chrome.setModified(true);
+          updateTitle();
           renderMarkdown(md);
         });
         attachScrollSync(editor.view, previewPane);
@@ -276,6 +295,7 @@ async function saveCurrentFile(): Promise<void> {
     await invoke('save_file', { path, contents: content });
     isModified = false;
     chrome.setModified(false);
+    updateTitle();
   } catch (e) {
     console.error('Save failed:', e);
   }
@@ -291,6 +311,7 @@ async function openFile(path: string) {
     isModified = false;
     chrome.setFilename(path.split('/').pop() || path);
     chrome.setModified(false);
+    updateTitle();
 
     invoke('add_recent_file', { path }).catch(() => {});
     loadRecentFiles();
@@ -299,6 +320,7 @@ async function openFile(path: string) {
       editor = await mountEditor(editorPane, (md) => {
         isModified = true;
         chrome.setModified(true);
+        updateTitle();
         renderMarkdown(md);
       });
       attachScrollSync(editor.view, previewPane);

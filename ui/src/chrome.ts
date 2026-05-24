@@ -99,6 +99,7 @@ export function createChrome(parent: HTMLElement): ChromeInstance {
     btn.textContent = label;
     btn.dataset.mode = id;
     btn.type = 'button';
+    btn.title = `Switch to ${label} mode (Ctrl+\)`;
     modeGroup.appendChild(btn);
     return btn;
   });

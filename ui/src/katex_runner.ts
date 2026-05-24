@@ -16,12 +16,12 @@ export function renderMathNode(el: HTMLElement) {
 }
 
 export function renderMathNodes(root: HTMLElement) {
-  const blocks = root.querySelectorAll<HTMLElement>("code.language-math, .math-inline, .math-block");
-  for (const code of blocks) {
-    renderMathNode(code);
+  const blocks = root.querySelectorAll<HTMLElement>(".math-inline, .math-display");
+  for (const block of blocks) {
+    renderMathNode(block);
   }
 }
 
 function isDisplayMath(el: HTMLElement): boolean {
-  return el.classList.contains("math-block") || el.closest("pre") !== null;
+  return el.classList.contains("math-display") || el.closest("pre") !== null;
 }

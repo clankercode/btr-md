@@ -183,12 +183,14 @@
 .pmd-picker-actions {
   display: flex;
   gap: 0.5rem;
+  visibility: hidden;
   opacity: 0;
-  transition: opacity 120ms;
+  transition: visibility 120ms, opacity 120ms;
 }
 
 .pmd-picker-card:hover .pmd-picker-actions,
 .pmd-picker-card--selected .pmd-picker-actions {
+  visibility: visible;
   opacity: 1;
 }
 

@@ -7,12 +7,14 @@ export function ensureInit(vars?: Record<string, string>) {
   if (vars) {
     currentThemeVars = vars;
   }
-  mermaid.initialize({
-    startOnLoad: false,
-    securityLevel: "strict",
-    themeVariables: currentThemeVars,
-  });
-  initialised = true;
+  if (!initialised) {
+    mermaid.initialize({
+      startOnLoad: false,
+      securityLevel: "strict",
+      themeVariables: currentThemeVars,
+    });
+    initialised = true;
+  }
 }
 
 export async function renderMermaidNodes(root: HTMLElement) {

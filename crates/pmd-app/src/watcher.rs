@@ -1,37 +1,79 @@
-use notify::{Config, RecommendedWatcher, RecursiveMode, Watcher};
+use notify::{Config, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
 use std::path::PathBuf;
 use std::sync::mpsc::channel;
+use std::sync::Mutex;
 use tauri::{AppHandle, Emitter};
 
-#[allow(dead_code)]
 pub struct FileWatcher {
-    watcher: RecommendedWatcher,
+    inner: Mutex<Option<RecommendedWatcher>>,
+}
+
+impl Default for FileWatcher {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl FileWatcher {
-    pub fn new(app: AppHandle, path: PathBuf) -> Result<Self, notify::Error> {
+    pub fn new() -> Self {
+        Self {
+            inner: Mutex::new(None),
+        }
+    }
+
+    pub fn watch(&self, app: AppHandle, path: PathBuf) {
+        let parent = path.parent().unwrap_or(&path).to_path_buf();
+        let file_name = path.file_name().map(|n| n.to_owned());
+        if file_name.is_none() {
+            return;
+        }
+        let file_name = file_name.unwrap();
+
         let (tx, rx) = channel();
 
-        let mut watcher = RecommendedWatcher::new(
-            move |res: Result<notify::Event, notify::Error>| {
+        let mut watcher = match RecommendedWatcher::new(
+            move |res: notify::Result<notify::Event>| {
                 let _ = tx.send(res);
             },
             Config::default(),
-        )?;
+        ) {
+            Ok(w) => w,
+            Err(_) => return,
+        };
 
-        watcher.watch(&path, RecursiveMode::NonRecursive)?;
+        if watcher.watch(&parent, RecursiveMode::NonRecursive).is_err() {
+            return;
+        }
 
         let app_clone = app.clone();
+        let watched_path = path.clone();
+
         std::thread::spawn(move || {
-            while let Ok(event) = rx.recv() {
-                if let Ok(event) = event {
-                    if event.kind.is_modify() {
-                        let _ = app_clone.emit("file_changed_on_disk", ());
+            while let Ok(res) = rx.recv() {
+                if let Ok(event) = res {
+                    let dominated = event
+                        .paths
+                        .iter()
+                        .any(|p| p.file_name() == Some(&file_name));
+                    if !dominated {
+                        continue;
+                    }
+                    match event.kind {
+                        EventKind::Modify(_) | EventKind::Create(_) => {
+                            if watched_path.exists() {
+                                let _ = app_clone.emit("file_changed_on_disk", ());
+                            }
+                        }
+                        EventKind::Remove(_) => {
+                            let _ = app_clone.emit("file_removed_from_disk", ());
+                        }
+                        _ => {}
                     }
                 }
             }
         });
 
-        Ok(Self { watcher })
+        let mut inner = self.inner.lock().unwrap();
+        *inner = Some(watcher);
     }
 }

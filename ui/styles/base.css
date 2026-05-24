@@ -53,8 +53,7 @@ body {
   margin: 0;
   padding: 0;
   height: 100%;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial,
-    sans-serif;
+  font-family: var(--pmd-font-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif);
   background-color: var(--pmd-bg);
   color: var(--pmd-fg);
 }
@@ -119,10 +118,11 @@ body[data-mode="preview"] #preview-pane {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.25rem 0.75rem;
+  padding: 0 0.75rem;
   background: var(--pmd-toolbar-bg);
   border-bottom: 1px solid var(--pmd-toolbar-border);
-  height: 40px;
+  height: 36px;
+  box-sizing: border-box;
 }
 
 .pmd-title-section {
@@ -282,10 +282,11 @@ body[data-mode="preview"] #preview-pane {
 .pmd-status-bar {
   display: flex;
   align-items: center;
-  padding: 0.125rem 0.75rem;
+  padding: 0 0.75rem;
   background: var(--pmd-statusbar-bg);
   border-top: 1px solid var(--pmd-toolbar-border);
-  height: 24px;
+  height: 22px;
+  box-sizing: border-box;
 }
 
 .pmd-status-text {
@@ -394,7 +395,7 @@ kbd {
 }
 
 .pmd-preview code {
-  font-family: "JetBrains Mono", "Fira Code", "Cascadia Code", monospace;
+  font-family: var(--pmd-font-mono, "JetBrains Mono", "Fira Code", "Cascadia Code", monospace);
   background-color: var(--pmd-inline-code-bg);
   color: var(--pmd-inline-code-fg);
   padding: 0.2em 0.4em;

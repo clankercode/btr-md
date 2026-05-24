@@ -65,11 +65,24 @@ pub fn path() -> std::io::Result<PathBuf> {
     Ok(recents_path())
 }
 
-pub fn clear() -> std::io::Result<()> {
-    let path = path()?;
-    if path.exists() {
-        std::fs::remove_file(path)?;
+pub fn clear() -> Result<()> {
+    if let Some(parent) = recents_path().parent() {
+        std::fs::create_dir_all(parent)?;
     }
+    let mut f = OpenOptions::new()
+        .read(true)
+        .write(true)
+        .create(true)
+        .truncate(false)
+        .open(recents_path())?;
+    f.lock_exclusive()?;
+    let recents = Recents::default();
+    let out = toml::to_string_pretty(&recents)?;
+    f.set_len(0)?;
+    f.seek(SeekFrom::Start(0))?;
+    f.write_all(out.as_bytes())?;
+    f.sync_all()?;
+    fs2::FileExt::unlock(&f)?;
     Ok(())
 }
 

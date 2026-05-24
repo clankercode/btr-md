@@ -127,6 +127,22 @@ pub fn set_theme(slug: String) -> Result<ThemeBundle, String> {
         css_vars.push_str(&format!("  --pmd-syntax-{css_key}: {v};\n"));
     }
 
+    if let Some(ui) = &theme.fonts.ui {
+        css_vars.push_str(&format!("  --pmd-font-ui: {};\n", ui));
+    }
+    if let Some(mono) = &theme.fonts.mono {
+        css_vars.push_str(&format!("  --pmd-font-mono: {};\n", mono));
+    }
+    if let Some(serif) = &theme.fonts.serif {
+        css_vars.push_str(&format!("  --pmd-font-serif: {};\n", serif));
+    }
+    if let Some(heading) = &theme.fonts.heading {
+        css_vars.push_str(&format!("  --pmd-font-heading: {};\n", heading));
+    }
+    if let Some(body) = &theme.fonts.body {
+        css_vars.push_str(&format!("  --pmd-font-body: {};\n", body));
+    }
+
     let derive_mermaid = |key: &str, fallback: Option<&str>| -> Option<String> {
         if theme.palette.colours.contains_key(key) {
             return None;
@@ -140,8 +156,9 @@ pub fn set_theme(slug: String) -> Result<ThemeBundle, String> {
     let accent = theme.palette.colours.get("accent");
 
     if let (Some(bg), Some(bg_elevated), Some(fg), Some(accent)) = (bg, bg_elevated, fg, accent) {
-        if let (Some(bg_rgb), Some(fg_rgb), Some(accent_rgb)) = (
+        if let (Some(bg_rgb), Some(bg_elevated_rgb), Some(fg_rgb), Some(accent_rgb)) = (
             pmd_core::theme::mix::parse_hex(bg),
+            pmd_core::theme::mix::parse_hex(bg_elevated),
             pmd_core::theme::mix::parse_hex(fg),
             pmd_core::theme::mix::parse_hex(accent),
         ) {
@@ -149,7 +166,7 @@ pub fn set_theme(slug: String) -> Result<ThemeBundle, String> {
                 css_vars.push_str(&format!("  --pmd-mermaid-edge-label-bg: {};\n", v));
             }
             if !theme.palette.colours.contains_key("mermaid_cluster_bg") {
-                let mixed = pmd_core::theme::mix::mix(bg_rgb, fg_rgb, 0.04);
+                let mixed = pmd_core::theme::mix::mix(bg_elevated_rgb, fg_rgb, 0.04);
                 css_vars.push_str(&format!(
                     "  --pmd-mermaid-cluster-bg: {};\n",
                     pmd_core::theme::mix::to_hex(mixed)
@@ -210,6 +227,9 @@ pub fn set_theme(slug: String) -> Result<ThemeBundle, String> {
     ) {
         mermaid_vars.insert("edgeLabelBackground".to_string(), v);
     }
+    if let Some(v) = theme.palette.colours.get("mermaid_cluster_bg") {
+        mermaid_vars.insert("clusterBkg".to_string(), v.clone());
+    }
     if !mermaid_vars.contains_key("clusterBkg") {
         if let (Some(bg_elevated), Some(fg)) = (bg_elevated, fg) {
             if let (Some(bg_rgb), Some(fg_rgb)) = (
@@ -230,6 +250,9 @@ pub fn set_theme(slug: String) -> Result<ThemeBundle, String> {
     }
     if let Some(v) = get_or_derive_str("mermaid_note_border", accent.as_ref().map(|s| s.as_str())) {
         mermaid_vars.insert("noteBorderColor".to_string(), v);
+    }
+    if let Some(v) = theme.palette.colours.get("mermaid_actor_bg") {
+        mermaid_vars.insert("actorBkg".to_string(), v.clone());
     }
     if !mermaid_vars.contains_key("actorBkg") {
         if let (Some(accent), Some(bg)) = (accent, bg) {

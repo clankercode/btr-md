@@ -1,5 +1,5 @@
 use pmd_app_lib::{cli, cmd, path_scope::PathScope, watcher::FileWatcher, AppState};
-use tauri::Emitter;
+use tauri::{Emitter, Manager};
 
 fn main() {
     let scope = PathScope::new();
@@ -13,6 +13,7 @@ fn main() {
             scope,
             initial_path: std::sync::Mutex::new(initial_path),
         })
+        .manage(FileWatcher::new())
         .invoke_handler(tauri::generate_handler![
             cmd::render::render_cmd,
             cmd::file::open_file,
@@ -29,11 +30,13 @@ fn main() {
             cmd::settings::add_recent_file,
             cmd::settings::clear_recent_files,
             cmd::file::get_initial_path,
+            cmd::window::set_window_title,
         ])
         .setup(move |app| {
             if let Some(ref p) = initial.path {
                 let _ = app.emit("open-file", p.to_string_lossy().to_string());
-                let _ = FileWatcher::new(app.handle().clone(), p.clone());
+                app.state::<FileWatcher>()
+                    .watch(app.handle().clone(), p.clone());
             }
             Ok(())
         })

@@ -10,7 +10,7 @@ interface PickerState {
   filteredThemes: ThemeInfo[];
   selectedIndex: number;
   filter: string;
-  onSelect: (slug: string) => void;
+  onSelect: (slug: string, mode?: 'light' | 'dark') => void;
   onClose: () => void;
 }
 
@@ -65,6 +65,7 @@ function renderPicker(state: PickerState): HTMLElement {
     card.dataset.slug = theme.slug;
     card.dataset.index = String(index);
     card.setAttribute('role', 'option');
+    card.tabIndex = 0;
     card.ariaSelected = String(index === state.selectedIndex);
 
     if (index === state.selectedIndex) {
@@ -124,6 +125,7 @@ function updateGrid(state: PickerState): void {
     card.dataset.slug = theme.slug;
     card.dataset.index = String(index);
     card.setAttribute('role', 'option');
+    card.tabIndex = 0;
     card.ariaSelected = String(index === state.selectedIndex);
 
     if (index === state.selectedIndex) {
@@ -247,7 +249,7 @@ function handlePickerKeydown(e: KeyboardEvent): void {
   }
 }
 
-export function openThemePicker(themes: ThemeInfo[], onSelect: (slug: string) => void): void {
+export function openThemePicker(themes: ThemeInfo[], onSelect: (slug: string, mode?: 'light' | 'dark') => void): void {
   if (currentState) {
     closePicker();
   }
@@ -284,8 +286,9 @@ export function openThemePicker(themes: ThemeInfo[], onSelect: (slug: string) =>
         target.classList.contains('pmd-picker-action--dark')) {
       e.stopPropagation();
       const slug = target.dataset.slug;
+      const mode = target.dataset.mode as 'light' | 'dark' | undefined;
       if (slug) {
-        onSelect(slug);
+        onSelect(slug, mode);
         closePicker();
       }
       return;
