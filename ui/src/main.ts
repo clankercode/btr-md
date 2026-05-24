@@ -1,6 +1,7 @@
 import { mountEditor } from './editor.js';
 import { createChrome, type Mode } from './chrome.js';
 import { createHotkeyHandler, createOverlay } from './hotkeys.js';
+import { attachScrollSync } from './scroll_sync.js';
 
 const { invoke } = window.__TAURI__.core;
 const { listen } = window.__TAURI__.event;
@@ -93,6 +94,7 @@ async function openFile(path: string) {
         chrome.setModified(true);
         renderMarkdown(md);
       });
+      attachScrollSync(editor.view, previewPane);
     }
     editor.setValue(file.contents);
     await renderMarkdown(file.contents);
