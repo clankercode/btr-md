@@ -1,0 +1,17 @@
+* text=auto eol=lf
+
+# Treat binary blobs as binary so git does not try to diff or normalize them.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.ico binary
+*.icns binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.otf binary
+
+# Vendored web assets and screenshot baselines should never be merged or
+# diffed by hand; mark them as generated so platforms render them folded.
+tests/screenshots/** linguist-generated=true
+ui/vendor/** linguist-vendored=true
