@@ -7,10 +7,37 @@ import { renderMermaidNodes } from './mermaid_runner.js';
 import { renderMathNodes } from './katex_runner.js';
 import { openThemePicker, isPickerOpen, closeThemePicker, type ThemeInfo } from './picker.js';
 
-import '../styles/picker.css';
+declare global {
+  interface Window {
+    __TAURI__?: {
+      core: {
+        invoke: (cmd: string, args?: Record<string, unknown>) => Promise<unknown>;
+      };
+      event: {
+        listen: <T>(event: string, handler: (event: { payload: T }) => void) => Promise<() => void>;
+      };
+    };
+  }
+}
 
-const { invoke } = window.__TAURI__.core;
-const { listen } = window.__TAURI__.event;
+const invoke = <T>(cmd: string, args?: Record<string, unknown>): Promise<T> => {
+  if (!window.__TAURI__) {
+    console.error('window.__TAURI__ is not defined');
+    return Promise.reject(new Error('Tauri not available'));
+  }
+  if (!window.__TAURI__.core) {
+    console.error('window.__TAURI__.core is not defined');
+    return Promise.reject(new Error('Tauri core not available'));
+  }
+  if (typeof window.__TAURI__.core.invoke !== 'function') {
+    console.error('window.__TAURI__.core.invoke is not a function:', typeof window.__TAURI__.core.invoke);
+    return Promise.reject(new Error('Tauri invoke not available'));
+  }
+  return window.__TAURI__.core.invoke<T>(cmd, args);
+};
+
+const listen = <T>(event: string, handler: (event: { payload: T }) => void): Promise<() => void> =>
+  window.__TAURI__?.event.listen(event, handler) ?? Promise.reject(new Error('Tauri not available')) as unknown as Promise<() => void>;
 
 interface RenderResult {
   html: string;
@@ -390,6 +417,9 @@ invoke<string | null>('get_initial_path').then((path) => {
   } else {
     showWelcomeScreen();
   }
+}).catch((e) => {
+  console.error('Failed to get initial path:', e);
+  showWelcomeScreen();
 });
 
 export {};

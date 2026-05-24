@@ -57958,67 +57958,6 @@ var init_codemirror_bundle = __esm({
   }
 });
 
-// src/mermaid_runner.ts
-var mermaid_runner_exports = {};
-__export(mermaid_runner_exports, {
-  ensureInit: () => ensureInit,
-  renderMermaidNodes: () => renderMermaidNodes
-});
-function ensureInit(vars) {
-  if (initialised) {
-    mermaid.initialize({ themeVariables: vars });
-    return;
-  }
-  mermaid.initialize({ startOnLoad: false, securityLevel: "strict", themeVariables: vars });
-  initialised = true;
-}
-async function renderMermaidNodes(root) {
-  const blocks = root.querySelectorAll("pre > code.language-mermaid");
-  for (const code2 of blocks) {
-    try {
-      const id3 = `m-${Math.random().toString(36).slice(2)}`;
-      const { svg: svg2 } = await mermaid.render(id3, code2.textContent ?? "");
-      code2.parentElement.outerHTML = svg2;
-    } catch (e) {
-      code2.parentElement.classList.add("pmd-mermaid-error");
-    }
-  }
-}
-var initialised;
-var init_mermaid_runner = __esm({
-  "src/mermaid_runner.ts"() {
-    initialised = false;
-  }
-});
-
-// src/katex_runner.ts
-var katex_runner_exports = {};
-__export(katex_runner_exports, {
-  renderMathNode: () => renderMathNode,
-  renderMathNodes: () => renderMathNodes
-});
-function renderMathNode(el) {
-  try {
-    katex.render(el.textContent ?? "", el.parentElement, {
-      trust: false,
-      strict: "warn",
-      displayMode: el.classList.contains("math-block")
-    });
-  } catch (e) {
-    el.classList.add("pmd-math-error");
-  }
-}
-function renderMathNodes(root) {
-  const blocks = root.querySelectorAll("code.language-math, .math-block");
-  for (const code2 of blocks) {
-    renderMathNode(code2);
-  }
-}
-var init_katex_runner = __esm({
-  "src/katex_runner.ts"() {
-  }
-});
-
 // src/editor.ts
 init_codemirror_bundle();
 async function mountEditor(el, onChange) {
@@ -58134,6 +58073,7 @@ function createChrome(parent) {
     btn.textContent = label;
     btn.dataset.mode = id3;
     btn.type = "button";
+    btn.title = `Switch to ${label} mode (Ctrl+)`;
     modeGroup.appendChild(btn);
     return btn;
   });
@@ -58306,50 +58246,136 @@ function attachScrollSync(view, preview) {
   }
 }
 
+// src/mermaid_runner.ts
+import mermaid from "mermaid";
+var initialised = false;
+var currentThemeVars = {};
+function ensureInit(vars) {
+  if (vars) {
+    currentThemeVars = vars;
+  }
+  if (!initialised) {
+    mermaid.initialize({
+      startOnLoad: false,
+      securityLevel: "strict",
+      themeVariables: currentThemeVars
+    });
+    initialised = true;
+  }
+}
+async function renderMermaidNodes(root) {
+  ensureInit();
+  const targets = collectMermaidTargets(root);
+  for (const target of targets) {
+    await renderMermaidNode(target);
+  }
+}
+async function renderMermaidNode(target) {
+  ensureInit();
+  const container = ensureMermaidContainer(target);
+  const source = container.dataset.mermaidSource ?? "";
+  try {
+    const id3 = `m-${Math.random().toString(36).slice(2)}`;
+    const { svg: svg2 } = await mermaid.render(id3, source);
+    container.classList.remove("pmd-mermaid-error");
+    container.innerHTML = svg2;
+  } catch (e) {
+    container.classList.add("pmd-mermaid-error");
+    container.textContent = source;
+  }
+}
+function collectMermaidTargets(root) {
+  const targets = /* @__PURE__ */ new Set();
+  root.querySelectorAll(".pmd-mermaid[data-mermaid-source]").forEach((el) => {
+    targets.add(el);
+  });
+  root.querySelectorAll("pre > code.language-mermaid").forEach((code2) => {
+    if (code2.parentElement) {
+      targets.add(code2.parentElement);
+    }
+  });
+  return Array.from(targets);
+}
+function ensureMermaidContainer(target) {
+  if (target.classList.contains("pmd-mermaid")) {
+    return target;
+  }
+  const code2 = target.matches("code.language-mermaid") ? target : target.querySelector("code.language-mermaid");
+  const container = document.createElement("div");
+  container.className = "pmd-mermaid";
+  container.dataset.mermaidSource = code2?.textContent ?? target.textContent ?? "";
+  copySourceRange(target, container);
+  target.replaceWith(container);
+  return container;
+}
+function copySourceRange(from, to) {
+  if (from.dataset.srcStart) {
+    to.dataset.srcStart = from.dataset.srcStart;
+  }
+  if (from.dataset.srcEnd) {
+    to.dataset.srcEnd = from.dataset.srcEnd;
+  }
+}
+
+// src/katex_runner.ts
+import katex from "katex";
+import "katex/dist/katex.min.css";
+function renderMathNode(el) {
+  const source = el.dataset.mathSource ?? el.textContent ?? "";
+  try {
+    katex.render(source, el, {
+      trust: false,
+      strict: "warn",
+      displayMode: isDisplayMath(el)
+    });
+    el.classList.remove("pmd-math-error");
+  } catch (e) {
+    el.classList.add("pmd-math-error");
+  }
+}
+function renderMathNodes(root) {
+  const blocks = root.querySelectorAll(".math-inline, .math-display");
+  for (const block of blocks) {
+    renderMathNode(block);
+  }
+}
+function isDisplayMath(el) {
+  return el.classList.contains("math-display") || el.closest("pre") !== null;
+}
+
 // src/theme_apply.ts
 function markMermaidNodes(container) {
   const mermaidBlocks = container.querySelectorAll("pre > code.language-mermaid");
   mermaidBlocks.forEach((block) => {
-    block.classList.add("pmd-mermaid");
+    const pre = block.parentElement;
+    if (!pre) return;
+    pre.classList.add("pmd-mermaid");
+    pre.dataset.mermaidSource = block.textContent ?? "";
   });
 }
 function markMathNodes(container) {
-  const mathBlocks = container.querySelectorAll("code.language-math, .math-block");
+  const mathBlocks = container.querySelectorAll("code.language-math, .math-inline, .math-block");
   mathBlocks.forEach((block) => {
     block.classList.add("pmd-math");
+    block.dataset.mathSource = block.dataset.mathSource ?? block.textContent ?? "";
   });
 }
 function markAllNodes(container) {
   markMermaidNodes(container);
   markMathNodes(container);
 }
-function ensureInit2(vars) {
-  if (typeof window === "undefined" || !("mermaid" in window)) return;
-  const m = window.mermaid;
-  m.initialize({
-    startOnLoad: false,
-    securityLevel: "strict",
-    themeVariables: vars
-  });
-}
 async function rerenderForThemeChange(root, ctx) {
-  ensureInit2(ctx.vars);
-  const targets = Array.from(root.querySelectorAll(".pmd-mermaid, .pmd-math"));
+  ensureInit(ctx.vars);
+  const targets = Array.from(root.querySelectorAll(".pmd-mermaid[data-mermaid-source], .pmd-math[data-math-source]"));
   for (const t11 of targets) {
     await new Promise((r) => requestAnimationFrame(() => r()));
     if (t11.classList.contains("pmd-mermaid")) {
-      const { renderMermaidNodes: renderMermaidNodes2 } = await Promise.resolve().then(() => (init_mermaid_runner(), mermaid_runner_exports));
-      await renderMermaidNodes2(t11.parentElement);
+      await renderMermaidNode(t11);
     } else {
-      const { renderMathNode: renderMathNode2 } = await Promise.resolve().then(() => (init_katex_runner(), katex_runner_exports));
-      await renderMathNode2(t11);
+      renderMathNode(t11);
     }
   }
 }
-
-// src/main.ts
-init_mermaid_runner();
-init_katex_runner();
 
 // src/picker.ts
 var currentState = null;
@@ -58393,6 +58419,7 @@ function renderPicker(state) {
     card.dataset.slug = theme2.slug;
     card.dataset.index = String(index);
     card.setAttribute("role", "option");
+    card.tabIndex = 0;
     card.ariaSelected = String(index === state.selectedIndex);
     if (index === state.selectedIndex) {
       card.classList.add("pmd-picker-card--selected");
@@ -58440,6 +58467,7 @@ function updateGrid(state) {
     card.dataset.slug = theme2.slug;
     card.dataset.index = String(index);
     card.setAttribute("role", "option");
+    card.tabIndex = 0;
     card.ariaSelected = String(index === state.selectedIndex);
     if (index === state.selectedIndex) {
       card.classList.add("pmd-picker-card--selected");
@@ -58574,8 +58602,9 @@ function openThemePicker(themes, onSelect) {
     if (target.classList.contains("pmd-picker-action--light") || target.classList.contains("pmd-picker-action--dark")) {
       e.stopPropagation();
       const slug = target.dataset.slug;
+      const mode = target.dataset.mode;
       if (slug) {
-        onSelect(slug);
+        onSelect(slug, mode);
         closePicker();
       }
       return;
@@ -58606,8 +58635,22 @@ function closeThemePicker() {
 }
 
 // src/main.ts
-var { invoke } = window.__TAURI__.core;
-var { listen } = window.__TAURI__.event;
+var invoke = (cmd2, args) => {
+  if (!window.__TAURI__) {
+    console.error("window.__TAURI__ is not defined");
+    return Promise.reject(new Error("Tauri not available"));
+  }
+  if (!window.__TAURI__.core) {
+    console.error("window.__TAURI__.core is not defined");
+    return Promise.reject(new Error("Tauri core not available"));
+  }
+  if (typeof window.__TAURI__.core.invoke !== "function") {
+    console.error("window.__TAURI__.core.invoke is not a function:", typeof window.__TAURI__.core.invoke);
+    return Promise.reject(new Error("Tauri invoke not available"));
+  }
+  return window.__TAURI__.core.invoke(cmd2, args);
+};
+var listen = (event, handler) => window.__TAURI__?.event.listen(event, handler) ?? Promise.reject(new Error("Tauri not available"));
 var renderQueue = [];
 var rendering = false;
 var currentVersion = 0;
@@ -58624,10 +58667,53 @@ var chrome2 = createChrome(document.body);
 var hotkeyOverlay = createOverlay();
 hotkeyOverlay.hidden = true;
 document.body.appendChild(hotkeyOverlay);
+document.body.addEventListener("dragover", (e) => {
+  e.preventDefault();
+  e.stopPropagation();
+});
+document.body.addEventListener("drop", async (e) => {
+  e.preventDefault();
+  e.stopPropagation();
+  const files = e.dataTransfer?.files;
+  if (!files || files.length === 0) return;
+  const file = files[0];
+  if (!file.name.endsWith(".md") && !file.name.endsWith(".markdown")) {
+    console.log("Not a markdown file:", file.name);
+    return;
+  }
+  const path = file.path;
+  if (path) {
+    openFile(path);
+  } else {
+    const contents = await file.text();
+    currentFilePath = null;
+    isModified = true;
+    chrome2.setFilename(file.name);
+    chrome2.setModified(true);
+    updateTitle();
+    if (!editor) {
+      editor = await mountEditor(editorPane, (md) => {
+        isModified = true;
+        chrome2.setModified(true);
+        updateTitle();
+        renderMarkdown(md);
+      });
+      attachScrollSync(editor.view, previewPane);
+    }
+    editor.setValue(contents);
+    await renderMarkdown(contents);
+  }
+});
 var editor = null;
 var currentFilePath = null;
 var isModified = false;
 var currentMode = "split";
+function updateTitle() {
+  const name11 = currentFilePath ? currentFilePath.split("/").pop() || currentFilePath : "Untitled";
+  const title = isModified ? `\u25CF ${name11} \u2014 preview-md` : `${name11} \u2014 preview-md`;
+  invoke("set_window_title", { title }).catch(() => {
+  });
+}
 chrome2.onModeChange((mode) => {
   currentMode = mode;
 });
@@ -58648,7 +58734,14 @@ async function showThemePicker() {
     return;
   }
   const themes = await loadThemes();
-  openThemePicker(themes, async (slug) => {
+  openThemePicker(themes, async (slug, mode) => {
+    if (mode) {
+      await invoke("set_theme_pair", {
+        light: mode === "light" ? slug : null,
+        dark: mode === "dark" ? slug : null
+      });
+      await invoke("set_auto_switch", { autoSwitch: true });
+    }
     await applyTheme(slug);
   });
 }
@@ -58677,18 +58770,18 @@ async function loadRecentFiles() {
   try {
     const files = await invoke("get_recent_files");
     chrome2.setRecentFiles(files);
-    chrome2.onRecentFileSelect((path) => {
-      openFile(path);
-    });
-    chrome2.onClearRecentFiles(async () => {
-      await invoke("clear_recent_files");
-      chrome2.setRecentFiles([]);
-    });
   } catch (e) {
     console.error("loadRecentFiles failed:", e);
   }
 }
 loadRecentFiles();
+chrome2.onRecentFileSelect((path) => {
+  openFile(path);
+});
+chrome2.onClearRecentFiles(async () => {
+  await invoke("clear_recent_files");
+  chrome2.setRecentFiles([]);
+});
 async function applyTheme(slug) {
   try {
     const bundle = await invoke("set_theme", { slug });
@@ -58754,10 +58847,12 @@ async function newFile() {
   isModified = false;
   chrome2.setFilename("Untitled");
   chrome2.setModified(false);
+  updateTitle();
   if (!editor) {
     editor = await mountEditor(editorPane, (md) => {
       isModified = true;
       chrome2.setModified(true);
+      updateTitle();
       renderMarkdown(md);
     });
     attachScrollSync(editor.view, previewPane);
@@ -58773,10 +58868,12 @@ async function openFileDialog() {
       isModified = false;
       chrome2.setFilename(result.path.split("/").pop() || result.path);
       chrome2.setModified(false);
+      updateTitle();
       if (!editor) {
         editor = await mountEditor(editorPane, (md) => {
           isModified = true;
           chrome2.setModified(true);
+          updateTitle();
           renderMarkdown(md);
         });
         attachScrollSync(editor.view, previewPane);
@@ -58804,6 +58901,7 @@ async function saveCurrentFile() {
     await invoke("save_file", { path, contents: content11 });
     isModified = false;
     chrome2.setModified(false);
+    updateTitle();
   } catch (e) {
     console.error("Save failed:", e);
   }
@@ -58817,6 +58915,7 @@ async function openFile(path) {
     isModified = false;
     chrome2.setFilename(path.split("/").pop() || path);
     chrome2.setModified(false);
+    updateTitle();
     invoke("add_recent_file", { path }).catch(() => {
     });
     loadRecentFiles();
@@ -58824,6 +58923,7 @@ async function openFile(path) {
       editor = await mountEditor(editorPane, (md) => {
         isModified = true;
         chrome2.setModified(true);
+        updateTitle();
         renderMarkdown(md);
       });
       attachScrollSync(editor.view, previewPane);
@@ -58882,4 +58982,7 @@ invoke("get_initial_path").then((path) => {
   } else {
     showWelcomeScreen();
   }
+}).catch((e) => {
+  console.error("Failed to get initial path:", e);
+  showWelcomeScreen();
 });
