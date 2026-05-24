@@ -499,17 +499,19 @@
   background: var(--pmd-bg-elevated);
   border-bottom: 1px solid var(--pmd-border);
   display: flex;
-  align-items: center;
-  height: 44px;
-  padding: 0 var(--pmd-space-3);
-  gap: var(--pmd-space-3);
+  flex-direction: column;
+  height: auto;
+  min-height: 44px;
 }
 
 .pmd-toolbar {
   display: flex;
   align-items: center;
+  height: 44px;
+  padding: 0 var(--pmd-space-3);
+  gap: var(--pmd-space-3);
+  flex-shrink: 0;
   flex: 1;
-  gap: var(--pmd-space-2);
 }
 
 .pmd-title-section {
@@ -693,8 +695,9 @@
 
 #app-container {
   display: flex;
-  height: calc(100vh - 44px - 28px);
-  margin-top: calc(44px + 28px);
+  height: calc(100vh - 72px);
+  padding-top: 72px;
+  box-sizing: border-box;
   width: 100%;
 }
 
