@@ -1,0 +1,64 @@
+[meta]
+name = "Tokyo Night"
+slug = "tokyo-night"
+author = "Tokyo Night"
+mode = "dark"
+version = "1.0.0"
+
+[palette]
+# Surfaces
+bg = "#1a1b26"
+bg_elevated = "#24283b"
+fg = "#a9b1d6"
+fg_muted = "#565f89"
+accent = "#7aa2f7"
+link = "#7aa2f7"
+border = "#3b4261"
+
+# Editor
+selection_bg = "#3b4261"
+selection_fg = "#a9b1d6"
+focus_ring = "#7aa2f7"
+caret = "#a9b1d6"
+scrollbar_thumb = "#3b4261"
+scrollbar_track = "#1a1b26"
+
+# Markdown
+inline_code_bg = "#24283b"
+inline_code_fg = "#a9b1d6"
+code_block_bg = "#24283b"
+code_block_fg = "#a9b1d6"
+code_block_border = "#3b4261"
+blockquote_bar = "#3b4261"
+blockquote_fg = "#565f89"
+hr = "#3b4261"
+
+# Tables
+table_header_bg = "#24283b"
+table_row_alt = "#1a1b26"
+table_border = "#3b4261"
+
+# Admonitions
+admonition_note = "#7aa2f7"
+admonition_warn = "#e0af68"
+admonition_tip = "#9ece6a"
+
+# Kbd
+kbd_bg = "#24283b"
+kbd_fg = "#a9b1d6"
+kbd_border = "#3b4261"
+
+# Links
+link_hover = "#bb9af7"
+link_visited = "#bb9af7"
+image_caption = "#565f89"
+
+# Mermaid
+mermaid_primary = "#a9b1d6"
+mermaid_primary_text = "#a9b1d6"
+mermaid_secondary = "#565f89"
+mermaid_tertiary = "#3b4261"
+mermaid_line = "#565f89"
+
+# Syntax
+syntax = { keyword = "#bb9af7", string = "#9ece6a", number = "#ff9e64", function = "#7aa2f7", type = "#2ac3de", comment = "#565f89", operator = "#a9b1d6", punctuation = "#a9b1d6", variable = "#ff9e64", constant = "#2ac3de" }

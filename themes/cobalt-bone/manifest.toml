@@ -1,0 +1,64 @@
+[meta]
+name = "Cobalt Bone"
+slug = "cobalt-bone"
+author = "Cobalt Bone"
+mode = "light"
+version = "1.0.0"
+
+[palette]
+# Surfaces
+bg = "#faf8f5"
+bg_elevated = "#e8e4df"
+fg = "#2c2c2c"
+fg_muted = "#606060"
+accent = "#0045a5"
+link = "#003399"
+border = "#d8d4cf"
+
+# Editor
+selection_bg = "#2c2c2c"
+selection_fg = "#faf8f5"
+focus_ring = "#0045a5"
+caret = "#2c2c2c"
+scrollbar_thumb = "#d8d4cf"
+scrollbar_track = "#faf8f5"
+
+# Markdown
+inline_code_bg = "#e8e4df"
+inline_code_fg = "#2c2c2c"
+code_block_bg = "#e8e4df"
+code_block_fg = "#2c2c2c"
+code_block_border = "#d8d4cf"
+blockquote_bar = "#d8d4cf"
+blockquote_fg = "#606060"
+hr = "#d8d4cf"
+
+# Tables
+table_header_bg = "#e8e4df"
+table_row_alt = "#faf8f5"
+table_border = "#d8d4cf"
+
+# Admonitions
+admonition_note = "#0045a5"
+admonition_warn = "#b45a00"
+admonition_tip = "#006644"
+
+# Kbd
+kbd_bg = "#e8e4df"
+kbd_fg = "#2c2c2c"
+kbd_border = "#d8d4cf"
+
+# Links
+link_hover = "#0033aa"
+link_visited = "#5500aa"
+image_caption = "#606060"
+
+# Mermaid
+mermaid_primary = "#2c2c2c"
+mermaid_primary_text = "#2c2c2c"
+mermaid_secondary = "#606060"
+mermaid_tertiary = "#d8d4cf"
+mermaid_line = "#606060"
+
+# Syntax
+syntax = { keyword = "#003399", string = "#006644", number = "#0045a5", function = "#5500aa", type = "#b45a00", comment = "#606060", operator = "#2c2c2c", punctuation = "#2c2c2c", variable = "#b45a00", constant = "#0045a5" }

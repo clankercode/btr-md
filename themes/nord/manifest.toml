@@ -1,0 +1,64 @@
+[meta]
+name = "Nord"
+slug = "nord"
+author = "Arctic Ice Studio"
+mode = "dark"
+version = "1.0.0"
+
+[palette]
+# Surfaces
+bg = "#2e3440"
+bg_elevated = "#3b4252"
+fg = "#eceff4"
+fg_muted = "#d8dee9"
+accent = "#88c0d0"
+link = "#81a1c1"
+border = "#4c566a"
+
+# Editor
+selection_bg = "#4c566a"
+selection_fg = "#eceff4"
+focus_ring = "#88c0d0"
+caret = "#eceff4"
+scrollbar_thumb = "#4c566a"
+scrollbar_track = "#2e3440"
+
+# Markdown
+inline_code_bg = "#3b4252"
+inline_code_fg = "#eceff4"
+code_block_bg = "#3b4252"
+code_block_fg = "#eceff4"
+code_block_border = "#4c566a"
+blockquote_bar = "#4c566a"
+blockquote_fg = "#d8dee9"
+hr = "#4c566a"
+
+# Tables
+table_header_bg = "#3b4252"
+table_row_alt = "#2e3440"
+table_border = "#4c566a"
+
+# Admonitions
+admonition_note = "#88c0d0"
+admonition_warn = "#ebcb8b"
+admonition_tip = "#a3be8c"
+
+# Kbd
+kbd_bg = "#3b4252"
+kbd_fg = "#eceff4"
+kbd_border = "#4c566a"
+
+# Links
+link_hover = "#8fbcdb"
+link_visited = "#b48ead"
+image_caption = "#d8dee9"
+
+# Mermaid
+mermaid_primary = "#eceff4"
+mermaid_primary_text = "#eceff4"
+mermaid_secondary = "#d8dee9"
+mermaid_tertiary = "#4c566a"
+mermaid_line = "#d8dee9"
+
+# Syntax
+syntax = { keyword = "#81a1c1", string = "#a3be8c", number = "#8fbcdb", function = "#88c0d0", type = "#ebcb8b", comment = "#d8dee9", operator = "#eceff4", punctuation = "#eceff4", variable = "#ebcb8b", constant = "#8fbcdb" }

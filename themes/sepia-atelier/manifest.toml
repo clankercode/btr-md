@@ -1,0 +1,64 @@
+[meta]
+name = "Sepia Atelier"
+slug = "sepia-atelier"
+author = "Sepia Atelier"
+mode = "light"
+version = "1.0.0"
+
+[palette]
+# Surfaces
+bg = "#f4e8c1"
+bg_elevated = "#e6d9a8"
+fg = "#5e5e5e"
+fg_muted = "#8c8c8c"
+accent = "#b45a3c"
+link = "#a55a2b"
+border = "#d4c8a0"
+
+# Editor
+selection_bg = "#5e5e5e"
+selection_fg = "#f4e8c1"
+focus_ring = "#b45a3c"
+caret = "#5e5e5e"
+scrollbar_thumb = "#d4c8a0"
+scrollbar_track = "#f4e8c1"
+
+# Markdown
+inline_code_bg = "#e6d9a8"
+inline_code_fg = "#5e5e5e"
+code_block_bg = "#e6d9a8"
+code_block_fg = "#5e5e5e"
+code_block_border = "#d4c8a0"
+blockquote_bar = "#d4c8a0"
+blockquote_fg = "#8c8c8c"
+hr = "#d4c8a0"
+
+# Tables
+table_header_bg = "#e6d9a8"
+table_row_alt = "#f4e8c1"
+table_border = "#d4c8a0"
+
+# Admonitions
+admonition_note = "#b45a3c"
+admonition_warn = "#c49a2c"
+admonition_tip = "#6b8e23"
+
+# Kbd
+kbd_bg = "#e6d9a8"
+kbd_fg = "#5e5e5e"
+kbd_border = "#d4c8a0"
+
+# Links
+link_hover = "#8b3a1c"
+link_visited = "#8b5a2b"
+image_caption = "#8c8c8c"
+
+# Mermaid
+mermaid_primary = "#5e5e5e"
+mermaid_primary_text = "#5e5e5e"
+mermaid_secondary = "#8c8c8c"
+mermaid_tertiary = "#d4c8a0"
+mermaid_line = "#8c8c8c"
+
+# Syntax
+syntax = { keyword = "#a55a2b", string = "#6b8e23", number = "#c49a2c", function = "#b45a3c", type = "#8b5a2b", comment = "#8c8c8c", operator = "#5e5e5e", punctuation = "#5e5e5e", variable = "#c49a2c", constant = "#a55a2b" }

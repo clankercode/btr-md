@@ -1,0 +1,64 @@
+[meta]
+name = "Lavender Forest"
+slug = "lavender-forest"
+author = "Lavender Forest"
+mode = "dark"
+version = "1.0.0"
+
+[palette]
+# Surfaces
+bg = "#1e2128"
+bg_elevated = "#282c34"
+fg = "#c9d1d9"
+fg_muted = "#8b949e"
+accent = "#b4a7d6"
+link = "#d2a8ff"
+border = "#3c4249"
+
+# Editor
+selection_bg = "#3c4249"
+selection_fg = "#c9d1d9"
+focus_ring = "#b4a7d6"
+caret = "#c9d1d9"
+scrollbar_thumb = "#3c4249"
+scrollbar_track = "#1e2128"
+
+# Markdown
+inline_code_bg = "#282c34"
+inline_code_fg = "#c9d1d9"
+code_block_bg = "#282c34"
+code_block_fg = "#c9d1d9"
+code_block_border = "#3c4249"
+blockquote_bar = "#3c4249"
+blockquote_fg = "#8b949e"
+hr = "#3c4249"
+
+# Tables
+table_header_bg = "#282c34"
+table_row_alt = "#1e2128"
+table_border = "#3c4249"
+
+# Admonitions
+admonition_note = "#b4a7d6"
+admonition_warn = "#e3b341"
+admonition_tip = "#7ee787"
+
+# Kbd
+kbd_bg = "#282c34"
+kbd_fg = "#c9d1d9"
+kbd_border = "#3c4249"
+
+# Links
+link_hover = "#d2a8ff"
+link_visited = "#f778ba"
+image_caption = "#8b949e"
+
+# Mermaid
+mermaid_primary = "#c9d1d9"
+mermaid_primary_text = "#c9d1d9"
+mermaid_secondary = "#8b949e"
+mermaid_tertiary = "#3c4249"
+mermaid_line = "#8b949e"
+
+# Syntax
+syntax = { keyword = "#d2a8ff", string = "#7ee787", number = "#79c0ff", function = "#b4a7d6", type = "#ffa657", comment = "#8b949e", operator = "#c9d1d9", punctuation = "#c9d1d9", variable = "#ffa657", constant = "#79c0ff" }

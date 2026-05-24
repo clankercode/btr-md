@@ -1,0 +1,64 @@
+[meta]
+name = "Dracula"
+slug = "dracula"
+author = "Dracula Theme"
+mode = "dark"
+version = "1.0.0"
+
+[palette]
+# Surfaces
+bg = "#282a36"
+bg_elevated = "#383a4a"
+fg = "#f8f8f2"
+fg_muted = "#6272a4"
+accent = "#bd93f9"
+link = "#8be9fd"
+border = "#44475a"
+
+# Editor
+selection_bg = "#44475a"
+selection_fg = "#f8f8f2"
+focus_ring = "#bd93f9"
+caret = "#f8f8f2"
+scrollbar_thumb = "#44475a"
+scrollbar_track = "#282a36"
+
+# Markdown
+inline_code_bg = "#383a4a"
+inline_code_fg = "#f8f8f2"
+code_block_bg = "#383a4a"
+code_block_fg = "#f8f8f2"
+code_block_border = "#44475a"
+blockquote_bar = "#44475a"
+blockquote_fg = "#6272a4"
+hr = "#44475a"
+
+# Tables
+table_header_bg = "#383a4a"
+table_row_alt = "#282a36"
+table_border = "#44475a"
+
+# Admonitions
+admonition_note = "#bd93f9"
+admonition_warn = "#ffb86c"
+admonition_tip = "#50fa7b"
+
+# Kbd
+kbd_bg = "#383a4a"
+kbd_fg = "#f8f8f2"
+kbd_border = "#44475a"
+
+# Links
+link_hover = "#a4ffff"
+link_visited = "#ff79c6"
+image_caption = "#6272a4"
+
+# Mermaid
+mermaid_primary = "#f8f8f2"
+mermaid_primary_text = "#f8f8f2"
+mermaid_secondary = "#6272a4"
+mermaid_tertiary = "#44475a"
+mermaid_line = "#6272a4"
+
+# Syntax
+syntax = { keyword = "#bd93f9", string = "#f1fa8c", number = "#ff79c6", function = "#50fa7b", type = "#8be9fd", comment = "#6272a4", operator = "#f8f8f2", punctuation = "#f8f8f2", variable = "#ffb86c", constant = "#ff79c6" }

@@ -1,0 +1,64 @@
+[meta]
+name = "Solarized Light"
+slug = "solarized-light"
+author = "Ethan Schoonover"
+mode = "light"
+version = "1.0.0"
+
+[palette]
+# Surfaces
+bg = "#fdf6e3"
+bg_elevated = "#eee8d5"
+fg = "#657b83"
+fg_muted = "#93a1a1"
+accent = "#268bd2"
+link = "#268bd2"
+border = "#d6d0c4"
+
+# Editor
+selection_bg = "#1f2328"
+selection_fg = "#fdf6e3"
+focus_ring = "#268bd2"
+caret = "#657b83"
+scrollbar_thumb = "#d6d0c4"
+scrollbar_track = "#fdf6e3"
+
+# Markdown
+inline_code_bg = "#eee8d5"
+inline_code_fg = "#657b83"
+code_block_bg = "#eee8d5"
+code_block_fg = "#657b83"
+code_block_border = "#d6d0c4"
+blockquote_bar = "#d6d0c4"
+blockquote_fg = "#93a1a1"
+hr = "#d6d0c4"
+
+# Tables
+table_header_bg = "#eee8d5"
+table_row_alt = "#fdf6e3"
+table_border = "#d6d0c4"
+
+# Admonitions
+admonition_note = "#268bd2"
+admonition_warn = "#d4a000"
+admonition_tip = "#2ea043"
+
+# Kbd
+kbd_bg = "#eee8d5"
+kbd_fg = "#657b83"
+kbd_border = "#d6d0c4"
+
+# Links
+link_hover = "#1a5c9e"
+link_visited = "#8b5cf6"
+image_caption = "#93a1a1"
+
+# Mermaid
+mermaid_primary = "#657b83"
+mermaid_primary_text = "#657b83"
+mermaid_secondary = "#93a1a1"
+mermaid_tertiary = "#d6d0c4"
+mermaid_line = "#93a1a1"
+
+# Syntax
+syntax = { keyword = "#859900", string = "#2aa198", number = "#268bd2", function = "#6c71c4", type = "#cb4b16", comment = "#93a1a1", operator = "#657b83", punctuation = "#657b83", variable = "#cb4b16", constant = "#268bd2" }

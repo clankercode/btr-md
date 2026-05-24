@@ -1,0 +1,64 @@
+[meta]
+name = "Rose Pine Dawn"
+slug = "rose-pine-dawn"
+author = "Rosé Pine"
+mode = "light"
+version = "1.0.0"
+
+[palette]
+# Surfaces
+bg = "#faf4ed"
+bg_elevated = "#f2e9de"
+fg = "#575279"
+fg_muted = "#797593"
+accent = "#d7787d"
+link = "#9a446f"
+border = "#e8dfd5"
+
+# Editor
+selection_bg = "#575279"
+selection_fg = "#faf4ed"
+focus_ring = "#d7787d"
+caret = "#575279"
+scrollbar_thumb = "#e8dfd5"
+scrollbar_track = "#faf4ed"
+
+# Markdown
+inline_code_bg = "#f2e9de"
+inline_code_fg = "#575279"
+code_block_bg = "#f2e9de"
+code_block_fg = "#575279"
+code_block_border = "#e8dfd5"
+blockquote_bar = "#e8dfd5"
+blockquote_fg = "#797593"
+hr = "#e8dfd5"
+
+# Tables
+table_header_bg = "#f2e9de"
+table_row_alt = "#faf4ed"
+table_border = "#e8dfd5"
+
+# Admonitions
+admonition_note = "#d7787d"
+admonition_warn = "#e5a84b"
+admonition_tip = "#9ccfd8"
+
+# Kbd
+kbd_bg = "#f2e9de"
+kbd_fg = "#575279"
+kbd_border = "#e8dfd5"
+
+# Links
+link_hover = "#c45c70"
+link_visited = "#906f7d"
+image_caption = "#797593"
+
+# Mermaid
+mermaid_primary = "#575279"
+mermaid_primary_text = "#575279"
+mermaid_secondary = "#797593"
+mermaid_tertiary = "#e8dfd5"
+mermaid_line = "#797593"
+
+# Syntax
+syntax = { keyword = "#d7787d", string = "#9a446f", number = "#e5a84b", function = "#b78fc4", type = "#c45c70", comment = "#797593", operator = "#575279", punctuation = "#575279", variable = "#e5a84b", constant = "#9a446f" }

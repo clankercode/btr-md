@@ -1,0 +1,64 @@
+[meta]
+name = "Solarized Dark"
+slug = "solarized-dark"
+author = "Ethan Schoonover"
+mode = "dark"
+version = "1.0.0"
+
+[palette]
+# Surfaces
+bg = "#002b36"
+bg_elevated = "#073642"
+fg = "#839496"
+fg_muted = "#586e75"
+accent = "#268bd2"
+link = "#268bd2"
+border = "#0a4450"
+
+# Editor
+selection_bg = "#073642"
+selection_fg = "#839496"
+focus_ring = "#268bd2"
+caret = "#839496"
+scrollbar_thumb = "#0a4450"
+scrollbar_track = "#002b36"
+
+# Markdown
+inline_code_bg = "#073642"
+inline_code_fg = "#839496"
+code_block_bg = "#073642"
+code_block_fg = "#839496"
+code_block_border = "#0a4450"
+blockquote_bar = "#0a4450"
+blockquote_fg = "#586e75"
+hr = "#0a4450"
+
+# Tables
+table_header_bg = "#073642"
+table_row_alt = "#002b36"
+table_border = "#0a4450"
+
+# Admonitions
+admonition_note = "#268bd2"
+admonition_warn = "#b58900"
+admonition_tip = "#2ea043"
+
+# Kbd
+kbd_bg = "#073642"
+kbd_fg = "#839496"
+kbd_border = "#0a4450"
+
+# Links
+link_hover = "#4da6d9"
+link_visited = "#9b59b6"
+image_caption = "#586e75"
+
+# Mermaid
+mermaid_primary = "#839496"
+mermaid_primary_text = "#839496"
+mermaid_secondary = "#586e75"
+mermaid_tertiary = "#0a4450"
+mermaid_line = "#586e75"
+
+# Syntax
+syntax = { keyword = "#859900", string = "#2aa198", number = "#268bd2", function = "#6c71c4", type = "#cb4b16", comment = "#586e75", operator = "#839496", punctuation = "#839496", variable = "#cb4b16", constant = "#268bd2" }

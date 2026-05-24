@@ -1,0 +1,64 @@
+[meta]
+name = "Sky Hero"
+slug = "sky-hero"
+author = "Sky Hero"
+mode = "dark"
+version = "1.0.0"
+
+[palette]
+# Surfaces
+bg = "#0d1b2a"
+bg_elevated = "#1b263b"
+fg = "#e0e1dd"
+fg_muted = "#778da9"
+accent = "#00b4d8"
+link = "#48cae4"
+border = "#23374d"
+
+# Editor
+selection_bg = "#23374d"
+selection_fg = "#e0e1dd"
+focus_ring = "#00b4d8"
+caret = "#e0e1dd"
+scrollbar_thumb = "#23374d"
+scrollbar_track = "#0d1b2a"
+
+# Markdown
+inline_code_bg = "#1b263b"
+inline_code_fg = "#e0e1dd"
+code_block_bg = "#1b263b"
+code_block_fg = "#e0e1dd"
+code_block_border = "#23374d"
+blockquote_bar = "#23374d"
+blockquote_fg = "#778da9"
+hr = "#23374d"
+
+# Tables
+table_header_bg = "#1b263b"
+table_row_alt = "#0d1b2a"
+table_border = "#23374d"
+
+# Admonitions
+admonition_note = "#00b4d8"
+admonition_warn = "#e9c46a"
+admonition_tip = "#2a9d8f"
+
+# Kbd
+kbd_bg = "#1b263b"
+kbd_fg = "#e0e1dd"
+kbd_border = "#23374d"
+
+# Links
+link_hover = "#90e0ef"
+link_visited = "#00b4d8"
+image_caption = "#778da9"
+
+# Mermaid
+mermaid_primary = "#e0e1dd"
+mermaid_primary_text = "#e0e1dd"
+mermaid_secondary = "#778da9"
+mermaid_tertiary = "#23374d"
+mermaid_line = "#778da9"
+
+# Syntax
+syntax = { keyword = "#48cae4", string = "#00b4d8", number = "#e9c46a", function = "#00b4d8", type = "#f4a261", comment = "#778da9", operator = "#e0e1dd", punctuation = "#e0e1dd", variable = "#e9c46a", constant = "#48cae4" }

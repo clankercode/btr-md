@@ -1,0 +1,64 @@
+[meta]
+name = "Rust Warden"
+slug = "rust-warden"
+author = "Rust Warden"
+mode = "dark"
+version = "1.0.0"
+
+[palette]
+# Surfaces
+bg = "#1a1410"
+bg_elevated = "#2a2018"
+fg = "#e8c8a0"
+fg_muted = "#b09070"
+accent = "#d4591a"
+link = "#e87040"
+border = "#3a2a1a"
+
+# Editor
+selection_bg = "#3a2a1a"
+selection_fg = "#e8c8a0"
+focus_ring = "#d4591a"
+caret = "#e8c8a0"
+scrollbar_thumb = "#3a2a1a"
+scrollbar_track = "#1a1410"
+
+# Markdown
+inline_code_bg = "#2a2018"
+inline_code_fg = "#e8c8a0"
+code_block_bg = "#2a2018"
+code_block_fg = "#e8c8a0"
+code_block_border = "#3a2a1a"
+blockquote_bar = "#3a2a1a"
+blockquote_fg = "#b09070"
+hr = "#3a2a1a"
+
+# Tables
+table_header_bg = "#2a2018"
+table_row_alt = "#1a1410"
+table_border = "#3a2a1a"
+
+# Admonitions
+admonition_note = "#d4591a"
+admonition_warn = "#e8a040"
+admonition_tip = "#8bc34a"
+
+# Kbd
+kbd_bg = "#2a2018"
+kbd_fg = "#e8c8a0"
+kbd_border = "#3a2a1a"
+
+# Links
+link_hover = "#f09050"
+link_visited = "#c04030"
+image_caption = "#b09070"
+
+# Mermaid
+mermaid_primary = "#e8c8a0"
+mermaid_primary_text = "#e8c8a0"
+mermaid_secondary = "#b09070"
+mermaid_tertiary = "#3a2a1a"
+mermaid_line = "#b09070"
+
+# Syntax
+syntax = { keyword = "#e87040", string = "#8bc34a", number = "#e8a040", function = "#d4591a", type = "#f0c080", comment = "#b09070", operator = "#e8c8a0", punctuation = "#e8c8a0", variable = "#e8a040", constant = "#e8c8a0" }

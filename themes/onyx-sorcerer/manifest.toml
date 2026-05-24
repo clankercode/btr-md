@@ -1,0 +1,64 @@
+[meta]
+name = "Onyx Sorcerer"
+slug = "onyx-sorcerer"
+author = "Onyx Sorcerer"
+mode = "dark"
+version = "1.0.0"
+
+[palette]
+# Surfaces
+bg = "#353535"
+bg_elevated = "#454545"
+fg = "#e0e0e0"
+fg_muted = "#a0a0a0"
+accent = "#c9a227"
+link = "#e6c229"
+border = "#505050"
+
+# Editor
+selection_bg = "#505050"
+selection_fg = "#e0e0e0"
+focus_ring = "#c9a227"
+caret = "#e0e0e0"
+scrollbar_thumb = "#505050"
+scrollbar_track = "#353535"
+
+# Markdown
+inline_code_bg = "#454545"
+inline_code_fg = "#e0e0e0"
+code_block_bg = "#454545"
+code_block_fg = "#e0e0e0"
+code_block_border = "#505050"
+blockquote_bar = "#505050"
+blockquote_fg = "#a0a0a0"
+hr = "#505050"
+
+# Tables
+table_header_bg = "#454545"
+table_row_alt = "#353535"
+table_border = "#505050"
+
+# Admonitions
+admonition_note = "#c9a227"
+admonition_warn = "#e6c229"
+admonition_tip = "#7ec17e"
+
+# Kbd
+kbd_bg = "#454545"
+kbd_fg = "#e0e0e0"
+kbd_border = "#505050"
+
+# Links
+link_hover = "#f0d84a"
+link_visited = "#c9a227"
+image_caption = "#a0a0a0"
+
+# Mermaid
+mermaid_primary = "#e0e0e0"
+mermaid_primary_text = "#e0e0e0"
+mermaid_secondary = "#a0a0a0"
+mermaid_tertiary = "#505050"
+mermaid_line = "#a0a0a0"
+
+# Syntax
+syntax = { keyword = "#e6c229", string = "#7ec17e", number = "#e6a229", function = "#c9a227", type = "#e69629", comment = "#a0a0a0", operator = "#e0e0e0", punctuation = "#e0e0e0", variable = "#e6a229", constant = "#79c0ff" }

@@ -1,0 +1,64 @@
+[meta]
+name = "Rose Melancholy"
+slug = "rose-melancholy"
+author = "Rose Melancholy"
+mode = "dark"
+version = "1.0.0"
+
+[palette]
+# Surfaces
+bg = "#1f1a1d"
+bg_elevated = "#2d262b"
+fg = "#e8b4b8"
+fg_muted = "#a08088"
+accent = "#e8a0a8"
+link = "#e87080"
+border = "#3d3539"
+
+# Editor
+selection_bg = "#3d3539"
+selection_fg = "#e8b4b8"
+focus_ring = "#e8a0a8"
+caret = "#e8b4b8"
+scrollbar_thumb = "#3d3539"
+scrollbar_track = "#1f1a1d"
+
+# Markdown
+inline_code_bg = "#2d262b"
+inline_code_fg = "#e8b4b8"
+code_block_bg = "#2d262b"
+code_block_fg = "#e8b4b8"
+code_block_border = "#3d3539"
+blockquote_bar = "#3d3539"
+blockquote_fg = "#a08088"
+hr = "#3d3539"
+
+# Tables
+table_header_bg = "#2d262b"
+table_row_alt = "#1f1a1d"
+table_border = "#3d3539"
+
+# Admonitions
+admonition_note = "#e8a0a8"
+admonition_warn = "#e8b070"
+admonition_tip = "#90c090"
+
+# Kbd
+kbd_bg = "#2d262b"
+kbd_fg = "#e8b4b8"
+kbd_border = "#3d3539"
+
+# Links
+link_hover = "#f0b0b8"
+link_visited = "#d06090"
+image_caption = "#a08088"
+
+# Mermaid
+mermaid_primary = "#e8b4b8"
+mermaid_primary_text = "#e8b4b8"
+mermaid_secondary = "#a08088"
+mermaid_tertiary = "#3d3539"
+mermaid_line = "#a08088"
+
+# Syntax
+syntax = { keyword = "#e8a0a8", string = "#90c090", number = "#f0a0a8", function = "#e8a0a8", type = "#e8b070", comment = "#a08088", operator = "#e8b4b8", punctuation = "#e8b4b8", variable = "#f0a0a8", constant = "#e87080" }

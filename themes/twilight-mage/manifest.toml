@@ -1,0 +1,64 @@
+[meta]
+name = "Twilight Mage"
+slug = "twilight-mage"
+author = "Twilight Mage"
+mode = "dark"
+version = "1.0.0"
+
+[palette]
+# Surfaces
+bg = "#1a1b2e"
+bg_elevated = "#2a2b4a"
+fg = "#c0c5e8"
+fg_muted = "#7878a6"
+accent = "#a777ed"
+link = "#c090f0"
+border = "#3d3d6b"
+
+# Editor
+selection_bg = "#3d3d6b"
+selection_fg = "#c0c5e8"
+focus_ring = "#a777ed"
+caret = "#c0c5e8"
+scrollbar_thumb = "#3d3d6b"
+scrollbar_track = "#1a1b2e"
+
+# Markdown
+inline_code_bg = "#2a2b4a"
+inline_code_fg = "#c0c5e8"
+code_block_bg = "#2a2b4a"
+code_block_fg = "#c0c5e8"
+code_block_border = "#3d3d6b"
+blockquote_bar = "#3d3d6b"
+blockquote_fg = "#7878a6"
+hr = "#3d3d6b"
+
+# Tables
+table_header_bg = "#2a2b4a"
+table_row_alt = "#1a1b2e"
+table_border = "#3d3d6b"
+
+# Admonitions
+admonition_note = "#a777ed"
+admonition_warn = "#d4a84b"
+admonition_tip = "#7dcea0"
+
+# Kbd
+kbd_bg = "#2a2b4a"
+kbd_fg = "#c0c5e8"
+kbd_border = "#3d3d6b"
+
+# Links
+link_hover = "#bb99f5"
+link_visited = "#d68bdf"
+image_caption = "#7878a6"
+
+# Mermaid
+mermaid_primary = "#c0c5e8"
+mermaid_primary_text = "#c0c5e8"
+mermaid_secondary = "#7878a6"
+mermaid_tertiary = "#3d3d6b"
+mermaid_line = "#7878a6"
+
+# Syntax
+syntax = { keyword = "#a777ed", string = "#c090f0", number = "#f0b080", function = "#7aa2f7", type = "#f0c080", comment = "#7878a6", operator = "#c0c5e8", punctuation = "#c0c5e8", variable = "#f0b080", constant = "#f0c080" }
