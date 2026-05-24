@@ -211,6 +211,14 @@ function closePicker(): void {
 function handlePickerKeydown(e: KeyboardEvent): void {
   if (!currentState) return;
 
+  if (e.key === '/') {
+    e.preventDefault();
+    const searchInput = document.getElementById('theme-filter-input') as HTMLInputElement;
+    searchInput?.focus();
+    searchInput?.select();
+    return;
+  }
+
   switch (e.key) {
     case 'ArrowDown':
       e.preventDefault();
