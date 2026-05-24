@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <name>preview-md</name>
+  <summary>Best-in-class markdown preview for Linux</summary>
+  <description>
+    <p>preview-md is a Linux-first markdown preview application with GFM support,
+    mermaid diagrams, KaTeX math, syntax highlighting, and 17 bundled themes.</p>
+  </description>
+  <launchable type="desktop-id">dev.previewmd.App.desktop</launchable>
+  <url type="homepage">https://github.com/preview-md/preview-md</url>
+  <provides>
+    <binary>preview-md</binary>
+  </provides>
+</component>

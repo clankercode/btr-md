@@ -3,6 +3,9 @@ import { createChrome, type Mode } from './chrome.js';
 import { createHotkeyHandler, createOverlay } from './hotkeys.js';
 import { attachScrollSync } from './scroll_sync.js';
 import { markAllNodes, rerenderForThemeChange } from './theme_apply.js';
+import { openThemePicker, isPickerOpen, closeThemePicker, type ThemeInfo } from './picker.js';
+
+import './picker.css';
 
 const { invoke } = window.__TAURI__.core;
 const { listen } = window.__TAURI__.event;
@@ -39,6 +42,21 @@ let currentMode: Mode = 'split';
 chrome.onModeChange((mode) => {
   currentMode = mode;
 });
+
+async function loadRecentFiles() {
+  try {
+    const files = await invoke<string[]>('get_recent_files');
+    chrome.setRecentFiles(files);
+  } catch (e) {
+    console.error('loadRecentFiles failed:', e);
+  }
+}
+
+chrome.onRecentFileSelect((path) => {
+  openFile(path);
+});
+
+loadRecentFiles();
 
 async function applyTheme(slug: string) {
   try {
@@ -107,6 +125,9 @@ async function openFile(path: string) {
     isModified = false;
     chrome.setFilename(path.split('/').pop() || path);
     chrome.setModified(false);
+
+    invoke('add_recent_file', { path }).catch(() => {});
+    loadRecentFiles();
 
     if (!editor) {
       editor = await mountEditor(editorPane, (md) => {

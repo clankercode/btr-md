@@ -13,6 +13,7 @@ export interface ChromeInstance {
   setModified: (modified: boolean) => void;
   setStatus: (text: string) => void;
   onModeChange: (handler: (mode: Mode) => void) => void;
+  onThemePickerClick: (handler: () => void) => void;
   destroy: () => void;
 }
 
@@ -38,6 +39,48 @@ export function createChrome(parent: HTMLElement): ChromeInstance {
   titleSection.appendChild(modifiedDot);
   titleSection.appendChild(filenameEl);
 
+  const fileMenuBtn = document.createElement('button');
+  fileMenuBtn.className = 'pmd-file-menu-btn';
+  fileMenuBtn.textContent = 'File';
+  fileMenuBtn.type = 'button';
+
+  const fileDropdown = document.createElement('div');
+  fileDropdown.className = 'pmd-file-dropdown';
+  fileDropdown.hidden = true;
+
+  const recentHeader = document.createElement('div');
+  recentHeader.className = 'pmd-dropdown-header';
+  recentHeader.textContent = 'Recent Files';
+  fileDropdown.appendChild(recentHeader);
+
+  const recentList = document.createElement('div');
+  recentList.className = 'pmd-recent-list';
+  fileDropdown.appendChild(recentList);
+
+  const clearBtn = document.createElement('button');
+  clearBtn.className = 'pmd-dropdown-clear';
+  clearBtn.textContent = 'Clear Recent Files';
+  clearBtn.type = 'button';
+  fileDropdown.appendChild(clearBtn);
+
+  document.addEventListener('click', (e) => {
+    if (!fileMenuBtn.contains(e.target as Node) && !fileDropdown.contains(e.target as Node)) {
+      fileDropdown.hidden = true;
+    }
+  });
+
+  fileMenuBtn.addEventListener('click', () => {
+    fileDropdown.hidden = !fileDropdown.hidden;
+  });
+
+  let recentFileHandlers: ((path: string) => void)[] = [];
+  let clearHandlers: (() => void)[] = [];
+
+  clearBtn.addEventListener('click', () => {
+    clearHandlers.forEach((h) => h());
+    fileDropdown.hidden = true;
+  });
+
   const modeGroup = document.createElement('div');
   modeGroup.className = 'pmd-mode-group';
 
@@ -57,6 +100,8 @@ export function createChrome(parent: HTMLElement): ChromeInstance {
     return btn;
   });
 
+  toolbar.appendChild(fileMenuBtn);
+  toolbar.appendChild(fileDropdown);
   toolbar.appendChild(titleSection);
   toolbar.appendChild(modeGroup);
 
@@ -106,8 +151,34 @@ export function createChrome(parent: HTMLElement): ChromeInstance {
     setStatus: (text: string) => {
       statusText.textContent = text;
     },
+    setRecentFiles: (files: string[]) => {
+      recentList.innerHTML = '';
+      if (files.length === 0) {
+        const empty = document.createElement('div');
+        empty.className = 'pmd-recent-empty';
+        empty.textContent = 'No recent files';
+        recentList.appendChild(empty);
+      } else {
+        files.forEach((file) => {
+          const item = document.createElement('button');
+          item.className = 'pmd-recent-item';
+          item.type = 'button';
+          const name = file.split('/').pop() || file;
+          item.textContent = name;
+          item.title = file;
+          item.addEventListener('click', () => {
+            recentFileHandlers.forEach((h) => h(file));
+            fileDropdown.hidden = true;
+          });
+          recentList.appendChild(item);
+        });
+      }
+    },
     onModeChange: (handler: (mode: Mode) => void) => {
       modeHandlers.push(handler);
+    },
+    onRecentFileSelect: (handler: (path: string) => void) => {
+      recentFileHandlers.push(handler);
     },
     destroy: () => {
       container.remove();

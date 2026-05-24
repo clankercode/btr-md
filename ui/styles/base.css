@@ -146,6 +146,93 @@ body[data-mode="preview"] #preview-pane {
   text-overflow: ellipsis;
 }
 
+.pmd-file-menu-btn {
+  border: none;
+  background: transparent;
+  color: var(--pmd-fg);
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.pmd-file-menu-btn:hover {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.pmd-file-dropdown {
+  position: absolute;
+  top: 40px;
+  left: 0.75rem;
+  background: var(--pmd-bg-elevated);
+  border: 1px solid var(--pmd-border);
+  border-radius: 6px;
+  min-width: 220px;
+  max-width: 320px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 100;
+  overflow: hidden;
+}
+
+.pmd-dropdown-header {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--pmd-fg-muted);
+  padding: 0.5rem 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--pmd-border);
+}
+
+.pmd-recent-list {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.pmd-recent-empty {
+  padding: 0.75rem;
+  font-size: 0.875rem;
+  color: var(--pmd-fg-muted);
+  font-style: italic;
+}
+
+.pmd-recent-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: transparent;
+  color: var(--pmd-fg);
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pmd-recent-item:hover {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.pmd-dropdown-clear {
+  display: block;
+  width: 100%;
+  text-align: center;
+  border: none;
+  border-top: 1px solid var(--pmd-border);
+  background: transparent;
+  color: var(--pmd-fg-muted);
+  padding: 0.5rem 0.75rem;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.pmd-dropdown-clear:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--pmd-fg);
+}
+
 .pmd-mode-group {
   display: flex;
   gap: 2px;
