@@ -2,6 +2,7 @@ import { mountEditor } from './editor.js';
 import { createChrome, type Mode } from './chrome.js';
 import { createHotkeyHandler, createOverlay } from './hotkeys.js';
 import { attachScrollSync } from './scroll_sync.js';
+import { markAllNodes, rerenderForThemeChange } from './theme_apply.js';
 
 const { invoke } = window.__TAURI__.core;
 const { listen } = window.__TAURI__.event;
@@ -39,6 +40,24 @@ chrome.onModeChange((mode) => {
   currentMode = mode;
 });
 
+async function applyTheme(slug: string) {
+  try {
+    const bundle = await invoke<{ css: string; mermaid_vars: Record<string, string> }>('set_theme', { slug });
+    let style = document.getElementById('pmd-theme-styles') as HTMLStyleElement;
+    if (!style) {
+      style = document.createElement('style');
+      style.id = 'pmd-theme-styles';
+      document.head.appendChild(style);
+    }
+    style.textContent = bundle.css;
+    requestAnimationFrame(() => {
+      rerenderForThemeChange(previewPane, { vars: bundle.mermaid_vars });
+    });
+  } catch (e) {
+    console.error('applyTheme failed:', e);
+  }
+}
+
 function showOverlay() {
   hotkeyOverlay.hidden = false;
 }
@@ -64,6 +83,7 @@ async function processRenderQueue() {
       markdown: item.markdown,
     });
     previewPane.innerHTML = result.html;
+    markAllNodes(previewPane);
     item.resolve();
   } catch (e) {
     item.reject(e);
@@ -122,7 +142,7 @@ listen('system_theme_changed', async () => {
       const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
       const themeSlug = isDark ? settings.dark_theme : settings.light_theme;
       if (themeSlug) {
-        await invoke('set_theme', { slug: themeSlug });
+        await applyTheme(themeSlug);
       }
     }
   } catch (e) {

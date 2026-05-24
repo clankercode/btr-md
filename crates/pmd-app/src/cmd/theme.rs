@@ -117,6 +117,54 @@ pub fn set_theme(slug: String) -> Result<ThemeBundle, String> {
     for (k, v) in &theme.palette.syntax {
         css_vars.push_str(&format!("  --pmd-syntax-{k}: {v};\n"));
     }
+
+    let derive_mermaid = |key: &str, fallback: Option<&str>| -> Option<String> {
+        if theme.palette.colours.contains_key(key) {
+            return None;
+        }
+        fallback.map(|s| s.to_string())
+    };
+
+    let bg = theme.palette.colours.get("bg");
+    let bg_elevated = theme.palette.colours.get("bg_elevated");
+    let fg = theme.palette.colours.get("fg");
+    let accent = theme.palette.colours.get("accent");
+
+    if let (Some(bg), Some(bg_elevated), Some(fg), Some(accent)) = (bg, bg_elevated, fg, accent) {
+        if let (Some(bg_rgb), Some(fg_rgb), Some(accent_rgb)) = (
+            pmd_core::theme::mix::parse_hex(bg),
+            pmd_core::theme::mix::parse_hex(fg),
+            pmd_core::theme::mix::parse_hex(accent),
+        ) {
+            if let Some(v) = derive_mermaid("mermaid_edge_label_bg", Some(bg_elevated)) {
+                css_vars.push_str(&format!("  --pmd-mermaid_edge_label_bg: {};\n", v));
+            }
+            if derive_mermaid("mermaid_cluster_bg", None).is_some() {
+                let mixed = pmd_core::theme::mix::mix(bg_rgb, fg_rgb, 0.04);
+                css_vars.push_str(&format!(
+                    "  --pmd-mermaid_cluster_bg: {};\n",
+                    pmd_core::theme::mix::to_hex(mixed)
+                ));
+            }
+            if let Some(v) = derive_mermaid("mermaid_note_bg", Some(bg_elevated)) {
+                css_vars.push_str(&format!("  --pmd-mermaid_note_bg: {};\n", v));
+            }
+            if let Some(v) = derive_mermaid("mermaid_note_border", Some(accent)) {
+                css_vars.push_str(&format!("  --pmd-mermaid_note_border: {};\n", v));
+            }
+            if derive_mermaid("mermaid_actor_bg", None).is_some() {
+                let mixed = pmd_core::theme::mix::mix(accent_rgb, bg_rgb, 0.30);
+                css_vars.push_str(&format!(
+                    "  --pmd-mermaid_actor_bg: {};\n",
+                    pmd_core::theme::mix::to_hex(mixed)
+                ));
+            }
+            if derive_mermaid("mermaid_error", Some("#e77878")).is_some() {
+                css_vars.push_str("  --pmd-mermaid_error: #e77878;\n");
+            }
+        }
+    }
+
     css_vars.push_str("}\n");
     css_vars.push_str(&extra_css);
 

@@ -5,6 +5,7 @@ export interface EditorInstance {
   setValue: (md: string) => void;
   focus: () => void;
   destroy: () => void;
+  view: EditorView;
 }
 
 export async function mountEditor(
@@ -58,5 +59,6 @@ export async function mountEditor(
     },
     focus: () => view.focus(),
     destroy: () => view.destroy(),
+    view,
   };
 }
