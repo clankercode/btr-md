@@ -1,4 +1,5 @@
 use pmd_app_lib::{cli, cmd, path_scope::PathScope, AppState};
+use tauri::Emitter;
 
 fn main() {
     let scope = PathScope::new();
@@ -19,8 +20,10 @@ fn main() {
             cmd::settings::get_recent_files,
             cmd::settings::add_recent_file,
         ])
-        .setup(move |_app| {
-            if let Some(_p) = initial.path {}
+        .setup(move |app| {
+            if let Some(ref p) = initial.path {
+                let _ = app.emit("open-file", p.to_string_lossy().to_string());
+            }
             Ok(())
         })
         .run(tauri::generate_context!())

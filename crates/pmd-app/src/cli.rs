@@ -16,11 +16,17 @@ pub fn parse_argv(scope: &crate::path_scope::PathScope) -> InitialOpen {
     }
 
     if paths.len() > 1 {
+        let exe = match std::env::current_exe() {
+            Ok(e) => e,
+            Err(e) => {
+                eprintln!("failed to get executable path: {}", e);
+                std::process::exit(1);
+            }
+        };
         for p in &paths {
-            std::process::Command::new(std::env::current_exe().unwrap())
-                .arg(p)
-                .spawn()
-                .ok();
+            if let Err(e) = std::process::Command::new(&exe).arg(p).spawn() {
+                eprintln!("failed to spawn instance for {}: {}", p.display(), e);
+            }
         }
         std::process::exit(0);
     }
