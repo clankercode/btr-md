@@ -33,6 +33,7 @@ fn main() {
         .setup(move |app| {
             if let Some(ref p) = initial.path {
                 let _ = app.emit("open-file", p.to_string_lossy().to_string());
+                let _ = FileWatcher::new(app.handle().clone(), p.clone());
             }
             Ok(())
         })

@@ -3,6 +3,7 @@ use std::path::PathBuf;
 use std::sync::mpsc::channel;
 use tauri::{AppHandle, Emitter};
 
+#[allow(dead_code)]
 pub struct FileWatcher {
     watcher: RecommendedWatcher,
 }
