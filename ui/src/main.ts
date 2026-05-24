@@ -60,7 +60,7 @@ document.body.appendChild(appContainer);
 
 const chrome = createChrome(document.body);
 const hotkeyOverlay = createOverlay();
-hotkeyOverlay.hidden = true;
+hotkeyOverlay.style.display = 'none';
 document.body.appendChild(hotkeyOverlay);
 
 document.body.addEventListener('dragover', (e) => {
@@ -216,7 +216,7 @@ async function applyTheme(slug: string) {
 }
 
 function showOverlay() {
-  hotkeyOverlay.hidden = false;
+  hotkeyOverlay.style.display = 'flex';
 }
 
 const setupHotkeys = createHotkeyHandler(
@@ -365,7 +365,32 @@ function getCurrentMarkdown(): string {
 
 listen<string>('open-file', (event) => {
   openFile(event.payload);
-});
+}).catch(() => {});
+
+listen('system_theme_changed', async () => {
+  try {
+    const settings = await invoke<{
+      auto_switch: boolean;
+      light_theme: string | null;
+      dark_theme: string | null;
+    }>('get_settings');
+    if (settings.auto_switch && (settings.light_theme || settings.dark_theme)) {
+      const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const themeSlug = isDark ? settings.dark_theme : settings.light_theme;
+      if (themeSlug) {
+        await applyTheme(themeSlug);
+      }
+    }
+  } catch (e) {
+    console.error('Auto-switch failed:', e);
+  }
+}).catch(() => {});
+
+listen<string>('mode-change', (event) => {
+  const mode = event.payload as Mode;
+  chrome.setMode(mode);
+  currentMode = mode;
+}).catch(() => {});
 
 listen('system_theme_changed', async () => {
   try {

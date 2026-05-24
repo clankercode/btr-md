@@ -37,24 +37,26 @@ export function createOverlay(): HTMLElement {
         <tr><td><kbd>Ctrl</kbd> + <kbd>/</kbd></td><td>Show this overlay</td></tr>
         <tr><td><kbd>Esc</kbd></td><td>Close overlay</td></tr>
       </table>
-      <button class="pmd-overlay-close">Close</button>
+      <button type="button" class="pmd-overlay-close">Close</button>
     </div>
   `;
 
   const closeBtn = overlay.querySelector('.pmd-overlay-close') as HTMLButtonElement;
-  closeBtn.addEventListener('click', () => {
-    overlay.hidden = true;
+  closeBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    overlay.style.display = 'none';
   });
 
   overlay.addEventListener('click', (e) => {
     if (e.target === overlay) {
-      overlay.hidden = true;
+      overlay.style.display = 'none';
     }
   });
 
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && !overlay.hidden) {
-      overlay.hidden = true;
+    if (e.key === 'Escape' && overlay.style.display !== 'none') {
+      overlay.style.display = 'none';
     }
   });
 

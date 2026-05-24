@@ -1,5 +1,4 @@
 import katex from 'katex';
-import 'katex/dist/katex.min.css';
 
 export function renderMathNode(el: HTMLElement) {
   const source = el.dataset.mathSource ?? el.textContent ?? "";

@@ -3,7 +3,10 @@ default:
 
 # dev
 run:
-    cargo run -p pmd-app -j 2
+    just build-ui && cargo run -p pmd-app -j 2
+
+build-ui:
+    cd ui && npx esbuild src/main.ts --bundle --outfile=dist/bundle.js --format=esm --platform=browser --external:katex --loader:.css=file
 
 watch:
     cargo watch -j 2 -x 'run -p pmd-app -j 2'
