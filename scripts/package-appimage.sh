@@ -83,17 +83,18 @@ install -Dm644 "$ROOT_DIR/packaging/linux/preview-md.1" \
 cp -a "$ROOT_DIR/themes" "$APPDIR/usr/share/preview-md/themes"
 install_icons
 
+install -Dm755 "$ROOT_DIR/target/release/preview-md" "$APPDIR/usr/bin/preview-md"
+
 mkdir -p "$DIST_DIR"
 rm -f "$OUT"
 echo "[appimage] preparing AppDir with linuxdeploy"
 APPIMAGE_EXTRACT_AND_RUN=1 \
 "$LINUXDEPLOY" \
     --appdir "$APPDIR" \
+    --executable "$APPDIR/usr/bin/preview-md" \
     --desktop-file "$APPDIR/usr/share/applications/dev.previewmd.App.desktop" \
     --icon-file "$APPDIR/usr/share/icons/hicolor/scalable/apps/dev.previewmd.App.svg" \
     --custom-apprun "$APPRUN"
-
-install -Dm755 "$ROOT_DIR/target/release/preview-md" "$APPDIR/usr/bin/preview-md"
 
 echo "[appimage] running linuxdeploy appimage plugin"
 LINUXDEPLOY_OUTPUT_VERSION="${VERSION:-0.1.0}" \
