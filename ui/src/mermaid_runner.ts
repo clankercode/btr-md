@@ -40,17 +40,12 @@ export async function renderMermaidNode(target: HTMLElement) {
   }
 }
 
+// Only render nodes that `markMermaidNodes` flagged. The sanitizer strips the
+// `pmd-mermaid` class and `data-mermaid-source` attribute from raw HTML, so
+// reaching this collection requires the trusted emitter path
+// (`pre > code.language-mermaid` upgraded by `markMermaidNodes`).
 function collectMermaidTargets(root: HTMLElement): HTMLElement[] {
-  const targets = new Set<HTMLElement>();
-  root.querySelectorAll<HTMLElement>(".pmd-mermaid[data-mermaid-source]").forEach((el) => {
-    targets.add(el);
-  });
-  root.querySelectorAll<HTMLElement>("pre > code.language-mermaid").forEach((code) => {
-    if (code.parentElement) {
-      targets.add(code.parentElement);
-    }
-  });
-  return Array.from(targets);
+  return Array.from(root.querySelectorAll<HTMLElement>(".pmd-mermaid[data-mermaid-source]"));
 }
 
 function ensureMermaidContainer(target: HTMLElement): HTMLElement {

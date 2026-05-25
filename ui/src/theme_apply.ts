@@ -11,11 +11,24 @@ export function markMermaidNodes(container: HTMLElement) {
   });
 }
 
+// The sanitizer strips `pmd-math`, `math-inline`, and `math-display` class
+// tokens and `data-math-source` attributes from any HTML it processes. The
+// emitter-stable trusted entry points are `code.language-math` (inline) and
+// `code.math-block` (display). Only nodes reachable from these emitter
+// selectors get re-tagged here, so attacker raw HTML cannot opt arbitrary
+// content into the KaTeX renderer.
 export function markMathNodes(container: HTMLElement) {
-  const mathBlocks = container.querySelectorAll<HTMLElement>("code.language-math, .math-inline, .math-block");
-  mathBlocks.forEach((block) => {
-    block.classList.add('pmd-math');
-    block.dataset.mathSource = block.dataset.mathSource ?? block.textContent ?? '';
+  const inline = container.querySelectorAll<HTMLElement>("code.language-math");
+  inline.forEach((code) => {
+    const target = code.parentElement?.classList.contains('math-inline') ? code.parentElement : code;
+    target.classList.add('pmd-math', 'math-inline');
+    target.dataset.mathSource = code.textContent ?? '';
+  });
+  const block = container.querySelectorAll<HTMLElement>("code.math-block");
+  block.forEach((code) => {
+    const target = code.parentElement?.classList.contains('math-display') ? code.parentElement : code;
+    target.classList.add('pmd-math', 'math-display');
+    target.dataset.mathSource = code.textContent ?? '';
   });
 }
 

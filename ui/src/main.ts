@@ -426,7 +426,12 @@ async function openFile(path: string) {
     await renderMarkdown(file.contents);
     editor.focus();
   } catch (e) {
-    previewPane.innerHTML = `<pre>Error: ${e}</pre>`;
+    // Backend errors can include user-controlled paths; build the node via
+    // textContent so the string is rendered as text, never parsed as HTML.
+    previewPane.textContent = '';
+    const pre = document.createElement('pre');
+    pre.textContent = `Error: ${String(e)}`;
+    previewPane.appendChild(pre);
   }
 }
 

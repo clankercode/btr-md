@@ -17,6 +17,24 @@ fn byte_to_line(md: &str) -> impl Fn(usize) -> u32 + '_ {
     move |b| (starts.partition_point(|&s| s <= b)) as u32
 }
 
+struct ImageState {
+    dest_url: String,
+    title: String,
+    alt: String,
+}
+
+fn emit_image(html: &mut String, state: &ImageState) {
+    html.push_str(&format!(
+        "<img src=\"{}\" alt=\"{}\"",
+        escape_html(&state.dest_url),
+        escape_html(&state.alt)
+    ));
+    if !state.title.is_empty() {
+        html.push_str(&format!(" title=\"{}\"", escape_html(&state.title)));
+    }
+    html.push('>');
+}
+
 fn alignment_value(alignment: Alignment) -> Option<&'static str> {
     match alignment {
         Alignment::None => None,
@@ -117,14 +135,9 @@ fn emit_open_tag(
             }
             html.push('>');
         }
-        Tag::Image {
-            dest_url, title, ..
-        } => {
-            html.push_str(&format!("<img src=\"{}\"", escape_html(dest_url)));
-            if !title.is_empty() {
-                html.push_str(&format!(" title=\"{}\"", escape_html(title)));
-            }
-            html.push('>');
+        Tag::Image { .. } => {
+            // Image markup is emitted on Tag::Image close after we have
+            // accumulated alt text from child events; suppress the open here.
         }
         Tag::HtmlBlock => {}
         Tag::FootnoteDefinition(_) => {}
@@ -248,6 +261,13 @@ pub fn render_string(md: &str) -> RenderResult {
     let mut table_alignments: Vec<Alignment> = Vec::new();
     let mut table_cell_index = 0;
     let mut block_math: Option<String> = None;
+    // Depth of currently-open fenced/indented code blocks. While positive,
+    // Event::Text content is emitted verbatim — no math delimiter parsing —
+    // because `$E=mc^2$` inside a code fence is literal source, not math.
+    let mut in_code_block: u32 = 0;
+    // While inside Tag::Image, collect plain text into the alt attribute and
+    // suppress body emission. Image markup is emitted on close.
+    let mut image_state: Option<ImageState> = None;
 
     for (event, range) in parser {
         match event {
@@ -261,6 +281,19 @@ pub fn render_string(md: &str) -> RenderResult {
                 }
                 if matches!(tag, Tag::TableRow) {
                     table_cell_index = 0;
+                }
+                if matches!(tag, Tag::CodeBlock(_)) {
+                    in_code_block += 1;
+                }
+                if let Tag::Image {
+                    dest_url, title, ..
+                } = &tag
+                {
+                    image_state = Some(ImageState {
+                        dest_url: dest_url.to_string(),
+                        title: title.to_string(),
+                        alt: String::new(),
+                    });
                 }
                 let cell_alignment = if matches!(tag, Tag::TableCell) {
                     let alignment = table_alignments.get(table_cell_index).copied();
@@ -278,6 +311,9 @@ pub fn render_string(md: &str) -> RenderResult {
                 if matches!(tag_end, TagEnd::TableHead) {
                     in_table_head = false;
                 }
+                if matches!(tag_end, TagEnd::CodeBlock) && in_code_block > 0 {
+                    in_code_block -= 1;
+                }
                 if let Some((start_line, open_pos)) = block_stack.pop() {
                     let end_line = to_line(range.end.saturating_sub(1));
                     let placeholder = "data-src-end=\"\"";
@@ -288,38 +324,63 @@ pub fn render_string(md: &str) -> RenderResult {
                     source_map.push((start_line, end_line));
                     emit_close_tag(&mut html, &tag_end, in_table_head);
                 }
+                if matches!(tag_end, TagEnd::Image) {
+                    if let Some(state) = image_state.take() {
+                        emit_image(&mut html, &state);
+                    }
+                }
                 if matches!(tag_end, TagEnd::Table) {
                     table_alignments.clear();
                     table_cell_index = 0;
                 }
             }
             Event::Text(t) => {
-                emit_text_with_math(&mut html, &t, &mut block_math);
+                if let Some(state) = image_state.as_mut() {
+                    state.alt.push_str(&t);
+                } else if in_code_block > 0 {
+                    html.push_str(&escape_html(&t));
+                } else {
+                    emit_text_with_math(&mut html, &t, &mut block_math);
+                }
             }
             Event::Code(t) => {
-                html.push_str("<code>");
-                html.push_str(&escape_html(&t));
-                html.push_str("</code>");
+                if let Some(state) = image_state.as_mut() {
+                    state.alt.push_str(&t);
+                } else {
+                    html.push_str("<code>");
+                    html.push_str(&escape_html(&t));
+                    html.push_str("</code>");
+                }
             }
             Event::SoftBreak => {
-                if let Some(buffer) = &mut block_math {
+                if let Some(state) = image_state.as_mut() {
+                    state.alt.push(' ');
+                } else if let Some(buffer) = &mut block_math {
                     buffer.push('\n');
                 } else {
                     html.push(' ');
                 }
             }
             Event::HardBreak => {
-                if let Some(buffer) = &mut block_math {
+                if let Some(state) = image_state.as_mut() {
+                    state.alt.push(' ');
+                } else if let Some(buffer) = &mut block_math {
                     buffer.push('\n');
                 } else {
                     html.push_str("<br>");
                 }
             }
             Event::Html(t) => {
-                html.push_str(&t);
+                if image_state.is_none() {
+                    html.push_str(&t);
+                }
+                // Inline HTML inside alt text is dropped: alt is a plain-text
+                // attribute, and we refuse to let attacker markup leak there.
             }
             Event::InlineHtml(t) => {
-                html.push_str(&t);
+                if image_state.is_none() {
+                    html.push_str(&t);
+                }
             }
             Event::FootnoteReference(t) => {
                 html.push_str(&format!("<sup>{}</sup>", escape_html(&t)));

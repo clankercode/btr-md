@@ -14,8 +14,11 @@ export function renderMathNode(el: HTMLElement) {
   }
 }
 
+// Only nodes that `markMathNodes` flagged are rendered. Selecting on the
+// JS-added `.pmd-math` class (stripped from raw HTML by the sanitizer) means
+// attacker markup cannot reach the renderer through this path.
 export function renderMathNodes(root: HTMLElement) {
-  const blocks = root.querySelectorAll<HTMLElement>(".math-inline, .math-display");
+  const blocks = root.querySelectorAll<HTMLElement>(".pmd-math[data-math-source]");
   for (const block of blocks) {
     renderMathNode(block);
   }
