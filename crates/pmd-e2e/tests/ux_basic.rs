@@ -1,14 +1,16 @@
 mod helpers;
 
 use helpers::WebDriverSession;
+use std::time::Duration;
 
 const UX_SCREENSHOT_PATH: &str = "tests/screenshots/ux/window.png";
 
 #[test]
 fn test_welcome_screen_shows_on_launch_without_args() {
     let session = WebDriverSession::new().expect("open WebDriver session");
-
-    std::thread::sleep(std::time::Duration::from_secs(2));
+    session
+        .wait_for_selector(".pmd-chrome", Duration::from_secs(5))
+        .expect("wait for app chrome");
 
     let welcome = session
         .execute_script(
@@ -36,7 +38,9 @@ fn test_welcome_screen_shows_on_launch_without_args() {
 #[test]
 fn test_toolbar_exists_with_mode_buttons() {
     let session = WebDriverSession::new().expect("open WebDriver session");
-    std::thread::sleep(std::time::Duration::from_secs(2));
+    session
+        .wait_for_selector(".pmd-chrome", Duration::from_secs(5))
+        .expect("wait for app chrome");
 
     let toolbar = session.execute_script(
         r#"
@@ -44,12 +48,12 @@ fn test_toolbar_exists_with_mode_buttons() {
         const toolbar = document.querySelector('.pmd-toolbar');
         const modeGroup = document.querySelector('.pmd-segmented');
         const buttons = modeGroup ? Array.from(modeGroup.querySelectorAll('.pmd-segmented-btn')).map(b => b.textContent) : [];
-        done({
+        done(JSON.stringify({
             hasToolbar: !!toolbar,
             hasModeGroup: !!modeGroup,
             modeButtons: buttons,
             bodyMode: document.body.dataset.mode
-        });
+        }));
         "#,
         &[],
     ).expect("execute script");
@@ -68,7 +72,9 @@ fn test_toolbar_exists_with_mode_buttons() {
 fn test_mode_switching_via_toolbar() {
     let session = WebDriverSession::with_args(&["/work/tests/corpus/hello.md"])
         .expect("open WebDriver session with file");
-    std::thread::sleep(std::time::Duration::from_secs(2));
+    session
+        .wait_for_selector(".cm-editor", Duration::from_secs(5))
+        .expect("wait for editor");
 
     let initial = session
         .execute_script(
@@ -145,7 +151,9 @@ fn test_mode_switching_via_toolbar() {
 fn test_editor_accepts_input_in_source_mode() {
     let session = WebDriverSession::with_args(&["/work/tests/corpus/hello.md"])
         .expect("open WebDriver session with file");
-    std::thread::sleep(std::time::Duration::from_secs(2));
+    session
+        .wait_for_selector(".cm-editor", Duration::from_secs(5))
+        .expect("wait for editor");
 
     session
         .execute_script(
@@ -193,7 +201,9 @@ fn test_editor_accepts_input_in_source_mode() {
 #[test]
 fn test_keyboard_shortcut_ctrl_n_creates_new_file() {
     let session = WebDriverSession::new().expect("open WebDriver session");
-    std::thread::sleep(std::time::Duration::from_secs(2));
+    session
+        .wait_for_selector(".pmd-chrome", Duration::from_secs(5))
+        .expect("wait for app chrome");
 
     session.execute_script(
         r#"
@@ -211,11 +221,11 @@ fn test_keyboard_shortcut_ctrl_n_creates_new_file() {
         const done = arguments[0];
         const filename = document.querySelector('.pmd-filename');
         const editor = document.querySelector('.cm-editor');
-        done({
+        done(JSON.stringify({
             filename: filename ? filename.textContent : 'no-filename',
             hasEditor: !!editor,
             bodyMode: document.body.dataset.mode
-        });
+        }));
         "#,
             &[],
         )
@@ -234,13 +244,15 @@ fn test_keyboard_shortcut_ctrl_n_creates_new_file() {
 #[test]
 fn test_file_menu_opens_and_shows_recent_files() {
     let session = WebDriverSession::new().expect("open WebDriver session");
-    std::thread::sleep(std::time::Duration::from_secs(2));
+    session
+        .wait_for_selector(".pmd-dropdown > button", Duration::from_secs(5))
+        .expect("wait for file menu button");
 
     session
         .execute_script(
             r#"
         const done = arguments[0];
-        const btn = document.querySelector('.pmd-file-menu-btn');
+        const btn = document.querySelector('.pmd-dropdown > button');
         if (btn) { btn.click(); }
         setTimeout(done, 200);
         "#,
@@ -254,11 +266,11 @@ fn test_file_menu_opens_and_shows_recent_files() {
             r#"
         const done = arguments[0];
         const dropdown = document.querySelector('.pmd-dropdown-menu');
-        done({
+        done(JSON.stringify({
             visible: dropdown ? dropdown.style.display !== 'none' : false,
             hasRecentList: !!document.querySelector('.pmd-dropdown-item'),
             hasClearBtn: !!document.querySelector('.pmd-dropdown-divider')
-        });
+        }));
         "#,
             &[],
         )
@@ -277,7 +289,9 @@ fn test_file_menu_opens_and_shows_recent_files() {
 #[test]
 fn test_theme_picker_opens_with_ctrl_t() {
     let session = WebDriverSession::new().expect("open WebDriver session");
-    std::thread::sleep(std::time::Duration::from_secs(2));
+    session
+        .wait_for_selector(".pmd-chrome", Duration::from_secs(5))
+        .expect("wait for app chrome");
 
     session.execute_script(
         r#"
@@ -293,12 +307,12 @@ fn test_theme_picker_opens_with_ctrl_t() {
         .execute_script(
             r#"
         const done = arguments[0];
-        const pickerEl = document.querySelector('.pmd-picker');
+        const pickerEl = document.querySelector('#theme-picker-overlay, .pmd-picker-overlay');
         const cards = document.querySelectorAll('.pmd-picker-card');
-        done({
+        done(JSON.stringify({
             pickerOpen: !!pickerEl,
             cardCount: cards.length
-        });
+        }));
         "#,
             &[],
         )
@@ -318,7 +332,9 @@ fn test_theme_picker_opens_with_ctrl_t() {
 fn test_app_with_file_arg_opens_file() {
     let session = WebDriverSession::with_args(&["/work/tests/corpus/hello.md"])
         .expect("open WebDriver session with file");
-    std::thread::sleep(std::time::Duration::from_secs(2));
+    session
+        .wait_for_selector(".cm-editor", Duration::from_secs(5))
+        .expect("wait for editor");
 
     let state = session
         .execute_script(
@@ -326,11 +342,11 @@ fn test_app_with_file_arg_opens_file() {
         const done = arguments[0];
         const filename = document.querySelector('.pmd-filename');
         const preview = document.getElementById('preview-pane');
-        done({
+        done(JSON.stringify({
             filename: filename ? filename.textContent : '',
             previewHasContent: preview ? preview.innerHTML.length > 0 : false,
             hasEditor: !!document.querySelector('.cm-editor')
-        });
+        }));
         "#,
             &[],
         )

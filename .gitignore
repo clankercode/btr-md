@@ -1,6 +1,10 @@
 *.tmp
 target/
 node_modules/
+/build-deps/
+/build-appimage/
+/build-flatpak/
+/dist/
 tests/screenshots/playwright-results/
 tests/screenshots/playwright/
 .playwright-mcp/

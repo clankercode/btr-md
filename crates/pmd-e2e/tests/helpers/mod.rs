@@ -6,7 +6,7 @@ use serde_json::{json, Value};
 use std::io::{Read, Write};
 use std::net::TcpStream;
 use std::process::Command;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 const WEBDRIVER_ADDR: &str = "127.0.0.1:4444";
 const APPLICATION_PATH: &str = "/work/target/release/preview-md";
@@ -155,12 +155,31 @@ impl WebDriverSession {
     }
 
     pub fn execute_script(&self, script: &str, args: &[Value]) -> Result<Value> {
+        // Returns the raw WebDriver JSON value; object-shaped assertions should
+        // stringify in JavaScript before calling `done(...)`.
         let payload = json!({ "script": script, "args": args });
         let response = webdriver_request("POST", &self.path("execute/async"), Some(&payload))?;
         response
             .get("value")
             .ok_or_else(|| anyhow!("execute script response missing value: {response}"))
             .cloned()
+    }
+
+    pub fn wait_for_selector(&self, selector: &str, timeout: Duration) -> Result<()> {
+        let started = Instant::now();
+        let script = r#"
+            const selector = arguments[0];
+            const done = arguments[arguments.length - 1];
+            done(Boolean(document.querySelector(selector)));
+        "#;
+        while started.elapsed() <= timeout {
+            let found = self.execute_script(script, &[json!(selector)])?;
+            if found.as_bool().unwrap_or(false) {
+                return Ok(());
+            }
+            std::thread::sleep(Duration::from_millis(50));
+        }
+        Err(anyhow!("timed out waiting for selector `{selector}`"))
     }
 
     fn path(&self, suffix: &str) -> String {

@@ -78,6 +78,16 @@ fn user_theme_dir() -> Option<PathBuf> {
     })
 }
 
+fn appdir_theme_dir() -> Option<PathBuf> {
+    std::env::var_os("APPDIR").map(|appdir| {
+        PathBuf::from(appdir)
+            .join("usr")
+            .join("share")
+            .join("preview-md")
+            .join("themes")
+    })
+}
+
 pub fn find_theme_roots(resource_dir: Option<&Path>) -> Vec<PathBuf> {
     let mut dirs = Vec::new();
 
@@ -90,6 +100,18 @@ pub fn find_theme_roots(resource_dir: Option<&Path>) -> Vec<PathBuf> {
 
     if let Some(resource_dir) = resource_dir {
         push_existing_dir(&mut dirs, resource_dir.join("themes"));
+    }
+
+    if let Some(appdir_themes) = appdir_theme_dir() {
+        push_existing_dir(&mut dirs, appdir_themes);
+    }
+
+    for system_dir in [
+        PathBuf::from("/app/share/preview-md/themes"),
+        PathBuf::from("/usr/local/share/preview-md/themes"),
+        PathBuf::from("/usr/share/preview-md/themes"),
+    ] {
+        push_existing_dir(&mut dirs, system_dir);
     }
 
     if let Ok(cwd) = std::env::current_dir() {

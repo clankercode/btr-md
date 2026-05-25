@@ -7,12 +7,7 @@ use std::collections::HashSet;
 /// Mermaid/KaTeX input; only nodes that survive sanitization through the
 /// emitter-stable selectors (`code.language-mermaid`, `code.language-math`,
 /// `code.math-block`) get re-flagged after sanitize.
-const STRIPPED_CLASS_TOKENS: &[&str] = &[
-    "pmd-mermaid",
-    "pmd-math",
-    "math-inline",
-    "math-display",
-];
+const STRIPPED_CLASS_TOKENS: &[&str] = &["pmd-mermaid", "pmd-math", "math-inline", "math-display"];
 
 /// Image `src` MIME types we will allow as `data:` URLs. Mirrors what a local
 /// markdown previewer reasonably needs (inline raster + SVG) while excluding
@@ -135,7 +130,10 @@ fn filter_class(value: &str) -> Option<Cow<'_, str>> {
     let mut kept: Vec<&str> = Vec::new();
     let mut changed = false;
     for tok in value.split_whitespace() {
-        if STRIPPED_CLASS_TOKENS.iter().any(|s| s.eq_ignore_ascii_case(tok)) {
+        if STRIPPED_CLASS_TOKENS
+            .iter()
+            .any(|s| s.eq_ignore_ascii_case(tok))
+        {
             changed = true;
             continue;
         }
@@ -202,10 +200,13 @@ fn filter_img_src(value: &str) -> Option<Cow<'_, str>> {
 
 fn is_safe_image_data_url(value: &str) -> bool {
     let trimmed = value.trim_start_matches(|c: char| c.is_ascii_whitespace() || (c as u32) < 0x20);
-    let Some(rest) = trimmed
-        .get(0..5)
-        .and_then(|p| if p.eq_ignore_ascii_case("data:") { Some(&trimmed[5..]) } else { None })
-    else {
+    let Some(rest) = trimmed.get(0..5).and_then(|p| {
+        if p.eq_ignore_ascii_case("data:") {
+            Some(&trimmed[5..])
+        } else {
+            None
+        }
+    }) else {
         return false;
     };
     // MIME is everything up to the first `;` or `,`.

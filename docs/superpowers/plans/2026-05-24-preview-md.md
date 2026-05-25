@@ -444,7 +444,6 @@ test-golden:            cargo test -p pmd-core --test golden -j 2
 test-theme:             cargo test -p pmd-core --test 'theme_*' -j 2
 test-ipc:               cargo test -p pmd-app -j 2
 e2e:                    ./scripts/e2e.sh
-e2e-update-baselines:   ./scripts/e2e.sh --update
 visual-review:          ./scripts/visual-review.sh
 review-and-fix:         ./scripts/review-and-fix.sh
 
@@ -531,9 +530,6 @@ CMD ["bash", "-c", "cage -- tauri-driver --port 4444 --binary /work/target/relea
 #!/usr/bin/env bash
 set -euo pipefail
 
-UPDATE=0
-[[ "${1:-}" == "--update" ]] && UPDATE=1
-
 NETWORK_MODE="${PMD_E2E_NETWORK:-host}"
 case "$NETWORK_MODE" in
   host)   NET_ARGS=(--network=host) ;;
@@ -546,7 +542,6 @@ cargo build --release -p pmd-app -j 2
 docker build -f docker/e2e/Dockerfile -t preview-md-e2e:dev .
 
 CID=$(docker run -d --rm "${NET_ARGS[@]}" \
-  -e PMD_E2E_UPDATE_BASELINES="$UPDATE" \
   -v "$PWD/target/release/preview-md:/work/target/release/preview-md:ro" \
   -v "$PWD/tests:/work/tests" \
   -v "$PWD/ui:/work/ui:ro" \
@@ -1808,7 +1803,7 @@ git commit -m "phase 6b: 17-theme bundle + mermaid derivation + rAF re-render"
 
 - [ ] **Step 7.2: Implement picker UI in `ui/src/picker.ts` + `ui/styles/picker.css`**
 
-- [ ] **Step 7.3: Generate fresh screenshots for all 17 themes via `just e2e-update-baselines` and commit them under `themes/<slug>/screenshot.png`**
+- [ ] **Step 7.3: Generate fresh review screenshots via `just visual-review` and commit any intentional Playwright snapshot updates**
 
 - [ ] **Step 7.4: WCAG warnings surfaced in dev builds via `console.warn` from `set_theme`**
 

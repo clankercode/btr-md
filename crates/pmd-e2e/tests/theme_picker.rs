@@ -1,15 +1,17 @@
 mod helpers;
 
 use helpers::WebDriverSession;
+use std::time::Duration;
 
 const THEME_PICKER_SCREENSHOT: &str = "tests/screenshots/theme-picker/window.png";
 
 #[test]
 fn test_theme_picker_opens_and_filters_and_applies_theme() {
-    std::thread::sleep(std::time::Duration::from_secs(2));
-
     let session = WebDriverSession::with_args(&["/work/tests/corpus/hello.md"])
         .expect("open WebDriver session with file arg");
+    session
+        .wait_for_selector(".cm-editor", Duration::from_secs(5))
+        .expect("wait for editor");
 
     let url = session.url().expect("read page URL");
     assert_eq!(url, "tauri://localhost", "unexpected app URL");
@@ -59,10 +61,10 @@ fn test_theme_picker_opens_and_filters_and_applies_theme() {
         setTimeout(() => {
             const overlay = document.getElementById('theme-picker-overlay');
             const style = document.getElementById('pmd-theme-styles');
-            done({
+            done(JSON.stringify({
                 pickerClosed: !overlay,
                 styleApplied: !!style && style.textContent.length > 0
-            });
+            }));
         }, 200);
     "#;
     let select_result = session
@@ -85,10 +87,11 @@ fn test_theme_picker_opens_and_filters_and_applies_theme() {
 
 #[test]
 fn test_theme_picker_keyboard_navigation() {
-    std::thread::sleep(std::time::Duration::from_secs(2));
-
     let session = WebDriverSession::with_args(&["/work/tests/corpus/hello.md"])
         .expect("open WebDriver session with file arg");
+    session
+        .wait_for_selector(".cm-editor", Duration::from_secs(5))
+        .expect("wait for editor");
 
     let open_picker_script = r#"
         const done = arguments[arguments.length - 1];

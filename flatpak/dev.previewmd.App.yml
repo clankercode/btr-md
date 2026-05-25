@@ -1,10 +1,40 @@
+# Development Flatpak manifest. Cargo runs inside the Freedesktop SDK with
+# rust-stable on PATH; this dev manifest allows network during build so cargo
+# can fetch crates. A release manifest should vendor cargo sources instead.
 app-id: dev.previewmd.App
 runtime: org.freedesktop.Platform
-runtime-version: '23.08'
+runtime-version: '24.08'
 sdk: org.freedesktop.Sdk
+sdk-extensions:
+  - org.freedesktop.Sdk.Extension.rust-stable
 command: preview-md
 finish-args:
   - --share=ipc
   - --socket=fallback-x11
   - --socket=wayland
   - --device=dri
+  - --filesystem=xdg-documents
+build-options:
+  append-path: /usr/lib/sdk/rust-stable/bin
+  build-args:
+    - --share=network
+cleanup:
+  - /include
+  - /lib/pkgconfig
+modules:
+  - name: preview-md
+    buildsystem: simple
+    build-commands:
+      - cargo build --release --locked -j 2 -p pmd-app
+      - install -Dm755 target/release/preview-md /app/bin/preview-md
+      - install -Dm644 packaging/linux/dev.previewmd.App.desktop /app/share/applications/dev.previewmd.App.desktop
+      - install -Dm644 packaging/linux/dev.previewmd.App.metainfo.xml /app/share/metainfo/dev.previewmd.App.metainfo.xml
+      - install -Dm644 packaging/linux/dev.previewmd.App.mime.xml /app/share/mime/packages/dev.previewmd.App.mime.xml
+      - install -Dm644 packaging/linux/preview-md.1 /app/share/man/man1/preview-md.1
+      - install -Dm644 packaging/linux/icons/preview-md.svg /app/share/icons/hicolor/scalable/apps/dev.previewmd.App.svg
+      - for size in 16 24 32 48 64 128 256; do install -Dm644 packaging/linux/icons/${size}x${size}.png /app/share/icons/hicolor/${size}x${size}/apps/dev.previewmd.App.png; done
+      - mkdir -p /app/share/preview-md/themes
+      - cp -a themes/. /app/share/preview-md/themes/
+    sources:
+      - type: dir
+        path: ..

@@ -111,7 +111,8 @@ fn raw_mermaid_div_does_not_carry_renderer_attrs() {
 
 #[test]
 fn raw_math_span_does_not_carry_renderer_attrs() {
-    let raw = r#"<span class="math-inline" data-math-source="\\href{javascript:alert(1)}{x}">x</span>"#;
+    let raw =
+        r#"<span class="math-inline" data-math-source="\\href{javascript:alert(1)}{x}">x</span>"#;
     let out = clean(raw);
     assert!(
         !out.contains("math-inline"),

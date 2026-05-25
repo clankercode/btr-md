@@ -1,15 +1,17 @@
 mod helpers;
 
 use helpers::WebDriverSession;
+use std::time::Duration;
 
 const MODES_SCREENSHOT: &str = "tests/screenshots/modes/window.png";
 
 #[test]
 fn test_modes_editor_renders_and_accepts_input() {
-    std::thread::sleep(std::time::Duration::from_secs(2));
-
     let session = WebDriverSession::with_args(&["/work/tests/corpus/hello.md"])
         .expect("open WebDriver session with file arg");
+    session
+        .wait_for_selector(".cm-editor", Duration::from_secs(5))
+        .expect("wait for editor");
 
     let url = session.url().expect("read page URL");
     assert_eq!(url, "tauri://localhost", "unexpected app URL");
@@ -23,10 +25,11 @@ fn test_modes_editor_renders_and_accepts_input() {
 
 #[test]
 fn test_split_mode_preview_updates_within_100ms() {
-    std::thread::sleep(std::time::Duration::from_secs(2));
-
     let session = WebDriverSession::with_args(&["/work/tests/corpus/hello.md"])
         .expect("open WebDriver session with file arg");
+    session
+        .wait_for_selector(".cm-editor", Duration::from_secs(5))
+        .expect("wait for editor");
 
     let script = r#"
         const done = arguments[arguments.length - 1];
@@ -55,10 +58,11 @@ fn test_split_mode_preview_updates_within_100ms() {
 
 #[test]
 fn test_version_drop_discards_stale_responses() {
-    std::thread::sleep(std::time::Duration::from_secs(2));
-
     let session = WebDriverSession::with_args(&["/work/tests/corpus/hello.md"])
         .expect("open WebDriver session with file arg");
+    session
+        .wait_for_selector(".cm-editor", Duration::from_secs(5))
+        .expect("wait for editor");
 
     let script = r#"
         const done = arguments[arguments.length - 1];

@@ -129,6 +129,7 @@ async function installTauriMock(page, options = {}) {
         if (cmd === 'plugin:event|unlisten') return null;
         if (cmd === 'get_recent_files') return [];
         if (cmd === 'get_initial_path') return initialPath ?? null;
+        if (cmd === 'get_open_dialog_on_start') return false;
         if (cmd === 'list_themes') return themes;
         if (cmd === 'set_theme') {
           const theme = themes.find((item) => item.slug === args.slug) ?? themes[0];
@@ -140,7 +141,10 @@ async function installTauriMock(page, options = {}) {
             warnings: [],
           };
         }
-        if (cmd === 'render_cmd') return { html: renderMarkdown(args.markdown ?? '') };
+        if (cmd === 'render_cmd') return {
+          html: renderMarkdown(args.markdown ?? ''),
+          version: args.version ?? 0,
+        };
         if (cmd === 'open_file' || cmd === 'request_open_file') {
           return { path: args.path, contents: files[args.path] ?? '# Missing fixture' };
         }

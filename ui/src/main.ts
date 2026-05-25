@@ -11,6 +11,7 @@ import { openThemePicker, isPickerOpen, closeThemePicker, type ThemeInfo } from 
 
 interface RenderResult {
   html: string;
+  version: number;
 }
 
 interface Settings {
@@ -381,6 +382,7 @@ async function processRenderQueue() {
       markdown: item.markdown,
     });
     previewPane.innerHTML = result.html;
+    previewPane.dataset.versionApplied = String(result.version);
     markAllNodes(previewPane);
     await renderMermaidNodes(previewPane);
     await renderMathNodes(previewPane);
@@ -622,16 +624,33 @@ async function bootstrap(): Promise<void> {
     await applyAutoSwitchTheme(settings);
   }
 
+  let openDialogOnStart = false;
+  try {
+    openDialogOnStart = await invoke<boolean>('get_open_dialog_on_start');
+  } catch (e) {
+    console.error('Failed to get open-dialog startup flag:', e);
+  }
+
   try {
     const path = await invoke<string | null>('get_initial_path');
     if (path) {
       openFile(path);
     } else {
       showWelcomeScreen();
+      if (openDialogOnStart) {
+        setTimeout(() => {
+          openFileDialog();
+        }, 0);
+      }
     }
   } catch (e) {
     console.error('Failed to get initial path:', e);
     showWelcomeScreen();
+    if (openDialogOnStart) {
+      setTimeout(() => {
+        openFileDialog();
+      }, 0);
+    }
   }
 }
 

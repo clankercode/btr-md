@@ -493,8 +493,8 @@ The e2e harness runs in Docker so it is reproducible on any developer machine an
   3. The test creates a session with `tauri:options` capabilities — `{"application": "/usr/local/bin/preview-md", "args": ["..."]}` — and `tauri-driver` spawns the app, attaches the WebDriver session to its webview.
   4. The app does **not** expose its own `--webdriver-port` flag; tauri-driver handles that.
 - **Why cage, not Xvfb:** the dev machine is KDE Plasma on Wayland; cage gives a deterministic, single-window, undecorated Wayland compositor — closer environment parity for screenshot stability.
-- **Baseline capture rule:** all screenshot baselines are captured **inside the container** via `just e2e-update-baselines`. Never on the dev machine directly. This avoids font / compositor / DPI drift between dev and CI.
-- **Just targets:** `just e2e` (verify) and `just e2e-update-baselines` (capture). Both wrap the Docker invocation so the human and agent paths are identical.
+- **Baseline capture rule:** Playwright screenshot baselines are updated deliberately with `playwright test --update-snapshots`; the Docker e2e harness writes review screenshots but does not own baseline updates.
+- **Just targets:** `just e2e` verifies the Docker WebDriver harness; `just visual-review` writes review screenshots for author-side inspection.
 
 ## 10. Dev-time dual-model visual review (not a CI gate)
 
@@ -544,7 +544,6 @@ test-golden:            cargo test -p pmd-core --test golden
 test-theme:             cargo test -p pmd-core --test 'theme_*'
 test-ipc:               cargo test -p pmd-app
 e2e:                    ./scripts/e2e.sh
-e2e-update-baselines:   ./scripts/e2e.sh --update
 visual-review:          ./scripts/visual-review.sh        # dev-time only
 review-and-fix:         ./scripts/review-and-fix.sh       # e2e + visual-review + aggregate
 

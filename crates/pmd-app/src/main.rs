@@ -3,9 +3,17 @@ use tauri::{Emitter, Manager};
 
 fn main() {
     let scope = PathScope::new();
-    let initial = cli::parse_argv(&scope);
+    let args = cli::parse_argv(&scope);
 
-    let initial_path = initial.path.clone();
+    if args.list_themes {
+        if let Err(e) = cli::print_theme_list() {
+            eprintln!("failed to list themes: {e}");
+            std::process::exit(1);
+        }
+        return;
+    }
+
+    let initial_path = args.initial_path.clone();
 
     // Pre-populate AppState with the path the CLI already admitted to its
     // local scope. The watcher and `current_path` are set after the Tauri
@@ -13,6 +21,7 @@ fn main() {
     let state = AppState {
         scope,
         initial_path: std::sync::Mutex::new(initial_path.clone()),
+        open_dialog_on_start: std::sync::Mutex::new(args.open_dialog),
         current_path: std::sync::Mutex::new(initial_path.clone()),
         watcher: pmd_app_lib::watcher::FileWatcher::new(),
     };
@@ -39,10 +48,11 @@ fn main() {
             cmd::settings::add_recent_file,
             cmd::settings::clear_recent_files,
             cmd::file::get_initial_path,
+            cmd::file::get_open_dialog_on_start,
             cmd::window::set_window_title,
         ])
         .setup(move |app| {
-            if let Some(ref p) = initial.path {
+            if let Some(ref p) = args.initial_path {
                 let _ = app.emit("open-file", p.to_string_lossy().to_string());
                 app.state::<AppState>()
                     .watcher

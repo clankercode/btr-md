@@ -285,6 +285,17 @@ pub fn get_initial_path(state: tauri::State<'_, crate::AppState>) -> Option<Path
 }
 
 #[tauri::command]
+pub fn get_open_dialog_on_start(state: tauri::State<'_, crate::AppState>) -> bool {
+    let mut flag = state
+        .open_dialog_on_start
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner());
+    let should_open = *flag;
+    *flag = false;
+    should_open
+}
+
+#[tauri::command]
 pub async fn open_dialog(
     app: tauri::AppHandle,
     state: tauri::State<'_, crate::AppState>,

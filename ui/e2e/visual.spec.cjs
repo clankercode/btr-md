@@ -11,6 +11,9 @@ test('@visual fixed chrome leaves no gap and content fills below it', async ({ p
   await expect(page.locator('.pmd-status-bar')).toBeVisible();
 
   await page.screenshot({ path: screenshotPath('welcome.png') });
+  await expect(page).toHaveScreenshot('welcome.png', {
+    maxDiffPixelRatio: 0.02,
+  });
 
   const metrics = await page.evaluate(() => {
     const chrome = document.querySelector('.pmd-chrome').getBoundingClientRect();
@@ -46,6 +49,9 @@ test('@visual theme picker previews use each theme palette', async ({ page }) =>
   expect(cardCount).toBeGreaterThan(2);
 
   await page.screenshot({ path: screenshotPath('theme-picker.png') });
+  await expect(page).toHaveScreenshot('theme-picker.png', {
+    maxDiffPixelRatio: 0.02,
+  });
 
   const previews = await page.evaluate(() => {
     return Array.from(document.querySelectorAll('.pmd-picker-card')).map((card) => {

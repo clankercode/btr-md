@@ -13,11 +13,6 @@
 # accepting connections, then run `cargo test -p pmd-e2e` from the host.
 set -euo pipefail
 
-UPDATE=0
-if [[ "${1:-}" == "--update" ]]; then
-    UPDATE=1
-fi
-
 NETWORK_MODE="${PMD_E2E_NETWORK:-bridge}"
 case "$NETWORK_MODE" in
     host)
@@ -39,7 +34,6 @@ mkdir -p tests/screenshots/run-smoke
 
 RUN_ARGS=(
     "${NET_ARGS[@]}"
-    -e PMD_E2E_UPDATE_BASELINES="$UPDATE"
     -v "$PWD/tests:/work/tests"
     -v "$PWD/ui:/work/ui:ro"
 )

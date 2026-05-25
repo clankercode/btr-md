@@ -18,8 +18,10 @@
   </description>
   <launchable type="desktop-id">dev.previewmd.App.desktop</launchable>
   <screenshots>
-    <!-- Screenshot placeholders - generate via `just e2e-update-baselines` -->
-    <!-- <screenshot type="default"><caption>Main window with Twilight Mage theme</caption></screenshot> -->
+    <screenshot type="default">
+      <caption>Main preview window with the welcome screen and theme-aware chrome</caption>
+      <image type="source">https://preview-md.example.com/screenshots/welcome.png</image>
+    </screenshot>
   </screenshots>
   <url type="homepage">https://github.com/preview-md/preview-md</url>
   <provides>

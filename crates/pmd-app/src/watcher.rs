@@ -2,7 +2,7 @@ use notify::{Config, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
 use std::path::{Path, PathBuf};
 use std::sync::mpsc::channel;
 use std::sync::Mutex;
-use tauri::{AppHandle, Emitter};
+use tauri::{AppHandle, Emitter, Runtime};
 
 /// Manages an at-most-one `notify` watcher for the currently active file.
 ///
@@ -47,7 +47,7 @@ impl FileWatcher {
     /// The watcher tracks the parent directory and filters events by file
     /// name, since `notify`'s recommended backend on Linux is inotify which
     /// has trouble re-arming on a single file when editors rename-and-replace.
-    pub fn set_target(&self, app: AppHandle, path: PathBuf) {
+    pub fn set_target<R: Runtime>(&self, app: AppHandle<R>, path: PathBuf) {
         // Recover from a poisoned lock — `inner` is a single Option<WatcherSlot>
         // with no multi-step invariants. Drop the previous slot before building
         // the new one so the old worker thread can exit cleanly.
@@ -83,7 +83,7 @@ impl FileWatcher {
     }
 }
 
-fn build_slot(app: AppHandle, path: &Path) -> Option<WatcherSlot> {
+fn build_slot<R: Runtime>(app: AppHandle<R>, path: &Path) -> Option<WatcherSlot> {
     let parent = path.parent()?.to_path_buf();
     let file_name = path.file_name()?.to_owned();
     let watched_path = path.to_path_buf();
@@ -97,9 +97,7 @@ fn build_slot(app: AppHandle, path: &Path) -> Option<WatcherSlot> {
     )
     .ok()?;
 
-    watcher
-        .watch(&parent, RecursiveMode::NonRecursive)
-        .ok()?;
+    watcher.watch(&parent, RecursiveMode::NonRecursive).ok()?;
 
     let worker_app = app.clone();
     let worker_path = watched_path.clone();

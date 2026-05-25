@@ -1,4 +1,4 @@
-use pmd_app_lib::cmd::theme::{list_themes_from_roots, set_theme_from_roots};
+use pmd_app_lib::cmd::theme::{find_theme_roots, list_themes_from_roots, set_theme_from_roots};
 use std::path::PathBuf;
 
 fn workspace_theme_roots() -> Vec<PathBuf> {
@@ -22,6 +22,27 @@ fn write_theme(root: &std::path::Path, slug: &str, name: &str, extra_css: &str) 
     )
     .expect("write manifest");
     std::fs::write(theme_dir.join("theme.css"), extra_css).expect("write theme css");
+}
+
+#[test]
+fn find_theme_roots_includes_appimage_appdir_share_path() {
+    let temp = tempfile::tempdir().expect("appdir");
+    let appdir_theme_root = temp.path().join("usr/share/preview-md/themes");
+    std::fs::create_dir_all(&appdir_theme_root).expect("create appdir theme root");
+    let previous = std::env::var_os("APPDIR");
+    std::env::set_var("APPDIR", temp.path());
+
+    let roots = find_theme_roots(None);
+
+    if let Some(previous) = previous {
+        std::env::set_var("APPDIR", previous);
+    } else {
+        std::env::remove_var("APPDIR");
+    }
+    assert!(
+        roots.iter().any(|root| root == &appdir_theme_root),
+        "expected APPDIR theme root in {roots:?}"
+    );
 }
 
 #[tokio::test]

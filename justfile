@@ -36,9 +36,6 @@ test-ipc:
 e2e:
     ./scripts/e2e.sh
 
-e2e-update-baselines:
-    ./scripts/e2e.sh --update
-
 visual-review:
     ./scripts/visual-review.sh
 
@@ -65,6 +62,12 @@ package-flatpak:
 package-all:
     just package-appimage && just package-flatpak
 
+package-smoke:
+    bash -n scripts/package-appimage.sh
+    bash -n scripts/package-flatpak.sh
+    test -f packaging/linux/preview-md.1
+    test -d themes
+
 # install (local desktop integration)
 install-desktop:
     ./scripts/install-desktop-files.sh
@@ -77,4 +80,13 @@ lint:
     cargo clippy --workspace --all-targets -j 2 -- -D warnings
 
 check:
-    just fmt && just lint && just test && just theme-validate
+    just fmt
+    cargo test --workspace --exclude pmd-e2e -j 2
+    cargo clippy --workspace --all-targets -j 2 -- -D warnings
+    cargo check -p pmd-e2e --tests -j 2
+    cd ui && npm run build
+    cd ui && npm test
+    just theme-validate
+    just package-smoke
+    if command -v appstreamcli >/dev/null 2>&1; then appstreamcli validate --no-net packaging/linux/dev.previewmd.App.metainfo.xml; else echo "appstreamcli skipped (not installed)"; fi
+    if command -v desktop-file-validate >/dev/null 2>&1; then desktop-file-validate packaging/linux/dev.previewmd.App.desktop; else echo "desktop-file-validate skipped (not installed)"; fi

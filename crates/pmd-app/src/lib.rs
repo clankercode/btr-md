@@ -13,6 +13,9 @@ use std::path::PathBuf;
 pub struct AppState {
     pub scope: path_scope::PathScope,
     pub initial_path: std::sync::Mutex<Option<PathBuf>>,
+    /// Whether the frontend should open the OS file dialog once startup has
+    /// completed. Set by the desktop "Open File..." action.
+    pub open_dialog_on_start: std::sync::Mutex<bool>,
     /// The canonical path of the file currently being edited, if any. Set
     /// by every successful open code path; cleared on "new file" /
     /// untitled buffer.
@@ -25,6 +28,7 @@ impl AppState {
         Self {
             scope: path_scope::PathScope::new(),
             initial_path: std::sync::Mutex::new(initial_path),
+            open_dialog_on_start: std::sync::Mutex::new(false),
             current_path: std::sync::Mutex::new(None),
             watcher: watcher::FileWatcher::new(),
         }

@@ -9,6 +9,16 @@ module.exports = {
     timeout: 5_000,
   },
   outputDir: path.join(__dirname, '..', 'tests', 'screenshots', 'playwright-results'),
+  snapshotPathTemplate: path.join(
+    __dirname,
+    '..',
+    'tests',
+    'screenshots',
+    'baselines',
+    '{projectName}',
+    '{testFilePath}',
+    '{arg}{ext}'
+  ),
   reporter: [['list']],
   webServer: {
     command: `python3 -m http.server ${PORT} --bind 127.0.0.1`,
@@ -30,8 +40,22 @@ module.exports = {
         '--disable-crashpad',
       ],
     },
-    viewport: { width: 1100, height: 720 },
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
   },
+  projects: [
+    {
+      name: 'desktop',
+      use: {
+        viewport: { width: 1100, height: 720 },
+      },
+    },
+    {
+      name: 'narrow',
+      grep: /@visual/,
+      use: {
+        viewport: { width: 800, height: 600 },
+      },
+    },
+  ],
 };
