@@ -155,8 +155,6 @@ impl WebDriverSession {
     }
 
     pub fn execute_script(&self, script: &str, args: &[Value]) -> Result<Value> {
-        // Returns the raw WebDriver JSON value; object-shaped assertions should
-        // stringify in JavaScript before calling `done(...)`.
         let payload = json!({ "script": script, "args": args });
         let response = webdriver_request("POST", &self.path("execute/async"), Some(&payload))?;
         response
@@ -165,21 +163,62 @@ impl WebDriverSession {
             .cloned()
     }
 
-    pub fn wait_for_selector(&self, selector: &str, timeout: Duration) -> Result<()> {
+    pub fn js_object(&self, script: &str, args: &[Value]) -> Result<Value> {
+        let value = self.execute_script(script, args)?;
+        match value {
+            Value::Object(_) => Ok(value),
+            Value::String(text) => {
+                let parsed: Value = serde_json::from_str(&text)
+                    .with_context(|| format!("parse script result as JSON object: {text}"))?;
+                if parsed.is_object() {
+                    Ok(parsed)
+                } else {
+                    Err(anyhow!("script result JSON was not an object: {parsed}"))
+                }
+            }
+            other => Err(anyhow!("script result was not an object: {other}")),
+        }
+    }
+
+    pub fn wait_for_condition<F>(
+        &self,
+        description: &str,
+        timeout: Duration,
+        mut condition: F,
+    ) -> Result<()>
+    where
+        F: FnMut() -> Result<bool>,
+    {
         let started = Instant::now();
+        let mut last_error = None;
+        while started.elapsed() <= timeout {
+            match condition() {
+                Ok(true) => return Ok(()),
+                Ok(false) => last_error = None,
+                Err(err) => last_error = Some(err),
+            }
+            std::thread::sleep(Duration::from_millis(50));
+        }
+
+        if let Some(err) = last_error {
+            Err(anyhow!(
+                "timed out waiting for {description}; last error: {err:#}"
+            ))
+        } else {
+            Err(anyhow!("timed out waiting for {description}"))
+        }
+    }
+
+    pub fn wait_for_selector(&self, selector: &str, timeout: Duration) -> Result<()> {
         let script = r#"
             const selector = arguments[0];
             const done = arguments[arguments.length - 1];
             done(Boolean(document.querySelector(selector)));
         "#;
-        while started.elapsed() <= timeout {
+        self.wait_for_condition(&format!("selector `{selector}`"), timeout, || {
             let found = self.execute_script(script, &[json!(selector)])?;
-            if found.as_bool().unwrap_or(false) {
-                return Ok(());
-            }
-            std::thread::sleep(Duration::from_millis(50));
-        }
-        Err(anyhow!("timed out waiting for selector `{selector}`"))
+            Ok(found.as_bool().unwrap_or(false))
+        })
     }
 
     fn path(&self, suffix: &str) -> String {

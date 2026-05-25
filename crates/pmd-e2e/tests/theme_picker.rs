@@ -61,21 +61,25 @@ fn test_theme_picker_opens_and_filters_and_applies_theme() {
         setTimeout(() => {
             const overlay = document.getElementById('theme-picker-overlay');
             const style = document.getElementById('pmd-theme-styles');
-            done(JSON.stringify({
+            done({
                 pickerClosed: !overlay,
                 styleApplied: !!style && style.textContent.length > 0
-            }));
+            });
         }, 200);
     "#;
     let select_result = session
-        .execute_script(select_script, &[])
+        .js_object(select_script, &[])
         .expect("select script");
-    let select_str = select_result.as_str().unwrap_or("");
 
-    assert!(
-        select_str.contains("\"pickerClosed\":true") || select_str.contains("pickerClosed:true"),
-        "picker should close after Enter, got: {}",
-        select_str
+    assert_eq!(
+        select_result["pickerClosed"].as_bool(),
+        Some(true),
+        "picker should close after Enter: {select_result}"
+    );
+    assert_eq!(
+        select_result["styleApplied"].as_bool(),
+        Some(true),
+        "theme styles should be applied after Enter: {select_result}"
     );
 
     session
@@ -102,11 +106,31 @@ fn test_theme_picker_keyboard_navigation() {
             done(overlay ? 'opened' : 'not-opened');
         }, 100);
     "#;
-    session
+    let open_result = session
         .execute_script(open_picker_script, &[])
         .expect("open picker script");
+    assert_eq!(
+        open_result.as_str(),
+        Some("opened"),
+        "theme picker should open on Ctrl+T"
+    );
 
-    std::thread::sleep(std::time::Duration::from_millis(200));
+    session
+        .wait_for_condition(
+            "theme picker overlay before keyboard navigation",
+            Duration::from_secs(2),
+            || {
+                let is_open = session.execute_script(
+                    r#"
+        const done = arguments[arguments.length - 1];
+        done(Boolean(document.getElementById('theme-picker-overlay')));
+        "#,
+                    &[],
+                )?;
+                Ok(is_open.as_bool() == Some(true))
+            },
+        )
+        .expect("wait for theme picker overlay");
 
     let arrow_down_script = r#"
         const done = arguments[arguments.length - 1];
