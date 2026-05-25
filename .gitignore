@@ -3,3 +3,5 @@ target/
 node_modules/
 tests/screenshots/playwright-results/
 tests/screenshots/playwright/
+.playwright-mcp/
+.review-screens/

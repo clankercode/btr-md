@@ -207,7 +207,58 @@ pub fn set_theme(slug: String) -> Result<ThemeBundle, String> {
         }
     }
 
+    // Derive theme-aware interaction colors that themes rarely set explicitly.
+    // accent_hover: shift the accent toward fg slightly (darker for light themes,
+    // brighter for dark themes). ring: translucent accent for focus outlines.
+    if !theme.palette.colours.contains_key("accent_hover") {
+        if let (Some(accent), Some(fg)) = (
+            theme.palette.colours.get("accent"),
+            theme.palette.colours.get("fg"),
+        ) {
+            if let (Some(accent_rgb), Some(fg_rgb)) = (
+                pmd_core::theme::mix::parse_hex(accent),
+                pmd_core::theme::mix::parse_hex(fg),
+            ) {
+                let hover = pmd_core::theme::mix::mix(accent_rgb, fg_rgb, 0.18);
+                css_vars.push_str(&format!(
+                    "  --pmd-accent-hover: {};\n",
+                    pmd_core::theme::mix::to_hex(hover)
+                ));
+            }
+        }
+    }
+
+    if !theme.palette.colours.contains_key("ring") {
+        if let Some(accent) = theme.palette.colours.get("accent") {
+            if let Some((r, g, b)) = pmd_core::theme::mix::parse_hex(accent) {
+                css_vars.push_str(&format!(
+                    "  --pmd-ring: rgba({}, {}, {}, 0.3);\n",
+                    r, g, b
+                ));
+            }
+        }
+    }
+
+    // Mark theme mode so [data-theme="dark|light"] selectors stay in sync
+    // with the actual theme. Themes without bg_muted fall back to bg_elevated.
+    if !theme.palette.colours.contains_key("bg_muted") {
+        if let Some(bg_elevated) = theme.palette.colours.get("bg_elevated") {
+            css_vars.push_str(&format!("  --pmd-bg-muted: {};\n", bg_elevated));
+        }
+    }
+
     css_vars.push_str("}\n");
+
+    // Apply data-theme on documentElement via a small trampoline rule.
+    // Themes don't set this directly, but design-system.css uses it for tokens.
+    let mode = theme.meta.mode.as_str();
+    if mode == "light" || mode == "dark" {
+        css_vars.push_str(&format!(
+            "html {{ color-scheme: {}; }}\n",
+            mode
+        ));
+    }
+
     css_vars.push_str(&extra_css);
 
     let mut mermaid_vars = BTreeMap::new();

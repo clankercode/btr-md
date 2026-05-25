@@ -553,13 +553,20 @@
    -------------------------------------------- */
 
 .pmd-status-bar {
-  height: 28px;
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 24px;
   display: flex;
   align-items: center;
   padding: 0 var(--pmd-space-3);
   font-size: var(--pmd-text-xs);
   color: var(--pmd-fg-muted);
   gap: var(--pmd-space-4);
+  background: var(--pmd-bg-elevated);
+  border-top: 1px solid var(--pmd-border);
+  z-index: 30;
 }
 
 .pmd-status-item {
@@ -576,6 +583,16 @@
 .pmd-status-text {
   font-size: var(--pmd-text-xs);
   color: var(--pmd-fg-muted);
+}
+
+.pmd-status-mode {
+  margin-left: auto;
+  color: var(--pmd-fg-muted);
+  text-transform: capitalize;
+}
+
+.pmd-toolbar-spacer {
+  flex: 1;
 }
 
 /* --------------------------------------------
@@ -702,6 +719,7 @@
   display: flex;
   height: 100vh;
   padding-top: 44px;
+  padding-bottom: 24px;
   box-sizing: border-box;
   width: 100%;
 }
@@ -729,14 +747,54 @@ body[data-mode="source"] #editor-pane {
   display: block;
 }
 
-body[data-mode="split"] #editor-pane,
-body[data-mode="split"] #preview-pane {
+body[data-mode="split"] #editor-pane {
   display: block;
-  width: 50%;
+  flex: 0 0 calc(var(--pmd-split-ratio, 0.5) * 100%);
+  min-width: 0;
+  width: auto;
 }
 
 body[data-mode="split"] #preview-pane {
-  border-left: 1px solid var(--pmd-border);
+  display: block;
+  flex: 1 1 auto;
+  min-width: 0;
+  width: auto;
+}
+
+body[data-mode="split"] #split-resizer {
+  display: block;
+}
+
+.pmd-split-resizer {
+  display: none;
+  flex: 0 0 6px;
+  align-self: stretch;
+  cursor: col-resize;
+  background: var(--pmd-border);
+  position: relative;
+  transition: background var(--pmd-transition-fast);
+}
+
+.pmd-split-resizer:hover,
+.pmd-split-resizer:focus-visible,
+body.pmd-resizing .pmd-split-resizer {
+  background: var(--pmd-accent);
+  outline: none;
+}
+
+.pmd-split-resizer::before {
+  content: '';
+  position: absolute;
+  inset: 0 -4px;
+}
+
+body.pmd-resizing {
+  cursor: col-resize;
+  user-select: none;
+}
+
+body.pmd-resizing * {
+  user-select: none;
 }
 
 body[data-mode="preview"] #preview-pane {
@@ -744,4 +802,15 @@ body[data-mode="preview"] #preview-pane {
   width: 100%;
   max-width: 75ch;
   margin: 0 auto;
+}
+
+#pmd-welcome {
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+}
+
+body[data-state="welcome"] #editor-pane,
+body[data-state="welcome"] #preview-pane {
+  display: none !important;
 }

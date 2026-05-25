@@ -20,6 +20,95 @@ interface PickerState {
 
 let currentState: PickerState | null = null;
 
+function renderCard(theme: ThemeInfo, index: number, isSelected: boolean): HTMLElement {
+  const card = document.createElement('div');
+  card.className = 'pmd-picker-card';
+  card.dataset.slug = theme.slug;
+  card.dataset.index = String(index);
+  card.dataset.mode = theme.mode;
+  card.setAttribute('role', 'option');
+  card.tabIndex = 0;
+  card.ariaSelected = String(isSelected);
+  if (isSelected) {
+    card.dataset.selected = 'true';
+  }
+
+  const bg = theme.preview_bg || (theme.mode === 'dark' ? '#1f2328' : '#ffffff');
+  const bgElevated = theme.preview_bg_elevated || bg;
+  const fg = theme.preview_fg || (theme.mode === 'dark' ? '#e6edf3' : '#1f2328');
+  const accent = theme.preview_accent || (theme.mode === 'dark' ? '#7aa2f7' : '#0969da');
+
+  const preview = document.createElement('div');
+  preview.className = 'pmd-picker-preview';
+  preview.style.background = bg;
+  preview.style.color = fg;
+
+  const previewInner = document.createElement('div');
+  previewInner.className = 'pmd-picker-preview-inner';
+  previewInner.style.background = bgElevated;
+  previewInner.style.color = fg;
+
+  const previewHeading = document.createElement('span');
+  previewHeading.className = 'pmd-picker-preview-heading';
+  previewHeading.textContent = 'Aa';
+
+  const previewAccent = document.createElement('span');
+  previewAccent.className = 'pmd-picker-preview-accent';
+  previewAccent.style.background = accent;
+
+  previewInner.appendChild(previewHeading);
+  previewInner.appendChild(previewAccent);
+  preview.appendChild(previewInner);
+  card.appendChild(preview);
+
+  const info = document.createElement('div');
+  info.className = 'pmd-picker-info';
+
+  const nameRow = document.createElement('div');
+  nameRow.className = 'pmd-picker-name-row';
+
+  const name = document.createElement('span');
+  name.className = 'pmd-picker-name';
+  name.textContent = theme.name;
+  nameRow.appendChild(name);
+
+  const modeBadge = document.createElement('span');
+  modeBadge.className = 'pmd-picker-mode-badge';
+  modeBadge.dataset.mode = theme.mode;
+  modeBadge.textContent = theme.mode;
+  nameRow.appendChild(modeBadge);
+
+  info.appendChild(nameRow);
+
+  if (theme.inspired_by) {
+    const rationale = document.createElement('span');
+    rationale.className = 'pmd-picker-rationale';
+    rationale.textContent = `Inspired by ${theme.inspired_by}`;
+    info.appendChild(rationale);
+  }
+
+  const actions = document.createElement('div');
+  actions.className = 'pmd-picker-actions';
+  const lightBtn = document.createElement('button');
+  lightBtn.className = 'pmd-picker-action pmd-picker-action--light';
+  lightBtn.dataset.slug = theme.slug;
+  lightBtn.dataset.mode = 'light';
+  lightBtn.title = 'Use as light theme (auto-switch)';
+  lightBtn.textContent = 'As light';
+  const darkBtn = document.createElement('button');
+  darkBtn.className = 'pmd-picker-action pmd-picker-action--dark';
+  darkBtn.dataset.slug = theme.slug;
+  darkBtn.dataset.mode = 'dark';
+  darkBtn.title = 'Use as dark theme (auto-switch)';
+  darkBtn.textContent = 'As dark';
+  actions.appendChild(lightBtn);
+  actions.appendChild(darkBtn);
+  info.appendChild(actions);
+
+  card.appendChild(info);
+  return card;
+}
+
 function renderPicker(state: PickerState): HTMLElement {
   const overlay = document.createElement('div');
   overlay.className = 'pmd-picker-overlay';
@@ -51,10 +140,10 @@ function renderPicker(state: PickerState): HTMLElement {
   searchWrapper.appendChild(searchInput);
   header.appendChild(searchWrapper);
 
-  const autoRow = document.createElement('div');
-  autoRow.className = 'pmd-picker-auto-row';
-  autoRow.innerHTML = '<span class="pmd-picker-auto-label">Auto</span>';
-  header.appendChild(autoRow);
+  const hint = document.createElement('div');
+  hint.className = 'pmd-picker-hint';
+  hint.textContent = 'Click a card to apply now, or use "As light" / "As dark" to set auto-switch slots.';
+  header.appendChild(hint);
 
   dialog.appendChild(header);
 
@@ -64,67 +153,7 @@ function renderPicker(state: PickerState): HTMLElement {
   grid.id = 'theme-grid';
 
   state.filteredThemes.forEach((theme, index) => {
-    const card = document.createElement('div');
-    card.className = 'pmd-picker-card';
-    card.dataset.slug = theme.slug;
-    card.dataset.index = String(index);
-    card.setAttribute('role', 'option');
-    card.tabIndex = 0;
-    card.ariaSelected = String(index === state.selectedIndex);
-
-    if (index === state.selectedIndex) {
-      card.dataset.selected = 'true';
-    }
-
-    const preview = document.createElement('div');
-    preview.className = 'pmd-picker-preview';
-
-    const swatchLight = document.createElement('div');
-    swatchLight.className = 'pmd-picker-preview-swatch pmd-picker-preview-swatch--light';
-    swatchLight.style.background = theme.preview_bg_elevated || theme.preview_bg || '#ffffff';
-    swatchLight.style.color = theme.preview_fg || '#1f2328';
-    swatchLight.style.borderColor = theme.preview_bg || '#e2e8f0';
-    swatchLight.innerHTML = '<span>Aa</span>';
-
-    const swatchDark = document.createElement('div');
-    swatchDark.className = 'pmd-picker-preview-swatch pmd-picker-preview-swatch--dark';
-    swatchDark.style.background = theme.preview_bg || '#1f2328';
-    swatchDark.style.color = theme.preview_fg || '#e6edf3';
-    swatchDark.style.borderColor = theme.preview_bg || '#30363d';
-    swatchDark.innerHTML = '<span>Aa</span>';
-
-    const swatches = document.createElement('div');
-    swatches.className = 'pmd-picker-preview-swatches';
-    swatches.appendChild(swatchLight);
-    swatches.appendChild(swatchDark);
-    preview.appendChild(swatches);
-    card.appendChild(preview);
-
-    const info = document.createElement('div');
-    info.className = 'pmd-picker-info';
-
-    const name = document.createElement('span');
-    name.className = 'pmd-picker-name';
-    name.textContent = theme.name;
-    info.appendChild(name);
-
-    if (theme.inspired_by) {
-      const rationale = document.createElement('span');
-      rationale.className = 'pmd-picker-rationale';
-      rationale.textContent = `Inspired by ${theme.inspired_by}`;
-      info.appendChild(rationale);
-    }
-
-    const actions = document.createElement('div');
-    actions.className = 'pmd-picker-actions';
-    actions.innerHTML = `
-      <button class="pmd-picker-action pmd-picker-action--light" data-slug="${theme.slug}" data-mode="light" title="Set as light theme">Light</button>
-      <button class="pmd-picker-action pmd-picker-action--dark" data-slug="${theme.slug}" data-mode="dark" title="Set as dark theme">Dark</button>
-    `;
-    info.appendChild(actions);
-
-    card.appendChild(info);
-    grid.appendChild(card);
+    grid.appendChild(renderCard(theme, index, index === state.selectedIndex));
   });
 
   dialog.appendChild(grid);
@@ -135,71 +164,9 @@ function renderPicker(state: PickerState): HTMLElement {
 function updateGrid(state: PickerState): void {
   const grid = document.getElementById('theme-grid');
   if (!grid) return;
-
   grid.innerHTML = '';
-
   state.filteredThemes.forEach((theme, index) => {
-    const card = document.createElement('div');
-    card.className = 'pmd-picker-card';
-    card.dataset.slug = theme.slug;
-    card.dataset.index = String(index);
-    card.setAttribute('role', 'option');
-    card.tabIndex = 0;
-    card.ariaSelected = String(index === state.selectedIndex);
-
-    if (index === state.selectedIndex) {
-      card.dataset.selected = 'true';
-    }
-
-    const preview = document.createElement('div');
-    preview.className = 'pmd-picker-preview';
-
-    const swatchLight = document.createElement('div');
-    swatchLight.className = 'pmd-picker-preview-swatch pmd-picker-preview-swatch--light';
-    swatchLight.style.background = theme.preview_bg_elevated || theme.preview_bg || '#ffffff';
-    swatchLight.style.color = theme.preview_fg || '#1f2328';
-    swatchLight.style.borderColor = theme.preview_bg || '#e2e8f0';
-    swatchLight.innerHTML = '<span>Aa</span>';
-
-    const swatchDark = document.createElement('div');
-    swatchDark.className = 'pmd-picker-preview-swatch pmd-picker-preview-swatch--dark';
-    swatchDark.style.background = theme.preview_bg || '#1f2328';
-    swatchDark.style.color = theme.preview_fg || '#e6edf3';
-    swatchDark.style.borderColor = theme.preview_bg || '#30363d';
-    swatchDark.innerHTML = '<span>Aa</span>';
-
-    const swatches = document.createElement('div');
-    swatches.className = 'pmd-picker-preview-swatches';
-    swatches.appendChild(swatchLight);
-    swatches.appendChild(swatchDark);
-    preview.appendChild(swatches);
-    card.appendChild(preview);
-
-    const info = document.createElement('div');
-    info.className = 'pmd-picker-info';
-
-    const name = document.createElement('span');
-    name.className = 'pmd-picker-name';
-    name.textContent = theme.name;
-    info.appendChild(name);
-
-    if (theme.inspired_by) {
-      const rationale = document.createElement('span');
-      rationale.className = 'pmd-picker-rationale';
-      rationale.textContent = `Inspired by ${theme.inspired_by}`;
-      info.appendChild(rationale);
-    }
-
-    const actions = document.createElement('div');
-    actions.className = 'pmd-picker-actions';
-    actions.innerHTML = `
-      <button class="pmd-picker-action pmd-picker-action--light" data-slug="${theme.slug}" data-mode="light" title="Set as light theme">Light</button>
-      <button class="pmd-picker-action pmd-picker-action--dark" data-slug="${theme.slug}" data-mode="dark" title="Set as dark theme">Dark</button>
-    `;
-    info.appendChild(actions);
-
-    card.appendChild(info);
-    grid.appendChild(card);
+    grid.appendChild(renderCard(theme, index, index === state.selectedIndex));
   });
 }
 

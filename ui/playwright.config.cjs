@@ -1,5 +1,7 @@
 const path = require('node:path');
 
+const PORT = Number(process.env.PMD_TEST_PORT || 4173);
+
 module.exports = {
   testDir: path.join(__dirname, 'e2e'),
   timeout: 15_000,
@@ -8,7 +10,15 @@ module.exports = {
   },
   outputDir: path.join(__dirname, '..', 'tests', 'screenshots', 'playwright-results'),
   reporter: [['list']],
+  webServer: {
+    command: `python3 -m http.server ${PORT} --bind 127.0.0.1`,
+    cwd: __dirname,
+    port: PORT,
+    timeout: 10_000,
+    reuseExistingServer: !process.env.CI,
+  },
   use: {
+    baseURL: `http://127.0.0.1:${PORT}/`,
     browserName: 'chromium',
     launchOptions: {
       executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE || '/usr/bin/chromium',

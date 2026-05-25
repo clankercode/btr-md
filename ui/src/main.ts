@@ -22,11 +22,82 @@ const editorPane = document.createElement('div');
 editorPane.id = 'editor-pane';
 editorPane.className = 'pmd-editor-pane';
 
+const splitResizer = document.createElement('div');
+splitResizer.id = 'split-resizer';
+splitResizer.className = 'pmd-split-resizer';
+splitResizer.setAttribute('role', 'separator');
+splitResizer.setAttribute('aria-orientation', 'vertical');
+splitResizer.setAttribute('aria-label', 'Resize editor and preview panes');
+splitResizer.tabIndex = 0;
+
 const appContainer = document.createElement('div');
 appContainer.id = 'app-container';
 appContainer.appendChild(editorPane);
+appContainer.appendChild(splitResizer);
 appContainer.appendChild(previewPane);
 document.body.appendChild(appContainer);
+
+const SPLIT_RATIO_KEY = 'pmd:split-ratio';
+const MIN_RATIO = 0.2;
+const MAX_RATIO = 0.8;
+
+function clampRatio(r: number): number {
+  return Math.max(MIN_RATIO, Math.min(MAX_RATIO, r));
+}
+
+function applySplitRatio(ratio: number): void {
+  const clamped = clampRatio(ratio);
+  appContainer.style.setProperty('--pmd-split-ratio', String(clamped));
+  splitResizer.setAttribute('aria-valuenow', String(Math.round(clamped * 100)));
+}
+
+const storedRatio = parseFloat(localStorage.getItem(SPLIT_RATIO_KEY) || '');
+applySplitRatio(Number.isFinite(storedRatio) ? storedRatio : 0.5);
+
+let resizing = false;
+splitResizer.addEventListener('pointerdown', (e) => {
+  if (currentMode !== 'split') return;
+  resizing = true;
+  splitResizer.setPointerCapture(e.pointerId);
+  document.body.classList.add('pmd-resizing');
+  e.preventDefault();
+});
+splitResizer.addEventListener('pointermove', (e) => {
+  if (!resizing) return;
+  const rect = appContainer.getBoundingClientRect();
+  const ratio = (e.clientX - rect.left) / rect.width;
+  applySplitRatio(ratio);
+});
+function endResize(e: PointerEvent) {
+  if (!resizing) return;
+  resizing = false;
+  splitResizer.releasePointerCapture(e.pointerId);
+  document.body.classList.remove('pmd-resizing');
+  const ratio = parseFloat(
+    appContainer.style.getPropertyValue('--pmd-split-ratio') || '0.5'
+  );
+  localStorage.setItem(SPLIT_RATIO_KEY, String(ratio));
+}
+splitResizer.addEventListener('pointerup', endResize);
+splitResizer.addEventListener('pointercancel', endResize);
+splitResizer.addEventListener('dblclick', () => {
+  applySplitRatio(0.5);
+  localStorage.setItem(SPLIT_RATIO_KEY, '0.5');
+});
+splitResizer.addEventListener('keydown', (e) => {
+  if (currentMode !== 'split') return;
+  const current = parseFloat(
+    appContainer.style.getPropertyValue('--pmd-split-ratio') || '0.5'
+  );
+  let next = current;
+  if (e.key === 'ArrowLeft') next = current - 0.02;
+  else if (e.key === 'ArrowRight') next = current + 0.02;
+  else if (e.key === 'Home') next = 0.5;
+  else return;
+  e.preventDefault();
+  applySplitRatio(next);
+  localStorage.setItem(SPLIT_RATIO_KEY, String(clampRatio(next)));
+});
 
 const chrome = createChrome(document.body);
 const hotkeyOverlay = createOverlay();
@@ -230,6 +301,7 @@ function renderMarkdown(markdown: string): Promise<void> {
 }
 
 async function newFile(): Promise<void> {
+  hideWelcomeScreen();
   currentFilePath = null;
   isModified = false;
   chrome.setFilename('Untitled');
@@ -253,6 +325,7 @@ async function openFileDialog(): Promise<void> {
   try {
     const result = await invoke<{ contents: string; path: string } | null>('open_dialog');
     if (result) {
+      hideWelcomeScreen();
       currentFilePath = result.path;
       isModified = false;
       chrome.setFilename(result.path.split('/').pop() || result.path);
@@ -299,8 +372,7 @@ async function saveCurrentFile(): Promise<void> {
 }
 
 async function openFile(path: string) {
-  const welcome = document.querySelector('.pmd-welcome');
-  if (welcome) welcome.remove();
+  hideWelcomeScreen();
 
   try {
     const file = await invoke<{ contents: string; path: string }>('open_file', { path });
@@ -362,48 +434,34 @@ listen<string>('mode-change', (event) => {
   currentMode = mode;
 }).catch(() => {});
 
-listen('system_theme_changed', async () => {
-  try {
-    const settings = await invoke<{
-      auto_switch: boolean;
-      light_theme: string | null;
-      dark_theme: string | null;
-    }>('get_settings');
-    if (settings.auto_switch && (settings.light_theme || settings.dark_theme)) {
-      const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      const themeSlug = isDark ? settings.dark_theme : settings.light_theme;
-      if (themeSlug) {
-        await applyTheme(themeSlug);
-      }
-    }
-  } catch (e) {
-    console.error('Auto-switch failed:', e);
-  }
-});
-
-listen<string>('mode-change', (event) => {
-  const mode = event.payload as Mode;
-  chrome.setMode(mode);
-  currentMode = mode;
-});
-
 document.body.dataset.mode = 'split';
 chrome.setStatus('Ready');
 
 function showWelcomeScreen(): void {
-  previewPane.innerHTML = `
-    <div class="pmd-welcome">
-      <h1>preview-md</h1>
-      <p>Best-in-class markdown preview for Linux</p>
-      <div class="pmd-welcome-actions">
-        <button id="pmd-welcome-open" class="pmd-welcome-btn">Open File</button>
-        <button id="pmd-welcome-new" class="pmd-welcome-btn">New File</button>
-      </div>
-      <p class="pmd-welcome-hint">or press Ctrl+O to open, Ctrl+N to create</p>
+  hideWelcomeScreen();
+  const welcome = document.createElement('div');
+  welcome.id = 'pmd-welcome';
+  welcome.className = 'pmd-welcome';
+  welcome.innerHTML = `
+    <h1>preview-md</h1>
+    <p>Best-in-class markdown preview for Linux</p>
+    <div class="pmd-welcome-actions">
+      <button id="pmd-welcome-open" class="pmd-welcome-btn">Open File</button>
+      <button id="pmd-welcome-new" class="pmd-welcome-btn">New File</button>
     </div>
+    <p class="pmd-welcome-hint">or press Ctrl+O to open, Ctrl+N to create</p>
   `;
+  appContainer.appendChild(welcome);
+  document.body.dataset.state = 'welcome';
   document.getElementById('pmd-welcome-open')?.addEventListener('click', () => openFileDialog());
   document.getElementById('pmd-welcome-new')?.addEventListener('click', () => newFile());
+}
+
+function hideWelcomeScreen(): void {
+  document.getElementById('pmd-welcome')?.remove();
+  if (document.body.dataset.state === 'welcome') {
+    delete document.body.dataset.state;
+  }
 }
 
 invoke<string | null>('get_initial_path').then((path) => {

@@ -80,7 +80,7 @@ const themes = [
 ];
 
 function appUrl() {
-  return pathToFileURL(path.join(__dirname, '..', 'index.html')).href;
+  return '/index.html';
 }
 
 function screenshotPath(name) {

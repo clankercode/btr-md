@@ -84,6 +84,10 @@ export function createChrome(parent: HTMLElement): ChromeInstance {
   toolbar.appendChild(titleSection);
   toolbar.appendChild(modeGroup);
 
+  const toolbarSpacer = document.createElement('div');
+  toolbarSpacer.className = 'pmd-toolbar-spacer';
+  toolbar.appendChild(toolbarSpacer);
+
   const themeBtn = document.createElement('button');
   themeBtn.className = 'pmd-btn pmd-btn-ghost pmd-btn-sm';
   themeBtn.textContent = 'Theme';
@@ -91,13 +95,22 @@ export function createChrome(parent: HTMLElement): ChromeInstance {
   themeBtn.title = 'Change theme (Ctrl+T)';
   toolbar.appendChild(themeBtn);
 
-  const statusText = document.createElement('span');
-  statusText.className = 'pmd-status-text';
-  statusText.style.marginLeft = 'auto';
-  toolbar.appendChild(statusText);
-
   container.appendChild(toolbar);
   parent.appendChild(container);
+
+  const statusBar = document.createElement('div');
+  statusBar.className = 'pmd-status-bar';
+  statusBar.setAttribute('role', 'status');
+
+  const statusText = document.createElement('span');
+  statusText.className = 'pmd-status-item pmd-status-text';
+  statusBar.appendChild(statusText);
+
+  const statusModeText = document.createElement('span');
+  statusModeText.className = 'pmd-status-item pmd-status-mode';
+  statusBar.appendChild(statusModeText);
+
+  parent.appendChild(statusBar);
 
   let currentMode: Mode = 'split';
   const modeHandlers: ((mode: Mode) => void)[] = [];
@@ -133,6 +146,7 @@ export function createChrome(parent: HTMLElement): ChromeInstance {
       btn.classList.toggle('data-active', isActive);
       btn.setAttribute('aria-selected', String(isActive));
     });
+    statusModeText.textContent = mode.charAt(0).toUpperCase() + mode.slice(1);
   }
 
   function handleModeClick(e: Event) {
@@ -220,6 +234,7 @@ export function createChrome(parent: HTMLElement): ChromeInstance {
     },
     destroy: () => {
       container.remove();
+      statusBar.remove();
     },
   };
 }
