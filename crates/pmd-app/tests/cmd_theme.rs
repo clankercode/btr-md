@@ -1,5 +1,13 @@
 use pmd_app_lib::cmd::theme::{find_theme_roots, list_themes_from_roots, set_theme_from_roots};
-use std::path::PathBuf;
+use std::{
+    path::PathBuf,
+    sync::{Mutex, OnceLock},
+};
+
+fn process_env_lock() -> std::sync::MutexGuard<'static, ()> {
+    static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+    LOCK.get_or_init(|| Mutex::new(())).lock().unwrap()
+}
 
 fn workspace_theme_roots() -> Vec<PathBuf> {
     vec![PathBuf::from(env!("CARGO_MANIFEST_DIR"))
@@ -26,6 +34,7 @@ fn write_theme(root: &std::path::Path, slug: &str, name: &str, extra_css: &str) 
 
 #[test]
 fn find_theme_roots_includes_appimage_appdir_share_path() {
+    let _guard = process_env_lock();
     let temp = tempfile::tempdir().expect("appdir");
     let appdir_theme_root = temp.path().join("usr/share/preview-md/themes");
     std::fs::create_dir_all(&appdir_theme_root).expect("create appdir theme root");
@@ -42,6 +51,29 @@ fn find_theme_roots_includes_appimage_appdir_share_path() {
     assert!(
         roots.iter().any(|root| root == &appdir_theme_root),
         "expected APPDIR theme root in {roots:?}"
+    );
+}
+
+#[test]
+fn find_theme_roots_discovers_workspace_themes_from_crate_dir() {
+    let _guard = process_env_lock();
+    let previous_cwd = std::env::current_dir().expect("current dir");
+    let previous_theme_root = std::env::var_os("PREVIEW_MD_THEME_ROOT");
+    std::env::remove_var("PREVIEW_MD_THEME_ROOT");
+    std::env::set_current_dir(env!("CARGO_MANIFEST_DIR")).expect("enter app crate dir");
+
+    let roots = find_theme_roots(None);
+
+    std::env::set_current_dir(previous_cwd).expect("restore cwd");
+    if let Some(previous_theme_root) = previous_theme_root {
+        std::env::set_var("PREVIEW_MD_THEME_ROOT", previous_theme_root);
+    }
+    let workspace_themes = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../..")
+        .join("themes");
+    assert!(
+        roots.iter().any(|root| root == &workspace_themes),
+        "expected workspace theme root in {roots:?}"
     );
 }
 

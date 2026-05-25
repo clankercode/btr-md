@@ -123,6 +123,12 @@ pub fn find_theme_roots(resource_dir: Option<&Path>) -> Vec<PathBuf> {
         push_existing_dir(&mut dirs, PathBuf::from(dev_root));
     }
 
+    #[cfg(debug_assertions)]
+    {
+        let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        push_existing_dir(&mut dirs, manifest_dir.join("../..").join("themes"));
+    }
+
     dirs
 }
 
