@@ -811,6 +811,7 @@ body[data-mode="preview"] #preview-pane {
 }
 
 body[data-state="welcome"] #editor-pane,
-body[data-state="welcome"] #preview-pane {
-  display: none !important;
+body[data-state="welcome"] #preview-pane,
+body[data-state="welcome"] #split-resizer {
+  display: none;
 }

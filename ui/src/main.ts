@@ -28,6 +28,9 @@ splitResizer.className = 'pmd-split-resizer';
 splitResizer.setAttribute('role', 'separator');
 splitResizer.setAttribute('aria-orientation', 'vertical');
 splitResizer.setAttribute('aria-label', 'Resize editor and preview panes');
+splitResizer.setAttribute('aria-controls', 'editor-pane preview-pane');
+splitResizer.setAttribute('aria-valuemin', '20');
+splitResizer.setAttribute('aria-valuemax', '80');
 splitResizer.tabIndex = 0;
 
 const appContainer = document.createElement('div');
@@ -40,6 +43,7 @@ document.body.appendChild(appContainer);
 const SPLIT_RATIO_KEY = 'pmd:split-ratio';
 const MIN_RATIO = 0.2;
 const MAX_RATIO = 0.8;
+const DEFAULT_RATIO = 0.5;
 
 function clampRatio(r: number): number {
   return Math.max(MIN_RATIO, Math.min(MAX_RATIO, r));
@@ -81,18 +85,20 @@ function endResize(e: PointerEvent) {
 splitResizer.addEventListener('pointerup', endResize);
 splitResizer.addEventListener('pointercancel', endResize);
 splitResizer.addEventListener('dblclick', () => {
-  applySplitRatio(0.5);
-  localStorage.setItem(SPLIT_RATIO_KEY, '0.5');
+  applySplitRatio(DEFAULT_RATIO);
+  localStorage.setItem(SPLIT_RATIO_KEY, String(DEFAULT_RATIO));
 });
 splitResizer.addEventListener('keydown', (e) => {
   if (currentMode !== 'split') return;
   const current = parseFloat(
-    appContainer.style.getPropertyValue('--pmd-split-ratio') || '0.5'
+    appContainer.style.getPropertyValue('--pmd-split-ratio') || String(DEFAULT_RATIO)
   );
   let next = current;
   if (e.key === 'ArrowLeft') next = current - 0.02;
   else if (e.key === 'ArrowRight') next = current + 0.02;
-  else if (e.key === 'Home') next = 0.5;
+  else if (e.key === 'Home') next = MIN_RATIO;
+  else if (e.key === 'End') next = MAX_RATIO;
+  else if (e.key === 'Enter' || e.key === ' ') next = DEFAULT_RATIO;
   else return;
   e.preventDefault();
   applySplitRatio(next);
@@ -126,6 +132,7 @@ document.body.addEventListener('drop', async (e) => {
   if (path) {
     openFile(path);
   } else {
+    hideWelcomeScreen();
     const contents = await file.text();
     currentFilePath = null;
     isModified = true;
@@ -144,6 +151,7 @@ document.body.addEventListener('drop', async (e) => {
     }
     editor.setValue(contents);
     await renderMarkdown(contents);
+    editor.focus();
   }
 });
 
@@ -237,7 +245,7 @@ chrome.onClearRecentFiles(async () => {
 
 async function applyTheme(slug: string) {
   try {
-    const bundle = await invoke<{ css: string; mermaid_vars: Record<string, string>; warnings?: string[] }>('set_theme', { slug });
+    const bundle = await invoke<{ css: string; mermaid_vars: Record<string, string>; mode: string; warnings?: string[] }>('set_theme', { slug });
     if (bundle.warnings && bundle.warnings.length > 0) {
       bundle.warnings.forEach((w: string) => console.warn(`[preview-md] Theme "${slug}": ${w}`));
     }
@@ -248,6 +256,12 @@ async function applyTheme(slug: string) {
       document.head.appendChild(style);
     }
     style.textContent = bundle.css;
+    // Mirror the theme mode onto <html> so design-system.css selectors
+    // (`[data-theme="dark"]`, `[data-theme="light"]`) pick up the right
+    // variant. CSS cannot set this attribute itself.
+    if (bundle.mode === 'light' || bundle.mode === 'dark') {
+      document.documentElement.dataset.theme = bundle.mode;
+    }
     requestAnimationFrame(() => {
       rerenderForThemeChange(previewPane, { vars: bundle.mermaid_vars });
     });
@@ -319,6 +333,7 @@ async function newFile(): Promise<void> {
   }
   editor.setValue('');
   await renderMarkdown('');
+  editor.focus();
 }
 
 async function openFileDialog(): Promise<void> {
@@ -343,6 +358,7 @@ async function openFileDialog(): Promise<void> {
       }
       editor.setValue(result.contents);
       await renderMarkdown(result.contents);
+      editor.focus();
       loadRecentFiles();
     }
   } catch (e) {
@@ -396,6 +412,7 @@ async function openFile(path: string) {
     }
     editor.setValue(file.contents);
     await renderMarkdown(file.contents);
+    editor.focus();
   } catch (e) {
     previewPane.innerHTML = `<pre>Error: ${e}</pre>`;
   }

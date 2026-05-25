@@ -16,6 +16,7 @@ interface PickerState {
   filter: string;
   onSelect: (slug: string, mode?: 'light' | 'dark') => void;
   onClose: () => void;
+  previousFocus: HTMLElement | null;
 }
 
 let currentState: PickerState | null = null;
@@ -26,9 +27,8 @@ function renderCard(theme: ThemeInfo, index: number, isSelected: boolean): HTMLE
   card.dataset.slug = theme.slug;
   card.dataset.index = String(index);
   card.dataset.mode = theme.mode;
-  card.setAttribute('role', 'option');
-  card.tabIndex = 0;
-  card.ariaSelected = String(isSelected);
+  card.setAttribute('role', 'group');
+  card.setAttribute('aria-label', `${theme.name} (${theme.mode})`);
   if (isSelected) {
     card.dataset.selected = 'true';
   }
@@ -37,6 +37,16 @@ function renderCard(theme: ThemeInfo, index: number, isSelected: boolean): HTMLE
   const bgElevated = theme.preview_bg_elevated || bg;
   const fg = theme.preview_fg || (theme.mode === 'dark' ? '#e6edf3' : '#1f2328');
   const accent = theme.preview_accent || (theme.mode === 'dark' ? '#7aa2f7' : '#0969da');
+
+  // Primary apply button — entire visual card, including preview swatch and name row,
+  // sits inside this button so a single click/Enter/Space applies the theme.
+  const applyBtn = document.createElement('button');
+  applyBtn.type = 'button';
+  applyBtn.className = 'pmd-picker-card-apply';
+  applyBtn.dataset.slug = theme.slug;
+  applyBtn.dataset.index = String(index);
+  applyBtn.setAttribute('aria-label', `Apply ${theme.name}`);
+  applyBtn.tabIndex = isSelected ? 0 : -1;
 
   const preview = document.createElement('div');
   preview.className = 'pmd-picker-preview';
@@ -59,7 +69,7 @@ function renderCard(theme: ThemeInfo, index: number, isSelected: boolean): HTMLE
   previewInner.appendChild(previewHeading);
   previewInner.appendChild(previewAccent);
   preview.appendChild(previewInner);
-  card.appendChild(preview);
+  applyBtn.appendChild(preview);
 
   const info = document.createElement('div');
   info.className = 'pmd-picker-info';
@@ -87,25 +97,33 @@ function renderCard(theme: ThemeInfo, index: number, isSelected: boolean): HTMLE
     info.appendChild(rationale);
   }
 
+  applyBtn.appendChild(info);
+  card.appendChild(applyBtn);
+
+  // Sibling action buttons — outside the apply button so they're independently
+  // focusable / clickable without bubbling through the apply target.
   const actions = document.createElement('div');
   actions.className = 'pmd-picker-actions';
   const lightBtn = document.createElement('button');
+  lightBtn.type = 'button';
   lightBtn.className = 'pmd-picker-action pmd-picker-action--light';
   lightBtn.dataset.slug = theme.slug;
   lightBtn.dataset.mode = 'light';
   lightBtn.title = 'Use as light theme (auto-switch)';
+  lightBtn.setAttribute('aria-label', `Set ${theme.name} as auto-switch light theme`);
   lightBtn.textContent = 'As light';
   const darkBtn = document.createElement('button');
+  darkBtn.type = 'button';
   darkBtn.className = 'pmd-picker-action pmd-picker-action--dark';
   darkBtn.dataset.slug = theme.slug;
   darkBtn.dataset.mode = 'dark';
   darkBtn.title = 'Use as dark theme (auto-switch)';
+  darkBtn.setAttribute('aria-label', `Set ${theme.name} as auto-switch dark theme`);
   darkBtn.textContent = 'As dark';
   actions.appendChild(lightBtn);
   actions.appendChild(darkBtn);
-  info.appendChild(actions);
+  card.appendChild(actions);
 
-  card.appendChild(info);
   return card;
 }
 
@@ -116,14 +134,16 @@ function renderPicker(state: PickerState): HTMLElement {
 
   const dialog = document.createElement('div');
   dialog.className = 'pmd-picker-dialog';
-  dialog.role = 'dialog';
-  dialog.ariaLabel = 'Theme picker';
+  dialog.setAttribute('role', 'dialog');
+  dialog.setAttribute('aria-modal', 'true');
+  dialog.setAttribute('aria-labelledby', 'theme-picker-title');
 
   const header = document.createElement('div');
   header.className = 'pmd-picker-header';
 
   const title = document.createElement('h2');
   title.className = 'pmd-picker-title';
+  title.id = 'theme-picker-title';
   title.textContent = 'Choose Theme';
   header.appendChild(title);
 
@@ -134,7 +154,7 @@ function renderPicker(state: PickerState): HTMLElement {
   searchInput.type = 'text';
   searchInput.className = 'pmd-picker-search';
   searchInput.placeholder = 'Filter themes... (press / to focus)';
-  searchInput.ariaLabel = 'Filter themes';
+  searchInput.setAttribute('aria-label', 'Filter themes');
   searchInput.value = state.filter;
   searchInput.id = 'theme-filter-input';
   searchWrapper.appendChild(searchInput);
@@ -149,7 +169,6 @@ function renderPicker(state: PickerState): HTMLElement {
 
   const grid = document.createElement('div');
   grid.className = 'pmd-picker-grid';
-  grid.setAttribute('role', 'listbox');
   grid.id = 'theme-grid';
 
   state.filteredThemes.forEach((theme, index) => {
@@ -157,17 +176,51 @@ function renderPicker(state: PickerState): HTMLElement {
   });
 
   dialog.appendChild(grid);
+
+  // Live region announces selection changes for screen readers.
+  const liveRegion = document.createElement('div');
+  liveRegion.id = 'theme-picker-live';
+  liveRegion.className = 'pmd-sr-only';
+  liveRegion.setAttribute('aria-live', 'polite');
+  liveRegion.setAttribute('aria-atomic', 'true');
+  dialog.appendChild(liveRegion);
+
   overlay.appendChild(dialog);
   return overlay;
 }
 
-function updateGrid(state: PickerState): void {
+function rebuildGrid(state: PickerState): void {
   const grid = document.getElementById('theme-grid');
   if (!grid) return;
   grid.innerHTML = '';
   state.filteredThemes.forEach((theme, index) => {
     grid.appendChild(renderCard(theme, index, index === state.selectedIndex));
   });
+}
+
+function updateSelection(state: PickerState): void {
+  const grid = document.getElementById('theme-grid');
+  if (!grid) return;
+  const cards = Array.from(grid.querySelectorAll<HTMLElement>('.pmd-picker-card'));
+  cards.forEach((card, idx) => {
+    const isSelected = idx === state.selectedIndex;
+    if (isSelected) {
+      card.dataset.selected = 'true';
+    } else {
+      delete card.dataset.selected;
+    }
+    const applyBtn = card.querySelector<HTMLButtonElement>('.pmd-picker-card-apply');
+    if (applyBtn) applyBtn.tabIndex = isSelected ? 0 : -1;
+  });
+  announceSelection(state);
+}
+
+function announceSelection(state: PickerState): void {
+  const live = document.getElementById('theme-picker-live');
+  const theme = state.filteredThemes[state.selectedIndex];
+  if (live && theme) {
+    live.textContent = `${theme.name}, ${theme.mode}, ${state.selectedIndex + 1} of ${state.filteredThemes.length}`;
+  }
 }
 
 function filterThemes(themes: ThemeInfo[], filter: string): ThemeInfo[] {
@@ -182,10 +235,20 @@ function filterThemes(themes: ThemeInfo[], filter: string): ThemeInfo[] {
 
 function moveSelection(delta: number): void {
   if (!currentState) return;
+  if (currentState.filteredThemes.length === 0) return;
   const newIndex = currentState.selectedIndex + delta;
   currentState.selectedIndex = Math.max(0, Math.min(newIndex, currentState.filteredThemes.length - 1));
-  updateGrid(currentState);
+  updateSelection(currentState);
   scrollSelectedIntoView();
+  focusSelectedCard();
+}
+
+function focusSelectedCard(): void {
+  const grid = document.getElementById('theme-grid');
+  if (!grid) return;
+  const selectedCard = grid.querySelector<HTMLElement>('.pmd-picker-card[data-selected="true"]');
+  const applyBtn = selectedCard?.querySelector<HTMLButtonElement>('.pmd-picker-card-apply');
+  applyBtn?.focus();
 }
 
 function scrollSelectedIntoView(): void {
@@ -198,24 +261,90 @@ function selectCurrent(): void {
   if (!currentState) return;
   const theme = currentState.filteredThemes[currentState.selectedIndex];
   if (theme) {
-    currentState.onSelect(theme.slug);
+    const onSelect = currentState.onSelect;
     closePicker();
+    onSelect(theme.slug);
   }
 }
 
 function closePicker(): void {
+  const previousFocus = currentState?.previousFocus ?? null;
   const overlay = document.getElementById('theme-picker-overlay');
   if (overlay) {
     overlay.remove();
   }
-  document.removeEventListener('keydown', handlePickerKeydown);
+  document.removeEventListener('keydown', handlePickerKeydown, true);
   currentState = null;
+  // Restore focus to the element that was focused before the picker opened.
+  if (previousFocus && document.contains(previousFocus)) {
+    previousFocus.focus();
+  }
+}
+
+function getFocusableElements(root: HTMLElement): HTMLElement[] {
+  const selector = [
+    'a[href]',
+    'button:not([disabled])',
+    'input:not([disabled])',
+    'select:not([disabled])',
+    'textarea:not([disabled])',
+    '[tabindex]:not([tabindex="-1"])',
+  ].join(',');
+  return Array.from(root.querySelectorAll<HTMLElement>(selector)).filter((el) => {
+    if (el.hasAttribute('disabled')) return false;
+    if (el.tabIndex < 0) return false;
+    // offsetParent is null for display:none ancestors.
+    if (el.offsetParent === null) return false;
+    // visibility:hidden / collapse keeps layout but removes the element from
+    // sequential focus navigation — exclude so the focus trap doesn't try
+    // to focus an invisible action button.
+    const style = getComputedStyle(el);
+    if (style.visibility === 'hidden' || style.visibility === 'collapse') return false;
+    if (style.display === 'none') return false;
+    return true;
+  });
+}
+
+function trapFocus(e: KeyboardEvent): void {
+  const overlay = document.getElementById('theme-picker-overlay');
+  if (!overlay) return;
+  const focusable = getFocusableElements(overlay);
+  if (focusable.length === 0) {
+    e.preventDefault();
+    return;
+  }
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+  const active = document.activeElement as HTMLElement | null;
+  if (e.shiftKey) {
+    if (active === first || !overlay.contains(active)) {
+      e.preventDefault();
+      last.focus();
+    }
+  } else {
+    if (active === last || !overlay.contains(active)) {
+      e.preventDefault();
+      first.focus();
+    }
+  }
 }
 
 function handlePickerKeydown(e: KeyboardEvent): void {
   if (!currentState) return;
 
-  if (e.key === '/') {
+  if (e.key === 'Tab') {
+    trapFocus(e);
+    return;
+  }
+
+  if (e.key === 'Escape') {
+    e.preventDefault();
+    closePicker();
+    return;
+  }
+
+  // Only intercept "/" when focus is not in the search input.
+  if (e.key === '/' && !(e.target instanceof HTMLInputElement)) {
     e.preventDefault();
     const searchInput = document.getElementById('theme-filter-input') as HTMLInputElement;
     searchInput?.focus();
@@ -223,30 +352,32 @@ function handlePickerKeydown(e: KeyboardEvent): void {
     return;
   }
 
+  // Arrow / Enter navigation should fire when focus is on a card OR the search input,
+  // but if the user types arrows in the input we still want to move the grid selection.
   switch (e.key) {
     case 'ArrowDown':
       e.preventDefault();
-      moveSelection(1);
+      moveSelection(3);
       break;
     case 'ArrowUp':
       e.preventDefault();
-      moveSelection(-1);
+      moveSelection(-3);
       break;
     case 'ArrowRight':
       e.preventDefault();
-      moveSelection(3);
+      moveSelection(1);
       break;
     case 'ArrowLeft':
       e.preventDefault();
-      moveSelection(-3);
+      moveSelection(-1);
       break;
     case 'Enter':
-      e.preventDefault();
-      selectCurrent();
-      break;
-    case 'Escape':
-      e.preventDefault();
-      closePicker();
+      // Let Enter on action buttons activate them normally; only auto-select
+      // when focus is on the search input or apply button.
+      if (e.target instanceof HTMLInputElement || (e.target instanceof HTMLElement && e.target.classList.contains('pmd-picker-card-apply'))) {
+        e.preventDefault();
+        selectCurrent();
+      }
       break;
   }
 }
@@ -257,6 +388,7 @@ export function openThemePicker(themes: ThemeInfo[], onSelect: (slug: string, mo
   }
 
   const filteredThemes = filterThemes(themes, '');
+  const previousFocus = document.activeElement as HTMLElement | null;
 
   currentState = {
     themes,
@@ -265,6 +397,7 @@ export function openThemePicker(themes: ThemeInfo[], onSelect: (slug: string, mo
     filter: '',
     onSelect,
     onClose: closePicker,
+    previousFocus,
   };
 
   const overlay = renderPicker(currentState);
@@ -272,47 +405,52 @@ export function openThemePicker(themes: ThemeInfo[], onSelect: (slug: string, mo
 
   const searchInput = document.getElementById('theme-filter-input') as HTMLInputElement;
   searchInput?.focus();
+  announceSelection(currentState);
 
   searchInput?.addEventListener('input', () => {
     if (!currentState) return;
     currentState.filter = searchInput.value;
     currentState.filteredThemes = filterThemes(currentState.themes, currentState.filter);
     currentState.selectedIndex = 0;
-    updateGrid(currentState);
+    rebuildGrid(currentState);
+    announceSelection(currentState);
   });
 
   overlay.addEventListener('click', (e) => {
     const target = e.target as HTMLElement;
 
-    if (target.classList.contains('pmd-picker-action--light') ||
-        target.classList.contains('pmd-picker-action--dark')) {
+    const actionBtn = target.closest<HTMLElement>('.pmd-picker-action');
+    if (actionBtn) {
       e.stopPropagation();
-      const slug = target.dataset.slug;
-      const mode = target.dataset.mode as 'light' | 'dark' | undefined;
-      if (slug) {
-        onSelect(slug, mode);
+      const slug = actionBtn.dataset.slug;
+      const mode = actionBtn.dataset.mode as 'light' | 'dark' | undefined;
+      if (slug && currentState) {
+        const cb = currentState.onSelect;
         closePicker();
+        cb(slug, mode);
       }
       return;
     }
 
-    const card = target.closest('.pmd-picker-card');
-    if (card) {
-      const index = parseInt(card.getAttribute('data-index') || '0', 10);
+    const applyBtn = target.closest<HTMLElement>('.pmd-picker-card-apply');
+    if (applyBtn) {
+      const index = parseInt(applyBtn.dataset.index || '0', 10);
       if (!isNaN(index) && currentState) {
         currentState.selectedIndex = index;
-        updateGrid(currentState);
         selectCurrent();
       }
       return;
     }
 
-    if (target.classList.contains('pmd-picker-overlay')) {
+    // Click on the overlay background (outside the dialog) closes the picker.
+    if (target === overlay) {
       closePicker();
     }
   });
 
-  document.addEventListener('keydown', handlePickerKeydown);
+  // Capture-phase keydown so the picker handles keys even when the editor
+  // (CodeMirror) is focused underneath.
+  document.addEventListener('keydown', handlePickerKeydown, true);
 }
 
 export function isPickerOpen(): boolean {

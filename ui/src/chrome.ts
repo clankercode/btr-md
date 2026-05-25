@@ -124,11 +124,12 @@ export function createChrome(parent: HTMLElement): ChromeInstance {
     fileDropdown.style.display = isHidden ? 'block' : 'none';
   }
 
-  document.addEventListener('click', (e) => {
+  const handleDocumentClick = (e: MouseEvent) => {
     if (!fileMenuWrapper.contains(e.target as Node)) {
       closeDropdown();
     }
-  });
+  };
+  document.addEventListener('click', handleDocumentClick);
 
   fileMenuBtn.addEventListener('click', (e) => {
     e.stopPropagation();
@@ -233,6 +234,7 @@ export function createChrome(parent: HTMLElement): ChromeInstance {
       clearHandlers.push(handler);
     },
     destroy: () => {
+      document.removeEventListener('click', handleDocumentClick);
       container.remove();
       statusBar.remove();
     },
