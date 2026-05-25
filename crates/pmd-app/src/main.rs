@@ -31,6 +31,7 @@ fn main() {
             cmd::theme::list_themes,
             cmd::theme::set_theme,
             cmd::settings::get_settings,
+            cmd::settings::set_active_theme,
             cmd::settings::set_default_mode,
             cmd::settings::set_theme_pair,
             cmd::settings::set_auto_switch,

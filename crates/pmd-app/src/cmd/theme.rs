@@ -1,5 +1,9 @@
 use serde::Serialize;
-use std::collections::BTreeMap;
+use std::{
+    collections::{BTreeMap, HashSet},
+    path::{Path, PathBuf},
+};
+use tauri::Manager;
 
 #[derive(Debug, Clone, Serialize)]
 pub struct ThemeInfo {
@@ -56,55 +60,66 @@ fn is_safe_slug(slug: &str) -> bool {
         .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_')
 }
 
-fn theme_dirs() -> Vec<std::path::PathBuf> {
-    let mut dirs = Vec::new();
-
-    if let Ok(exe) = std::env::current_exe() {
-        if let Some(parent) = exe.parent() {
-            let bundle = parent.parent().unwrap_or(parent);
-            let themes = bundle.join("themes");
-            if themes.is_dir() {
-                dirs.push(themes);
-            }
-        }
+fn push_existing_dir(dirs: &mut Vec<PathBuf>, dir: PathBuf) {
+    if dir.is_dir() && !dirs.iter().any(|existing| existing == &dir) {
+        dirs.push(dir);
     }
+}
 
-    if let Ok(manifest) = std::env::var("CARGO_MANIFEST_DIR") {
-        let manifest_path = std::path::Path::new(&manifest);
-        // Walk two levels up to the workspace root. A malformed env var
-        // (e.g. just "/" or "themes") would have <2 parents; skip rather
-        // than panic.
-        if let Some(workspace_root) = manifest_path.parent().and_then(|p| p.parent()) {
-            let themes = workspace_root.join("themes");
-            if themes.is_dir() {
-                dirs.push(themes);
-            }
-        }
+fn user_theme_dir() -> Option<PathBuf> {
+    if let Some(config_home) = std::env::var_os("XDG_CONFIG_HOME") {
+        return Some(PathBuf::from(config_home).join("preview-md").join("themes"));
     }
-
-    if let Ok(home) = std::env::var("HOME") {
-        let user_theme = std::path::Path::new(&home)
+    std::env::var_os("HOME").map(|home| {
+        PathBuf::from(home)
             .join(".config")
             .join("preview-md")
-            .join("themes");
-        if user_theme.is_dir() {
-            dirs.push(user_theme);
-        }
+            .join("themes")
+    })
+}
+
+pub fn find_theme_roots(resource_dir: Option<&Path>) -> Vec<PathBuf> {
+    let mut dirs = Vec::new();
+
+    // User themes are searched before bundled themes so a user can override
+    // a built-in slug. list_themes dedupes with this same first-root-wins
+    // order, keeping picker entries aligned with set_theme resolution.
+    if let Some(user_themes) = user_theme_dir() {
+        push_existing_dir(&mut dirs, user_themes);
+    }
+
+    if let Some(resource_dir) = resource_dir {
+        push_existing_dir(&mut dirs, resource_dir.join("themes"));
+    }
+
+    if let Ok(cwd) = std::env::current_dir() {
+        push_existing_dir(&mut dirs, cwd.join("themes"));
+    }
+
+    #[cfg(debug_assertions)]
+    if let Ok(dev_root) = std::env::var("PREVIEW_MD_THEME_ROOT") {
+        push_existing_dir(&mut dirs, PathBuf::from(dev_root));
     }
 
     dirs
 }
 
 #[tauri::command]
-pub fn list_themes() -> Result<Vec<ThemeInfo>, String> {
+pub fn list_themes(app: tauri::AppHandle) -> Result<Vec<ThemeInfo>, String> {
+    let resource_dir = app.path().resource_dir().ok();
+    list_themes_from_roots(&find_theme_roots(resource_dir.as_deref()))
+}
+
+pub fn list_themes_from_roots(roots: &[PathBuf]) -> Result<Vec<ThemeInfo>, String> {
     let mut themes = Vec::new();
-    for base in theme_dirs() {
+    let mut seen = HashSet::new();
+    for base in roots {
         // Canonicalise the base so the per-entry containment check below
         // works through any symlinks in the base path itself.
         let Ok(base_canon) = base.canonicalize() else {
             continue;
         };
-        if let Ok(entries) = std::fs::read_dir(&base) {
+        if let Ok(entries) = std::fs::read_dir(base) {
             for entry in entries.flatten() {
                 let path = entry.path();
                 if path.is_dir() {
@@ -118,7 +133,6 @@ pub fn list_themes() -> Result<Vec<ThemeInfo>, String> {
                         else {
                             continue;
                         };
-
                         // Refuse symlinks that escape the trusted base — a
                         // safe-named entry could point to a manifest outside
                         // the theme root and we'd surface that as if it were
@@ -127,6 +141,9 @@ pub fn list_themes() -> Result<Vec<ThemeInfo>, String> {
                             continue;
                         };
                         if !path_canon.starts_with(&base_canon) {
+                            continue;
+                        }
+                        if !seen.insert(slug.clone()) {
                             continue;
                         }
 
@@ -147,14 +164,26 @@ pub fn list_themes() -> Result<Vec<ThemeInfo>, String> {
                                     name: theme.meta.name,
                                     mode: theme.meta.mode.clone(),
                                     inspired_by,
-                                    preview_bg: theme.palette.colours.get("bg").cloned(),
-                                    preview_fg: theme.palette.colours.get("fg").cloned(),
-                                    preview_accent: theme.palette.colours.get("accent").cloned(),
+                                    preview_bg: theme
+                                        .palette
+                                        .colours
+                                        .get("bg")
+                                        .and_then(|v| normalize_hex_colour(v)),
+                                    preview_fg: theme
+                                        .palette
+                                        .colours
+                                        .get("fg")
+                                        .and_then(|v| normalize_hex_colour(v)),
+                                    preview_accent: theme
+                                        .palette
+                                        .colours
+                                        .get("accent")
+                                        .and_then(|v| normalize_hex_colour(v)),
                                     preview_bg_elevated: theme
                                         .palette
                                         .colours
                                         .get("bg_elevated")
-                                        .cloned(),
+                                        .and_then(|v| normalize_hex_colour(v)),
                                 });
                             }
                         }
@@ -167,9 +196,14 @@ pub fn list_themes() -> Result<Vec<ThemeInfo>, String> {
 }
 
 #[tauri::command]
-pub fn set_theme(slug: String) -> Result<ThemeBundle, String> {
+pub fn set_theme(app: tauri::AppHandle, slug: String) -> Result<ThemeBundle, String> {
+    let resource_dir = app.path().resource_dir().ok();
+    set_theme_from_roots(&slug, &find_theme_roots(resource_dir.as_deref()))
+}
+
+pub fn set_theme_from_roots(slug: &str, roots: &[PathBuf]) -> Result<ThemeBundle, String> {
     let (theme_dir, base_canon) =
-        find_theme_dir(&slug).ok_or_else(|| format!("theme not found: {}", slug))?;
+        find_theme_dir(slug, roots).ok_or_else(|| format!("theme not found: {}", slug))?;
     let manifest_path = theme_dir.join("manifest.toml");
 
     // Read the manifest only if it canonicalises inside the trusted base
@@ -190,6 +224,8 @@ pub fn set_theme(slug: String) -> Result<ThemeBundle, String> {
         }
         warnings.push(format!("WCAG contrast issue: {}", e));
     }
+    let colours = normalize_hex_map(&theme.palette.colours, "palette")?;
+    let syntax_colours = normalize_hex_map(&theme.palette.syntax, "syntax")?;
 
     let css_path = theme_dir.join("theme.css");
     // theme.css is optional. When present, it is concatenated raw into the
@@ -221,7 +257,7 @@ pub fn set_theme(slug: String) -> Result<ThemeBundle, String> {
     };
 
     let mut css_vars = String::from(":root {\n");
-    for (k, v) in &theme.palette.colours {
+    for (k, v) in &colours {
         let css_key = k.replace('_', "-");
         if !safe_css_ident(&css_key) {
             warnings.push(format!("palette key `{k}` rejected (unsafe characters)"));
@@ -229,7 +265,7 @@ pub fn set_theme(slug: String) -> Result<ThemeBundle, String> {
         }
         css_vars.push_str(&format!("  --pmd-{css_key}: {v};\n"));
     }
-    for (k, v) in &theme.palette.syntax {
+    for (k, v) in &syntax_colours {
         let css_key = k.replace('_', "-");
         if !safe_css_ident(&css_key) {
             warnings.push(format!("syntax key `{k}` rejected (unsafe characters)"));
@@ -261,16 +297,16 @@ pub fn set_theme(slug: String) -> Result<ThemeBundle, String> {
     push_font("body", &theme.fonts.body);
 
     let derive_mermaid = |key: &str, fallback: Option<&str>| -> Option<String> {
-        if theme.palette.colours.contains_key(key) {
+        if colours.contains_key(key) {
             return None;
         }
         fallback.map(|s| s.to_string())
     };
 
-    let bg = theme.palette.colours.get("bg");
-    let bg_elevated = theme.palette.colours.get("bg_elevated");
-    let fg = theme.palette.colours.get("fg");
-    let accent = theme.palette.colours.get("accent");
+    let bg = colours.get("bg");
+    let bg_elevated = colours.get("bg_elevated");
+    let fg = colours.get("fg");
+    let accent = colours.get("accent");
 
     if let (Some(bg), Some(bg_elevated), Some(fg), Some(accent)) = (bg, bg_elevated, fg, accent) {
         if let (Some(bg_rgb), Some(bg_elevated_rgb), Some(fg_rgb), Some(accent_rgb)) = (
@@ -282,7 +318,7 @@ pub fn set_theme(slug: String) -> Result<ThemeBundle, String> {
             if let Some(v) = derive_mermaid("mermaid_edge_label_bg", Some(bg_elevated)) {
                 css_vars.push_str(&format!("  --pmd-mermaid-edge-label-bg: {};\n", v));
             }
-            if !theme.palette.colours.contains_key("mermaid_cluster_bg") {
+            if !colours.contains_key("mermaid_cluster_bg") {
                 let mixed = pmd_core::theme::mix::mix(bg_elevated_rgb, fg_rgb, 0.04);
                 css_vars.push_str(&format!(
                     "  --pmd-mermaid-cluster-bg: {};\n",
@@ -295,7 +331,7 @@ pub fn set_theme(slug: String) -> Result<ThemeBundle, String> {
             if let Some(v) = derive_mermaid("mermaid_note_border", Some(accent)) {
                 css_vars.push_str(&format!("  --pmd-mermaid-note-border: {};\n", v));
             }
-            if !theme.palette.colours.contains_key("mermaid_actor_bg") {
+            if !colours.contains_key("mermaid_actor_bg") {
                 let mixed = pmd_core::theme::mix::mix(accent_rgb, bg_rgb, 0.30);
                 css_vars.push_str(&format!(
                     "  --pmd-mermaid-actor-bg: {};\n",
@@ -311,11 +347,8 @@ pub fn set_theme(slug: String) -> Result<ThemeBundle, String> {
     // Derive theme-aware interaction colors that themes rarely set explicitly.
     // accent_hover: shift the accent toward fg slightly (darker for light themes,
     // brighter for dark themes). ring: translucent accent for focus outlines.
-    if !theme.palette.colours.contains_key("accent_hover") {
-        if let (Some(accent), Some(fg)) = (
-            theme.palette.colours.get("accent"),
-            theme.palette.colours.get("fg"),
-        ) {
+    if !colours.contains_key("accent_hover") {
+        if let (Some(accent), Some(fg)) = (colours.get("accent"), colours.get("fg")) {
             if let (Some(accent_rgb), Some(fg_rgb)) = (
                 pmd_core::theme::mix::parse_hex(accent),
                 pmd_core::theme::mix::parse_hex(fg),
@@ -329,8 +362,8 @@ pub fn set_theme(slug: String) -> Result<ThemeBundle, String> {
         }
     }
 
-    if !theme.palette.colours.contains_key("ring") {
-        if let Some(accent) = theme.palette.colours.get("accent") {
+    if !colours.contains_key("ring") {
+        if let Some(accent) = colours.get("accent") {
             if let Some((r, g, b)) = pmd_core::theme::mix::parse_hex(accent) {
                 css_vars.push_str(&format!("  --pmd-ring: rgba({}, {}, {}, 0.3);\n", r, g, b));
             }
@@ -339,8 +372,8 @@ pub fn set_theme(slug: String) -> Result<ThemeBundle, String> {
 
     // Themes without bg_muted fall back to bg_elevated so the muted token
     // always resolves to *something* sensible.
-    if !theme.palette.colours.contains_key("bg_muted") {
-        if let Some(bg_elevated) = theme.palette.colours.get("bg_elevated") {
+    if !colours.contains_key("bg_muted") {
+        if let Some(bg_elevated) = colours.get("bg_elevated") {
             css_vars.push_str(&format!("  --pmd-bg-muted: {};\n", bg_elevated));
         }
     }
@@ -368,17 +401,17 @@ pub fn set_theme(slug: String) -> Result<ThemeBundle, String> {
         ("mermaid_line", "lineColor"),
     ];
     for (key, mermaid_key) in &mermaid_map {
-        if let Some(v) = theme.palette.colours.get(*key) {
+        if let Some(v) = colours.get(*key) {
             mermaid_vars.insert(mermaid_key.to_string(), v.clone());
         }
     }
 
-    if let Some(bg) = theme.palette.colours.get("bg") {
+    if let Some(bg) = colours.get("bg") {
         mermaid_vars.insert("background".to_string(), bg.clone());
     }
 
     let get_or_derive_str = |key: &str, fallback: Option<&str>| -> Option<String> {
-        if let Some(v) = theme.palette.colours.get(key) {
+        if let Some(v) = colours.get(key) {
             Some(v.clone())
         } else {
             fallback.map(|s| s.to_string())
@@ -391,7 +424,7 @@ pub fn set_theme(slug: String) -> Result<ThemeBundle, String> {
     ) {
         mermaid_vars.insert("edgeLabelBackground".to_string(), v);
     }
-    if let Some(v) = theme.palette.colours.get("mermaid_cluster_bg") {
+    if let Some(v) = colours.get("mermaid_cluster_bg") {
         mermaid_vars.insert("clusterBkg".to_string(), v.clone());
     }
     if !mermaid_vars.contains_key("clusterBkg") {
@@ -415,7 +448,7 @@ pub fn set_theme(slug: String) -> Result<ThemeBundle, String> {
     if let Some(v) = get_or_derive_str("mermaid_note_border", accent.as_ref().map(|s| s.as_str())) {
         mermaid_vars.insert("noteBorderColor".to_string(), v);
     }
-    if let Some(v) = theme.palette.colours.get("mermaid_actor_bg") {
+    if let Some(v) = colours.get("mermaid_actor_bg") {
         mermaid_vars.insert("actorBkg".to_string(), v.clone());
     }
     if !mermaid_vars.contains_key("actorBkg") {
@@ -441,16 +474,34 @@ pub fn set_theme(slug: String) -> Result<ThemeBundle, String> {
     })
 }
 
+fn normalize_hex_colour(value: &str) -> Option<String> {
+    pmd_core::theme::mix::parse_hex(value).map(pmd_core::theme::mix::to_hex)
+}
+
+fn normalize_hex_map(
+    colours: &BTreeMap<String, String>,
+    label: &str,
+) -> Result<BTreeMap<String, String>, String> {
+    let mut normalized = BTreeMap::new();
+    for (key, value) in colours {
+        let colour = normalize_hex_colour(value).ok_or_else(|| {
+            format!("theme validation: invalid hex colour for {label}.{key}: {value}")
+        })?;
+        normalized.insert(key.clone(), colour);
+    }
+    Ok(normalized)
+}
+
 /// Locate a theme directory by slug and return both its canonical path
 /// and the canonical theme-root it belongs to. Callers need the root so
 /// they can re-check containment when reading individual files inside
 /// the theme (manifest.toml, theme.css) — guarding against symlinks that
 /// escape the trusted root even if the directory itself is well-named.
-fn find_theme_dir(slug: &str) -> Option<(std::path::PathBuf, std::path::PathBuf)> {
+fn find_theme_dir(slug: &str, roots: &[PathBuf]) -> Option<(PathBuf, PathBuf)> {
     if !is_safe_slug(slug) {
         return None;
     }
-    for base in theme_dirs() {
+    for base in roots {
         let path = base.join(slug);
         if !path.is_dir() || !path.join("manifest.toml").exists() {
             continue;

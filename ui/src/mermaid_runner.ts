@@ -3,13 +3,25 @@ import mermaid from 'mermaid';
 let initialised = false;
 let currentThemeVars: Record<string, string> = {};
 
+function shallowEqual(a: Record<string, string>, b: Record<string, string>): boolean {
+  const aKeys = Object.keys(a);
+  const bKeys = Object.keys(b);
+  if (aKeys.length !== bKeys.length) return false;
+  return aKeys.every((key) => a[key] === b[key]);
+}
+
 export function ensureInit(vars?: Record<string, string>) {
+  let shouldInitialize = !initialised;
   if (vars) {
-    currentThemeVars = vars;
+    if (!shallowEqual(currentThemeVars, vars)) {
+      currentThemeVars = { ...vars };
+      shouldInitialize = true;
+    }
   }
-  if (!initialised) {
+  if (shouldInitialize) {
     mermaid.initialize({
       startOnLoad: false,
+      theme: "base",
       securityLevel: "strict",
       themeVariables: currentThemeVars,
     });

@@ -27,17 +27,20 @@ impl From<settings::Settings> for Settings {
 pub fn get_settings() -> Result<Settings, String> {
     let path = settings::path();
     if !path.exists() {
-        return Ok(Settings {
-            active_theme: None,
-            light_theme: None,
-            dark_theme: None,
-            auto_switch: false,
-            default_mode: None,
-        });
+        return Ok(Settings::from(settings::Settings::default()));
     }
     let content = std::fs::read_to_string(&path).map_err(|e| e.to_string())?;
-    let s: settings::Settings = toml::from_str(&content).map_err(|e| e.to_string())?;
+    let s = settings::parse_or_default(&content);
     Ok(Settings::from(s))
+}
+
+#[tauri::command]
+pub fn set_active_theme(slug: String) -> Result<(), String> {
+    settings::rmw(|s| settings::Settings {
+        active_theme: Some(slug),
+        ..s
+    })
+    .map_err(|e| e.to_string())
 }
 
 #[tauri::command]

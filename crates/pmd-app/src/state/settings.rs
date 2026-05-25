@@ -25,6 +25,22 @@ pub fn path() -> PathBuf {
         .unwrap_or_else(|| PathBuf::from("state.toml"))
 }
 
+pub fn parse_or_default(body: &str) -> Settings {
+    if body.is_empty() {
+        return Settings::default();
+    }
+    match toml::from_str::<Settings>(body) {
+        Ok(settings) => settings,
+        Err(e) => {
+            eprintln!(
+                "[preview-md] state.toml is malformed ({}); treating settings as defaults",
+                e
+            );
+            Settings::default()
+        }
+    }
+}
+
 pub fn rmw<F: FnOnce(Settings) -> Settings>(merge: F) -> Result<()> {
     if let Some(parent) = path().parent() {
         std::fs::create_dir_all(parent)?;
@@ -38,11 +54,7 @@ pub fn rmw<F: FnOnce(Settings) -> Settings>(merge: F) -> Result<()> {
     f.lock_exclusive()?;
     let mut s = String::new();
     f.read_to_string(&mut s)?;
-    let current: Settings = if s.is_empty() {
-        Settings::default()
-    } else {
-        toml::from_str(&s)?
-    };
+    let current = parse_or_default(&s);
     let next = merge(current);
     let out = toml::to_string_pretty(&next)?;
     f.set_len(0)?;

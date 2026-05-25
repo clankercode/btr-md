@@ -13,6 +13,14 @@ interface RenderResult {
   html: string;
 }
 
+interface Settings {
+  active_theme: string | null;
+  light_theme: string | null;
+  dark_theme: string | null;
+  auto_switch: boolean;
+  default_mode: string | null;
+}
+
 let renderQueue: Array<{ markdown: string; resolve: () => void; reject: (e: unknown) => void }> = [];
 let rendering = false;
 let currentVersion = 0;
@@ -270,6 +278,11 @@ chrome.onClearRecentFiles(async () => {
 async function applyTheme(slug: string) {
   try {
     const bundle = await invoke<{ css: string; mermaid_vars: Record<string, string>; mode: string; warnings?: string[] }>('set_theme', { slug });
+    try {
+      await invoke('set_active_theme', { slug });
+    } catch (e) {
+      console.error('set_active_theme failed:', e);
+    }
     if (bundle.warnings && bundle.warnings.length > 0) {
       bundle.warnings.forEach((w: string) => console.warn(`[preview-md] Theme "${slug}": ${w}`));
     }
@@ -294,6 +307,47 @@ async function applyTheme(slug: string) {
   }
 }
 
+function isMode(value: unknown): value is Mode {
+  return value === 'source' || value === 'split' || value === 'preview';
+}
+
+function applyMode(mode: Mode): void {
+  chrome.setMode(mode);
+  currentMode = mode;
+}
+
+const systemColorSchemeQuery = window.matchMedia('(prefers-color-scheme: dark)');
+
+async function loadSettings(): Promise<Settings | null> {
+  try {
+    return await invoke<Settings>('get_settings');
+  } catch (e) {
+    console.error('get_settings failed:', e);
+    return null;
+  }
+}
+
+async function applyAutoSwitchTheme(settings?: Settings): Promise<boolean> {
+  const currentSettings = settings ?? await loadSettings();
+  if (!currentSettings?.auto_switch) return false;
+
+  const themeSlug = systemColorSchemeQuery.matches
+    ? currentSettings.dark_theme
+    : currentSettings.light_theme;
+  if (!themeSlug) return false;
+
+  await applyTheme(themeSlug);
+  return true;
+}
+
+function handleSystemThemeChange(): void {
+  applyAutoSwitchTheme().catch((e) => {
+    console.error('Auto-switch failed:', e);
+  });
+}
+
+systemColorSchemeQuery.addEventListener('change', handleSystemThemeChange);
+
 function showOverlay() {
   hotkeyOverlay.style.display = 'flex';
 }
@@ -307,6 +361,14 @@ const setupHotkeys = createHotkeyHandler(
   showOverlay
 );
 setupHotkeys();
+
+document.body.addEventListener('mode-change', (event) => {
+  const mode = (event as CustomEvent<{ mode?: unknown }>).detail?.mode;
+  if (!isMode(mode)) return;
+  invoke('set_default_mode', { mode }).catch((e) => {
+    console.error('set_default_mode failed:', e);
+  });
+});
 
 async function processRenderQueue() {
   if (rendering || renderQueue.length === 0) return;
@@ -510,32 +572,15 @@ listen<string>('file_removed_from_disk', (event) => {
   chrome.setStatus('File removed from disk');
 }).catch(() => {});
 
-listen('system_theme_changed', async () => {
-  try {
-    const settings = await invoke<{
-      auto_switch: boolean;
-      light_theme: string | null;
-      dark_theme: string | null;
-    }>('get_settings');
-    if (settings.auto_switch && (settings.light_theme || settings.dark_theme)) {
-      const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      const themeSlug = isDark ? settings.dark_theme : settings.light_theme;
-      if (themeSlug) {
-        await applyTheme(themeSlug);
-      }
-    }
-  } catch (e) {
-    console.error('Auto-switch failed:', e);
-  }
-}).catch(() => {});
+listen('system_theme_changed', handleSystemThemeChange).catch(() => {});
 
 listen<string>('mode-change', (event) => {
   const mode = event.payload as Mode;
-  chrome.setMode(mode);
-  currentMode = mode;
+  if (isMode(mode)) {
+    applyMode(mode);
+  }
 }).catch(() => {});
 
-document.body.dataset.mode = 'split';
 chrome.setStatus('Ready');
 
 function showWelcomeScreen(): void {
@@ -565,14 +610,33 @@ function hideWelcomeScreen(): void {
   }
 }
 
-invoke<string | null>('get_initial_path').then((path) => {
-  if (path) {
-    openFile(path);
-  } else {
+async function bootstrap(): Promise<void> {
+  const settings = await loadSettings();
+  if (settings) {
+    if (isMode(settings.default_mode)) {
+      applyMode(settings.default_mode);
+    }
+    if (settings.active_theme) {
+      await applyTheme(settings.active_theme);
+    }
+    await applyAutoSwitchTheme(settings);
+  }
+
+  try {
+    const path = await invoke<string | null>('get_initial_path');
+    if (path) {
+      openFile(path);
+    } else {
+      showWelcomeScreen();
+    }
+  } catch (e) {
+    console.error('Failed to get initial path:', e);
     showWelcomeScreen();
   }
-}).catch((e) => {
-  console.error('Failed to get initial path:', e);
+}
+
+bootstrap().catch((e) => {
+  console.error('Startup failed:', e);
   showWelcomeScreen();
 });
 

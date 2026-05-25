@@ -1,4 +1,5 @@
 import * as esbuild from 'esbuild';
+import { cp } from 'node:fs/promises';
 
 await esbuild.build({
   entryPoints: ['src/main.ts'],
@@ -10,3 +11,5 @@ await esbuild.build({
   target: ['es2020'],
   logLevel: 'info',
 });
+
+await cp('node_modules/katex/dist/fonts', 'styles/fonts', { recursive: true });

@@ -9,7 +9,7 @@ version = "1.0.0"
 # Surfaces
 bg = "#fdf6e3"
 bg_elevated = "#eee8d5"
-fg = "#657b83"
+fg = "#475b62"
 fg_muted = "#93a1a1"
 accent = "#268bd2"
 link = "#268bd2"

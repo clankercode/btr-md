@@ -1,4 +1,7 @@
-use pmd_app_lib::cmd::settings::{get_settings, set_theme_pair};
+use pmd_app_lib::{
+    cmd::settings::{get_settings, set_active_theme, set_theme_pair},
+    state::settings,
+};
 use std::{
     env,
     ffi::OsString,
@@ -46,8 +49,11 @@ fn set_theme_pair_only_updates_provided_slots() {
     let _lock = config_env_lock();
     let _home = ConfigHomeGuard::new();
 
-    set_theme_pair(Some("github-light".to_string()), Some("github-dark".to_string()))
-        .expect("seed both slots");
+    set_theme_pair(
+        Some("github-light".to_string()),
+        Some("github-dark".to_string()),
+    )
+    .expect("seed both slots");
 
     set_theme_pair(Some("solarized-light".to_string()), None).expect("update only light");
 
@@ -64,4 +70,60 @@ fn set_theme_pair_only_updates_provided_slots() {
     let s = get_settings().expect("read settings");
     assert_eq!(s.light_theme.as_deref(), Some("solarized-light"));
     assert_eq!(s.dark_theme.as_deref(), Some("dracula"));
+}
+
+#[test]
+fn set_active_theme_persists_slug_without_clearing_other_settings() {
+    let _lock = config_env_lock();
+    let _home = ConfigHomeGuard::new();
+
+    set_theme_pair(
+        Some("github-light".to_string()),
+        Some("github-dark".to_string()),
+    )
+    .expect("seed theme slots");
+
+    set_active_theme("solarized-light".to_string()).expect("persist active theme");
+
+    let s = get_settings().expect("read settings");
+    assert_eq!(s.active_theme.as_deref(), Some("solarized-light"));
+    assert_eq!(s.light_theme.as_deref(), Some("github-light"));
+    assert_eq!(s.dark_theme.as_deref(), Some("github-dark"));
+}
+
+#[test]
+fn get_settings_recovers_from_corrupt_toml() {
+    let _lock = config_env_lock();
+    let _home = ConfigHomeGuard::new();
+
+    if let Some(parent) = settings::path().parent() {
+        std::fs::create_dir_all(parent).expect("create config dir");
+    }
+    std::fs::write(settings::path(), "this is not valid toml = = =")
+        .expect("write corrupt settings");
+
+    let s = get_settings().expect("corrupt settings should fall back to defaults");
+    assert_eq!(s.active_theme, None);
+    assert_eq!(s.light_theme, None);
+    assert_eq!(s.dark_theme, None);
+    assert!(!s.auto_switch);
+    assert_eq!(s.default_mode, None);
+}
+
+#[test]
+fn settings_rmw_recovers_from_corrupt_toml_and_overwrites_on_next_write() {
+    let _lock = config_env_lock();
+    let _home = ConfigHomeGuard::new();
+
+    if let Some(parent) = settings::path().parent() {
+        std::fs::create_dir_all(parent).expect("create config dir");
+    }
+    std::fs::write(settings::path(), "this is not valid toml = = =")
+        .expect("write corrupt settings");
+
+    set_active_theme("github-dark".to_string()).expect("write after corrupt settings");
+
+    let content = std::fs::read_to_string(settings::path()).expect("read rewritten settings");
+    let parsed: settings::Settings = toml::from_str(&content).expect("settings rewritten as TOML");
+    assert_eq!(parsed.active_theme.as_deref(), Some("github-dark"));
 }

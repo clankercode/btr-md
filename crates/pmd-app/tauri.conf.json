@@ -6,6 +6,11 @@
   "build": {
     "frontendDist": "../../ui"
   },
+  "bundle": {
+    "resources": {
+      "../../themes": "themes"
+    }
+  },
   "app": {
     "windows": [
       {
