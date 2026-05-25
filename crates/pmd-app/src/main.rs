@@ -1,4 +1,4 @@
-use pmd_app_lib::{cli, cmd, path_scope::PathScope, watcher::FileWatcher, AppState};
+use pmd_app_lib::{cli, cmd, path_scope::PathScope, AppState};
 use tauri::{Emitter, Manager};
 
 fn main() {
@@ -7,13 +7,19 @@ fn main() {
 
     let initial_path = initial.path.clone();
 
+    // Pre-populate AppState with the path the CLI already admitted to its
+    // local scope. The watcher and `current_path` are set after the Tauri
+    // app is up so we have an `AppHandle` to drive event emission.
+    let state = AppState {
+        scope,
+        initial_path: std::sync::Mutex::new(initial_path.clone()),
+        current_path: std::sync::Mutex::new(initial_path.clone()),
+        watcher: pmd_app_lib::watcher::FileWatcher::new(),
+    };
+
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
-        .manage(AppState {
-            scope,
-            initial_path: std::sync::Mutex::new(initial_path),
-        })
-        .manage(FileWatcher::new())
+        .manage(state)
         .invoke_handler(tauri::generate_handler![
             cmd::render::render_cmd,
             cmd::file::open_file,
@@ -21,6 +27,7 @@ fn main() {
             cmd::file::save_file,
             cmd::file::open_dialog,
             cmd::file::save_dialog,
+            cmd::file::clear_active_file,
             cmd::theme::list_themes,
             cmd::theme::set_theme,
             cmd::settings::get_settings,
@@ -36,8 +43,9 @@ fn main() {
         .setup(move |app| {
             if let Some(ref p) = initial.path {
                 let _ = app.emit("open-file", p.to_string_lossy().to_string());
-                app.state::<FileWatcher>()
-                    .watch(app.handle().clone(), p.clone());
+                app.state::<AppState>()
+                    .watcher
+                    .set_target(app.handle().clone(), p.clone());
             }
             Ok(())
         })

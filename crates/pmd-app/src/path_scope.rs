@@ -1,5 +1,17 @@
 use std::{collections::HashSet, path::PathBuf, sync::Mutex};
 
+/// Tracks the set of paths the renderer is allowed to read or write.
+///
+/// Admission to the scope is performed by trusted backend code paths only:
+/// the CLI argv parser, the OS file dialog (`open_dialog` / `save_dialog`),
+/// and drag/drop events the OS routed through Tauri. The renderer cannot
+/// admit arbitrary paths — see `cmd::file::request_open_file` for the
+/// re-admission rules it applies on renderer-supplied paths.
+///
+/// Scope is append-only for the process lifetime; `save_file` additionally
+/// requires the path to match the currently-active file (see
+/// `AppState::current_path`), so a stale scope entry from an earlier-opened
+/// file cannot be used to overwrite that file once the user has moved on.
 pub struct PathScope {
     allowed: Mutex<HashSet<PathBuf>>,
 }
@@ -17,19 +29,11 @@ impl PathScope {
         }
     }
 
+    /// Admit a path into the scope, returning its canonical form. For
+    /// non-existent paths (e.g. save-as targets), the parent directory is
+    /// canonicalised and the file name is appended.
     pub fn allow(&self, p: &std::path::Path) -> std::io::Result<PathBuf> {
-        let canon = if p.exists() {
-            std::fs::canonicalize(p)?
-        } else {
-            let parent = p.parent().ok_or_else(|| {
-                std::io::Error::new(std::io::ErrorKind::InvalidInput, "no parent directory")
-            })?;
-            let parent_canon = std::fs::canonicalize(parent)?;
-            let file_name = p.file_name().ok_or_else(|| {
-                std::io::Error::new(std::io::ErrorKind::InvalidInput, "path has no file name")
-            })?;
-            parent_canon.join(file_name)
-        };
+        let canon = canonicalise(p)?;
         // Recover from a poisoned lock instead of panicking: the contained
         // HashSet has no invariants the panicked thread could have broken
         // partway through.
@@ -41,24 +45,37 @@ impl PathScope {
         Ok(canon)
     }
 
+    /// Returns `true` if `p` (canonicalised) is in the scope.
     pub fn check(&self, p: &std::path::Path) -> bool {
-        let canon = if p.exists() {
-            std::fs::canonicalize(p).ok()
-        } else {
-            p.parent().and_then(|parent| {
-                let parent_canon = std::fs::canonicalize(parent).ok()?;
-                let file_name = p.file_name()?;
-                Some(parent_canon.join(file_name))
-            })
+        let Ok(canon) = canonicalise(p) else {
+            return false;
         };
-        match canon {
-            Some(c) => self
-                .allowed
-                .lock()
-                .map(|g| g.contains(&c))
-                .unwrap_or_else(|poisoned| poisoned.into_inner().contains(&c)),
-            None => false,
-        }
+        self.allowed
+            .lock()
+            .map(|g| g.contains(&canon))
+            .unwrap_or_else(|poisoned| poisoned.into_inner().contains(&canon))
+    }
+
+    /// Canonicalise without mutating the scope. Useful when a caller wants
+    /// to compare a candidate to a list of known-good paths (e.g. recents)
+    /// before deciding whether to admit it.
+    pub fn canonicalise(p: &std::path::Path) -> std::io::Result<PathBuf> {
+        canonicalise(p)
+    }
+}
+
+fn canonicalise(p: &std::path::Path) -> std::io::Result<PathBuf> {
+    if p.exists() {
+        std::fs::canonicalize(p)
+    } else {
+        let parent = p.parent().ok_or_else(|| {
+            std::io::Error::new(std::io::ErrorKind::InvalidInput, "no parent directory")
+        })?;
+        let parent_canon = std::fs::canonicalize(parent)?;
+        let file_name = p.file_name().ok_or_else(|| {
+            std::io::Error::new(std::io::ErrorKind::InvalidInput, "path has no file name")
+        })?;
+        Ok(parent_canon.join(file_name))
     }
 }
 

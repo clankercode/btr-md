@@ -115,6 +115,27 @@ document.body.addEventListener('dragover', (e) => {
   e.stopPropagation();
 });
 
+// Markdown extensions we accept on drag/drop. Kept in sync with the backend
+// allowlist in `crates/pmd-app/src/cmd/file.rs::MARKDOWN_EXTENSIONS` so the
+// renderer doesn't reject paths the backend would have accepted. Comparison
+// is case-insensitive on the file's extension.
+const MARKDOWN_EXTENSIONS = ['md', 'markdown', 'mdown', 'mkd'];
+
+function isMarkdownFileName(name: string): boolean {
+  const dot = name.lastIndexOf('.');
+  if (dot < 0) return false;
+  const ext = name.slice(dot + 1).toLowerCase();
+  return MARKDOWN_EXTENSIONS.includes(ext);
+}
+
+function showError(message: string): void {
+  // Route user-facing open/save failures through the status bar instead of
+  // hijacking the preview pane (the prior behaviour). The preview should
+  // continue showing the last-rendered document; errors live in chrome.
+  chrome.setStatus(message);
+  console.error(message);
+}
+
 document.body.addEventListener('drop', async (e) => {
   e.preventDefault();
   e.stopPropagation();
@@ -123,8 +144,8 @@ document.body.addEventListener('drop', async (e) => {
   if (!files || files.length === 0) return;
 
   const file = files[0];
-  if (!file.name.endsWith('.md') && !file.name.endsWith('.markdown')) {
-    console.log('Not a markdown file:', file.name);
+  if (!isMarkdownFileName(file.name)) {
+    showError(`Not a markdown file: ${file.name}`);
     return;
   }
 
@@ -324,6 +345,9 @@ async function newFile(): Promise<void> {
   chrome.setFilename('Untitled');
   chrome.setModified(false);
   updateTitle();
+  // Tell the backend we've left the previous file so its scope-relative
+  // save authority and disk watcher both stop pointing at it.
+  invoke('clear_active_file').catch(() => {});
 
   if (!editor) {
     editor = await mountEditor(editorPane, (md) => {
@@ -363,9 +387,10 @@ async function openFileDialog(): Promise<void> {
       await renderMarkdown(result.contents);
       editor.focus();
       loadRecentFiles();
+      chrome.setStatus('Ready');
     }
   } catch (e) {
-    console.error('Open dialog failed:', e);
+    showError(`Open dialog failed: ${String(e)}`);
   }
 }
 
@@ -385,8 +410,9 @@ async function saveCurrentFile(): Promise<void> {
     isModified = false;
     chrome.setModified(false);
     updateTitle();
+    chrome.setStatus('Saved');
   } catch (e) {
-    console.error('Save failed:', e);
+    showError(`Save failed: ${String(e)}`);
   }
 }
 
@@ -396,8 +422,9 @@ async function openFile(path: string) {
   try {
     // `request_open_file` admits the path to the scope before reading; we
     // use it from every UI entry point (drag/drop, recents, welcome buttons,
-    // the open-file Tauri event) because some of those (drag/drop, recents)
-    // can hit paths that aren't yet scope-allowed.
+    // the open-file Tauri event). The backend admits only paths that are
+    // already in scope or in the recents list — anything else must come
+    // via `open_dialog`.
     const file = await invoke<{ contents: string; path: string }>('request_open_file', { path });
     // Track the canonical path returned by Rust, not the (possibly non-canonical
     // or symlinked) input. Saving uses currentFilePath, and `save_file` refuses
@@ -410,7 +437,8 @@ async function openFile(path: string) {
     chrome.setModified(false);
     updateTitle();
 
-    invoke('add_recent_file', { path: openedPath }).catch(() => {});
+    // Backend `request_open_file` already pushes to recents on success, so we
+    // don't double-push here — just refresh the dropdown.
     loadRecentFiles();
 
     if (!editor) {
@@ -425,13 +453,12 @@ async function openFile(path: string) {
     editor.setValue(file.contents);
     await renderMarkdown(file.contents);
     editor.focus();
+    chrome.setStatus('Ready');
   } catch (e) {
-    // Backend errors can include user-controlled paths; build the node via
-    // textContent so the string is rendered as text, never parsed as HTML.
-    previewPane.textContent = '';
-    const pre = document.createElement('pre');
-    pre.textContent = `Error: ${String(e)}`;
-    previewPane.appendChild(pre);
+    // Route to the status bar instead of hijacking the preview pane. The
+    // backend error string may include user-controlled path text; setStatus
+    // uses textContent under the hood so it's never parsed as HTML.
+    showError(`Open failed: ${String(e)}`);
   }
 }
 
@@ -441,6 +468,46 @@ function getCurrentMarkdown(): string {
 
 listen<string>('open-file', (event) => {
   openFile(event.payload);
+}).catch(() => {});
+
+/// Reload the active file from disk into the editor, preserving the cursor
+/// position so the user doesn't get bounced back to the top. The backend
+/// re-pushes to recents inside `open_file`, which is fine here.
+async function reloadActiveFromDisk(path: string): Promise<void> {
+  try {
+    const file = await invoke<{ contents: string; path: string }>('open_file', { path });
+    if (!editor) return;
+    const cursor = editor.view.state.selection.main.head;
+    editor.setValue(file.contents);
+    const max = editor.view.state.doc.length;
+    const clamped = Math.min(cursor, max);
+    editor.view.dispatch({ selection: { anchor: clamped } });
+    await renderMarkdown(file.contents);
+    chrome.setStatus('Reloaded from disk');
+  } catch (e) {
+    showError(`Reload failed: ${String(e)}`);
+  }
+}
+
+// The backend watcher emits a string payload that is the canonical path of
+// the file that changed. We compare it to `currentFilePath` before doing
+// anything so a stale event from a previously-watched file (during a fast
+// switch) cannot clobber the now-active buffer. If the buffer is clean we
+// auto-reload; if dirty we just surface a status so the user can decide.
+listen<string>('file_changed_on_disk', (event) => {
+  const changed = event.payload;
+  if (!currentFilePath || changed !== currentFilePath) return;
+  if (isModified) {
+    chrome.setStatus('File changed on disk (buffer modified; reload via reopen)');
+    return;
+  }
+  reloadActiveFromDisk(currentFilePath);
+}).catch(() => {});
+
+listen<string>('file_removed_from_disk', (event) => {
+  const removed = event.payload;
+  if (!currentFilePath || removed !== currentFilePath) return;
+  chrome.setStatus('File removed from disk');
 }).catch(() => {});
 
 listen('system_theme_changed', async () => {

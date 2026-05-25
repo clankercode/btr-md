@@ -73,12 +73,29 @@ pub fn set_auto_switch(auto_switch: bool) -> Result<(), String> {
 
 #[tauri::command]
 pub fn get_recent_files() -> Result<Vec<PathBuf>, String> {
-    recents::get().map_err(|e| e.to_string())
+    // Filter out paths that no longer exist on disk; the helper also rewrites
+    // the on-disk file so the list shrinks over time instead of accumulating
+    // dead entries.
+    recents::get_existing().map_err(|e| e.to_string())
 }
 
+/// Add a renderer-supplied path to the recents list.
+///
+/// Backend open commands (`open_file`, `request_open_file`, `open_dialog`)
+/// already push to recents on success, so this command exists only as a
+/// fallback for renderer flows that need to record a recent without going
+/// through an open. It validates that the path exists and canonicalises it
+/// so the renderer can't add arbitrary garbage strings.
 #[tauri::command]
 pub fn add_recent_file(path: PathBuf) -> Result<(), String> {
-    recents::push(&path).map_err(|e| e.to_string())
+    if !path.exists() {
+        return Err(format!(
+            "add_recent_file: path does not exist: {}",
+            path.display()
+        ));
+    }
+    let canon = std::fs::canonicalize(&path).map_err(|e| e.to_string())?;
+    recents::push(&canon).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
