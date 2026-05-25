@@ -10,10 +10,10 @@ version = "1.0.0"
 bg = "#f4e8c1"
 bg_elevated = "#e6d9a8"
 fg = "#5e5e5e"
-fg_muted = "#8c8c8c"
+fg_muted = "#676767"
 accent = "#b45a3c"
-link = "#a55a2b"
-border = "#d4c8a0"
+link = "#9b5529"
+border = "#948243"
 
 # Editor
 selection_bg = "#5e5e5e"

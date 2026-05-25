@@ -13,7 +13,7 @@ fg = "#2c2c2c"
 fg_muted = "#606060"
 accent = "#0045a5"
 link = "#003399"
-border = "#d8d4cf"
+border = "#978c7f"
 
 # Editor
 selection_bg = "#2c2c2c"

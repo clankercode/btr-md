@@ -64,3 +64,20 @@ fn all_bundled_themes_meet_normal_text_contrast_on_main_surfaces() {
         }
     }
 }
+
+#[test]
+fn all_bundled_themes_pass_full_theme_validation() {
+    let mut failures = Vec::new();
+    for slug in slugs() {
+        let theme = load(&slug);
+        if let Err(error) = validate(&theme) {
+            failures.push(format!("{slug}: {error}"));
+        }
+    }
+
+    assert!(
+        failures.is_empty(),
+        "bundled theme validation failures:\n{}",
+        failures.join("\n")
+    );
+}
