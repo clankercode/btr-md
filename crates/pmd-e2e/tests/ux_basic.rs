@@ -42,8 +42,8 @@ fn test_toolbar_exists_with_mode_buttons() {
         r#"
         const done = arguments[0];
         const toolbar = document.querySelector('.pmd-toolbar');
-        const modeGroup = document.querySelector('.pmd-mode-group');
-        const buttons = modeGroup ? Array.from(modeGroup.querySelectorAll('.pmd-mode-btn')).map(b => b.textContent) : [];
+        const modeGroup = document.querySelector('.pmd-segmented');
+        const buttons = modeGroup ? Array.from(modeGroup.querySelectorAll('.pmd-segmented-btn')).map(b => b.textContent) : [];
         done({
             hasToolbar: !!toolbar,
             hasModeGroup: !!modeGroup,
@@ -86,7 +86,7 @@ fn test_mode_switching_via_toolbar() {
         .execute_script(
             r#"
         const done = arguments[0];
-        const btn = document.querySelector('.pmd-mode-btn--source');
+        const btn = document.querySelector('[data-mode="source"]');
         if (btn) { btn.click(); }
         done(btn ? 'clicked' : 'not-found');
         "#,
@@ -114,7 +114,7 @@ fn test_mode_switching_via_toolbar() {
         .execute_script(
             r#"
         const done = arguments[0];
-        const btn = document.querySelector('.pmd-mode-btn--preview');
+        const btn = document.querySelector('[data-mode="preview"]');
         if (btn) { btn.click(); }
         done(btn ? 'clicked' : 'not-found');
         "#,
@@ -151,7 +151,7 @@ fn test_editor_accepts_input_in_source_mode() {
         .execute_script(
             r#"
         const done = arguments[0];
-        const btn = document.querySelector('.pmd-mode-btn--source');
+        const btn = document.querySelector('[data-mode="source"]');
         if (btn) { btn.click(); }
         setTimeout(done, 200);
         "#,
@@ -253,11 +253,11 @@ fn test_file_menu_opens_and_shows_recent_files() {
         .execute_script(
             r#"
         const done = arguments[0];
-        const dropdown = document.querySelector('.pmd-file-dropdown');
+        const dropdown = document.querySelector('.pmd-dropdown-menu');
         done({
-            visible: dropdown ? !dropdown.hidden : false,
-            hasRecentList: !!document.querySelector('.pmd-recent-list'),
-            hasClearBtn: !!document.querySelector('.pmd-dropdown-clear')
+            visible: dropdown ? dropdown.style.display !== 'none' : false,
+            hasRecentList: !!document.querySelector('.pmd-dropdown-item'),
+            hasClearBtn: !!document.querySelector('.pmd-dropdown-divider')
         });
         "#,
             &[],

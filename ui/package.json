@@ -4,7 +4,10 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "node vendor/build-app.mjs",
+    "test:e2e:playwright": "NODE_PATH=${NODE_PATH:-$HOME/.bun/install/global/node_modules} playwright test -c playwright.config.cjs",
+    "visual-review": "NODE_PATH=${NODE_PATH:-$HOME/.bun/install/global/node_modules} playwright test -c playwright.config.cjs --grep @visual",
+    "test": "npm run test:e2e:playwright"
   },
   "keywords": [],
   "author": "",

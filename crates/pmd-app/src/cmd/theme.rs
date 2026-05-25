@@ -7,6 +7,14 @@ pub struct ThemeInfo {
     pub name: String,
     pub mode: String,
     pub inspired_by: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub preview_bg: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub preview_fg: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub preview_accent: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub preview_bg_elevated: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -80,8 +88,16 @@ pub fn list_themes() -> Result<Vec<ThemeInfo>, String> {
                                 themes.push(ThemeInfo {
                                     slug,
                                     name: theme.meta.name,
-                                    mode: theme.meta.mode,
+                                    mode: theme.meta.mode.clone(),
                                     inspired_by,
+                                    preview_bg: theme.palette.colours.get("bg").cloned(),
+                                    preview_fg: theme.palette.colours.get("fg").cloned(),
+                                    preview_accent: theme.palette.colours.get("accent").cloned(),
+                                    preview_bg_elevated: theme
+                                        .palette
+                                        .colours
+                                        .get("bg_elevated")
+                                        .cloned(),
                                 });
                             }
                         }

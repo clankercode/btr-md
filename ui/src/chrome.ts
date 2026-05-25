@@ -91,14 +91,12 @@ export function createChrome(parent: HTMLElement): ChromeInstance {
   themeBtn.title = 'Change theme (Ctrl+T)';
   toolbar.appendChild(themeBtn);
 
-  const statusBar = document.createElement('div');
-  statusBar.className = 'pmd-status-bar';
   const statusText = document.createElement('span');
-  statusText.className = 'pmd-status-item';
-  statusBar.appendChild(statusText);
+  statusText.className = 'pmd-status-text';
+  statusText.style.marginLeft = 'auto';
+  toolbar.appendChild(statusText);
 
   container.appendChild(toolbar);
-  container.appendChild(statusBar);
   parent.appendChild(container);
 
   let currentMode: Mode = 'split';

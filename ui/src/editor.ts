@@ -30,8 +30,8 @@ export async function mountEditor(
           '&': {
             height: '100%',
             fontSize: '14px',
-            backgroundColor: 'var(--pmd-bg, #ffffff)',
-            color: 'var(--pmd-fg, #1f2328)',
+            backgroundColor: 'var(--pmd-bg)',
+            color: 'var(--pmd-fg)',
           },
           '.cm-scroller': {
             overflow: 'auto',
@@ -39,31 +39,31 @@ export async function mountEditor(
           },
           '.cm-content': {
             padding: '1rem',
-            caretColor: 'var(--pmd-caret, #0ea5e9)',
+            caretColor: 'var(--pmd-caret)',
           },
           '.cm-focused': {
             outline: 'none',
           },
           '.cm-cursor': {
-            borderLeftColor: 'var(--pmd-caret, #0ea5e9)',
+            borderLeftColor: 'var(--pmd-caret)',
           },
           '.cm-selectionBackground': {
-            backgroundColor: 'var(--pmd-selection-bg, rgba(14, 165, 233, 0.3))',
+            backgroundColor: 'var(--pmd-selection-bg)',
           },
           '&.cm-focused .cm-selectionBackground': {
-            backgroundColor: 'var(--pmd-selection-bg, rgba(14, 165, 233, 0.3))',
+            backgroundColor: 'var(--pmd-selection-bg)',
           },
           '.cm-gutters': {
-            backgroundColor: 'var(--pmd-bg-elevated, #f8fafc)',
-            color: 'var(--pmd-fg-muted, #64748b)',
+            backgroundColor: 'var(--pmd-bg-elevated)',
+            color: 'var(--pmd-fg-muted)',
             border: 'none',
-            borderRight: '1px solid var(--pmd-border, #e2e8f0)',
+            borderRight: '1px solid var(--pmd-border)',
           },
           '.cm-activeLineGutter': {
-            backgroundColor: 'var(--pmd-bg-muted, #f1f5f9)',
+            backgroundColor: 'var(--pmd-bg-elevated)',
           },
           '.cm-activeLine': {
-            backgroundColor: 'var(--pmd-bg-muted, #f1f5f9)',
+            backgroundColor: 'var(--pmd-bg-elevated)',
           },
         }),
       ],

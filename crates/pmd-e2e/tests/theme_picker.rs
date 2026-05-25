@@ -110,7 +110,7 @@ fn test_theme_picker_keyboard_navigation() {
         const event = new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true });
         document.dispatchEvent(event);
         setTimeout(() => {
-            const selected = document.querySelector('.pmd-picker-card--selected');
+            const selected = document.querySelector('[data-selected="true"]');
             const name = selected?.querySelector('.pmd-picker-name')?.textContent || '';
             done(name);
         }, 100);

@@ -45,7 +45,7 @@
 
 /* Secondary Button */
 .pmd-btn-secondary {
-  background: var(--pmd-bg-muted);
+  background: var(--pmd-bg-elevated);
   color: var(--pmd-fg);
   border-color: var(--pmd-border);
 }
@@ -61,7 +61,7 @@
 }
 
 .pmd-btn-ghost:hover {
-  background: var(--pmd-bg-muted);
+  background: var(--pmd-bg-elevated);
 }
 
 /* Outline Button */
@@ -72,7 +72,7 @@
 }
 
 .pmd-btn-outline:hover {
-  background: var(--pmd-bg-muted);
+  background: var(--pmd-bg-elevated);
   border-color: var(--pmd-border-strong);
 }
 
@@ -120,7 +120,7 @@
 .pmd-segmented {
   display: inline-flex;
   align-items: center;
-  background: var(--pmd-bg-muted);
+  background: var(--pmd-bg-elevated);
   border-radius: var(--pmd-radius-lg);
   padding: 2px;
   gap: 2px;
@@ -207,7 +207,7 @@
 
 .pmd-dropdown-item:hover,
 .pmd-dropdown-item[data-highlighted] {
-  background: var(--pmd-bg-muted);
+  background: var(--pmd-bg-elevated);
 }
 
 .pmd-dropdown-item[data-disabled] {
@@ -403,7 +403,7 @@
   font-size: var(--pmd-text-xs);
   font-weight: var(--pmd-font-medium);
   border-radius: var(--pmd-radius-sm);
-  background: var(--pmd-bg-muted);
+  background: var(--pmd-bg-elevated);
   color: var(--pmd-fg-muted);
 }
 
@@ -573,6 +573,11 @@
   height: 12px;
 }
 
+.pmd-status-text {
+  font-size: var(--pmd-text-xs);
+  color: var(--pmd-fg-muted);
+}
+
 /* --------------------------------------------
    12. Welcome Screen
    -------------------------------------------- */
@@ -695,8 +700,8 @@
 
 #app-container {
   display: flex;
-  height: calc(100vh - 72px);
-  padding-top: 72px;
+  height: 100vh;
+  padding-top: 44px;
   box-sizing: border-box;
   width: 100%;
 }

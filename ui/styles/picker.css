@@ -84,7 +84,7 @@
   font-size: var(--pmd-text-xs);
   font-weight: var(--pmd-font-medium);
   color: var(--pmd-fg-muted);
-  background: var(--pmd-bg-muted);
+  background: var(--pmd-bg-elevated);
   padding: var(--pmd-space-1) var(--pmd-space-2);
   border-radius: var(--pmd-radius-sm);
   border: 1px solid var(--pmd-border);
@@ -215,7 +215,7 @@
 }
 
 .pmd-picker-action:hover {
-  background: var(--pmd-bg-muted);
+  background: var(--pmd-bg-elevated);
   border-color: var(--pmd-accent);
 }
 

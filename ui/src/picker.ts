@@ -3,6 +3,10 @@ export interface ThemeInfo {
   name: string;
   mode: 'light' | 'dark';
   inspired_by?: string;
+  preview_bg?: string;
+  preview_fg?: string;
+  preview_accent?: string;
+  preview_bg_elevated?: string;
 }
 
 interface PickerState {
@@ -74,16 +78,26 @@ function renderPicker(state: PickerState): HTMLElement {
 
     const preview = document.createElement('div');
     preview.className = 'pmd-picker-preview';
-    preview.innerHTML = `
-      <div class="pmd-picker-preview-swatches">
-        <div class="pmd-picker-preview-swatch pmd-picker-preview-swatch--light">
-          <span>Aa</span>
-        </div>
-        <div class="pmd-picker-preview-swatch pmd-picker-preview-swatch--dark">
-          <span>Aa</span>
-        </div>
-      </div>
-    `;
+
+    const swatchLight = document.createElement('div');
+    swatchLight.className = 'pmd-picker-preview-swatch pmd-picker-preview-swatch--light';
+    swatchLight.style.background = theme.preview_bg_elevated || theme.preview_bg || '#ffffff';
+    swatchLight.style.color = theme.preview_fg || '#1f2328';
+    swatchLight.style.borderColor = theme.preview_bg || '#e2e8f0';
+    swatchLight.innerHTML = '<span>Aa</span>';
+
+    const swatchDark = document.createElement('div');
+    swatchDark.className = 'pmd-picker-preview-swatch pmd-picker-preview-swatch--dark';
+    swatchDark.style.background = theme.preview_bg || '#1f2328';
+    swatchDark.style.color = theme.preview_fg || '#e6edf3';
+    swatchDark.style.borderColor = theme.preview_bg || '#30363d';
+    swatchDark.innerHTML = '<span>Aa</span>';
+
+    const swatches = document.createElement('div');
+    swatches.className = 'pmd-picker-preview-swatches';
+    swatches.appendChild(swatchLight);
+    swatches.appendChild(swatchDark);
+    preview.appendChild(swatches);
     card.appendChild(preview);
 
     const info = document.createElement('div');
@@ -115,7 +129,6 @@ function renderPicker(state: PickerState): HTMLElement {
 
   dialog.appendChild(grid);
   overlay.appendChild(dialog);
-
   return overlay;
 }
 
@@ -140,16 +153,26 @@ function updateGrid(state: PickerState): void {
 
     const preview = document.createElement('div');
     preview.className = 'pmd-picker-preview';
-    preview.innerHTML = `
-      <div class="pmd-picker-preview-swatches">
-        <div class="pmd-picker-preview-swatch pmd-picker-preview-swatch--light">
-          <span>Aa</span>
-        </div>
-        <div class="pmd-picker-preview-swatch pmd-picker-preview-swatch--dark">
-          <span>Aa</span>
-        </div>
-      </div>
-    `;
+
+    const swatchLight = document.createElement('div');
+    swatchLight.className = 'pmd-picker-preview-swatch pmd-picker-preview-swatch--light';
+    swatchLight.style.background = theme.preview_bg_elevated || theme.preview_bg || '#ffffff';
+    swatchLight.style.color = theme.preview_fg || '#1f2328';
+    swatchLight.style.borderColor = theme.preview_bg || '#e2e8f0';
+    swatchLight.innerHTML = '<span>Aa</span>';
+
+    const swatchDark = document.createElement('div');
+    swatchDark.className = 'pmd-picker-preview-swatch pmd-picker-preview-swatch--dark';
+    swatchDark.style.background = theme.preview_bg || '#1f2328';
+    swatchDark.style.color = theme.preview_fg || '#e6edf3';
+    swatchDark.style.borderColor = theme.preview_bg || '#30363d';
+    swatchDark.innerHTML = '<span>Aa</span>';
+
+    const swatches = document.createElement('div');
+    swatches.className = 'pmd-picker-preview-swatches';
+    swatches.appendChild(swatchLight);
+    swatches.appendChild(swatchDark);
+    preview.appendChild(swatches);
     card.appendChild(preview);
 
     const info = document.createElement('div');
