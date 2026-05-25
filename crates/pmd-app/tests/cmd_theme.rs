@@ -28,6 +28,21 @@ async fn set_theme_returns_css_bundle_for_github_light() {
         bundle.mermaid_vars.contains_key("primaryColor"),
         "expected mermaid vars"
     );
+    // The UI needs the resolved mode so it can mirror it onto
+    // `<html data-theme>`; design-system tokens key off that attribute.
+    assert_eq!(
+        bundle.mode, "light",
+        "expected github-light to report mode=light"
+    );
+}
+
+#[tokio::test]
+async fn set_theme_reports_dark_mode_for_dark_theme() {
+    let bundle = set_theme("github-dark".to_string()).expect("set_theme should succeed");
+    assert_eq!(
+        bundle.mode, "dark",
+        "expected github-dark to report mode=dark"
+    );
 }
 
 #[tokio::test]
@@ -76,4 +91,26 @@ async fn set_theme_maps_mermaid_vars_to_mermaid_api_names() {
 async fn set_theme_returns_error_for_unknown_theme() {
     let result = set_theme("nonexistent-theme".to_string());
     assert!(result.is_err(), "expected error for unknown theme");
+}
+
+#[tokio::test]
+async fn set_theme_rejects_path_traversal_slug() {
+    // A slug that tries to escape the theme root must be refused before any
+    // filesystem lookup; otherwise an attacker-supplied manifest could be
+    // loaded from outside the trusted theme directories.
+    for slug in [
+        "../etc",
+        "..",
+        ".",
+        "./github-light",
+        "github-light/../github-dark",
+        "github light",
+        "github-light\0",
+    ] {
+        let result = set_theme(slug.to_string());
+        assert!(
+            result.is_err(),
+            "expected slug `{slug}` to be rejected, got: {result:?}"
+        );
+    }
 }

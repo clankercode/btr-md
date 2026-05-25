@@ -23,11 +23,9 @@ impl FileWatcher {
 
     pub fn watch(&self, app: AppHandle, path: PathBuf) {
         let parent = path.parent().unwrap_or(&path).to_path_buf();
-        let file_name = path.file_name().map(|n| n.to_owned());
-        if file_name.is_none() {
+        let Some(file_name) = path.file_name().map(|n| n.to_owned()) else {
             return;
-        }
-        let file_name = file_name.unwrap();
+        };
 
         let (tx, rx) = channel();
 
@@ -73,7 +71,12 @@ impl FileWatcher {
             }
         });
 
-        let mut inner = self.inner.lock().unwrap();
+        // Recover from a poisoned lock — `inner` is a single Option<Watcher>
+        // with no multi-step invariants.
+        let mut inner = self
+            .inner
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
         *inner = Some(watcher);
     }
 }

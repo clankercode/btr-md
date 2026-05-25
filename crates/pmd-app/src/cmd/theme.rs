@@ -21,8 +21,39 @@ pub struct ThemeInfo {
 pub struct ThemeBundle {
     pub css: String,
     pub mermaid_vars: BTreeMap<String, String>,
+    /// Theme mode (`"light"` or `"dark"`). The UI mirrors this onto
+    /// `<html data-theme="…">` so design-system tokens keyed on the
+    /// attribute resolve to the correct variant.
+    pub mode: String,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub warnings: Vec<String>,
+}
+
+/// Read a file at `path` only if its canonicalised location is contained
+/// by `base_canon`. Returns `None` if the file does not exist, cannot be
+/// canonicalised, points outside `base_canon` (i.e. is a symlink escape),
+/// or cannot be read. Used to refuse symlinked `manifest.toml` /
+/// `theme.css` entries inside an otherwise safe-named theme directory.
+fn read_contained_file(path: &std::path::Path, base_canon: &std::path::Path) -> Option<String> {
+    let canon = path.canonicalize().ok()?;
+    if !canon.starts_with(base_canon) {
+        return None;
+    }
+    std::fs::read_to_string(&canon).ok()
+}
+
+/// A theme slug is a single directory name. Reject anything that could
+/// escape the theme root (path separators, parent traversal, leading dot)
+/// or that isn't a small set of safe ASCII characters.
+fn is_safe_slug(slug: &str) -> bool {
+    if slug.is_empty() || slug.len() > 64 {
+        return false;
+    }
+    if slug == "." || slug == ".." || slug.starts_with('.') {
+        return false;
+    }
+    slug.chars()
+        .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_')
 }
 
 fn theme_dirs() -> Vec<std::path::PathBuf> {
@@ -40,10 +71,14 @@ fn theme_dirs() -> Vec<std::path::PathBuf> {
 
     if let Ok(manifest) = std::env::var("CARGO_MANIFEST_DIR") {
         let manifest_path = std::path::Path::new(&manifest);
-        let workspace_root = manifest_path.parent().unwrap().parent().unwrap();
-        let themes = workspace_root.join("themes");
-        if themes.is_dir() {
-            dirs.push(themes);
+        // Walk two levels up to the workspace root. A malformed env var
+        // (e.g. just "/" or "themes") would have <2 parents; skip rather
+        // than panic.
+        if let Some(workspace_root) = manifest_path.parent().and_then(|p| p.parent()) {
+            let themes = workspace_root.join("themes");
+            if themes.is_dir() {
+                dirs.push(themes);
+            }
         }
     }
 
@@ -64,19 +99,41 @@ fn theme_dirs() -> Vec<std::path::PathBuf> {
 pub fn list_themes() -> Result<Vec<ThemeInfo>, String> {
     let mut themes = Vec::new();
     for base in theme_dirs() {
+        // Canonicalise the base so the per-entry containment check below
+        // works through any symlinks in the base path itself.
+        let Ok(base_canon) = base.canonicalize() else {
+            continue;
+        };
         if let Ok(entries) = std::fs::read_dir(&base) {
             for entry in entries.flatten() {
                 let path = entry.path();
                 if path.is_dir() {
                     let manifest_path = path.join("manifest.toml");
                     if manifest_path.exists() {
-                        let slug = path
+                        let Some(slug) = path
                             .file_name()
                             .and_then(|n| n.to_str())
-                            .unwrap_or("unknown")
-                            .to_string();
+                            .filter(|s| is_safe_slug(s))
+                            .map(|s| s.to_string())
+                        else {
+                            continue;
+                        };
 
-                        if let Ok(content) = std::fs::read_to_string(&manifest_path) {
+                        // Refuse symlinks that escape the trusted base — a
+                        // safe-named entry could point to a manifest outside
+                        // the theme root and we'd surface that as if it were
+                        // a built-in theme.
+                        let Ok(path_canon) = path.canonicalize() else {
+                            continue;
+                        };
+                        if !path_canon.starts_with(&base_canon) {
+                            continue;
+                        }
+
+                        // Read the manifest only if it canonicalises inside
+                        // the trusted base — guards against a symlinked
+                        // manifest.toml pointing outside the theme root.
+                        if let Some(content) = read_contained_file(&manifest_path, &base_canon) {
                             if let Ok(theme) = pmd_core::theme::parse_manifest(&content) {
                                 let inspired_by = theme.meta.inspired_by.as_ref().and_then(|i| {
                                     i.work
@@ -111,53 +168,97 @@ pub fn list_themes() -> Result<Vec<ThemeInfo>, String> {
 
 #[tauri::command]
 pub fn set_theme(slug: String) -> Result<ThemeBundle, String> {
-    let manifest_path = find_theme_dir(&slug)
-        .ok_or_else(|| format!("theme not found: {}", slug))?
-        .join("manifest.toml");
+    let (theme_dir, base_canon) =
+        find_theme_dir(&slug).ok_or_else(|| format!("theme not found: {}", slug))?;
+    let manifest_path = theme_dir.join("manifest.toml");
 
-    let manifest_content =
-        std::fs::read_to_string(&manifest_path).map_err(|e| format!("read manifest: {}", e))?;
+    // Read the manifest only if it canonicalises inside the trusted base
+    // (i.e. it is not a symlink escaping the theme root).
+    let manifest_content = read_contained_file(&manifest_path, &base_canon).ok_or_else(|| {
+        format!(
+            "read manifest: {} not inside theme root",
+            manifest_path.display()
+        )
+    })?;
     let theme = pmd_core::theme::parse_manifest(&manifest_content)
         .map_err(|e| format!("parse manifest: {}", e))?;
 
     let mut warnings = Vec::new();
     if let Err(e) = pmd_core::theme::validate::validate(&theme) {
+        if e.is_fatal() {
+            return Err(format!("theme validation: {}", e));
+        }
         warnings.push(format!("WCAG contrast issue: {}", e));
     }
 
-    let theme_dir = manifest_path.parent().unwrap();
     let css_path = theme_dir.join("theme.css");
+    // theme.css is optional. When present, it is concatenated raw into the
+    // emitted CSS so it must also pass the containment check — a symlinked
+    // theme.css pointing to attacker-controlled content would otherwise
+    // inject arbitrary CSS.
     let extra_css = if css_path.exists() {
-        std::fs::read_to_string(&css_path).unwrap_or_default()
+        match read_contained_file(&css_path, &base_canon) {
+            Some(s) => s,
+            None => {
+                warnings
+                    .push("theme.css rejected: not inside theme root or unreadable".to_string());
+                String::new()
+            }
+        }
     } else {
         String::new()
+    };
+
+    // Palette/syntax keys come from the manifest's TOML map and are emitted
+    // verbatim into `--pmd-<key>` / `--pmd-syntax-<key>`. A quoted TOML key
+    // could contain `:`, `;`, `}` etc. and break out of the `:root { … }`
+    // block, so restrict to a strict CSS-ident character set after the
+    // underscore->hyphen rewrite.
+    let safe_css_ident = |s: &str| -> bool {
+        !s.is_empty()
+            && s.chars()
+                .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-')
     };
 
     let mut css_vars = String::from(":root {\n");
     for (k, v) in &theme.palette.colours {
         let css_key = k.replace('_', "-");
+        if !safe_css_ident(&css_key) {
+            warnings.push(format!("palette key `{k}` rejected (unsafe characters)"));
+            continue;
+        }
         css_vars.push_str(&format!("  --pmd-{css_key}: {v};\n"));
     }
     for (k, v) in &theme.palette.syntax {
         let css_key = k.replace('_', "-");
+        if !safe_css_ident(&css_key) {
+            warnings.push(format!("syntax key `{k}` rejected (unsafe characters)"));
+            continue;
+        }
         css_vars.push_str(&format!("  --pmd-syntax-{css_key}: {v};\n"));
     }
 
-    if let Some(ui) = &theme.fonts.ui {
-        css_vars.push_str(&format!("  --pmd-font-ui: {};\n", ui));
-    }
-    if let Some(mono) = &theme.fonts.mono {
-        css_vars.push_str(&format!("  --pmd-font-mono: {};\n", mono));
-    }
-    if let Some(serif) = &theme.fonts.serif {
-        css_vars.push_str(&format!("  --pmd-font-serif: {};\n", serif));
-    }
-    if let Some(heading) = &theme.fonts.heading {
-        css_vars.push_str(&format!("  --pmd-font-heading: {};\n", heading));
-    }
-    if let Some(body) = &theme.fonts.body {
-        css_vars.push_str(&format!("  --pmd-font-body: {};\n", body));
-    }
+    // Font values are user-supplied and emitted unescaped into CSS. Reject
+    // anything containing characters that would let a malicious manifest
+    // close the declaration / rule block and inject new CSS.
+    let safe_font = |s: &str| -> bool {
+        !s.chars()
+            .any(|c| matches!(c, ';' | '{' | '}' | '<' | '>' | '\n' | '\r'))
+    };
+    let mut push_font = |key: &str, value: &Option<String>| {
+        if let Some(v) = value {
+            if safe_font(v) {
+                css_vars.push_str(&format!("  --pmd-font-{key}: {v};\n"));
+            } else {
+                warnings.push(format!("font.{key} rejected (unsafe characters)"));
+            }
+        }
+    };
+    push_font("ui", &theme.fonts.ui);
+    push_font("mono", &theme.fonts.mono);
+    push_font("serif", &theme.fonts.serif);
+    push_font("heading", &theme.fonts.heading);
+    push_font("body", &theme.fonts.body);
 
     let derive_mermaid = |key: &str, fallback: Option<&str>| -> Option<String> {
         if theme.palette.colours.contains_key(key) {
@@ -231,16 +332,13 @@ pub fn set_theme(slug: String) -> Result<ThemeBundle, String> {
     if !theme.palette.colours.contains_key("ring") {
         if let Some(accent) = theme.palette.colours.get("accent") {
             if let Some((r, g, b)) = pmd_core::theme::mix::parse_hex(accent) {
-                css_vars.push_str(&format!(
-                    "  --pmd-ring: rgba({}, {}, {}, 0.3);\n",
-                    r, g, b
-                ));
+                css_vars.push_str(&format!("  --pmd-ring: rgba({}, {}, {}, 0.3);\n", r, g, b));
             }
         }
     }
 
-    // Mark theme mode so [data-theme="dark|light"] selectors stay in sync
-    // with the actual theme. Themes without bg_muted fall back to bg_elevated.
+    // Themes without bg_muted fall back to bg_elevated so the muted token
+    // always resolves to *something* sensible.
     if !theme.palette.colours.contains_key("bg_muted") {
         if let Some(bg_elevated) = theme.palette.colours.get("bg_elevated") {
             css_vars.push_str(&format!("  --pmd-bg-muted: {};\n", bg_elevated));
@@ -249,14 +347,13 @@ pub fn set_theme(slug: String) -> Result<ThemeBundle, String> {
 
     css_vars.push_str("}\n");
 
-    // Apply data-theme on documentElement via a small trampoline rule.
-    // Themes don't set this directly, but design-system.css uses it for tokens.
+    // Emit `color-scheme` so native UI (scrollbars, form controls) matches.
+    // The `[data-theme="…"]` attribute used by design-system.css is set by
+    // the JS layer when this bundle is applied — CSS itself cannot mutate
+    // attributes.
     let mode = theme.meta.mode.as_str();
     if mode == "light" || mode == "dark" {
-        css_vars.push_str(&format!(
-            "html {{ color-scheme: {}; }}\n",
-            mode
-        ));
+        css_vars.push_str(&format!("html {{ color-scheme: {}; }}\n", mode));
     }
 
     css_vars.push_str(&extra_css);
@@ -339,15 +436,34 @@ pub fn set_theme(slug: String) -> Result<ThemeBundle, String> {
     Ok(ThemeBundle {
         css: css_vars,
         mermaid_vars,
+        mode: theme.meta.mode.as_str().to_string(),
         warnings,
     })
 }
 
-fn find_theme_dir(slug: &str) -> Option<std::path::PathBuf> {
+/// Locate a theme directory by slug and return both its canonical path
+/// and the canonical theme-root it belongs to. Callers need the root so
+/// they can re-check containment when reading individual files inside
+/// the theme (manifest.toml, theme.css) — guarding against symlinks that
+/// escape the trusted root even if the directory itself is well-named.
+fn find_theme_dir(slug: &str) -> Option<(std::path::PathBuf, std::path::PathBuf)> {
+    if !is_safe_slug(slug) {
+        return None;
+    }
     for base in theme_dirs() {
         let path = base.join(slug);
-        if path.is_dir() && path.join("manifest.toml").exists() {
-            return Some(path);
+        if !path.is_dir() || !path.join("manifest.toml").exists() {
+            continue;
+        }
+        // Defence in depth: even though `is_safe_slug` already excludes
+        // separators and parent components, confirm via canonicalisation
+        // that the resolved theme path is contained by its declared base.
+        let (path_canon, base_canon) = match (path.canonicalize(), base.canonicalize()) {
+            (Ok(p), Ok(b)) => (p, b),
+            _ => continue,
+        };
+        if path_canon.starts_with(&base_canon) {
+            return Some((path_canon, base_canon));
         }
     }
     None

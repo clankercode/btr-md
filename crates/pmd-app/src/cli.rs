@@ -32,6 +32,15 @@ pub fn parse_argv(scope: &crate::path_scope::PathScope) -> InitialOpen {
     }
 
     let p = paths.remove(0);
-    let _ = scope.allow(&p);
-    InitialOpen { path: Some(p) }
+    // If scoping fails (e.g. the parent directory cannot be canonicalised,
+    // typically because the path does not exist), do not advertise the path
+    // to downstream open/watch logic — those code paths assume the scope
+    // covers it.
+    match scope.allow(&p) {
+        Ok(canon) => InitialOpen { path: Some(canon) },
+        Err(e) => {
+            eprintln!("ignoring initial path {}: {}", p.display(), e);
+            InitialOpen { path: None }
+        }
+    }
 }

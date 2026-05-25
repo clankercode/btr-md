@@ -29,8 +29,15 @@ impl Recents {
 }
 
 pub fn recents_path() -> PathBuf {
-    let base = xdg::BaseDirectories::with_prefix("preview-md").unwrap();
-    base.place_config_file("recents.toml").unwrap()
+    // `BaseDirectories::with_prefix` can fail when neither `HOME` nor the
+    // XDG base envs resolve; `place_config_file` can fail when the config
+    // dir cannot be created. Fall back to a relative path in both cases so
+    // a missing home directory becomes a recoverable I/O error in the
+    // calling rmw/get/clear, not a process-wide panic.
+    xdg::BaseDirectories::with_prefix("preview-md")
+        .ok()
+        .and_then(|b| b.place_config_file("recents.toml").ok())
+        .unwrap_or_else(|| PathBuf::from("recents.toml"))
 }
 
 pub fn push(file_path: &PathBuf) -> Result<()> {

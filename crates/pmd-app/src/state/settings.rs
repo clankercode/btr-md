@@ -17,8 +17,12 @@ pub struct Settings {
 }
 
 pub fn path() -> PathBuf {
-    let base = xdg::BaseDirectories::with_prefix("preview-md").unwrap();
-    base.place_config_file("state.toml").unwrap()
+    // See [`crate::state::recents::recents_path`] for the same fallback
+    // rationale: missing HOME / unable-to-create config dir must not panic.
+    xdg::BaseDirectories::with_prefix("preview-md")
+        .ok()
+        .and_then(|b| b.place_config_file("state.toml").ok())
+        .unwrap_or_else(|| PathBuf::from("state.toml"))
 }
 
 pub fn rmw<F: FnOnce(Settings) -> Settings>(merge: F) -> Result<()> {

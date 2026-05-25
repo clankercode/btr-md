@@ -25,9 +25,19 @@ impl PathScope {
                 std::io::Error::new(std::io::ErrorKind::InvalidInput, "no parent directory")
             })?;
             let parent_canon = std::fs::canonicalize(parent)?;
-            parent_canon.join(p.file_name().unwrap())
+            let file_name = p.file_name().ok_or_else(|| {
+                std::io::Error::new(std::io::ErrorKind::InvalidInput, "path has no file name")
+            })?;
+            parent_canon.join(file_name)
         };
-        self.allowed.lock().unwrap().insert(canon.clone());
+        // Recover from a poisoned lock instead of panicking: the contained
+        // HashSet has no invariants the panicked thread could have broken
+        // partway through.
+        let mut allowed = self
+            .allowed
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        allowed.insert(canon.clone());
         Ok(canon)
     }
 
@@ -36,13 +46,17 @@ impl PathScope {
             std::fs::canonicalize(p).ok()
         } else {
             p.parent().and_then(|parent| {
-                std::fs::canonicalize(parent)
-                    .ok()
-                    .map(|parent_canon| parent_canon.join(p.file_name().unwrap()))
+                let parent_canon = std::fs::canonicalize(parent).ok()?;
+                let file_name = p.file_name()?;
+                Some(parent_canon.join(file_name))
             })
         };
         match canon {
-            Some(c) => self.allowed.lock().unwrap().contains(&c),
+            Some(c) => self
+                .allowed
+                .lock()
+                .map(|g| g.contains(&c))
+                .unwrap_or_else(|poisoned| poisoned.into_inner().contains(&c)),
             None => false,
         }
     }
