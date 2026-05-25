@@ -89,14 +89,40 @@ fn backslash_network_path_raw_image_src_stripped() {
 
 #[test]
 fn backslash_network_path_markdown_image_src_stripped() {
-    let out = render(r#"![x](<\\\host\x.png>)"#);
+    let out = render(r#"![x](<\\host\x.png>)"#);
     assert!(
         !out.contains("src="),
         "backslash network-path markdown image src survived: {out}"
     );
     assert!(
-        !out.contains(r#"\\host\x.png"#),
+        !out.contains(r#"\host\x.png"#),
         "backslash network-path markdown image URL survived: {out}"
+    );
+}
+
+#[test]
+fn single_leading_backslash_raw_image_src_stripped() {
+    let out = clean(r#"<img src="\host\x.png">"#);
+    assert!(
+        !out.contains("src="),
+        "single-leading-backslash raw image src survived: {out}"
+    );
+    assert!(
+        !out.contains(r#"\host\x.png"#),
+        "single-leading-backslash raw image URL survived: {out}"
+    );
+}
+
+#[test]
+fn single_leading_backslash_file_raw_image_src_stripped() {
+    let out = clean(r#"<img src="\file.png">"#);
+    assert!(
+        !out.contains("src="),
+        "single-leading-backslash file image src survived: {out}"
+    );
+    assert!(
+        !out.contains(r#"\file.png"#),
+        "single-leading-backslash file image URL survived: {out}"
     );
 }
 

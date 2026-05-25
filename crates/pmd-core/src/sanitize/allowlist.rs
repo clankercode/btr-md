@@ -187,7 +187,7 @@ fn url_scheme(value: &str) -> Option<String> {
     // Strip leading ASCII whitespace and control chars per HTML URL parsing
     // norms; if no `:` precedes a path/query/fragment delimiter, treat as relative.
     let trimmed = trim_url_start(value);
-    if starts_with_network_path(trimmed) {
+    if starts_with_network_path(trimmed) || trimmed.starts_with('\\') {
         return Some(String::new());
     }
     let mut scheme = String::new();
