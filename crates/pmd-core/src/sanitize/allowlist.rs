@@ -182,9 +182,9 @@ fn filter_class(value: &str) -> Option<Cow<'_, str>> {
 
 fn url_scheme(value: &str) -> Option<String> {
     // Strip leading ASCII whitespace and control chars per HTML URL parsing
-    // norms; if no `:` precedes a `/`, `?`, or `#`, treat as relative.
-    let trimmed = value.trim_start_matches(|c: char| c.is_ascii_whitespace() || (c as u32) < 0x20);
-    if trimmed.starts_with("//") {
+    // norms; if no `:` precedes a path/query/fragment delimiter, treat as relative.
+    let trimmed = trim_url_start(value);
+    if starts_with_network_path(trimmed) {
         return Some(String::new());
     }
     let mut scheme = String::new();
@@ -192,12 +192,24 @@ fn url_scheme(value: &str) -> Option<String> {
         if c == ':' {
             return Some(scheme.to_ascii_lowercase());
         }
-        if c == '/' || c == '?' || c == '#' {
+        if c == '/' || c == '\\' || c == '?' || c == '#' {
             return None;
         }
         scheme.push(c);
     }
     None
+}
+
+fn trim_url_start(value: &str) -> &str {
+    value.trim_start_matches(|c: char| c.is_ascii_whitespace() || (c as u32) < 0x20)
+}
+
+fn starts_with_network_path(value: &str) -> bool {
+    let mut chars = value.chars();
+    matches!(
+        (chars.next(), chars.next()),
+        (Some('/' | '\\'), Some('/' | '\\'))
+    )
 }
 
 fn filter_href(value: &str) -> Option<Cow<'_, str>> {
@@ -214,6 +226,9 @@ fn filter_href(value: &str) -> Option<Cow<'_, str>> {
 }
 
 fn filter_img_src(value: &str) -> Option<Cow<'_, str>> {
+    if starts_with_network_path(trim_url_start(value)) {
+        return None;
+    }
     match url_scheme(value) {
         // Relative path — allowed.
         None => Some(Cow::Borrowed(value)),
@@ -234,7 +249,7 @@ fn filter_img_src(value: &str) -> Option<Cow<'_, str>> {
 }
 
 fn is_safe_image_data_url(value: &str) -> bool {
-    let trimmed = value.trim_start_matches(|c: char| c.is_ascii_whitespace() || (c as u32) < 0x20);
+    let trimmed = trim_url_start(value);
     let Some(rest) = trimmed.get(0..5).and_then(|p| {
         if p.eq_ignore_ascii_case("data:") {
             Some(&trimmed[5..])

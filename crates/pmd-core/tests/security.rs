@@ -75,6 +75,56 @@ fn protocol_relative_image_stripped() {
 }
 
 #[test]
+fn backslash_network_path_raw_image_src_stripped() {
+    let out = clean(r#"<img src="\\host\x.png">"#);
+    assert!(
+        !out.contains("src="),
+        "backslash network-path raw image src survived: {out}"
+    );
+    assert!(
+        !out.contains(r#"\\host\x.png"#),
+        "backslash network-path raw image URL survived: {out}"
+    );
+}
+
+#[test]
+fn backslash_network_path_markdown_image_src_stripped() {
+    let out = render(r#"![x](<\\\host\x.png>)"#);
+    assert!(
+        !out.contains("src="),
+        "backslash network-path markdown image src survived: {out}"
+    );
+    assert!(
+        !out.contains(r#"\\host\x.png"#),
+        "backslash network-path markdown image URL survived: {out}"
+    );
+}
+
+#[test]
+fn mixed_slash_backslash_network_path_image_srcs_stripped() {
+    for src in [r#"/\host/x.png"#, r#"\/host/x.png"#] {
+        let out = clean(&format!(r#"<img src="{src}">"#));
+        assert!(
+            !out.contains("src="),
+            "mixed slash/backslash network-path image src survived for {src}: {out}"
+        );
+    }
+}
+
+#[test]
+fn leading_whitespace_control_backslash_network_path_image_src_stripped() {
+    let out = clean("<img src=\" \t\n\u{0001}\\\\host\\x.png\">");
+    assert!(
+        !out.contains("src="),
+        "backslash network-path image src with leading whitespace/control survived: {out}"
+    );
+    assert!(
+        !out.contains(r#"\\host\x.png"#),
+        "backslash network-path image URL with leading whitespace/control survived: {out}"
+    );
+}
+
+#[test]
 fn image_html_in_alt_rendered_as_attribute_text() {
     let out = render("![<script>alert(1)</script>](rel.png)");
     assert!(
