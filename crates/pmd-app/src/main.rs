@@ -17,6 +17,7 @@ fn main() {
         .invoke_handler(tauri::generate_handler![
             cmd::render::render_cmd,
             cmd::file::open_file,
+            cmd::file::request_open_file,
             cmd::file::save_file,
             cmd::file::open_dialog,
             cmd::file::save_dialog,

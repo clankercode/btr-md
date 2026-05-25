@@ -136,11 +136,12 @@ async function installTauriMock(page, options = {}) {
           return {
             css: `:root { --pmd-bg: ${p.bg}; --pmd-bg-elevated: ${p.bg_elevated}; --pmd-fg: ${p.fg}; --pmd-fg-muted: ${p.fg_muted}; --pmd-accent: ${p.accent}; --pmd-border: ${p.border}; }`,
             mermaid_vars: {},
+            mode: theme.mode,
             warnings: [],
           };
         }
         if (cmd === 'render_cmd') return { html: renderMarkdown(args.markdown ?? '') };
-        if (cmd === 'open_file') {
+        if (cmd === 'open_file' || cmd === 'request_open_file') {
           return { path: args.path, contents: files[args.path] ?? '# Missing fixture' };
         }
         return null;

@@ -79,12 +79,52 @@ pub async fn open_file(
 /// recents list, etc.) on a path that may not yet be in the active scope.
 /// We canonicalise and admit the path to the scope here, then read it the
 /// same way `open_file` does.
+///
+/// Trust note: this command admits a renderer-supplied path to the scope
+/// without an OS-level confirmation step. That means a compromised renderer
+/// could expand the scope to arbitrary paths it can name. We mitigate by
+/// (a) restricting to markdown-like extensions so reads can't be aimed at
+/// e.g. `/etc/shadow`, and (b) reading and canonicalising before returning
+/// — the caller gets the canonical path the scope now covers, not the raw
+/// input. A stronger guarantee (real proof of user intent) would require
+/// moving drag/drop and recents into Rust-side OS event handlers.
 #[tauri::command]
 pub async fn request_open_file(
     state: tauri::State<'_, crate::AppState>,
     path: PathBuf,
 ) -> Result<FileBuffer, String> {
-    let canon = state.scope.allow(&path).map_err(|e| e.to_string())?;
+    // Restrict admission to markdown-ish files. We check both the raw input
+    // and the canonical target so a symlink whose name ends `.md` cannot be
+    // used to aim the read at e.g. `/etc/passwd`.
+    let is_md_ext = |p: &std::path::Path| -> bool {
+        matches!(
+            p.extension().and_then(|e| e.to_str()).map(str::to_lowercase),
+            Some(ref ext) if ext == "md" || ext == "markdown" || ext == "mdown" || ext == "mkd"
+        )
+    };
+    if !is_md_ext(&path) {
+        return Err(format!(
+            "request_open_file refuses non-markdown extension: {}",
+            path.display()
+        ));
+    }
+    // Canonicalise *without* admitting yet, so a symlink-to-non-md target
+    // doesn't get a free entry in the scope.
+    let canon = if path.exists() {
+        std::fs::canonicalize(&path).map_err(|e| e.to_string())?
+    } else {
+        return Err(format!(
+            "request_open_file: path does not exist: {}",
+            path.display()
+        ));
+    };
+    if !is_md_ext(&canon) {
+        return Err(format!(
+            "request_open_file refuses canonical non-markdown target: {}",
+            canon.display()
+        ));
+    }
+    let canon = state.scope.allow(&canon).map_err(|e| e.to_string())?;
     let contents = std::fs::read_to_string(&canon).map_err(|e| e.to_string())?;
     crate::state::recents::push(&canon).map_err(|e| e.to_string())?;
     Ok(FileBuffer {

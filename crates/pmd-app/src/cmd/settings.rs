@@ -49,11 +49,18 @@ pub fn set_default_mode(mode: String) -> Result<(), String> {
     .map_err(|e| e.to_string())
 }
 
+/// Update the auto-switch theme slots. Slots that the caller does not pass
+/// (or passes as `null`) are left untouched; only slots explicitly set to
+/// a string slug are overwritten.
+///
+/// The previous implementation always overwrote both fields, so a UI that
+/// only meant to update the `light` slot would silently wipe the `dark`
+/// slot. The picker's per-card "As light" / "As dark" buttons hit that.
 #[tauri::command]
 pub fn set_theme_pair(light: Option<String>, dark: Option<String>) -> Result<(), String> {
     settings::rmw(|s| settings::Settings {
-        light_theme: light,
-        dark_theme: dark,
+        light_theme: light.or(s.light_theme.clone()),
+        dark_theme: dark.or(s.dark_theme.clone()),
         ..s
     })
     .map_err(|e| e.to_string())

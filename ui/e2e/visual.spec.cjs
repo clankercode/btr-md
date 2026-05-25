@@ -100,3 +100,23 @@ test('@visual split mode has a draggable resizer', async ({ page }) => {
 
   await page.screenshot({ path: screenshotPath('split-resized.png') });
 });
+
+test('@visual applying a dark theme sets html[data-theme="dark"]', async ({ page }) => {
+  // Regression test: design-system.css scopes its dark token block on
+  // [data-theme="dark"], so JS must mirror the theme mode there. CSS alone
+  // cannot set that attribute.
+  await installTauriMock(page);
+  await page.goto(appUrl());
+
+  await page.evaluate(() => {
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 't', ctrlKey: true, bubbles: true }));
+  });
+  await expect(page.locator('#theme-picker-overlay')).toBeVisible();
+
+  // Pick the dracula card (mocked as mode=dark).
+  await page.locator('.pmd-picker-card[data-slug="dracula"] .pmd-picker-card-apply').click();
+
+  await expect.poll(async () =>
+    page.evaluate(() => document.documentElement.dataset.theme)
+  ).toBe('dark');
+});

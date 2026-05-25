@@ -191,10 +191,13 @@ async function showThemePicker(): Promise<void> {
   const themes = await loadThemes();
   openThemePicker(themes, async (slug, mode) => {
     if (mode) {
-      await invoke('set_theme_pair', {
-        light: mode === 'light' ? slug : null,
-        dark: mode === 'dark' ? slug : null,
-      });
+      // Only send the slot that's being updated; the Rust merge preserves
+      // any slot whose value is `null`/omitted, so this leaves the opposite
+      // slot intact.
+      const payload: Record<string, string> = {};
+      if (mode === 'light') payload.light = slug;
+      else if (mode === 'dark') payload.dark = slug;
+      await invoke('set_theme_pair', payload);
       await invoke('set_auto_switch', { autoSwitch: true });
     }
     await applyTheme(slug);
@@ -391,14 +394,23 @@ async function openFile(path: string) {
   hideWelcomeScreen();
 
   try {
-    const file = await invoke<{ contents: string; path: string }>('open_file', { path });
-    currentFilePath = path;
+    // `request_open_file` admits the path to the scope before reading; we
+    // use it from every UI entry point (drag/drop, recents, welcome buttons,
+    // the open-file Tauri event) because some of those (drag/drop, recents)
+    // can hit paths that aren't yet scope-allowed.
+    const file = await invoke<{ contents: string; path: string }>('request_open_file', { path });
+    // Track the canonical path returned by Rust, not the (possibly non-canonical
+    // or symlinked) input. Saving uses currentFilePath, and `save_file` refuses
+    // to write through symlinks, so storing the canonical form here keeps the
+    // save round-trip consistent with the path we just admitted to the scope.
+    const openedPath = file.path || path;
+    currentFilePath = openedPath;
     isModified = false;
-    chrome.setFilename(path.split('/').pop() || path);
+    chrome.setFilename(openedPath.split('/').pop() || openedPath);
     chrome.setModified(false);
     updateTitle();
 
-    invoke('add_recent_file', { path }).catch(() => {});
+    invoke('add_recent_file', { path: openedPath }).catch(() => {});
     loadRecentFiles();
 
     if (!editor) {
