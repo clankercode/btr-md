@@ -1,5 +1,5 @@
 use pmd_core::emit::render_string;
-use pmd_core::sanitize::clean;
+use pmd_core::sanitize::{clean, clean_with_render_nonce};
 
 fn render(md: &str) -> String {
     render_string(md).html
@@ -229,6 +229,40 @@ fn raw_mermaid_language_code_does_not_carry_render_nonce_marker() {
     assert!(
         !out.contains("data-pmd-nonce"),
         "raw mermaid language code carried render nonce marker: {out}"
+    );
+}
+
+#[test]
+fn matching_render_nonce_on_untrusted_elements_is_stripped() {
+    let nonce = "0123456789abcdef0123456789abcdef";
+    let raw = format!(
+        r#"<div data-pmd-nonce="{nonce}">x</div><div class="language-mermaid" data-pmd-nonce="{nonce}">y</div><code data-pmd-nonce="{nonce}">z</code>"#
+    );
+    let out = clean_with_render_nonce(&raw, nonce);
+    assert!(
+        !out.contains("data-pmd-nonce"),
+        "matching render nonce survived on untrusted elements: {out}"
+    );
+}
+
+#[test]
+fn matching_render_nonce_is_preserved_on_trusted_code_shapes() {
+    let nonce = "0123456789abcdef0123456789abcdef";
+    for class in ["language-mermaid", "language-math", "math-block"] {
+        let raw = format!(r#"<code class="{class}" data-pmd-nonce="{nonce}">x</code>"#);
+        let out = clean_with_render_nonce(&raw, nonce);
+        assert!(
+            out.contains(&format!(r#"data-pmd-nonce="{nonce}""#)),
+            "matching render nonce stripped from trusted {class} code: {out}"
+        );
+    }
+    let out = clean_with_render_nonce(
+        &format!(r#"<code data-pmd-nonce="{nonce}" class="language-math">x</code>"#),
+        nonce,
+    );
+    assert!(
+        out.contains(&format!(r#"data-pmd-nonce="{nonce}""#)),
+        "matching render nonce stripped when trusted class followed nonce: {out}"
     );
 }
 

@@ -7,6 +7,9 @@ use std::collections::HashSet;
 /// Mermaid/KaTeX input; only nodes carrying the current render nonce get
 /// re-flagged after sanitize.
 const STRIPPED_CLASS_TOKENS: &[&str] = &["pmd-mermaid", "pmd-math", "math-inline", "math-display"];
+const TRUSTED_RENDER_NONCE_CLASS_TOKENS: &[&str] =
+    &["language-mermaid", "language-math", "math-block"];
+const RENDER_NONCE_ATTR: &str = "data-pmd-nonce";
 
 /// Image `src` MIME types we will allow as `data:` URLs. Mirrors what a local
 /// markdown previewer reasonably needs (inline raster + SVG) while excluding
@@ -144,7 +147,7 @@ fn filter_attribute<'a>(
     {
         return None;
     }
-    if attribute == "data-pmd-nonce" {
+    if attribute == RENDER_NONCE_ATTR {
         return match render_nonce {
             Some(nonce) if nonce == value => Some(Cow::Borrowed(value)),
             _ => None,
@@ -263,4 +266,180 @@ fn is_safe_image_data_url(value: &str) -> bool {
     let mime_end = rest.find([';', ',']).unwrap_or(rest.len());
     let mime = rest[..mime_end].trim().to_ascii_lowercase();
     ALLOWED_IMG_DATA_MIME.iter().any(|m| *m == mime)
+}
+
+pub(crate) fn strip_untrusted_render_nonces(html: &str) -> String {
+    if !html.contains(RENDER_NONCE_ATTR) {
+        return html.to_string();
+    }
+
+    let mut out = String::with_capacity(html.len());
+    let mut cursor = 0;
+    while let Some(tag_offset) = html[cursor..].find('<') {
+        let tag_start = cursor + tag_offset;
+        out.push_str(&html[cursor..tag_start]);
+        let Some(tag_end) = find_tag_end(html, tag_start + 1) else {
+            out.push_str(&html[tag_start..]);
+            return out;
+        };
+        out.push_str(&strip_untrusted_render_nonce_from_tag(
+            &html[tag_start..=tag_end],
+        ));
+        cursor = tag_end + 1;
+    }
+    out.push_str(&html[cursor..]);
+    out
+}
+
+fn find_tag_end(html: &str, start: usize) -> Option<usize> {
+    let mut quote = None;
+    for (offset, c) in html[start..].char_indices() {
+        match (quote, c) {
+            (Some(q), _) if q == c => quote = None,
+            (None, '"' | '\'') => quote = Some(c),
+            (None, '>') => return Some(start + offset),
+            _ => {}
+        }
+    }
+    None
+}
+
+fn strip_untrusted_render_nonce_from_tag(tag: &str) -> Cow<'_, str> {
+    if !tag.contains(RENDER_NONCE_ATTR) || tag.starts_with("</") || tag.starts_with("<!") {
+        return Cow::Borrowed(tag);
+    }
+
+    let Some((tag_name, attrs_start)) = parse_tag_name(tag) else {
+        return Cow::Borrowed(tag);
+    };
+    let attrs = parse_attrs(tag, attrs_start);
+    if attrs.nonce_spans.is_empty() {
+        return Cow::Borrowed(tag);
+    }
+    if tag_name.eq_ignore_ascii_case("code") && attrs.has_trusted_class {
+        return Cow::Borrowed(tag);
+    }
+
+    let mut stripped = String::with_capacity(tag.len());
+    let mut cursor = 0;
+    for (start, end) in attrs.nonce_spans {
+        stripped.push_str(&tag[cursor..start]);
+        cursor = end;
+    }
+    stripped.push_str(&tag[cursor..]);
+    Cow::Owned(stripped)
+}
+
+fn parse_tag_name(tag: &str) -> Option<(&str, usize)> {
+    if !tag.starts_with('<') {
+        return None;
+    }
+    let name_start = 1;
+    let name_end = tag[name_start..]
+        .find(|c: char| c.is_ascii_whitespace() || c == '/' || c == '>')
+        .map(|idx| name_start + idx)
+        .unwrap_or(tag.len() - 1);
+    if name_start == name_end {
+        return None;
+    }
+    Some((&tag[name_start..name_end], name_end))
+}
+
+struct ParsedAttrs {
+    has_trusted_class: bool,
+    nonce_spans: Vec<(usize, usize)>,
+}
+
+fn parse_attrs(tag: &str, start: usize) -> ParsedAttrs {
+    let mut attrs = ParsedAttrs {
+        has_trusted_class: false,
+        nonce_spans: Vec::new(),
+    };
+    let mut cursor = start;
+    let end = tag.len().saturating_sub(1);
+
+    while cursor < end {
+        let attr_start = cursor;
+        cursor = skip_ascii_whitespace(tag, cursor, end);
+        if cursor >= end || tag.as_bytes()[cursor] == b'/' {
+            break;
+        }
+
+        let name_start = cursor;
+        cursor = advance_attr_name(tag, cursor, end);
+        if name_start == cursor {
+            cursor += 1;
+            continue;
+        }
+        let name_end = cursor;
+
+        cursor = skip_ascii_whitespace(tag, cursor, end);
+        let mut value = None;
+        if cursor < end && tag.as_bytes()[cursor] == b'=' {
+            cursor += 1;
+            cursor = skip_ascii_whitespace(tag, cursor, end);
+            let (value_range, next_cursor) = parse_attr_value(tag, cursor, end);
+            value = value_range;
+            cursor = next_cursor;
+        }
+
+        let attr_name = &tag[name_start..name_end];
+        if attr_name.eq_ignore_ascii_case("class") {
+            if let Some((value_start, value_end)) = value {
+                attrs.has_trusted_class |= tag[value_start..value_end]
+                    .split_whitespace()
+                    .any(is_trusted_render_nonce_class);
+            }
+        } else if attr_name.eq_ignore_ascii_case(RENDER_NONCE_ATTR) {
+            attrs.nonce_spans.push((attr_start, cursor));
+        }
+    }
+
+    attrs
+}
+
+fn skip_ascii_whitespace(value: &str, mut cursor: usize, end: usize) -> usize {
+    while cursor < end && value.as_bytes()[cursor].is_ascii_whitespace() {
+        cursor += 1;
+    }
+    cursor
+}
+
+fn advance_attr_name(value: &str, mut cursor: usize, end: usize) -> usize {
+    while cursor < end {
+        let byte = value.as_bytes()[cursor];
+        if byte.is_ascii_whitespace() || byte == b'=' || byte == b'/' || byte == b'>' {
+            break;
+        }
+        cursor += 1;
+    }
+    cursor
+}
+
+fn parse_attr_value(tag: &str, cursor: usize, end: usize) -> (Option<(usize, usize)>, usize) {
+    if cursor >= end {
+        return (None, cursor);
+    }
+
+    let first = tag.as_bytes()[cursor];
+    if first == b'"' || first == b'\'' {
+        let value_start = cursor + 1;
+        let Some(close_offset) = tag[value_start..end].find(first as char) else {
+            return (Some((value_start, end)), end);
+        };
+        let value_end = value_start + close_offset;
+        return (Some((value_start, value_end)), value_end + 1);
+    }
+
+    let value_end = tag[cursor..end]
+        .find(|c: char| c.is_ascii_whitespace() || c == '>')
+        .map(|idx| cursor + idx)
+        .unwrap_or(end);
+    (Some((cursor, value_end)), value_end)
+}
+
+fn is_trusted_render_nonce_class(token: &str) -> bool {
+    TRUSTED_RENDER_NONCE_CLASS_TOKENS
+        .iter()
+        .any(|trusted| trusted.eq_ignore_ascii_case(token))
 }

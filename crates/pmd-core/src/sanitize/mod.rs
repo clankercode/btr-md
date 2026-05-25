@@ -10,5 +10,5 @@ pub fn clean(html: &str) -> String {
 
 pub fn clean_with_render_nonce(html: &str, render_nonce: &str) -> String {
     let b = allowlist::build_with_render_nonce(render_nonce);
-    b.clean(html).to_string()
+    allowlist::strip_untrusted_render_nonces(&b.clean(html).to_string())
 }
