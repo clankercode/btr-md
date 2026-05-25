@@ -43,6 +43,24 @@ impl Drop for ConfigHomeGuard {
 }
 
 #[test]
+fn renderer_cannot_register_add_recent_file_command() {
+    let manifest_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+    let main_rs =
+        std::fs::read_to_string(manifest_dir.join("src/main.rs")).expect("read main.rs");
+    let settings_rs = std::fs::read_to_string(manifest_dir.join("src/cmd/settings.rs"))
+        .expect("read settings command source");
+
+    assert!(
+        !main_rs.contains("add_recent_file"),
+        "add_recent_file must not be registered as a Tauri command"
+    );
+    assert!(
+        !settings_rs.contains("add_recent_file"),
+        "add_recent_file must not exist as a renderer-callable command"
+    );
+}
+
+#[test]
 fn set_theme_pair_only_updates_provided_slots() {
     // Regression test for the picker's "As light" / "As dark" buttons:
     // setting one slot must not silently clear the other.

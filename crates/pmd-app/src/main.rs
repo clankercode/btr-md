@@ -45,7 +45,6 @@ fn main() {
             cmd::settings::set_theme_pair,
             cmd::settings::set_auto_switch,
             cmd::settings::get_recent_files,
-            cmd::settings::add_recent_file,
             cmd::settings::clear_recent_files,
             cmd::file::get_initial_path,
             cmd::file::get_open_dialog_on_start,
