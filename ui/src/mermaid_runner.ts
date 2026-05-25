@@ -29,17 +29,18 @@ export function ensureInit(vars?: Record<string, string>) {
   }
 }
 
-export async function renderMermaidNodes(root: HTMLElement) {
+export async function renderMermaidNodes(root: HTMLElement, renderNonce: string) {
   ensureInit();
-  const targets = collectMermaidTargets(root);
+  const targets = collectMermaidTargets(root, renderNonce);
   for (const target of targets) {
-    await renderMermaidNode(target);
+    await renderMermaidNode(target, renderNonce);
   }
 }
 
-export async function renderMermaidNode(target: HTMLElement) {
+export async function renderMermaidNode(target: HTMLElement, renderNonce?: string) {
   ensureInit();
-  const container = ensureMermaidContainer(target);
+  const container = ensureMermaidContainer(target, renderNonce);
+  if (!container) return;
   const source = container.dataset.mermaidSource ?? "";
   try {
     const id = `m-${Math.random().toString(36).slice(2)}`;
@@ -52,25 +53,30 @@ export async function renderMermaidNode(target: HTMLElement) {
   }
 }
 
-// Only render nodes that `markMermaidNodes` flagged. The sanitizer strips the
-// `pmd-mermaid` class and `data-mermaid-source` attribute from raw HTML, so
-// reaching this collection requires the trusted emitter path
-// (`pre > code.language-mermaid` upgraded by `markMermaidNodes`).
-function collectMermaidTargets(root: HTMLElement): HTMLElement[] {
-  return Array.from(root.querySelectorAll<HTMLElement>(".pmd-mermaid[data-mermaid-source]"));
+// Only render nodes that `markMermaidNodes` flagged for the current backend
+// render nonce. Raw HTML can preserve syntax classes, but it cannot pre-seed
+// the JS-added renderer source/class pair with the matching nonce.
+function collectMermaidTargets(root: HTMLElement, renderNonce: string): HTMLElement[] {
+  return Array.from(root.querySelectorAll<HTMLElement>(".pmd-mermaid[data-mermaid-source][data-pmd-nonce]"))
+    .filter((target) => target.dataset.pmdNonce === renderNonce);
 }
 
-function ensureMermaidContainer(target: HTMLElement): HTMLElement {
+function ensureMermaidContainer(target: HTMLElement, renderNonce?: string): HTMLElement | null {
   if (target.classList.contains("pmd-mermaid")) {
+    if (renderNonce && target.dataset.pmdNonce !== renderNonce) return null;
     return target;
   }
 
   const code = target.matches("code.language-mermaid")
     ? target
     : target.querySelector<HTMLElement>("code.language-mermaid");
+  if (renderNonce && code?.dataset.pmdNonce !== renderNonce) return null;
   const container = document.createElement("div");
   container.className = "pmd-mermaid";
   container.dataset.mermaidSource = code?.textContent ?? target.textContent ?? "";
+  if (code?.dataset.pmdNonce) {
+    container.dataset.pmdNonce = code.dataset.pmdNonce;
+  }
   copySourceRange(target, container);
   target.replaceWith(container);
   return container;

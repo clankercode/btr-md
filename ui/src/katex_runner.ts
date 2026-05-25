@@ -1,6 +1,7 @@
 import katex from 'katex';
 
-export function renderMathNode(el: HTMLElement) {
+export function renderMathNode(el: HTMLElement, renderNonce?: string) {
+  if (renderNonce && el.dataset.pmdNonce !== renderNonce) return;
   const source = el.dataset.mathSource ?? el.textContent ?? "";
   try {
     katex.render(source, el, {
@@ -14,13 +15,11 @@ export function renderMathNode(el: HTMLElement) {
   }
 }
 
-// Only nodes that `markMathNodes` flagged are rendered. Selecting on the
-// JS-added `.pmd-math` class (stripped from raw HTML by the sanitizer) means
-// attacker markup cannot reach the renderer through this path.
-export function renderMathNodes(root: HTMLElement) {
-  const blocks = root.querySelectorAll<HTMLElement>(".pmd-math[data-math-source]");
+// Only nodes that `markMathNodes` flagged for this render nonce are rendered.
+export function renderMathNodes(root: HTMLElement, renderNonce: string) {
+  const blocks = root.querySelectorAll<HTMLElement>(".pmd-math[data-math-source][data-pmd-nonce]");
   for (const block of blocks) {
-    renderMathNode(block);
+    renderMathNode(block, renderNonce);
   }
 }
 

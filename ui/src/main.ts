@@ -12,6 +12,7 @@ import { openThemePicker, isPickerOpen, closeThemePicker, type ThemeInfo } from 
 interface RenderResult {
   html: string;
   version: number;
+  render_nonce: string;
 }
 
 interface Settings {
@@ -383,9 +384,10 @@ async function processRenderQueue() {
     });
     previewPane.innerHTML = result.html;
     previewPane.dataset.versionApplied = String(result.version);
-    markAllNodes(previewPane);
-    await renderMermaidNodes(previewPane);
-    await renderMathNodes(previewPane);
+    previewPane.dataset.pmdNonce = result.render_nonce;
+    markAllNodes(previewPane, result.render_nonce);
+    await renderMermaidNodes(previewPane, result.render_nonce);
+    await renderMathNodes(previewPane, result.render_nonce);
     item.resolve();
   } catch (e) {
     item.reject(e);

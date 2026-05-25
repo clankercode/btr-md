@@ -8,6 +8,7 @@ pub struct RenderResult {
     pub version: u64,
     pub html: String,
     pub source_map: Vec<(u32, u32)>,
+    pub render_nonce: String,
 }
 
 fn byte_to_line(md: &str) -> impl Fn(usize) -> u32 + '_ {
@@ -35,6 +36,12 @@ fn emit_image(html: &mut String, state: &ImageState) {
     html.push('>');
 }
 
+fn generate_render_nonce() -> String {
+    let mut bytes = [0u8; 16];
+    getrandom::getrandom(&mut bytes).expect("secure render nonce generation failed");
+    bytes.iter().map(|byte| format!("{byte:02x}")).collect()
+}
+
 fn alignment_value(alignment: Alignment) -> Option<&'static str> {
     match alignment {
         Alignment::None => None,
@@ -50,6 +57,7 @@ fn emit_open_tag(
     start_line: u32,
     in_table_head: bool,
     cell_alignment: Option<Alignment>,
+    render_nonce: &str,
 ) {
     match tag {
         Tag::Paragraph => html.push_str(&format!(
@@ -65,22 +73,31 @@ fn emit_open_tag(
             start_line
         )),
         Tag::CodeBlock(kind) => {
-            let class = match kind {
+            let (class, trusted_runner_target) = match kind {
                 pulldown_cmark::CodeBlockKind::Fenced(info) => {
-                    if info.is_empty() {
-                        " class=\"language-text\"".to_string()
+                    let language = info.split_whitespace().next().unwrap_or("text");
+                    if language.is_empty() {
+                        (" class=\"language-text\"".to_string(), false)
                     } else {
-                        format!(
-                            " class=\"language-{}\"",
-                            info.split_whitespace().next().unwrap_or("text")
+                        (
+                            format!(" class=\"language-{}\"", language),
+                            language.eq_ignore_ascii_case("mermaid")
+                                || language.eq_ignore_ascii_case("math"),
                         )
                     }
                 }
-                pulldown_cmark::CodeBlockKind::Indented => " class=\"language-text\"".to_string(),
+                pulldown_cmark::CodeBlockKind::Indented => {
+                    (" class=\"language-text\"".to_string(), false)
+                }
+            };
+            let nonce_attr = if trusted_runner_target {
+                format!(" data-pmd-nonce=\"{}\"", escape_html(render_nonce))
+            } else {
+                String::new()
             };
             html.push_str(&format!(
-                "<pre data-src-start=\"{}\" data-src-end=\"\"><code{}>",
-                start_line, class
+                "<pre data-src-start=\"{}\" data-src-end=\"\"><code{}{}>",
+                start_line, class, nonce_attr
             ));
         }
         Tag::List(ordered) => {
@@ -164,7 +181,7 @@ fn find_inline_math_delimiter(text: &str, start: usize) -> Option<usize> {
     None
 }
 
-fn emit_inline_math_text(html: &mut String, text: &str) {
+fn emit_inline_math_text(html: &mut String, text: &str, render_nonce: &str) {
     let mut cursor = 0;
     while let Some(open) = find_inline_math_delimiter(text, cursor) {
         let math_start = open + 1;
@@ -172,7 +189,10 @@ fn emit_inline_math_text(html: &mut String, text: &str) {
             break;
         };
         html.push_str(&escape_html(&text[cursor..open]));
-        html.push_str("<span class=\"math-inline\"><code class=\"language-math\">");
+        html.push_str(&format!(
+            "<span class=\"math-inline\"><code class=\"language-math\" data-pmd-nonce=\"{}\">",
+            escape_html(render_nonce)
+        ));
         html.push_str(&escape_html(&text[math_start..close]));
         html.push_str("</code></span>");
         cursor = close + 1;
@@ -180,13 +200,21 @@ fn emit_inline_math_text(html: &mut String, text: &str) {
     html.push_str(&escape_html(&text[cursor..]));
 }
 
-fn emit_block_math(html: &mut String, math: &str) {
-    html.push_str("<span class=\"math-display\"><code class=\"math-block\">");
+fn emit_block_math(html: &mut String, math: &str, render_nonce: &str) {
+    html.push_str(&format!(
+        "<span class=\"math-display\"><code class=\"math-block\" data-pmd-nonce=\"{}\">",
+        escape_html(render_nonce)
+    ));
     html.push_str(&escape_html(math.trim()));
     html.push_str("</code></span>");
 }
 
-fn emit_text_with_math(html: &mut String, text: &str, block_math: &mut Option<String>) {
+fn emit_text_with_math(
+    html: &mut String,
+    text: &str,
+    block_math: &mut Option<String>,
+    render_nonce: &str,
+) {
     let mut remaining = text;
     loop {
         if let Some(buffer) = block_math {
@@ -196,14 +224,14 @@ fn emit_text_with_math(html: &mut String, text: &str, block_math: &mut Option<St
             };
             buffer.push_str(&remaining[..close]);
             let math = block_math.take().unwrap();
-            emit_block_math(html, &math);
+            emit_block_math(html, &math, render_nonce);
             remaining = &remaining[close + 2..];
         } else {
             let Some(open) = find_block_math_delimiter(remaining) else {
-                emit_inline_math_text(html, remaining);
+                emit_inline_math_text(html, remaining, render_nonce);
                 return;
             };
-            emit_inline_math_text(html, &remaining[..open]);
+            emit_inline_math_text(html, &remaining[..open], render_nonce);
             *block_math = Some(String::new());
             remaining = &remaining[open + 2..];
         }
@@ -243,6 +271,7 @@ fn emit_close_tag(html: &mut String, tag_end: &TagEnd, in_table_head: bool) {
 }
 
 pub fn render_string(md: &str) -> RenderResult {
+    let render_nonce = generate_render_nonce();
     let to_line = byte_to_line(md);
     let mut opts = Options::empty();
     opts.insert(
@@ -308,7 +337,14 @@ pub fn render_string(md: &str) -> RenderResult {
                 };
                 let line = to_line(range.start);
                 let open_pos = html.len();
-                emit_open_tag(&mut html, &tag, line, in_table_head, cell_alignment);
+                emit_open_tag(
+                    &mut html,
+                    &tag,
+                    line,
+                    in_table_head,
+                    cell_alignment,
+                    &render_nonce,
+                );
                 block_stack.push((line, open_pos));
             }
             Event::End(tag_end) => {
@@ -348,7 +384,7 @@ pub fn render_string(md: &str) -> RenderResult {
                 } else if in_code_block > 0 {
                     html.push_str(&escape_html(&t));
                 } else {
-                    emit_text_with_math(&mut html, &t, &mut block_math);
+                    emit_text_with_math(&mut html, &t, &mut block_math, &render_nonce);
                 }
             }
             Event::Code(t) => {
@@ -410,10 +446,11 @@ pub fn render_string(md: &str) -> RenderResult {
         html.push_str("$$");
         html.push_str(&escape_html(&math));
     }
-    let html = crate::sanitize::clean(&html);
+    let html = crate::sanitize::clean_with_render_nonce(&html, &render_nonce);
     RenderResult {
         version: 0,
         html,
         source_map,
+        render_nonce,
     }
 }

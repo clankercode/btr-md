@@ -122,6 +122,43 @@ fn code_block_containing_dollar_math_not_rendered_as_katex() {
 }
 
 #[test]
+fn indented_code_containing_dollar_math_not_rendered_as_katex() {
+    let md = "    let x = $E=mc^2$;";
+    let out = render(md);
+    assert!(
+        !out.contains("math-inline"),
+        "indented code content triggered math-inline: {out}"
+    );
+    assert!(
+        !out.contains("language-math"),
+        "indented code content triggered language-math: {out}"
+    );
+    assert!(
+        !out.contains("math-block"),
+        "indented code content triggered math-block: {out}"
+    );
+    assert!(
+        out.contains("$E=mc^2$"),
+        "literal dollar math missing from indented code block: {out}"
+    );
+}
+
+#[test]
+fn trusted_mermaid_fence_carries_render_nonce_marker() {
+    let result = render_string("```mermaid\ngraph TD; A-->B\n```");
+    assert!(
+        !result.render_nonce.is_empty(),
+        "render nonce was empty: {result:?}"
+    );
+    assert!(
+        result
+            .html
+            .contains(&format!(r#"data-pmd-nonce="{}""#, result.render_nonce)),
+        "trusted mermaid fence did not carry current render nonce: {result:?}"
+    );
+}
+
+#[test]
 fn raw_mermaid_div_does_not_carry_renderer_attrs() {
     let raw = r#"<div class="pmd-mermaid" data-mermaid-source="graph TD; A--&gt;B">x</div>"#;
     let out = clean(raw);
@@ -132,6 +169,16 @@ fn raw_mermaid_div_does_not_carry_renderer_attrs() {
     assert!(
         !out.contains("data-mermaid-source"),
         "data-mermaid-source survived raw HTML: {out}"
+    );
+}
+
+#[test]
+fn raw_mermaid_language_code_does_not_carry_render_nonce_marker() {
+    let raw = r#"<pre><code class="language-mermaid" data-pmd-nonce="attacker">graph TD; A--&gt;B</code></pre>"#;
+    let out = clean(raw);
+    assert!(
+        !out.contains("data-pmd-nonce"),
+        "raw mermaid language code carried render nonce marker: {out}"
     );
 }
 
@@ -147,6 +194,26 @@ fn raw_math_span_does_not_carry_renderer_attrs() {
     assert!(
         !out.contains("data-math-source"),
         "data-math-source survived raw HTML: {out}"
+    );
+}
+
+#[test]
+fn raw_language_math_code_does_not_carry_render_nonce_marker() {
+    let raw = r#"<code class="language-math" data-pmd-nonce="attacker">x</code>"#;
+    let out = clean(raw);
+    assert!(
+        !out.contains("data-pmd-nonce"),
+        "raw language-math code carried render nonce marker: {out}"
+    );
+}
+
+#[test]
+fn raw_math_block_code_does_not_carry_render_nonce_marker() {
+    let raw = r#"<code class="math-block" data-pmd-nonce="attacker">x</code>"#;
+    let out = clean(raw);
+    assert!(
+        !out.contains("data-pmd-nonce"),
+        "raw math-block code carried render nonce marker: {out}"
     );
 }
 

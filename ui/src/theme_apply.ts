@@ -1,40 +1,47 @@
 import { ensureInit, renderMermaidNode } from './mermaid_runner.js';
 import { renderMathNode } from './katex_runner.js';
 
-export function markMermaidNodes(container: HTMLElement) {
-  const mermaidBlocks = container.querySelectorAll<HTMLElement>("pre > code.language-mermaid");
+function hasRenderNonce(el: HTMLElement, renderNonce: string): boolean {
+  return renderNonce.length > 0 && el.dataset.pmdNonce === renderNonce;
+}
+
+export function markMermaidNodes(container: HTMLElement, renderNonce: string) {
+  const mermaidBlocks = container.querySelectorAll<HTMLElement>("pre > code.language-mermaid[data-pmd-nonce]");
   mermaidBlocks.forEach((block) => {
+    if (!hasRenderNonce(block, renderNonce)) return;
     const pre = block.parentElement;
     if (!pre) return;
     pre.classList.add('pmd-mermaid');
     pre.dataset.mermaidSource = block.textContent ?? '';
+    pre.dataset.pmdNonce = renderNonce;
   });
 }
 
-// The sanitizer strips `pmd-math`, `math-inline`, and `math-display` class
-// tokens and `data-math-source` attributes from any HTML it processes. The
-// emitter-stable trusted entry points are `code.language-math` (inline) and
-// `code.math-block` (display). Only nodes reachable from these emitter
-// selectors get re-tagged here, so attacker raw HTML cannot opt arbitrary
-// content into the KaTeX renderer.
-export function markMathNodes(container: HTMLElement) {
-  const inline = container.querySelectorAll<HTMLElement>("code.language-math");
+// The sanitizer strips JS-added renderer classes/source attrs and only lets
+// emitter-produced targets keep the current `data-pmd-nonce`. Raw HTML can
+// preserve syntax classes, but it cannot match the nonce for this render.
+export function markMathNodes(container: HTMLElement, renderNonce: string) {
+  const inline = container.querySelectorAll<HTMLElement>("code.language-math[data-pmd-nonce]");
   inline.forEach((code) => {
+    if (!hasRenderNonce(code, renderNonce)) return;
     const target = code.parentElement?.classList.contains('math-inline') ? code.parentElement : code;
     target.classList.add('pmd-math', 'math-inline');
     target.dataset.mathSource = code.textContent ?? '';
+    target.dataset.pmdNonce = renderNonce;
   });
-  const block = container.querySelectorAll<HTMLElement>("code.math-block");
+  const block = container.querySelectorAll<HTMLElement>("code.math-block[data-pmd-nonce]");
   block.forEach((code) => {
+    if (!hasRenderNonce(code, renderNonce)) return;
     const target = code.parentElement?.classList.contains('math-display') ? code.parentElement : code;
     target.classList.add('pmd-math', 'math-display');
     target.dataset.mathSource = code.textContent ?? '';
+    target.dataset.pmdNonce = renderNonce;
   });
 }
 
-export function markAllNodes(container: HTMLElement) {
-  markMermaidNodes(container);
-  markMathNodes(container);
+export function markAllNodes(container: HTMLElement, renderNonce: string) {
+  markMermaidNodes(container, renderNonce);
+  markMathNodes(container, renderNonce);
 }
 
 export async function rerenderForThemeChange(
@@ -42,13 +49,15 @@ export async function rerenderForThemeChange(
   ctx: { vars: Record<string, string> }
 ) {
   ensureInit(ctx.vars);
-  const targets = Array.from(root.querySelectorAll<HTMLElement>('.pmd-mermaid[data-mermaid-source], .pmd-math[data-math-source]'));
+  const renderNonce = root.dataset.pmdNonce ?? '';
+  const targets = Array.from(root.querySelectorAll<HTMLElement>('.pmd-mermaid[data-mermaid-source][data-pmd-nonce], .pmd-math[data-math-source][data-pmd-nonce]'))
+    .filter((target) => hasRenderNonce(target, renderNonce));
   for (const t of targets) {
     await new Promise<void>(r => requestAnimationFrame(() => r()));
     if (t.classList.contains('pmd-mermaid')) {
-      await renderMermaidNode(t);
+      await renderMermaidNode(t, renderNonce);
     } else {
-      renderMathNode(t);
+      renderMathNode(t, renderNonce);
     }
   }
 }

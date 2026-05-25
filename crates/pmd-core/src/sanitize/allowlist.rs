@@ -4,9 +4,8 @@ use std::collections::HashSet;
 /// Class tokens that JS post-sanitize passes (`markMermaidNodes` /
 /// `markMathNodes`) add to flag trusted renderer targets. Stripping them here
 /// means raw HTML in markdown cannot pre-flag arbitrary content as
-/// Mermaid/KaTeX input; only nodes that survive sanitization through the
-/// emitter-stable selectors (`code.language-mermaid`, `code.language-math`,
-/// `code.math-block`) get re-flagged after sanitize.
+/// Mermaid/KaTeX input; only nodes carrying the current render nonce get
+/// re-flagged after sanitize.
 const STRIPPED_CLASS_TOKENS: &[&str] = &["pmd-mermaid", "pmd-math", "math-inline", "math-display"];
 
 /// Image `src` MIME types we will allow as `data:` URLs. Mirrors what a local
@@ -22,6 +21,14 @@ const ALLOWED_IMG_DATA_MIME: &[&str] = &[
 ];
 
 pub fn build() -> ammonia::Builder<'static> {
+    build_with_nonce(None)
+}
+
+pub fn build_with_render_nonce(render_nonce: &str) -> ammonia::Builder<'static> {
+    build_with_nonce(Some(render_nonce.to_string()))
+}
+
+fn build_with_nonce(render_nonce: Option<String>) -> ammonia::Builder<'static> {
     let tags: HashSet<&str> = [
         "a",
         "p",
@@ -106,17 +113,42 @@ pub fn build() -> ammonia::Builder<'static> {
             .collect(),
     );
     b.add_generic_attribute_prefixes(["data-"]);
-    b.attribute_filter(filter_attribute);
+    match render_nonce {
+        Some(allowed_nonce) => {
+            b.attribute_filter(move |element, attribute, value| {
+                filter_attribute(element, attribute, value, Some(&allowed_nonce))
+            });
+        }
+        None => {
+            b.attribute_filter(|element, attribute, value| {
+                filter_attribute(element, attribute, value, None)
+            });
+        }
+    }
     b
 }
 
-fn filter_attribute<'a>(element: &str, attribute: &str, value: &'a str) -> Option<Cow<'a, str>> {
+fn filter_attribute<'a>(
+    element: &str,
+    attribute: &str,
+    value: &'a str,
+    render_nonce: Option<&str>,
+) -> Option<Cow<'a, str>> {
     // Renderer-control data attributes are JS-internal: the Rust emitter does
-    // not produce them, and only the post-sanitize JS pass should add them.
-    // Stripping them universally means raw HTML cannot pre-seed Mermaid/KaTeX
-    // with attacker-controlled source text.
-    if attribute == "data-mermaid-source" || attribute == "data-math-source" {
+    // not produce source attrs, and only the post-sanitize JS pass should add
+    // them. Static render markers are stripped too; trusted emitter nodes use
+    // a per-render nonce, which raw HTML cannot know before sanitization.
+    if attribute == "data-mermaid-source"
+        || attribute == "data-math-source"
+        || attribute == "data-pmd-render"
+    {
         return None;
+    }
+    if attribute == "data-pmd-nonce" {
+        return match render_nonce {
+            Some(nonce) if nonce == value => Some(Cow::Borrowed(value)),
+            _ => None,
+        };
     }
     match (element, attribute) {
         ("a", "href") => filter_href(value),

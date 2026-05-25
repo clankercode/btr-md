@@ -2597,6 +2597,7 @@ name = "pmd-core"
 version = "0.1.0"
 dependencies = [
  "ammonia",
+ "getrandom 0.2.17",
  "proptest",
  "pulldown-cmark",
  "serde",

@@ -1,7 +1,26 @@
 use pmd_core::emit;
 
 fn normalize(s: &str) -> String {
-    s.split_whitespace().collect::<Vec<_>>().join(" ")
+    strip_render_nonce_attrs(s)
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
+fn strip_render_nonce_attrs(s: &str) -> String {
+    let attr = " data-pmd-nonce=\"";
+    let mut out = String::with_capacity(s.len());
+    let mut rest = s;
+    while let Some(start) = rest.find(attr) {
+        out.push_str(&rest[..start]);
+        let value = &rest[start + attr.len()..];
+        let Some(end) = value.find('"') else {
+            break;
+        };
+        rest = &value[end + 1..];
+    }
+    out.push_str(rest);
+    out
 }
 
 fn golden_one(dir: &str, name: &str) {

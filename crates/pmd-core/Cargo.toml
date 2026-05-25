@@ -11,6 +11,7 @@ toml.workspace = true
 thiserror.workspace = true
 pulldown-cmark.workspace = true
 ammonia.workspace = true
+getrandom.workspace = true
 
 [dev-dependencies]
 proptest.workspace = true
