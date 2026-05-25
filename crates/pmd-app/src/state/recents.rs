@@ -170,20 +170,17 @@ fn rewrite(files: &[PathBuf]) -> Result<()> {
     Ok(())
 }
 
-/// True if `path` (after canonicalising) appears in the recents list.
+/// True if an already-canonical `path` appears in the recents list.
 ///
 /// Used by `request_open_file` to admit paths the user previously chose
 /// through a trusted entry point (dialog / CLI / drag-drop). Comparing
 /// canonical-vs-canonical avoids spoofing via odd path expressions.
-pub fn contains_canonical(path: &std::path::Path) -> bool {
-    let Ok(target) = std::fs::canonicalize(path) else {
-        return false;
-    };
+pub fn contains_canonical_eq(canon: &std::path::Path) -> bool {
     let Ok(list) = get() else {
         return false;
     };
     list.iter()
-        .any(|p| std::fs::canonicalize(p).ok().as_deref() == Some(&target))
+        .any(|p| std::fs::canonicalize(p).ok().as_deref() == Some(canon))
 }
 
 #[cfg(test)]

@@ -163,13 +163,13 @@ pub async fn open_file(
     state: tauri::State<'_, crate::AppState>,
     path: PathBuf,
 ) -> Result<FileBuffer, String> {
-    if !state.scope.check(&path) {
-        return Err(format!("path not in active scope: {}", path.display()));
-    }
     // Read the canonical path, not the renderer's input — admission stored
     // the canonical form, and using it here removes a TOCTOU step between
     // "scope says yes" and "read".
     let canon = crate::path_scope::PathScope::canonicalise(&path).map_err(|e| e.to_string())?;
+    if !state.scope.check_canonical(&canon) {
+        return Err(format!("path not in active scope: {}", canon.display()));
+    }
     let contents = std::fs::read_to_string(&canon).map_err(|e| e.to_string())?;
     try_push_recent(&canon);
     set_current(&state, Some(canon.clone()));
@@ -206,7 +206,7 @@ pub async fn request_open_file(
         ));
     }
 
-    let canon = std::fs::canonicalize(&path).map_err(|e| e.to_string())?;
+    let canon = crate::path_scope::PathScope::canonicalise(&path).map_err(|e| e.to_string())?;
     if !is_markdown_path(&canon) {
         return Err(format!(
             "request_open_file refuses canonical non-markdown target: {}",
@@ -215,8 +215,8 @@ pub async fn request_open_file(
     }
 
     // Admission gate: either already scoped, or in recents.
-    let already_scoped = state.scope.check(&canon);
-    let in_recents = crate::state::recents::contains_canonical(&canon);
+    let already_scoped = state.scope.check_canonical(&canon);
+    let in_recents = crate::state::recents::contains_canonical_eq(&canon);
     if !already_scoped && !in_recents {
         return Err(format!(
             "request_open_file: {} is not in scope or recents; use the file dialog to open new paths",
@@ -227,7 +227,7 @@ pub async fn request_open_file(
     // It's fine to re-admit an already-scoped path; HashSet inserts are
     // idempotent. For recents-only paths this is the moment we add the
     // canonical form to the in-process scope.
-    let canon = state.scope.allow(&canon).map_err(|e| e.to_string())?;
+    let canon = state.scope.allow_canonical(&canon);
     let contents = std::fs::read_to_string(&canon).map_err(|e| e.to_string())?;
     try_push_recent(&canon);
     set_current(&state, Some(canon.clone()));
@@ -262,7 +262,7 @@ pub async fn save_file(
         ));
     }
     // Belt-and-braces: even the active path must still be in scope.
-    if !state.scope.check(&canon) {
+    if !state.scope.check_canonical(&canon) {
         return Err("path not in active scope".into());
     }
     write_no_follow(&canon, contents.as_bytes()).map_err(|e| e.to_string())?;

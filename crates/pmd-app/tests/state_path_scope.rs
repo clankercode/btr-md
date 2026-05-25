@@ -53,6 +53,19 @@ fn path_scope_allows_new_file_inside_existing_directory() {
 }
 
 #[test]
+fn path_scope_canonical_methods_do_not_touch_filesystem() {
+    let dir = tempfile::tempdir().expect("temp dir");
+    let canon = dir.path().join("missing-parent").join("future.md");
+    let scope = PathScope::new();
+
+    let allowed = scope.allow_canonical(&canon);
+
+    assert_eq!(allowed, canon);
+    assert!(scope.check_canonical(&canon));
+    assert!(!scope.check(&canon));
+}
+
+#[test]
 fn path_scope_rejects_unallowed_sibling_file() {
     let dir = tempfile::tempdir().expect("temp dir");
     let allowed = dir.path().join("allowed.md");
@@ -76,6 +89,28 @@ fn recents_push_preserves_existing_entries() {
         recents::push(&second).expect("push second recent");
 
         assert_eq!(recents::get().expect("read recents"), vec![second, first]);
+    });
+}
+
+#[cfg(unix)]
+#[test]
+fn recents_contains_canonical_eq_compares_target_without_recanonicalizing_it() {
+    use std::os::unix::fs::symlink;
+
+    with_config_home(|| {
+        let dir = tempfile::tempdir().expect("temp dir");
+        let path = dir.path().join("note.md");
+        let link = dir.path().join("link.md");
+        std::fs::write(&path, "note").expect("write note");
+        symlink(&path, &link).expect("symlink note");
+        let canon = path.canonicalize().expect("canonicalize note");
+
+        recents::push(&path).expect("push recent");
+
+        assert_eq!(link.canonicalize().unwrap(), canon);
+        assert_ne!(link, canon);
+        assert!(recents::contains_canonical_eq(&canon));
+        assert!(!recents::contains_canonical_eq(&link));
     });
 }
 

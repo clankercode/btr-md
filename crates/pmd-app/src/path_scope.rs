@@ -34,6 +34,13 @@ impl PathScope {
     /// canonicalised and the file name is appended.
     pub fn allow(&self, p: &std::path::Path) -> std::io::Result<PathBuf> {
         let canon = canonicalise(p)?;
+        Ok(self.allow_canonical(&canon))
+    }
+
+    /// Admit an already-canonical path into the scope without touching the
+    /// filesystem again.
+    pub fn allow_canonical(&self, canon: &std::path::Path) -> PathBuf {
+        let canon = canon.to_path_buf();
         // Recover from a poisoned lock instead of panicking: the contained
         // HashSet has no invariants the panicked thread could have broken
         // partway through.
@@ -42,7 +49,7 @@ impl PathScope {
             .lock()
             .unwrap_or_else(|poisoned| poisoned.into_inner());
         allowed.insert(canon.clone());
-        Ok(canon)
+        canon
     }
 
     /// Returns `true` if `p` (canonicalised) is in the scope.
@@ -50,10 +57,16 @@ impl PathScope {
         let Ok(canon) = canonicalise(p) else {
             return false;
         };
+        self.check_canonical(&canon)
+    }
+
+    /// Returns `true` if an already-canonical path is in the scope without
+    /// touching the filesystem again.
+    pub fn check_canonical(&self, canon: &std::path::Path) -> bool {
         self.allowed
             .lock()
-            .map(|g| g.contains(&canon))
-            .unwrap_or_else(|poisoned| poisoned.into_inner().contains(&canon))
+            .map(|g| g.contains(canon))
+            .unwrap_or_else(|poisoned| poisoned.into_inner().contains(canon))
     }
 
     /// Canonicalise without mutating the scope. Useful when a caller wants
