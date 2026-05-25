@@ -272,6 +272,10 @@ pub fn render_string(md: &str) -> RenderResult {
     for (event, range) in parser {
         match event {
             Event::Start(tag) => {
+                let starts_image = matches!(tag, Tag::Image { .. });
+                if image_state.is_some() && !starts_image {
+                    continue;
+                }
                 if matches!(tag, Tag::TableHead) {
                     in_table_head = true;
                 }
@@ -308,6 +312,10 @@ pub fn render_string(md: &str) -> RenderResult {
                 block_stack.push((line, open_pos));
             }
             Event::End(tag_end) => {
+                let ends_image = matches!(tag_end, TagEnd::Image);
+                if image_state.is_some() && !ends_image {
+                    continue;
+                }
                 if matches!(tag_end, TagEnd::TableHead) {
                     in_table_head = false;
                 }

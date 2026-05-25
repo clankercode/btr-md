@@ -87,6 +87,23 @@ fn image_html_in_alt_rendered_as_attribute_text() {
 }
 
 #[test]
+fn formatted_image_alt_does_not_emit_empty_inline_nodes() {
+    let out = render("![**bold** *em*](rel.png)");
+    assert!(
+        !out.contains("<strong></strong>"),
+        "empty strong leaked from formatted alt text: {out}"
+    );
+    assert!(
+        !out.contains("<em></em>"),
+        "empty em leaked from formatted alt text: {out}"
+    );
+    assert!(
+        out.contains(r#"alt="bold em""#),
+        "formatted alt text was not collected into img alt: {out}"
+    );
+}
+
+#[test]
 fn code_block_containing_dollar_math_not_rendered_as_katex() {
     let md = "```js\nlet x = $E=mc^2$;\n```";
     let out = render(md);
