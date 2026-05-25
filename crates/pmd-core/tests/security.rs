@@ -66,6 +66,15 @@ fn remote_http_image_stripped() {
 }
 
 #[test]
+fn protocol_relative_image_stripped() {
+    let out = render("![x](//host/x.png)");
+    assert!(
+        !out.contains("//host/x.png"),
+        "protocol-relative image survived: {out}"
+    );
+}
+
+#[test]
 fn image_html_in_alt_rendered_as_attribute_text() {
     let out = render("![<script>alert(1)</script>](rel.png)");
     assert!(

@@ -152,6 +152,9 @@ fn url_scheme(value: &str) -> Option<String> {
     // Strip leading ASCII whitespace and control chars per HTML URL parsing
     // norms; if no `:` precedes a `/`, `?`, or `#`, treat as relative.
     let trimmed = value.trim_start_matches(|c: char| c.is_ascii_whitespace() || (c as u32) < 0x20);
+    if trimmed.starts_with("//") {
+        return Some(String::new());
+    }
     let mut scheme = String::new();
     for c in trimmed.chars() {
         if c == ':' {
