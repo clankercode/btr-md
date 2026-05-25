@@ -17,12 +17,7 @@
     </ul>
   </description>
   <launchable type="desktop-id">dev.previewmd.App.desktop</launchable>
-  <screenshots>
-    <screenshot type="default">
-      <caption>Main preview window with the welcome screen and theme-aware chrome</caption>
-      <image type="source">https://preview-md.example.com/screenshots/welcome.png</image>
-    </screenshot>
-  </screenshots>
+  <!-- TODO(pre-release): add a real screenshot image before AppStream submission. -->
   <url type="homepage">https://github.com/preview-md/preview-md</url>
   <provides>
     <binary>preview-md</binary>
