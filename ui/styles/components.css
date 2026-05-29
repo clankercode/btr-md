@@ -739,8 +739,11 @@
   flex: 1;
   display: none;
   overflow: auto;
-  padding: var(--pmd-space-8);
-  line-height: 1.75;
+  /* Scroll container only — the centred reading column lives in the inner
+     `#pmd-content.pmd-preview` wrapper (padding/max-width/centring there).
+     `container-type: inline-size` lets individual blocks break out to the
+     full pane width via `cqi` units (e.g. expanded code blocks). */
+  container-type: inline-size;
 }
 
 body[data-mode="source"] #editor-pane {
@@ -749,7 +752,7 @@ body[data-mode="source"] #editor-pane {
 
 body[data-mode="split"] #editor-pane {
   display: block;
-  flex: 0 0 calc(var(--pmd-split-ratio, 0.5) * 100%);
+  flex: 0 0 calc(var(--pmd-split-ratio, 0.4) * 100%);
   min-width: 0;
   width: auto;
 }
@@ -800,8 +803,8 @@ body.pmd-resizing * {
 body[data-mode="preview"] #preview-pane {
   display: block;
   width: 100%;
-  max-width: 75ch;
-  margin: 0 auto;
+  /* Centring/column width is handled by the inner `.pmd-preview` wrapper;
+     the pane is the full-window scroll container. */
 }
 
 #pmd-welcome {
@@ -814,4 +817,191 @@ body[data-state="welcome"] #editor-pane,
 body[data-state="welcome"] #preview-pane,
 body[data-state="welcome"] #split-resizer {
   display: none;
+}
+
+/* ---- §2 Code-block toolbar -------------------------------------------- */
+/* `decorateCodeBlocks` (ui/src/code_blocks.ts) wraps each fenced code sample
+   in `figure.pmd-code-block > (.pmd-code-toolbar, pre)` after render. The
+   figure now owns the vertical spacing the bare `<pre>` used to carry. */
+.pmd-code-block {
+  position: relative;
+  margin: var(--pmd-space-4) 0;
+  transition: width var(--pmd-transition-base), margin var(--pmd-transition-base);
+}
+
+.pmd-code-block > pre {
+  margin: 0;
+}
+
+.pmd-code-toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--pmd-space-2);
+  margin-bottom: var(--pmd-space-1);
+}
+
+/* Language label is pushed left and always visible. */
+.pmd-code-lang {
+  margin-right: auto;
+  font-family: var(--pmd-font-mono);
+  font-size: var(--pmd-text-xs);
+  color: var(--pmd-fg-muted);
+}
+
+/* Buttons hide until the block is hovered or focused within. */
+.pmd-code-btn {
+  padding: var(--pmd-space-1) var(--pmd-space-2);
+  font-size: var(--pmd-text-xs);
+  font-weight: var(--pmd-font-medium);
+  font-family: inherit;
+  color: var(--pmd-fg-muted);
+  background: var(--pmd-bg-elevated);
+  border: 1px solid var(--pmd-border);
+  border-radius: var(--pmd-radius-sm);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity var(--pmd-transition-fast), color var(--pmd-transition-fast),
+    border-color var(--pmd-transition-fast), background var(--pmd-transition-fast);
+}
+
+.pmd-code-block:hover .pmd-code-btn,
+.pmd-code-block:focus-within .pmd-code-btn {
+  opacity: 1;
+}
+
+.pmd-code-btn:hover {
+  color: var(--pmd-fg);
+  border-color: var(--pmd-border-strong);
+}
+
+/* Keep buttons reachable/visible for keyboard users regardless of hover. */
+.pmd-code-btn:focus-visible {
+  opacity: 1;
+  outline: 2px solid var(--pmd-accent);
+  outline-offset: 1px;
+}
+
+/* Breakout: re-centre the expanded block on the full preview pane. Relies on
+   `#preview-pane { container-type: inline-size }` and `.pmd-preview { margin:
+   0 auto }` (both already set). */
+.pmd-code-block.pmd-expanded {
+  width: 92cqi;
+  margin-left: calc(50% - 46cqi);
+}
+
+/* --------------------------------------------
+   15. Mermaid Fullscreen Overlay
+   -------------------------------------------- */
+
+.pmd-mermaid {
+  position: relative;
+}
+
+.pmd-mermaid-expand {
+  position: absolute;
+  top: var(--pmd-space-2);
+  right: var(--pmd-space-2);
+  z-index: 2;
+  padding: var(--pmd-space-1) var(--pmd-space-3);
+  font-family: inherit;
+  font-size: var(--pmd-text-xs);
+  font-weight: var(--pmd-font-medium);
+  line-height: 1;
+  color: var(--pmd-fg);
+  background: var(--pmd-bg-elevated);
+  border: 1px solid var(--pmd-border);
+  border-radius: var(--pmd-radius-md);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity var(--pmd-transition-base), background var(--pmd-transition-fast), border-color var(--pmd-transition-fast);
+}
+
+.pmd-mermaid-expand:hover {
+  background: var(--pmd-border);
+  border-color: var(--pmd-border-strong);
+}
+
+.pmd-mermaid:hover .pmd-mermaid-expand,
+.pmd-mermaid:focus-within .pmd-mermaid-expand,
+.pmd-mermaid-expand:focus-visible {
+  opacity: 1;
+}
+
+.pmd-mermaid-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.75);
+  animation: fadeIn 150ms ease-out;
+}
+
+.pmd-mermaid-stage {
+  position: absolute;
+  inset: 0;
+  transform-origin: 0 0;
+  cursor: grab;
+}
+
+.pmd-mermaid-stage:active {
+  cursor: grabbing;
+}
+
+.pmd-mermaid-stage svg {
+  max-width: none;
+}
+
+.pmd-mermaid-controls {
+  position: absolute;
+  top: var(--pmd-space-3);
+  right: var(--pmd-space-3);
+  z-index: 1001;
+  display: flex;
+  gap: var(--pmd-space-2);
+}
+
+.pmd-mermaid-controls button {
+  padding: var(--pmd-space-2) var(--pmd-space-4);
+  font-family: inherit;
+  font-size: var(--pmd-text-sm);
+  font-weight: var(--pmd-font-medium);
+  line-height: 1;
+  color: var(--pmd-fg);
+  background: var(--pmd-bg-elevated);
+  border: 1px solid var(--pmd-border);
+  border-radius: var(--pmd-radius-md);
+  cursor: pointer;
+  transition: background var(--pmd-transition-fast), border-color var(--pmd-transition-fast);
+}
+
+.pmd-mermaid-controls button:hover {
+  background: var(--pmd-border);
+  border-color: var(--pmd-border-strong);
+}
+
+/* --------------------------------------------
+   16. Reload button (animated, external file change)
+   -------------------------------------------- */
+
+/* Hidden state: collapsed + invisible. Also a .pmd-btn .pmd-btn-ghost
+   .pmd-btn-sm, so colour/typography/hover are inherited; here we only add
+   the collapse + animation rules. Transition on max-width/opacity/padding
+   lets it slide in/out when [data-visible] toggles. */
+.pmd-reload-btn {
+  max-width: 0;
+  opacity: 0;
+  padding-left: 0;
+  padding-right: 0;
+  overflow: hidden;
+  pointer-events: none;
+  white-space: nowrap;
+  transition: max-width 180ms ease, opacity 180ms ease, padding 180ms ease;
+}
+
+.pmd-reload-btn[data-visible] {
+  max-width: 9rem;
+  opacity: 1;
+  /* Restore the .pmd-btn-sm horizontal padding. */
+  padding-left: var(--pmd-space-3);
+  padding-right: var(--pmd-space-3);
+  pointer-events: auto;
 }

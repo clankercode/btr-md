@@ -89,7 +89,7 @@ function screenshotPath(name) {
 }
 
 async function installTauriMock(page, options = {}) {
-  await page.addInitScript(({ initialPath, themes }) => {
+  await page.addInitScript(({ initialPath, themes, renderHtml }) => {
     let callbackId = 1;
     const callbacks = new Map();
     const files = {
@@ -142,8 +142,11 @@ async function installTauriMock(page, options = {}) {
           };
         }
         if (cmd === 'render_cmd') return {
-          html: renderMarkdown(args.markdown ?? ''),
+          // Tests can pin a fixed HTML payload (e.g. a real code block) via the
+          // `renderHtml` option; otherwise fall back to the escaped echo render.
+          html: renderHtml ?? renderMarkdown(args.markdown ?? ''),
           version: args.version ?? 0,
+          render_nonce: '',
         };
         if (cmd === 'open_file' || cmd === 'request_open_file') {
           return { path: args.path, contents: files[args.path] ?? '# Missing fixture' };
@@ -159,6 +162,7 @@ async function installTauriMock(page, options = {}) {
   }, {
     initialPath: options.initialPath ?? null,
     themes: options.themes ?? themes,
+    renderHtml: options.renderHtml ?? null,
   });
 }
 

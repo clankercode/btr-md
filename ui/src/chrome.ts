@@ -17,6 +17,8 @@ export interface ChromeInstance {
   onRecentFileSelect: (handler: (path: string) => void) => void;
   onThemePickerClick: (handler: () => void) => void;
   onClearRecentFiles: (handler: () => void) => void;
+  setReloadVisible: (visible: boolean) => void;
+  onReloadClick: (handler: () => void) => void;
   destroy: () => void;
 }
 
@@ -87,6 +89,16 @@ export function createChrome(parent: HTMLElement): ChromeInstance {
   const toolbarSpacer = document.createElement('div');
   toolbarSpacer.className = 'pmd-toolbar-spacer';
   toolbar.appendChild(toolbarSpacer);
+
+  // Reload button: hidden by default, animated in (see CSS) when the active
+  // file changes on disk while the buffer is modified. Sits to the LEFT of
+  // the Theme button.
+  const reloadBtn = document.createElement('button');
+  reloadBtn.className = 'pmd-btn pmd-btn-ghost pmd-btn-sm pmd-reload-btn';
+  reloadBtn.textContent = 'Reload';
+  reloadBtn.type = 'button';
+  reloadBtn.title = 'File changed on disk — reload';
+  toolbar.appendChild(reloadBtn);
 
   const themeBtn = document.createElement('button');
   themeBtn.className = 'pmd-btn pmd-btn-ghost pmd-btn-sm';
@@ -165,9 +177,14 @@ export function createChrome(parent: HTMLElement): ChromeInstance {
     themePickerHandlers.forEach((h) => h());
   });
 
+  reloadBtn.addEventListener('click', () => {
+    reloadHandlers.forEach((h) => h());
+  });
+
   setMode(currentMode);
 
   let themePickerHandlers: (() => void)[] = [];
+  let reloadHandlers: (() => void)[] = [];
 
   return {
     el: container,
@@ -232,6 +249,12 @@ export function createChrome(parent: HTMLElement): ChromeInstance {
     },
     onClearRecentFiles: (handler: () => void) => {
       clearHandlers.push(handler);
+    },
+    setReloadVisible: (visible: boolean) => {
+      reloadBtn.toggleAttribute('data-visible', visible);
+    },
+    onReloadClick: (handler: () => void) => {
+      reloadHandlers.push(handler);
     },
     destroy: () => {
       document.removeEventListener('click', handleDocumentClick);

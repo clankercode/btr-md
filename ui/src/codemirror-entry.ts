@@ -1,6 +1,21 @@
-import { EditorState } from '@codemirror/state';
+import { EditorState, Compartment } from '@codemirror/state';
 import { EditorView, basicSetup } from 'codemirror';
-import { markdown } from '@codemirror/lang-markdown';
+import { Decoration, ViewPlugin } from '@codemirror/view';
+import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
+import { syntaxTree } from '@codemirror/language';
+import { GFM } from '@lezer/markdown';
 import { oneDark } from '@codemirror/theme-one-dark';
 
-export { EditorState, EditorView, basicSetup, markdown, oneDark };
+export {
+  EditorState,
+  Compartment,
+  EditorView,
+  basicSetup,
+  Decoration,
+  ViewPlugin,
+  markdown,
+  markdownLanguage,
+  syntaxTree,
+  GFM,
+  oneDark,
+};

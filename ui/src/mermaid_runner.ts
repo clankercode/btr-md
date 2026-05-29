@@ -1,7 +1,19 @@
 import mermaid from 'mermaid';
+import { addMermaidExpandButton } from './mermaid_zoom.js';
 
 let initialised = false;
 let currentThemeVars: Record<string, string> = {};
+
+// The current theme's mermaid variables, set synchronously by `applyTheme`
+// (see main.ts) before any diagram is drawn. Every render passes these to
+// `ensureInit`, so the *initial* render already uses the active theme's
+// colours rather than mermaid's defaults — `ensureInit` only re-inits when
+// the vars actually change.
+let latestThemeVars: Record<string, string> = {};
+
+export function setMermaidTheme(vars: Record<string, string>) {
+  latestThemeVars = vars ? { ...vars } : {};
+}
 
 function shallowEqual(a: Record<string, string>, b: Record<string, string>): boolean {
   const aKeys = Object.keys(a);
@@ -30,7 +42,7 @@ export function ensureInit(vars?: Record<string, string>) {
 }
 
 export async function renderMermaidNodes(root: HTMLElement, renderNonce: string) {
-  ensureInit();
+  ensureInit(latestThemeVars);
   const targets = collectMermaidTargets(root, renderNonce);
   for (const target of targets) {
     await renderMermaidNode(target, renderNonce);
@@ -38,7 +50,7 @@ export async function renderMermaidNodes(root: HTMLElement, renderNonce: string)
 }
 
 export async function renderMermaidNode(target: HTMLElement, renderNonce?: string) {
-  ensureInit();
+  ensureInit(latestThemeVars);
   const container = ensureMermaidContainer(target, renderNonce);
   if (!container) return;
   const source = container.dataset.mermaidSource ?? "";
@@ -47,6 +59,7 @@ export async function renderMermaidNode(target: HTMLElement, renderNonce?: strin
     const { svg } = await mermaid.render(id, source);
     container.classList.remove("pmd-mermaid-error");
     container.innerHTML = svg;
+    addMermaidExpandButton(container);
   } catch (e) {
     container.classList.add("pmd-mermaid-error");
     container.textContent = source;

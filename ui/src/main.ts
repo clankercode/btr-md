@@ -5,8 +5,9 @@ import { createChrome, type Mode } from './chrome.js';
 import { createHotkeyHandler, createOverlay } from './hotkeys.js';
 import { attachScrollSync } from './scroll_sync.js';
 import { markAllNodes, rerenderForThemeChange } from './theme_apply.js';
-import { renderMermaidNodes } from './mermaid_runner.js';
+import { renderMermaidNodes, setMermaidTheme } from './mermaid_runner.js';
 import { renderMathNodes } from './katex_runner.js';
+import { decorateCodeBlocks } from './code_blocks.js';
 import { openThemePicker, isPickerOpen, closeThemePicker, type ThemeInfo } from './picker.js';
 
 interface RenderResult {
@@ -28,6 +29,11 @@ let rendering = false;
 let currentVersion = 0;
 
 const previewPane = document.getElementById('preview-pane') as HTMLElement;
+// `#preview-pane` is the scroll container; `#pmd-content` is the inner reading
+// column that receives all rendered markdown. Content writes (innerHTML, nonce
+// datasets, post-render passes) target the inner wrapper; scroll-sync stays on
+// the scroll container.
+const previewContent = document.getElementById('pmd-content') as HTMLElement;
 const editorPane = document.createElement('div');
 editorPane.id = 'editor-pane';
 editorPane.className = 'pmd-editor-pane';
@@ -53,7 +59,7 @@ document.body.appendChild(appContainer);
 const SPLIT_RATIO_KEY = 'pmd:split-ratio';
 const MIN_RATIO = 0.2;
 const MAX_RATIO = 0.8;
-const DEFAULT_RATIO = 0.5;
+const DEFAULT_RATIO = 0.4;
 
 function clampRatio(r: number): number {
   return Math.max(MIN_RATIO, Math.min(MAX_RATIO, r));
@@ -66,7 +72,7 @@ function applySplitRatio(ratio: number): void {
 }
 
 const storedRatio = parseFloat(localStorage.getItem(SPLIT_RATIO_KEY) || '');
-applySplitRatio(Number.isFinite(storedRatio) ? storedRatio : 0.5);
+applySplitRatio(Number.isFinite(storedRatio) ? storedRatio : DEFAULT_RATIO);
 
 let resizing = false;
 splitResizer.addEventListener('pointerdown', (e) => {
@@ -239,6 +245,12 @@ chrome.onThemePickerClick(() => {
   showThemePicker();
 });
 
+// The Reload button (shown when the active file changes on disk while the
+// buffer is dirty) pulls the on-disk version, discarding local edits.
+chrome.onReloadClick(() => {
+  if (currentFilePath) reloadActiveFromDisk(currentFilePath);
+});
+
 document.addEventListener('keydown', (e: KeyboardEvent) => {
   if (e.ctrlKey && e.key === 't') {
     e.preventDefault();
@@ -255,6 +267,13 @@ document.addEventListener('keydown', (e: KeyboardEvent) => {
   if (e.ctrlKey && e.key === 's') {
     e.preventDefault();
     saveCurrentFile();
+  }
+  if (e.altKey && (e.key === 'z' || e.key === 'Z')) {
+    e.preventDefault();
+    if (editor) {
+      const wrap = editor.toggleWrap();
+      chrome.setStatus(wrap ? 'Word wrap on' : 'Word wrap off');
+    }
   }
 });
 
@@ -301,8 +320,13 @@ async function applyTheme(slug: string) {
     if (bundle.mode === 'light' || bundle.mode === 'dark') {
       document.documentElement.dataset.theme = bundle.mode;
     }
+    // Make the theme's mermaid vars authoritative *synchronously*, before any
+    // diagram is drawn. `bootstrap` awaits `applyTheme` before the first file
+    // render, so the initial mermaid render already uses these colours; the
+    // rAF below only recolours already-rendered diagrams on later switches.
+    setMermaidTheme(bundle.mermaid_vars);
     requestAnimationFrame(() => {
-      rerenderForThemeChange(previewPane, { vars: bundle.mermaid_vars });
+      rerenderForThemeChange(previewContent, { vars: bundle.mermaid_vars });
     });
   } catch (e) {
     console.error('applyTheme failed:', e);
@@ -382,12 +406,15 @@ async function processRenderQueue() {
       version: currentVersion,
       markdown: item.markdown,
     });
-    previewPane.innerHTML = result.html;
-    previewPane.dataset.versionApplied = String(result.version);
-    previewPane.dataset.pmdNonce = result.render_nonce;
-    markAllNodes(previewPane, result.render_nonce);
-    await renderMermaidNodes(previewPane, result.render_nonce);
-    await renderMathNodes(previewPane, result.render_nonce);
+    previewContent.innerHTML = result.html;
+    previewContent.dataset.versionApplied = String(result.version);
+    previewContent.dataset.pmdNonce = result.render_nonce;
+    markAllNodes(previewContent, result.render_nonce);
+    await renderMermaidNodes(previewContent, result.render_nonce);
+    await renderMathNodes(previewContent, result.render_nonce);
+    // Post-sanitize decoration: wrap genuine code samples (mermaid/math nodes
+    // have already been converted above) with the language/copy/expand toolbar.
+    decorateCodeBlocks(previewContent);
     item.resolve();
   } catch (e) {
     item.reject(e);
@@ -406,6 +433,7 @@ function renderMarkdown(markdown: string): Promise<void> {
 
 async function newFile(): Promise<void> {
   hideWelcomeScreen();
+  chrome.setReloadVisible(false);
   currentFilePath = null;
   isModified = false;
   chrome.setFilename('Untitled');
@@ -434,6 +462,7 @@ async function openFileDialog(): Promise<void> {
     const result = await invoke<{ contents: string; path: string } | null>('open_dialog');
     if (result) {
       hideWelcomeScreen();
+      chrome.setReloadVisible(false);
       currentFilePath = result.path;
       isModified = false;
       chrome.setFilename(result.path.split('/').pop() || result.path);
@@ -476,6 +505,8 @@ async function saveCurrentFile(): Promise<void> {
     isModified = false;
     chrome.setModified(false);
     updateTitle();
+    // Our write supersedes any pending external-change prompt.
+    chrome.setReloadVisible(false);
     chrome.setStatus('Saved');
   } catch (e) {
     showError(`Save failed: ${String(e)}`);
@@ -484,6 +515,7 @@ async function saveCurrentFile(): Promise<void> {
 
 async function openFile(path: string) {
   hideWelcomeScreen();
+  chrome.setReloadVisible(false);
 
   try {
     // `request_open_file` admits the path to the scope before reading; we
@@ -549,6 +581,7 @@ async function reloadActiveFromDisk(path: string): Promise<void> {
     const clamped = Math.min(cursor, max);
     editor.view.dispatch({ selection: { anchor: clamped } });
     await renderMarkdown(file.contents);
+    chrome.setReloadVisible(false);
     chrome.setStatus('Reloaded from disk');
   } catch (e) {
     showError(`Reload failed: ${String(e)}`);
@@ -564,7 +597,10 @@ listen<string>('file_changed_on_disk', (event) => {
   const changed = event.payload;
   if (!currentFilePath || changed !== currentFilePath) return;
   if (isModified) {
-    chrome.setStatus('File changed on disk (buffer modified; reload via reopen)');
+    // Can't safely auto-reload over unsaved edits — surface the Reload button
+    // so the user can choose to pull the on-disk version (discarding edits).
+    chrome.setReloadVisible(true);
+    chrome.setStatus('File changed on disk (buffer modified) — use Reload to discard edits');
     return;
   }
   reloadActiveFromDisk(currentFilePath);

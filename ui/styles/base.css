@@ -11,7 +11,12 @@
 
 .pmd-preview {
   padding: var(--pmd-space-8);
-  max-width: 75ch;
+  /* Inner reading column. `#preview-pane` is the scroll container; this
+     wrapper is the centred column. Widened from 75ch so code samples have
+     more room while prose stays comfortably readable. Individual blocks
+     (e.g. expanded code) can break out to the full pane via `cqi` units —
+     see `#preview-pane { container-type: inline-size }` in components.css. */
+  max-width: 104ch;
   margin: 0 auto;
   line-height: 1.75;
 }
