@@ -236,9 +236,9 @@ var TextLeaf = class _TextLeaf extends Text {
   }
   lineInner(target, isLine, line, offset) {
     for (let i = 0; ; i++) {
-      let string11 = this.text[i], end = offset + string11.length;
+      let string7 = this.text[i], end = offset + string7.length;
       if ((isLine ? line : end) >= target)
-        return new Line(offset, end, line, string11);
+        return new Line(offset, end, line, string7);
       offset = end + 1;
       line++;
     }
@@ -606,10 +606,10 @@ var Line = class {
   /**
   @internal
   */
-  constructor(from, to, number11, text) {
+  constructor(from, to, number7, text) {
     this.from = from;
     this.to = to;
-    this.number = number11;
+    this.number = number7;
     this.text = text;
   }
   /**
@@ -1551,7 +1551,7 @@ var FacetProvider = class {
     this.id = nextID++;
   }
   dynamicSlot(addresses) {
-    var _a7;
+    var _a2;
     let getter = this.value;
     let compare2 = this.facet.compareInput;
     let id3 = this.id, idx = addresses[id3] >> 1, multi = this.type == 2;
@@ -1561,7 +1561,7 @@ var FacetProvider = class {
         depDoc = true;
       else if (dep == "selection")
         depSel = true;
-      else if ((((_a7 = addresses[dep.id]) !== null && _a7 !== void 0 ? _a7 : 1) & 1) == 0)
+      else if ((((_a2 = addresses[dep.id]) !== null && _a2 !== void 0 ? _a2 : 1) & 1) == 0)
         depAddrs.push(addresses[dep.id]);
     }
     return {
@@ -1784,8 +1784,8 @@ var Compartment = class _Compartment {
   Create an [effect](https://codemirror.net/6/docs/ref/#state.TransactionSpec.effects) that
   reconfigures this compartment.
   */
-  reconfigure(content11) {
-    return _Compartment.reconfigure.of({ compartment: this, extension: content11 });
+  reconfigure(content7) {
+    return _Compartment.reconfigure.of({ compartment: this, extension: content7 });
   }
   /**
   Get the current content of the compartment in the state, or
@@ -1891,9 +1891,9 @@ function flatten(extension, compartments, newCompartments) {
     } else if (ext instanceof CompartmentInstance) {
       if (newCompartments.has(ext.compartment))
         throw new RangeError(`Duplicate use of compartment in extensions`);
-      let content11 = compartments.get(ext.compartment) || ext.inner;
-      newCompartments.set(ext.compartment, content11);
-      inner(content11, prec2);
+      let content7 = compartments.get(ext.compartment) || ext.inner;
+      newCompartments.set(ext.compartment, content7);
+      inner(content7, prec2);
     } else if (ext instanceof PrecExtension) {
       inner(ext.inner, ext.prec);
     } else if (ext instanceof StateField) {
@@ -1905,10 +1905,10 @@ function flatten(extension, compartments, newCompartments) {
       if (ext.facet.extensions)
         inner(ext.facet.extensions, Prec_.default);
     } else {
-      let content11 = ext.extension;
-      if (!content11)
+      let content7 = ext.extension;
+      if (!content7)
         throw new Error(`Unrecognized extension value in extension set (${ext}). This sometimes happens because multiple instances of @codemirror/state are loaded, breaking instanceof checks.`);
-      inner(content11, prec2);
+      inner(content7, prec2);
     }
   }
   inner(extension, Prec_.default);
@@ -2144,7 +2144,7 @@ function joinRanges(a, b) {
   }
 }
 function mergeTransaction(a, b, sequential) {
-  var _a7;
+  var _a2;
   let mapForA, mapForB, changes;
   if (sequential) {
     mapForA = b.changes;
@@ -2157,7 +2157,7 @@ function mergeTransaction(a, b, sequential) {
   }
   return {
     changes,
-    selection: b.selection ? b.selection.map(mapForB) : (_a7 = a.selection) === null || _a7 === void 0 ? void 0 : _a7.map(mapForA),
+    selection: b.selection ? b.selection.map(mapForB) : (_a2 = a.selection) === null || _a2 === void 0 ? void 0 : _a2.map(mapForA),
     effects: StateEffect.mapEffects(a.effects, mapForA).concat(StateEffect.mapEffects(b.effects, mapForB)),
     annotations: a.annotations.length ? a.annotations.concat(b.annotations) : b.annotations,
     scrollIntoView: a.scrollIntoView || b.scrollIntoView
@@ -2404,8 +2404,8 @@ var EditorState = class _EditorState {
   separator](https://codemirror.net/6/docs/ref/#state.EditorState^lineSeparator), create a
   [`Text`](https://codemirror.net/6/docs/ref/#state.Text) instance from the given string.
   */
-  toText(string11) {
-    return Text.of(string11.split(this.facet(_EditorState.lineSeparator) || DefaultSplit));
+  toText(string7) {
+    return Text.of(string7.split(this.facet(_EditorState.lineSeparator) || DefaultSplit));
   }
   /**
   Return the given range of the document as a string.
@@ -2541,12 +2541,12 @@ var EditorState = class _EditorState {
   - [`"closeBrackets"`](https://codemirror.net/6/docs/ref/#autocomplete.CloseBracketConfig) controls
     bracket closing behavior.
   */
-  languageDataAt(name11, pos, side = -1) {
+  languageDataAt(name7, pos, side = -1) {
     let values2 = [];
     for (let provider of this.facet(languageData)) {
       for (let result of provider(this, pos, side)) {
-        if (Object.prototype.hasOwnProperty.call(result, name11))
-          values2.push(result[name11]);
+        if (Object.prototype.hasOwnProperty.call(result, name7))
+          values2.push(result[name7]);
       }
     }
     return values2;
@@ -3400,29 +3400,29 @@ function findMinIndex(value, array) {
     }
   return found;
 }
-function countColumn(string11, tabSize, to = string11.length) {
+function countColumn(string7, tabSize, to = string7.length) {
   let n = 0;
-  for (let i = 0; i < to && i < string11.length; ) {
-    if (string11.charCodeAt(i) == 9) {
+  for (let i = 0; i < to && i < string7.length; ) {
+    if (string7.charCodeAt(i) == 9) {
       n += tabSize - n % tabSize;
       i++;
     } else {
       n++;
-      i = findClusterBreak2(string11, i);
+      i = findClusterBreak2(string7, i);
     }
   }
   return n;
 }
-function findColumn(string11, col, tabSize, strict) {
+function findColumn(string7, col, tabSize, strict) {
   for (let i = 0, n = 0; ; ) {
     if (n >= col)
       return i;
-    if (i == string11.length)
+    if (i == string7.length)
       break;
-    n += string11.charCodeAt(i) == 9 ? tabSize - n % tabSize : 1;
-    i = findClusterBreak2(string11, i);
+    n += string7.charCodeAt(i) == 9 ? tabSize - n % tabSize : 1;
+    i = findClusterBreak2(string7, i);
   }
-  return strict === true ? -1 : string11.length;
+  return strict === true ? -1 : string7.length;
 }
 
 // node_modules/style-mod/src/style-mod.js
@@ -3652,14 +3652,14 @@ for (code in base) if (!shift.hasOwnProperty(code)) shift[code] = base[code];
 var code;
 function keyName(event) {
   var ignoreKey = mac && event.metaKey && event.shiftKey && !event.ctrlKey && !event.altKey || ie && event.shiftKey && event.key && event.key.length == 1 || event.key == "Unidentified";
-  var name11 = !ignoreKey && event.key || (event.shiftKey ? shift : base)[event.keyCode] || event.key || "Unidentified";
-  if (name11 == "Esc") name11 = "Escape";
-  if (name11 == "Del") name11 = "Delete";
-  if (name11 == "Left") name11 = "ArrowLeft";
-  if (name11 == "Up") name11 = "ArrowUp";
-  if (name11 == "Right") name11 = "ArrowRight";
-  if (name11 == "Down") name11 = "ArrowDown";
-  return name11;
+  var name7 = !ignoreKey && event.key || (event.shiftKey ? shift : base)[event.keyCode] || event.key || "Unidentified";
+  if (name7 == "Esc") name7 = "Escape";
+  if (name7 == "Del") name7 = "Delete";
+  if (name7 == "Left") name7 = "ArrowLeft";
+  if (name7 == "Up") name7 = "ArrowUp";
+  if (name7 == "Right") name7 = "ArrowRight";
+  if (name7 == "Down") name7 = "ArrowDown";
+  return name7;
 }
 
 // node_modules/crelt/index.js
@@ -3668,10 +3668,10 @@ function crelt() {
   if (typeof elt2 == "string") elt2 = document.createElement(elt2);
   var i = 1, next = arguments[1];
   if (next && typeof next == "object" && next.nodeType == null && !Array.isArray(next)) {
-    for (var name11 in next) if (Object.prototype.hasOwnProperty.call(next, name11)) {
-      var value = next[name11];
-      if (typeof value == "string") elt2.setAttribute(name11, value);
-      else if (value != null) elt2[name11] = value;
+    for (var name7 in next) if (Object.prototype.hasOwnProperty.call(next, name7)) {
+      var value = next[name7];
+      if (typeof value == "string") elt2.setAttribute(name7, value);
+      else if (value != null) elt2[name7] = value;
     }
     i++;
   }
@@ -3722,13 +3722,13 @@ var browser = {
   tabSize: doc.documentElement.style.tabSize != null ? "tab-size" : "-moz-tab-size"
 };
 function combineAttrs(source, target) {
-  for (let name11 in source) {
-    if (name11 == "class" && target.class)
+  for (let name7 in source) {
+    if (name7 == "class" && target.class)
       target.class += " " + source.class;
-    else if (name11 == "style" && target.style)
+    else if (name7 == "style" && target.style)
       target.style += ";" + source.style;
     else
-      target[name11] = source[name11];
+      target[name7] = source[name7];
   }
   return target;
 }
@@ -3751,38 +3751,38 @@ function attrsEq(a, b, ignore) {
 }
 function setAttrs(dom, attrs) {
   for (let i = dom.attributes.length - 1; i >= 0; i--) {
-    let name11 = dom.attributes[i].name;
-    if (attrs[name11] == null)
-      dom.removeAttribute(name11);
+    let name7 = dom.attributes[i].name;
+    if (attrs[name7] == null)
+      dom.removeAttribute(name7);
   }
-  for (let name11 in attrs) {
-    let value = attrs[name11];
-    if (name11 == "style")
+  for (let name7 in attrs) {
+    let value = attrs[name7];
+    if (name7 == "style")
       dom.style.cssText = value;
-    else if (dom.getAttribute(name11) != value)
-      dom.setAttribute(name11, value);
+    else if (dom.getAttribute(name7) != value)
+      dom.setAttribute(name7, value);
   }
 }
 function updateAttrs(dom, prev, attrs) {
   let changed = false;
   if (prev) {
-    for (let name11 in prev)
-      if (!(attrs && name11 in attrs)) {
+    for (let name7 in prev)
+      if (!(attrs && name7 in attrs)) {
         changed = true;
-        if (name11 == "style")
+        if (name7 == "style")
           dom.style.cssText = "";
         else
-          dom.removeAttribute(name11);
+          dom.removeAttribute(name7);
       }
   }
   if (attrs) {
-    for (let name11 in attrs)
-      if (!(prev && prev[name11] == attrs[name11])) {
+    for (let name7 in attrs)
+      if (!(prev && prev[name7] == attrs[name7])) {
         changed = true;
-        if (name11 == "style")
-          dom.style.cssText = attrs[name11];
+        if (name7 == "style")
+          dom.style.cssText = attrs[name7];
         else
-          dom.setAttribute(name11, attrs[name11]);
+          dom.setAttribute(name7, attrs[name7]);
       }
   }
   return changed;
@@ -4333,8 +4333,8 @@ function textRange(node, from, to = from) {
   range.setStart(node, from);
   return range;
 }
-function dispatchKey(elt2, name11, code, mods) {
-  let options = { key: name11, code: name11, keyCode: code, which: code, cancelable: true };
+function dispatchKey(elt2, name7, code, mods) {
+  let options = { key: name7, code: name7, keyCode: code, which: code, cancelable: true };
   if (mods)
     ({ altKey: options.altKey, ctrlKey: options.ctrlKey, shiftKey: options.shiftKey, metaKey: options.metaKey } = mods);
   let down = new KeyboardEvent("keydown", options);
@@ -4762,9 +4762,9 @@ function trivialOrder(length) {
 }
 var movedOver = "";
 function moveVisually(line, order, dir, start, forward) {
-  var _a7;
+  var _a2;
   let startIndex = start.head - line.from;
-  let spanI = BidiSpan.find(order, startIndex, (_a7 = start.bidiLevel) !== null && _a7 !== void 0 ? _a7 : -1, start.assoc);
+  let spanI = BidiSpan.find(order, startIndex, (_a2 = start.bidiLevel) !== null && _a2 !== void 0 ? _a2 : -1, start.assoc);
   let span = order[spanI], spanEnd = span.side(forward, dir);
   if (startIndex == spanEnd) {
     let nextI = spanI += forward ? 1 : -1;
@@ -4825,7 +4825,7 @@ var ScrollTarget = class _ScrollTarget {
     return this.range.to <= state.doc.length ? this : new _ScrollTarget(EditorSelection.cursor(state.doc.length), this.y, this.x, this.yMargin, this.xMargin, this.isSnapshot);
   }
 };
-var scrollIntoView = /* @__PURE__ */ StateEffect.define({ map: (t11, ch) => t11.map(ch) });
+var scrollIntoView = /* @__PURE__ */ StateEffect.define({ map: (t7, ch) => t7.map(ch) });
 var setEditContextFormatting = /* @__PURE__ */ StateEffect.define();
 function logException(state, exception, context) {
   let handler = state.facet(exceptionSink);
@@ -4929,8 +4929,8 @@ var PluginInstance = class {
     return this;
   }
   destroy(view) {
-    var _a7;
-    if ((_a7 = this.value) === null || _a7 === void 0 ? void 0 : _a7.destroy) {
+    var _a2;
+    if ((_a2 = this.value) === null || _a2 === void 0 ? void 0 : _a2.destroy) {
       try {
         this.value.destroy();
       } catch (e) {
@@ -5230,9 +5230,9 @@ var Tile = class {
     return null;
   }
   get root() {
-    for (let t11 = this; t11; t11 = t11.parent)
-      if (t11 instanceof DocTile)
-        return t11;
+    for (let t7 = this; t7; t7 = t7.parent)
+      if (t7 instanceof DocTile)
+        return t7;
     return null;
   }
   static get(dom) {
@@ -5708,10 +5708,10 @@ var TileBuilder = class {
     this.wrappers = [];
     this.wrapperPos = 0;
   }
-  addText(text, marks7, openStart, tile) {
-    var _a7;
+  addText(text, marks2, openStart, tile) {
+    var _a2;
     this.flushBuffer();
-    let parent = this.ensureMarks(marks7, openStart);
+    let parent = this.ensureMarks(marks2, openStart);
     let prev = parent.lastChild;
     if (prev && prev.isText() && !(prev.flags & 8) && prev.length + text.length < 512) {
       this.cache.reused.set(
@@ -5722,7 +5722,7 @@ var TileBuilder = class {
       let tile2 = parent.children[parent.children.length - 1] = new TextTile(prev.dom, prev.text + text);
       tile2.parent = parent;
     } else {
-      parent.append(tile || TextTile.of(text, (_a7 = this.cache.find(TextTile)) === null || _a7 === void 0 ? void 0 : _a7.dom));
+      parent.append(tile || TextTile.of(text, (_a2 = this.cache.find(TextTile)) === null || _a2 === void 0 ? void 0 : _a2.dom));
     }
     this.pos += text.length;
     this.afterWidget = null;
@@ -5773,20 +5773,20 @@ var TileBuilder = class {
     this.pos = composition.range.toB;
     head.append(text);
   }
-  addInlineWidget(widget, marks7, openStart) {
+  addInlineWidget(widget, marks2, openStart) {
     let noSpace = this.afterWidget && widget.flags & 48 && (this.afterWidget.flags & 48) == (widget.flags & 48);
     if (!noSpace)
       this.flushBuffer();
-    let parent = this.ensureMarks(marks7, openStart);
+    let parent = this.ensureMarks(marks2, openStart);
     if (!noSpace && !(widget.flags & 16))
       parent.append(this.getBuffer(1));
     parent.append(widget);
     this.pos += widget.length;
     this.afterWidget = widget;
   }
-  addMark(tile, marks7, openStart) {
+  addMark(tile, marks2, openStart) {
     this.flushBuffer();
-    let parent = this.ensureMarks(marks7, openStart);
+    let parent = this.ensureMarks(marks2, openStart);
     parent.append(tile);
     this.pos += tile.length;
     this.afterWidget = null;
@@ -5803,10 +5803,10 @@ var TileBuilder = class {
     this.pos += length;
   }
   addLineStart(attrs, dom) {
-    var _a7;
+    var _a2;
     if (!attrs)
       attrs = lineBaseAttrs;
-    let tile = LineTile.start(attrs, dom || ((_a7 = this.cache.find(LineTile)) === null || _a7 === void 0 ? void 0 : _a7.dom), !!dom);
+    let tile = LineTile.start(attrs, dom || ((_a2 = this.cache.find(LineTile)) === null || _a2 === void 0 ? void 0 : _a2.dom), !!dom);
     this.getBlockPos().append(this.lastBlock = this.curLine = tile);
   }
   addLine(tile) {
@@ -5828,16 +5828,16 @@ var TileBuilder = class {
     if (!this.curLine)
       this.addLineStart(attrs);
   }
-  ensureMarks(marks7, openStart) {
-    var _a7;
+  ensureMarks(marks2, openStart) {
+    var _a2;
     let parent = this.curLine;
-    for (let i = marks7.length - 1; i >= 0; i--) {
-      let mark = marks7[i], last;
+    for (let i = marks2.length - 1; i >= 0; i--) {
+      let mark = marks2[i], last;
       if (openStart > 0 && (last = parent.lastChild) && last instanceof MarkTile && last.mark.eq(mark)) {
         parent = last;
         openStart--;
       } else {
-        let tile = MarkTile.of(mark, (_a7 = this.cache.find(MarkTile, (m) => m.mark.eq(mark))) === null || _a7 === void 0 ? void 0 : _a7.dom);
+        let tile = MarkTile.of(mark, (_a2 = this.cache.find(MarkTile, (m) => m.mark.eq(mark))) === null || _a2 === void 0 ? void 0 : _a2.dom);
         parent.append(tile);
         parent = tile;
         openStart = 0;
@@ -5884,7 +5884,7 @@ var TileBuilder = class {
     this.wrapperPos = this.pos;
   }
   getBlockPos() {
-    var _a7;
+    var _a2;
     this.updateBlockWrappers();
     let parent = this.root;
     for (let wrap of this.wrappers) {
@@ -5892,7 +5892,7 @@ var TileBuilder = class {
       if (wrap.from < this.pos && last instanceof BlockWrapperTile && last.wrapper.eq(wrap.wrapper)) {
         parent = last;
       } else {
-        let tile = BlockWrapperTile.of(wrap.wrapper, (_a7 = this.cache.find(BlockWrapperTile, (t11) => t11.wrapper.eq(wrap.wrapper))) === null || _a7 === void 0 ? void 0 : _a7.dom);
+        let tile = BlockWrapperTile.of(wrap.wrapper, (_a2 = this.cache.find(BlockWrapperTile, (t7) => t7.wrapper.eq(wrap.wrapper))) === null || _a2 === void 0 ? void 0 : _a2.dom);
         parent.append(tile);
         parent = tile;
       }
@@ -6245,22 +6245,22 @@ var TileUpdate = class {
     }
   }
   getCompositionContext(text) {
-    let marks7 = [], line = null;
+    let marks2 = [], line = null;
     for (let parent = text.parentNode; ; parent = parent.parentNode) {
       let tile = Tile.get(parent);
       if (parent == this.view.contentDOM)
         break;
       if (tile instanceof MarkTile)
-        marks7.push(tile);
+        marks2.push(tile);
       else if (tile === null || tile === void 0 ? void 0 : tile.isLine())
         line = tile;
       else if (tile instanceof BlockWrapperTile) ;
       else if (parent.nodeName == "DIV" && !line && parent != this.view.contentDOM)
         line = new LineTile(parent, lineBaseAttrs);
       else if (!line)
-        marks7.push(MarkTile.of(new MarkDecoration({ tagName: parent.nodeName.toLowerCase(), attributes: getAttrs(parent) }), parent));
+        marks2.push(MarkTile.of(new MarkDecoration({ tagName: parent.nodeName.toLowerCase(), attributes: getAttrs(parent) }), parent));
     }
-    return { line, marks: marks7 };
+    return { line, marks: marks2 };
   }
 };
 function hasContent(tile, requireText) {
@@ -6360,7 +6360,7 @@ var DocView = class {
   }
   // Update the document view to a given state.
   update(update) {
-    var _a7;
+    var _a2;
     let changedRanges = update.changedRanges;
     if (this.minWidth > 0 && changedRanges.length) {
       if (!changedRanges.every(({ fromA, toA }) => toA < this.minWidthFrom || fromA > this.minWidthTo)) {
@@ -6373,7 +6373,7 @@ var DocView = class {
     this.updateEditContextFormatting(update);
     let readCompositionAt = -1;
     if (this.view.inputState.composing >= 0 && !this.view.observer.editContext) {
-      if ((_a7 = this.domChanged) === null || _a7 === void 0 ? void 0 : _a7.newSel)
+      if ((_a2 = this.domChanged) === null || _a2 === void 0 ? void 0 : _a2.newSel)
         readCompositionAt = this.domChanged.newSel.head;
       else if (!touchesComposition(update.changes, this.hasComposition) && !update.selectionSet)
         readCompositionAt = update.state.selection.main.head;
@@ -6813,7 +6813,7 @@ var DocView = class {
     this.blockWrappers = this.view.state.facet(blockWrappers).map((v) => typeof v == "function" ? v(this.view) : v);
   }
   scrollIntoView(target) {
-    var _a7;
+    var _a2;
     if (target.isSnapshot) {
       let ref = this.view.viewState.lineBlockAt(target.range.head);
       this.view.scrollDOM.scrollTop = ref.top - target.yMargin;
@@ -6829,7 +6829,7 @@ var DocView = class {
       }
     }
     let { range } = target;
-    let rect = this.coordsAt(range.head, (_a7 = range.assoc) !== null && _a7 !== void 0 ? _a7 : range.empty ? 0 : range.head > range.anchor ? -1 : 1), other;
+    let rect = this.coordsAt(range.head, (_a2 = range.assoc) !== null && _a2 !== void 0 ? _a2 : range.empty ? 0 : range.head > range.anchor ? -1 : 1), other;
     if (!rect)
       return;
     if (!range.empty && (other = this.coordsAt(range.anchor, range.anchor > range.head ? -1 : 1)))
@@ -7032,8 +7032,8 @@ function posAtCoordsImprecise(view, contentRect, block, x, y) {
     let line = Math.floor((y - block.top - (view.defaultLineHeight - textHeight) * 0.5) / textHeight);
     into += line * view.viewState.heightOracle.lineLength;
   }
-  let content11 = view.state.sliceDoc(block.from, block.to);
-  return block.from + findColumn(content11, into, view.state.tabSize);
+  let content7 = view.state.sliceDoc(block.from, block.to);
+  return block.from + findColumn(content7, into, view.state.tabSize);
 }
 function blockAt(view, pos, side) {
   let line = view.lineBlockAt(pos);
@@ -7180,7 +7180,7 @@ var PosAssoc = class {
   }
 };
 function posAtCoords(view, coords, precise, scanY) {
-  let content11 = view.contentDOM.getBoundingClientRect(), docTop = content11.top + view.viewState.paddingTop;
+  let content7 = view.contentDOM.getBoundingClientRect(), docTop = content7.top + view.viewState.paddingTop;
   let { x, y } = coords, yOffset = y - docTop, block;
   for (; ; ) {
     if (yOffset < 0)
@@ -7204,7 +7204,7 @@ function posAtCoords(view, coords, precise, scanY) {
     if (precise)
       return null;
     if (block.type == BlockType.Text) {
-      let pos = posAtCoordsImprecise(view, content11, block, x, y);
+      let pos = posAtCoordsImprecise(view, content7, block, x, y);
       return new PosAssoc(pos, pos == block.from ? 1 : -1);
     }
   }
@@ -8363,25 +8363,25 @@ function captureCopy(view, text) {
   }, 50);
 }
 function copiedRange(state) {
-  let content11 = [], ranges = [], linewise = false;
+  let content7 = [], ranges = [], linewise = false;
   for (let range of state.selection.ranges)
     if (!range.empty) {
-      content11.push(state.sliceDoc(range.from, range.to));
+      content7.push(state.sliceDoc(range.from, range.to));
       ranges.push(range);
     }
-  if (!content11.length) {
+  if (!content7.length) {
     let upto = -1;
     for (let { from } of state.selection.ranges) {
       let line = state.doc.lineAt(from);
       if (line.number > upto) {
-        content11.push(line.text);
+        content7.push(line.text);
         ranges.push({ from: line.from, to: Math.min(state.doc.length, line.to + 1) });
       }
       upto = line.number;
     }
     linewise = true;
   }
-  return { text: textFilter(state, clipboardOutputFilter, content11.join(state.lineBreak)), ranges, linewise };
+  return { text: textFilter(state, clipboardOutputFilter, content7.join(state.lineBreak)), ranges, linewise };
 }
 var lastLinewiseCopy = null;
 handlers.copy = handlers.cut = (view, event) => {
@@ -8473,13 +8473,13 @@ observers.contextmenu = (view) => {
   view.inputState.lastContextMenu = Date.now();
 };
 handlers.beforeinput = (view, event) => {
-  var _a7, _b;
+  var _a2, _b;
   if (event.inputType == "insertText" || event.inputType == "insertCompositionText") {
     view.inputState.insertingText = event.data;
     view.inputState.insertingTextAt = Date.now();
   }
   if (event.inputType == "insertReplacementText" && view.observer.editContext) {
-    let text = (_a7 = event.dataTransfer) === null || _a7 === void 0 ? void 0 : _a7.getData("text/plain"), ranges = event.getTargetRanges();
+    let text = (_a2 = event.dataTransfer) === null || _a2 === void 0 ? void 0 : _a2.getData("text/plain"), ranges = event.getTargetRanges();
     if (text && ranges.length) {
       let r = ranges[0];
       let from = view.posAtDOM(r.startContainer, r.startOffset), to = view.posAtDOM(r.endContainer, r.endOffset);
@@ -8493,8 +8493,8 @@ handlers.beforeinput = (view, event) => {
     if (pending.key == "Backspace" || pending.key == "Delete") {
       let startViewHeight = ((_b = window.visualViewport) === null || _b === void 0 ? void 0 : _b.height) || 0;
       setTimeout(() => {
-        var _a8;
-        if ((((_a8 = window.visualViewport) === null || _a8 === void 0 ? void 0 : _a8.height) || 0) > startViewHeight + 10 && view.hasFocus) {
+        var _a3;
+        if ((((_a3 = window.visualViewport) === null || _a3 === void 0 ? void 0 : _a3.height) || 0) > startViewHeight + 10 && view.hasFocus) {
           view.contentDOM.blur();
           view.focus();
         }
@@ -8645,8 +8645,8 @@ var BlockInfo = class _BlockInfo {
   @internal
   */
   join(other) {
-    let content11 = (Array.isArray(this._content) ? this._content : [this]).concat(Array.isArray(other._content) ? other._content : [other]);
-    return new _BlockInfo(this.from, this.length + other.length, this.top, this.height + other.height, content11);
+    let content7 = (Array.isArray(this._content) ? this._content : [this]).concat(Array.isArray(other._content) ? other._content : [other]);
+    return new _BlockInfo(this.from, this.length + other.length, this.top, this.height + other.height, content7);
   }
 };
 var QueryType = /* @__PURE__ */ (function(QueryType3) {
@@ -10236,8 +10236,8 @@ var DOMObserver = class {
       this.printQuery = window.matchMedia("print");
     if (typeof ResizeObserver == "function") {
       this.resizeScroll = new ResizeObserver(() => {
-        var _a7;
-        if (((_a7 = this.view.docView) === null || _a7 === void 0 ? void 0 : _a7.lastUpdate) < Date.now() - 75)
+        var _a2;
+        if (((_a2 = this.view.docView) === null || _a2 === void 0 ? void 0 : _a2.lastUpdate) < Date.now() - 75)
           this.onResize();
       });
       this.resizeScroll.observe(view.scrollDOM);
@@ -10414,7 +10414,7 @@ var DOMObserver = class {
   // detected (via beforeinput or keydown), and then tries to flush
   // them or, if that has no effect, dispatches the given key.
   delayAndroidKey(key, keyCode) {
-    var _a7;
+    var _a2;
     if (!this.delayedAndroidKey) {
       let flush = () => {
         let key2 = this.delayedAndroidKey;
@@ -10437,7 +10437,7 @@ var DOMObserver = class {
         // this isn't coming right after another change, in which case
         // it is probably part of a weird chain of updates, and should
         // be ignored if it returns the DOM to its previous state.
-        force: this.lastChange < Date.now() - 50 || !!((_a7 = this.delayedAndroidKey) === null || _a7 === void 0 ? void 0 : _a7.force)
+        force: this.lastChange < Date.now() - 50 || !!((_a2 = this.delayedAndroidKey) === null || _a2 === void 0 ? void 0 : _a2.force)
       };
   }
   clearDelayedAndroidKey() {
@@ -10572,9 +10572,9 @@ var DOMObserver = class {
     }
   }
   destroy() {
-    var _a7, _b, _c;
+    var _a2, _b, _c;
     this.stop();
-    (_a7 = this.intersection) === null || _a7 === void 0 ? void 0 : _a7.disconnect();
+    (_a2 = this.intersection) === null || _a2 === void 0 ? void 0 : _a2.disconnect();
     (_b = this.gapIntersection) === null || _b === void 0 ? void 0 : _b.disconnect();
     (_c = this.resizeScroll) === null || _c === void 0 ? void 0 : _c.disconnect();
     for (let dom of this.scrollTargets)
@@ -10890,7 +10890,7 @@ var EditorView = class _EditorView {
   view, so that the user can see the editor.
   */
   constructor(config2 = {}) {
-    var _a7;
+    var _a2;
     this.plugins = [];
     this.pluginMap = /* @__PURE__ */ new Map();
     this.editorAttrs = {};
@@ -10931,7 +10931,7 @@ var EditorView = class _EditorView {
     this.updateAttrs();
     this.updateState = 0;
     this.requestMeasure();
-    if ((_a7 = document.fonts) === null || _a7 === void 0 ? void 0 : _a7.ready)
+    if ((_a2 = document.fonts) === null || _a2 === void 0 ? void 0 : _a2.ready)
       document.fonts.ready.then(() => {
         this.viewState.mustMeasureContent = "refresh";
         this.requestMeasure();
@@ -11590,8 +11590,8 @@ var EditorView = class _EditorView {
   Check whether the editor has focus.
   */
   get hasFocus() {
-    var _a7;
-    return (this.dom.ownerDocument.hasFocus() || browser.safari && ((_a7 = this.inputState) === null || _a7 === void 0 ? void 0 : _a7.lastContextMenu) > Date.now() - 3e4) && this.root.activeElement == this.contentDOM;
+    var _a2;
+    return (this.dom.ownerDocument.hasFocus() || browser.safari && ((_a2 = this.inputState) === null || _a2 === void 0 ? void 0 : _a2.lastContextMenu) > Date.now() - 3e4) && this.root.activeElement == this.contentDOM;
   }
   /**
   Put focus on the editor.
@@ -11639,8 +11639,8 @@ var EditorView = class _EditorView {
   cause it to scroll the given position or range into view.
   */
   static scrollIntoView(pos, options = {}) {
-    var _a7, _b, _c, _d;
-    return scrollIntoView.of(new ScrollTarget(typeof pos == "number" ? EditorSelection.cursor(pos) : pos, (_a7 = options.y) !== null && _a7 !== void 0 ? _a7 : "nearest", (_b = options.x) !== null && _b !== void 0 ? _b : "nearest", (_c = options.yMargin) !== null && _c !== void 0 ? _c : 5, (_d = options.xMargin) !== null && _d !== void 0 ? _d : 5));
+    var _a2, _b, _c, _d;
+    return scrollIntoView.of(new ScrollTarget(typeof pos == "number" ? EditorSelection.cursor(pos) : pos, (_a2 = options.y) !== null && _a2 !== void 0 ? _a2 : "nearest", (_b = options.x) !== null && _b !== void 0 ? _b : "nearest", (_c = options.yMargin) !== null && _c !== void 0 ? _c : 5, (_d = options.xMargin) !== null && _d !== void 0 ? _d : 5));
   }
   /**
   Return an effect that resets the editor to its current (at the
@@ -11744,10 +11744,10 @@ var EditorView = class _EditorView {
   representation.
   */
   static findFromDOM(dom) {
-    var _a7;
-    let content11 = dom.querySelector(".cm-content");
-    let tile = content11 && Tile.get(content11) || Tile.get(dom);
-    return ((_a7 = tile === null || tile === void 0 ? void 0 : tile.root) === null || _a7 === void 0 ? void 0 : _a7.view) || null;
+    var _a2;
+    let content7 = dom.querySelector(".cm-content");
+    let tile = content7 && Tile.get(content7) || Tile.get(dom);
+    return ((_a2 = tile === null || tile === void 0 ? void 0 : tile.root) === null || _a2 === void 0 ? void 0 : _a2.view) || null;
   }
 };
 EditorView.styleModule = styleModule;
@@ -11819,16 +11819,16 @@ function attrsFromFacet(view, facet, base2) {
   return base2;
 }
 var currentPlatform = browser.mac ? "mac" : browser.windows ? "win" : browser.linux ? "linux" : "key";
-function normalizeKeyName(name11, platform) {
-  const parts = name11.split(/-(?!$)/);
+function normalizeKeyName(name7, platform) {
+  const parts = name7.split(/-(?!$)/);
   let result = parts[parts.length - 1];
   if (result == "Space")
     result = " ";
-  let alt, ctrl, shift2, meta11;
+  let alt, ctrl, shift2, meta7;
   for (let i = 0; i < parts.length - 1; ++i) {
     const mod = parts[i];
     if (/^(cmd|meta|m)$/i.test(mod))
-      meta11 = true;
+      meta7 = true;
     else if (/^a(lt)?$/i.test(mod))
       alt = true;
     else if (/^(c|ctrl|control)$/i.test(mod))
@@ -11837,7 +11837,7 @@ function normalizeKeyName(name11, platform) {
       shift2 = true;
     else if (/^mod$/i.test(mod)) {
       if (platform == "mac")
-        meta11 = true;
+        meta7 = true;
       else
         ctrl = true;
     } else
@@ -11847,22 +11847,22 @@ function normalizeKeyName(name11, platform) {
     result = "Alt-" + result;
   if (ctrl)
     result = "Ctrl-" + result;
-  if (meta11)
+  if (meta7)
     result = "Meta-" + result;
   if (shift2)
     result = "Shift-" + result;
   return result;
 }
-function modifiers(name11, event, shift2) {
+function modifiers(name7, event, shift2) {
   if (event.altKey)
-    name11 = "Alt-" + name11;
+    name7 = "Alt-" + name7;
   if (event.ctrlKey)
-    name11 = "Ctrl-" + name11;
+    name7 = "Ctrl-" + name7;
   if (event.metaKey)
-    name11 = "Meta-" + name11;
+    name7 = "Meta-" + name7;
   if (shift2 !== false && event.shiftKey)
-    name11 = "Shift-" + name11;
-  return name11;
+    name7 = "Shift-" + name7;
+  return name7;
 }
 var handleKeyEvents = /* @__PURE__ */ Prec.default(/* @__PURE__ */ EditorView.domEventHandlers({
   keydown(event, view) {
@@ -11886,15 +11886,15 @@ var PrefixTimeout = 4e3;
 function buildKeymap(bindings, platform = currentPlatform) {
   let bound = /* @__PURE__ */ Object.create(null);
   let isPrefix = /* @__PURE__ */ Object.create(null);
-  let checkPrefix = (name11, is) => {
-    let current = isPrefix[name11];
+  let checkPrefix = (name7, is) => {
+    let current = isPrefix[name7];
     if (current == null)
-      isPrefix[name11] = is;
+      isPrefix[name7] = is;
     else if (current != is)
-      throw new Error("Key binding " + name11 + " is used both as a regular binding and as a multi-stroke prefix");
+      throw new Error("Key binding " + name7 + " is used both as a regular binding and as a multi-stroke prefix");
   };
   let add2 = (scope, key, command2, preventDefault, stopPropagation) => {
-    var _a7, _b;
+    var _a2, _b;
     let scopeObj = bound[scope] || (bound[scope] = /* @__PURE__ */ Object.create(null));
     let parts = key.split(/ (?!$)/).map((k) => normalizeKeyName(k, platform));
     for (let i = 1; i < parts.length; i++) {
@@ -11919,7 +11919,7 @@ function buildKeymap(bindings, platform = currentPlatform) {
     let binding = scopeObj[full] || (scopeObj[full] = {
       preventDefault: false,
       stopPropagation: false,
-      run: ((_b = (_a7 = scopeObj._any) === null || _a7 === void 0 ? void 0 : _a7.run) === null || _b === void 0 ? void 0 : _b.slice()) || []
+      run: ((_b = (_a2 = scopeObj._any) === null || _a2 === void 0 ? void 0 : _a2.run) === null || _b === void 0 ? void 0 : _b.slice()) || []
     });
     if (command2)
       binding.run.push(command2);
@@ -11939,13 +11939,13 @@ function buildKeymap(bindings, platform = currentPlatform) {
         for (let key in scopeObj)
           scopeObj[key].run.push((view) => any(view, currentKeyEvent));
       }
-    let name11 = b[platform] || b.key;
-    if (!name11)
+    let name7 = b[platform] || b.key;
+    if (!name7)
       continue;
     for (let scope of scopes) {
-      add2(scope, name11, b.run, b.preventDefault, b.stopPropagation);
+      add2(scope, name7, b.run, b.preventDefault, b.stopPropagation);
       if (b.shift)
-        add2(scope, "Shift-" + name11, b.shift, b.preventDefault, b.stopPropagation);
+        add2(scope, "Shift-" + name7, b.shift, b.preventDefault, b.stopPropagation);
     }
   }
   return bound;
@@ -11953,8 +11953,8 @@ function buildKeymap(bindings, platform = currentPlatform) {
 var currentKeyEvent = null;
 function runHandlers(map, event, view, scope) {
   currentKeyEvent = event;
-  let name11 = keyName(event);
-  let charCode = codePointAt2(name11, 0), isChar = codePointSize2(charCode) == name11.length && name11 != " ";
+  let name7 = keyName(event);
+  let charCode = codePointAt2(name7, 0), isChar = codePointSize2(charCode) == name7.length && name7 != " ";
   let prefix = "", handled = false, prevented = false, stopPropagation = false;
   if (storedPrefix && storedPrefix.view == view && storedPrefix.scope == scope) {
     prefix = storedPrefix.prefix + " ";
@@ -11985,17 +11985,17 @@ function runHandlers(map, event, view, scope) {
   };
   let scopeObj = map[scope], baseName, shiftName;
   if (scopeObj) {
-    if (runFor(scopeObj[prefix + modifiers(name11, event, !isChar)])) {
+    if (runFor(scopeObj[prefix + modifiers(name7, event, !isChar)])) {
       handled = true;
     } else if (isChar && (event.altKey || event.metaKey || event.ctrlKey) && // Ctrl-Alt may be used for AltGr on Windows
     !(browser.windows && event.ctrlKey && event.altKey) && // Alt-combinations on macOS tend to be typed characters
-    !(browser.mac && event.altKey && !(event.ctrlKey || event.metaKey)) && (baseName = base[event.keyCode]) && baseName != name11) {
+    !(browser.mac && event.altKey && !(event.ctrlKey || event.metaKey)) && (baseName = base[event.keyCode]) && baseName != name7) {
       if (runFor(scopeObj[prefix + modifiers(baseName, event, true)])) {
         handled = true;
-      } else if (event.shiftKey && (shiftName = shift[event.keyCode]) != name11 && shiftName != baseName && runFor(scopeObj[prefix + modifiers(shiftName, event, false)])) {
+      } else if (event.shiftKey && (shiftName = shift[event.keyCode]) != name7 && shiftName != baseName && runFor(scopeObj[prefix + modifiers(shiftName, event, false)])) {
         handled = true;
       }
-    } else if (isChar && event.shiftKey && runFor(scopeObj[prefix + modifiers(name11, event, true)])) {
+    } else if (isChar && event.shiftKey && runFor(scopeObj[prefix + modifiers(name7, event, true)])) {
       handled = true;
     }
     if (!handled && runFor(scopeObj._any))
@@ -12083,8 +12083,8 @@ function rectanglesForRange(view, className, range) {
     return [];
   let from = Math.max(range.from, view.viewport.from), to = Math.min(range.to, view.viewport.to);
   let ltr = view.textDirection == Direction.LTR;
-  let content11 = view.contentDOM, contentRect = content11.getBoundingClientRect(), base2 = getBase(view);
-  let lineElt = content11.querySelector(".cm-line"), lineStyle = lineElt && window.getComputedStyle(lineElt);
+  let content7 = view.contentDOM, contentRect = content7.getBoundingClientRect(), base2 = getBase(view);
+  let lineElt = content7.querySelector(".cm-line"), lineStyle = lineElt && window.getComputedStyle(lineElt);
   let leftSide = contentRect.left + (lineStyle ? parseInt(lineStyle.paddingLeft) + Math.min(0, parseInt(lineStyle.textIndent)) : 0);
   let rightSide = contentRect.right - (lineStyle ? parseInt(lineStyle.paddingRight) : 0);
   let startBlock = blockAt(view, from, 1), endBlock = blockAt(view, to, -1);
@@ -12357,11 +12357,11 @@ var drawDropCursor = /* @__PURE__ */ ViewPlugin.fromClass(class {
     this.measureReq = { read: this.readPos.bind(this), write: this.drawCursor.bind(this) };
   }
   update(update) {
-    var _a7;
+    var _a2;
     let cursorPos = update.state.field(dropCursorPos);
     if (cursorPos == null) {
       if (this.cursor != null) {
-        (_a7 = this.cursor) === null || _a7 === void 0 ? void 0 : _a7.remove();
+        (_a2 = this.cursor) === null || _a2 === void 0 ? void 0 : _a2.remove();
         this.cursor = null;
       }
     } else {
@@ -12565,10 +12565,10 @@ var Names = {
 };
 var _supportsTabSize = null;
 function supportsTabSize() {
-  var _a7;
+  var _a2;
   if (_supportsTabSize == null && typeof document != "undefined" && document.body) {
     let styles = document.body.style;
-    _supportsTabSize = ((_a7 = styles.tabSize) !== null && _a7 !== void 0 ? _a7 : styles.MozTabSize) != null;
+    _supportsTabSize = ((_a2 = styles.tabSize) !== null && _a2 !== void 0 ? _a2 : styles.MozTabSize) != null;
   }
   return _supportsTabSize || false;
 }
@@ -12813,8 +12813,8 @@ function crosshairCursor(options = {}) {
   return [
     plugin,
     EditorView.contentAttributes.of((view) => {
-      var _a7;
-      return ((_a7 = view.plugin(plugin)) === null || _a7 === void 0 ? void 0 : _a7.isDown) ? showCrosshair : null;
+      var _a2;
+      return ((_a2 = view.plugin(plugin)) === null || _a2 === void 0 ? void 0 : _a2.isDown) ? showCrosshair : null;
     })
   ];
 }
@@ -12825,18 +12825,18 @@ var TooltipViewManager = class {
     this.createTooltipView = createTooltipView;
     this.removeTooltipView = removeTooltipView;
     this.input = view.state.facet(facet);
-    this.tooltips = this.input.filter((t11) => t11);
+    this.tooltips = this.input.filter((t7) => t7);
     let prev = null;
-    this.tooltipViews = this.tooltips.map((t11) => prev = createTooltipView(t11, prev));
+    this.tooltipViews = this.tooltips.map((t7) => prev = createTooltipView(t7, prev));
   }
   update(update, above) {
-    var _a7;
+    var _a2;
     let input = update.state.facet(this.facet);
     let tooltips = input.filter((x) => x);
     if (input === this.input) {
-      for (let t11 of this.tooltipViews)
-        if (t11.update)
-          t11.update(update);
+      for (let t7 of this.tooltipViews)
+        if (t7.update)
+          t7.update(update);
       return false;
     }
     let tooltipViews = [], newAbove = above ? [] : null;
@@ -12861,10 +12861,10 @@ var TooltipViewManager = class {
           tooltipView.update(update);
       }
     }
-    for (let t11 of this.tooltipViews)
-      if (tooltipViews.indexOf(t11) < 0) {
-        this.removeTooltipView(t11);
-        (_a7 = t11.destroy) === null || _a7 === void 0 ? void 0 : _a7.call(t11);
+    for (let t7 of this.tooltipViews)
+      if (tooltipViews.indexOf(t7) < 0) {
+        this.removeTooltipView(t7);
+        (_a2 = t7.destroy) === null || _a2 === void 0 ? void 0 : _a2.call(t7);
       }
     if (above) {
       newAbove.forEach((val, i) => above[i] = val);
@@ -12882,9 +12882,9 @@ function windowSpace(view) {
 }
 var tooltipConfig = /* @__PURE__ */ Facet.define({
   combine: (values2) => {
-    var _a7, _b, _c;
+    var _a2, _b, _c;
     return {
-      position: browser.ios ? "absolute" : ((_a7 = values2.find((conf) => conf.position)) === null || _a7 === void 0 ? void 0 : _a7.position) || "fixed",
+      position: browser.ios ? "absolute" : ((_a2 = values2.find((conf) => conf.position)) === null || _a2 === void 0 ? void 0 : _a2.position) || "fixed",
       parent: ((_b = values2.find((conf) => conf.parent)) === null || _b === void 0 ? void 0 : _b.parent) || null,
       tooltipSpace: ((_c = values2.find((conf) => conf.tooltipSpace)) === null || _c === void 0 ? void 0 : _c.tooltipSpace) || windowSpace
     };
@@ -12906,12 +12906,12 @@ var tooltipPlugin = /* @__PURE__ */ ViewPlugin.fromClass(class {
     this.createContainer();
     this.measureReq = { read: this.readMeasure.bind(this), write: this.writeMeasure.bind(this), key: this };
     this.resizeObserver = typeof ResizeObserver == "function" ? new ResizeObserver(() => this.measureSoon()) : null;
-    this.manager = new TooltipViewManager(view, showTooltip, (t11, p) => this.createTooltip(t11, p), (t11) => {
+    this.manager = new TooltipViewManager(view, showTooltip, (t7, p) => this.createTooltip(t7, p), (t7) => {
       if (this.resizeObserver)
-        this.resizeObserver.unobserve(t11.dom);
-      t11.dom.remove();
+        this.resizeObserver.unobserve(t7.dom);
+      t7.dom.remove();
     });
-    this.above = this.manager.tooltips.map((t11) => !!t11.above);
+    this.above = this.manager.tooltips.map((t7) => !!t7.above);
     this.intersectionObserver = typeof IntersectionObserver == "function" ? new IntersectionObserver((entries) => {
       if (Date.now() > this.lastTransaction - 50 && entries.length > 0 && entries[entries.length - 1].intersectionRatio < 1)
         this.measureSoon();
@@ -12954,8 +12954,8 @@ var tooltipPlugin = /* @__PURE__ */ ViewPlugin.fromClass(class {
     let newConfig = update.state.facet(tooltipConfig);
     if (newConfig.position != this.position && !this.madeAbsolute) {
       this.position = newConfig.position;
-      for (let t11 of this.manager.tooltipViews)
-        t11.dom.style.position = this.position;
+      for (let t7 of this.manager.tooltipViews)
+        t7.dom.style.position = this.position;
       shouldMeasure = true;
     }
     if (newConfig.parent != this.parent) {
@@ -12963,8 +12963,8 @@ var tooltipPlugin = /* @__PURE__ */ ViewPlugin.fromClass(class {
         this.container.remove();
       this.parent = newConfig.parent;
       this.createContainer();
-      for (let t11 of this.manager.tooltipViews)
-        this.container.appendChild(t11.dom);
+      for (let t7 of this.manager.tooltipViews)
+        this.container.appendChild(t7.dom);
       shouldMeasure = true;
     } else if (this.parent && this.view.themeClasses != this.classes) {
       this.classes = this.container.className = this.view.themeClasses;
@@ -12992,11 +12992,11 @@ var tooltipPlugin = /* @__PURE__ */ ViewPlugin.fromClass(class {
     return tooltipView;
   }
   destroy() {
-    var _a7, _b, _c;
+    var _a2, _b, _c;
     this.view.win.removeEventListener("resize", this.measureSoon);
     for (let tooltipView of this.manager.tooltipViews) {
       tooltipView.dom.remove();
-      (_a7 = tooltipView.destroy) === null || _a7 === void 0 ? void 0 : _a7.call(tooltipView);
+      (_a2 = tooltipView.destroy) === null || _a2 === void 0 ? void 0 : _a2.call(tooltipView);
     }
     if (this.parent)
       this.container.remove();
@@ -13035,9 +13035,9 @@ var tooltipPlugin = /* @__PURE__ */ ViewPlugin.fromClass(class {
         bottom: visible.bottom - margins.bottom
       },
       parent: this.parent ? this.container.getBoundingClientRect() : this.view.dom.getBoundingClientRect(),
-      pos: this.manager.tooltips.map((t11, i) => {
+      pos: this.manager.tooltips.map((t7, i) => {
         let tv = this.manager.tooltipViews[i];
-        return tv.getCoords ? tv.getCoords(t11.pos) : this.view.coordsAtPos(t11.pos);
+        return tv.getCoords ? tv.getCoords(t7.pos) : this.view.coordsAtPos(t7.pos);
       }),
       size: this.manager.tooltipViews.map(({ dom }) => dom.getBoundingClientRect()),
       space: this.view.state.facet(tooltipConfig).tooltipSpace(this.view),
@@ -13047,12 +13047,12 @@ var tooltipPlugin = /* @__PURE__ */ ViewPlugin.fromClass(class {
     };
   }
   writeMeasure(measured) {
-    var _a7;
+    var _a2;
     if (measured.makeAbsolute) {
       this.madeAbsolute = true;
       this.position = "absolute";
-      for (let t11 of this.manager.tooltipViews)
-        t11.dom.style.position = "absolute";
+      for (let t7 of this.manager.tooltipViews)
+        t7.dom.style.position = "absolute";
     }
     let { visible, space: space4, scaleX, scaleY } = measured;
     let others = [];
@@ -13065,7 +13065,7 @@ var tooltipPlugin = /* @__PURE__ */ ViewPlugin.fromClass(class {
       }
       let arrow = tooltip.arrow ? tView.dom.querySelector(".cm-tooltip-arrow") : null;
       let arrowHeight = arrow ? 7 : 0;
-      let width = size.right - size.left, height = (_a7 = knownHeight.get(tView)) !== null && _a7 !== void 0 ? _a7 : size.bottom - size.top;
+      let width = size.right - size.left, height = (_a2 = knownHeight.get(tView)) !== null && _a2 !== void 0 ? _a2 : size.bottom - size.top;
       let offset = tView.offset || noOffset, ltr = this.view.textDirection == Direction.LTR;
       let left = size.width > space4.right - space4.left ? ltr ? space4.left : space4.right - size.width : ltr ? Math.max(space4.left, Math.min(pos.left - (arrow ? 14 : 0) + offset.x, space4.right - width)) : Math.min(Math.max(space4.left, pos.left - width + (arrow ? 14 : 0) - offset.x), space4.right - width);
       let above = this.above[i];
@@ -13211,7 +13211,7 @@ var HoverTooltipHost = class _HoverTooltipHost {
     this.mounted = false;
     this.dom = document.createElement("div");
     this.dom.classList.add("cm-tooltip-hover");
-    this.manager = new TooltipViewManager(view, showHoverTooltip, (t11, p) => this.createHostedView(t11, p), (t11) => t11.dom.remove());
+    this.manager = new TooltipViewManager(view, showHoverTooltip, (t7, p) => this.createHostedView(t7, p), (t7) => t7.dom.remove());
   }
   createHostedView(tooltip, prev) {
     let hostedView = tooltip.create(this.view);
@@ -13238,14 +13238,14 @@ var HoverTooltipHost = class _HoverTooltipHost {
     this.manager.update(update);
   }
   destroy() {
-    var _a7;
-    for (let t11 of this.manager.tooltipViews)
-      (_a7 = t11.destroy) === null || _a7 === void 0 ? void 0 : _a7.call(t11);
+    var _a2;
+    for (let t7 of this.manager.tooltipViews)
+      (_a2 = t7.destroy) === null || _a2 === void 0 ? void 0 : _a2.call(t7);
   }
-  passProp(name11) {
+  passProp(name7) {
     let value = void 0;
     for (let view of this.manager.tooltipViews) {
-      let given = view[name11];
+      let given = view[name7];
       if (given !== void 0) {
         if (value === void 0)
           value = given;
@@ -13273,14 +13273,14 @@ var showHoverTooltipHost = /* @__PURE__ */ showTooltip.compute([showHoverTooltip
   if (tooltips.length === 0)
     return null;
   return {
-    pos: Math.min(...tooltips.map((t11) => t11.pos)),
-    end: Math.max(...tooltips.map((t11) => {
-      var _a7;
-      return (_a7 = t11.end) !== null && _a7 !== void 0 ? _a7 : t11.pos;
+    pos: Math.min(...tooltips.map((t7) => t7.pos)),
+    end: Math.max(...tooltips.map((t7) => {
+      var _a2;
+      return (_a2 = t7.end) !== null && _a2 !== void 0 ? _a2 : t7.pos;
     })),
     create: HoverTooltipHost.create,
     above: tooltips[0].above,
-    arrow: tooltips.some((t11) => t11.arrow)
+    arrow: tooltips.some((t7) => t7.arrow)
   };
 });
 var hoverPlugin = /* @__PURE__ */ Facet.define();
@@ -13366,17 +13366,17 @@ var HoverPlugin = class {
   }
   get tooltip() {
     let plugin = this.view.plugin(tooltipPlugin);
-    let index = plugin ? plugin.manager.tooltips.findIndex((t11) => t11.create == HoverTooltipHost.create) : -1;
+    let index = plugin ? plugin.manager.tooltips.findIndex((t7) => t7.create == HoverTooltipHost.create) : -1;
     return index > -1 ? plugin.manager.tooltipViews[index] : null;
   }
   mousemove(event) {
-    var _a7, _b;
+    var _a2, _b;
     this.lastMove = { x: event.clientX, y: event.clientY, target: event.target, time: Date.now() };
     if (this.hoverTimeout < 0)
       this.hoverTimeout = setTimeout(this.checkHover, this.hoverTime);
     let { active, tooltip } = this;
     if (active.length && !this.locked.has(active) && tooltip && !isInTooltip(tooltip.dom, event) || this.pending) {
-      let { pos } = active[0] || this.pending, end = (_b = (_a7 = active[0]) === null || _a7 === void 0 ? void 0 : _a7.end) !== null && _b !== void 0 ? _b : pos;
+      let { pos } = active[0] || this.pending, end = (_b = (_a2 = active[0]) === null || _a2 === void 0 ? void 0 : _a2.end) !== null && _b !== void 0 ? _b : pos;
       if (pos == end ? this.view.posAtCoords(this.lastMove) != pos : !isOverRange(this.view, pos, end, event.clientX, event.clientY)) {
         this.view.dispatch({ effects: this.setHover.of([]) });
         this.pending = null;
@@ -13495,7 +13495,7 @@ function hoverTooltip(source, options = {}) {
   };
 }
 function activateHover(view, pos, side, options = {}) {
-  var _a7;
+  var _a2;
   let plugins = view.state.facet(hoverPlugin).map((p) => view.plugin(p)).filter((p) => !!p);
   if (options.tooltip && options.tooltip.active) {
     let found = plugins.find((p) => p.field == options.tooltip.active);
@@ -13503,7 +13503,7 @@ function activateHover(view, pos, side, options = {}) {
       plugins = [found];
   }
   for (let plugin of plugins)
-    plugin.activateHover(view, pos, side, (_a7 = options.until) !== null && _a7 !== void 0 ? _a7 : (() => false));
+    plugin.activateHover(view, pos, side, (_a2 = options.until) !== null && _a2 !== void 0 ? _a2 : (() => false));
 }
 function getTooltip(view, tooltip) {
   let plugin = view.plugin(tooltipPlugin);
@@ -13702,23 +13702,23 @@ var dialogField = /* @__PURE__ */ StateField.define({
 var openDialogEffect = /* @__PURE__ */ StateEffect.define();
 var closeDialogEffect = /* @__PURE__ */ StateEffect.define();
 function createDialog(view, config2, result) {
-  let content11 = config2.content ? config2.content(view, () => done(null)) : null;
-  if (!content11) {
-    content11 = crelt("form");
+  let content7 = config2.content ? config2.content(view, () => done(null)) : null;
+  if (!content7) {
+    content7 = crelt("form");
     if (config2.input) {
       let input = crelt("input", config2.input);
       if (/^(text|password|number|email|tel|url)$/.test(input.type))
         input.classList.add("cm-textfield");
       if (!input.name)
         input.name = "input";
-      content11.appendChild(crelt("label", (config2.label || "") + ": ", input));
+      content7.appendChild(crelt("label", (config2.label || "") + ": ", input));
     } else {
-      content11.appendChild(document.createTextNode(config2.label || ""));
+      content7.appendChild(document.createTextNode(config2.label || ""));
     }
-    content11.appendChild(document.createTextNode(" "));
-    content11.appendChild(crelt("button", { class: "cm-button", type: "submit" }, config2.submitLabel || "OK"));
+    content7.appendChild(document.createTextNode(" "));
+    content7.appendChild(crelt("button", { class: "cm-button", type: "submit" }, config2.submitLabel || "OK"));
   }
-  let forms = content11.nodeName == "FORM" ? [content11] : content11.querySelectorAll("form");
+  let forms = content7.nodeName == "FORM" ? [content7] : content7.querySelectorAll("form");
   for (let i = 0; i < forms.length; i++) {
     let form = forms[i];
     form.addEventListener("keydown", (event) => {
@@ -13735,7 +13735,7 @@ function createDialog(view, config2, result) {
       done(form);
     });
   }
-  let panel = crelt("div", content11, crelt("button", {
+  let panel = crelt("div", content7, crelt("button", {
     onclick: () => done(null),
     "aria-label": view.state.phrase("close"),
     class: "cm-dialog-close",
@@ -13756,9 +13756,9 @@ function createDialog(view, config2, result) {
       if (config2.focus) {
         let focus;
         if (typeof config2.focus == "string")
-          focus = content11.querySelector(config2.focus);
+          focus = content7.querySelector(config2.focus);
         else
-          focus = content11.querySelector("input") || content11.querySelector("button");
+          focus = content7.querySelector("input") || content7.querySelector("button");
         if (focus && "select" in focus)
           focus.select();
         else if (focus && "focus" in focus)
@@ -14165,9 +14165,9 @@ var lineNumberConfig = /* @__PURE__ */ Facet.define({
   }
 });
 var NumberMarker = class extends GutterMarker {
-  constructor(number11) {
+  constructor(number7) {
     super();
-    this.number = number11;
+    this.number = number7;
   }
   eq(other) {
     return this.number == other.number;
@@ -14176,8 +14176,8 @@ var NumberMarker = class extends GutterMarker {
     return document.createTextNode(this.number);
   }
 };
-function formatNumber(view, number11) {
-  return view.state.facet(lineNumberConfig).formatNumber(number11, view.state);
+function formatNumber(view, number7) {
+  return view.state.facet(lineNumberConfig).formatNumber(number7, view.state);
 }
 var lineNumberGutter = /* @__PURE__ */ activeGutters.compute([lineNumberConfig], (state) => ({
   class: "cm-lineNumbers",
@@ -14229,21 +14229,21 @@ var activeLineGutterMarker = /* @__PURE__ */ new class extends GutterMarker {
   }
 }();
 var activeLineGutterHighlighter = /* @__PURE__ */ gutterLineClass.compute(["selection"], (state) => {
-  let marks7 = [], last = -1;
+  let marks2 = [], last = -1;
   for (let range of state.selection.ranges) {
     let linePos = state.doc.lineAt(range.head).from;
     if (linePos > last) {
       last = linePos;
-      marks7.push(activeLineGutterMarker.range(linePos));
+      marks2.push(activeLineGutterMarker.range(linePos));
     }
   }
-  return RangeSet.of(marks7);
+  return RangeSet.of(marks2);
 });
 function highlightActiveLineGutter() {
   return activeLineGutterHighlighter;
 }
 
-// node_modules/codemirror/node_modules/@lezer/common/dist/index.js
+// node_modules/@codemirror/lang-markdown/node_modules/@lezer/common/dist/index.js
 var DefaultBufferLength = 1024;
 var nextPropID = 0;
 var Range2 = class {
@@ -14314,8 +14314,8 @@ var NodeType = class _NodeType {
   /**
   @internal
   */
-  constructor(name11, props, id3, flags = 0) {
-    this.name = name11;
+  constructor(name7, props, id3, flags = 0) {
+    this.name = name7;
     this.props = props;
     this.id = id3;
     this.flags = flags;
@@ -14375,14 +14375,14 @@ var NodeType = class _NodeType {
   Returns true when this node's name or one of its
   [groups](#common.NodeProp^group) matches the given string.
   */
-  is(name11) {
-    if (typeof name11 == "string") {
-      if (this.name == name11)
+  is(name7) {
+    if (typeof name7 == "string") {
+      if (this.name == name7)
         return true;
       let group = this.prop(NodeProp.group);
-      return group ? group.indexOf(name11) > -1 : false;
+      return group ? group.indexOf(name7) > -1 : false;
     }
-    return this.id == name11;
+    return this.id == name7;
   }
   /**
   Create a function from node types to arbitrary values by
@@ -14395,8 +14395,8 @@ var NodeType = class _NodeType {
   static match(map) {
     let direct = /* @__PURE__ */ Object.create(null);
     for (let prop in map)
-      for (let name11 of prop.split(" "))
-        direct[name11] = map[prop];
+      for (let name7 of prop.split(" "))
+        direct[name7] = map[prop];
     return (node) => {
       for (let groups = node.prop(NodeProp.group), i = -1; i < (groups ? groups.length : 0); i++) {
         let found = direct[i < 0 ? node.name : groups[i]];
@@ -14413,15 +14413,51 @@ NodeType.none = new NodeType(
   8
   /* NodeFlag.Anonymous */
 );
+var NodeSet = class _NodeSet {
+  /**
+  Create a set with the given types. The `id` property of each
+  type should correspond to its position within the array.
+  */
+  constructor(types2) {
+    this.types = types2;
+    for (let i = 0; i < types2.length; i++)
+      if (types2[i].id != i)
+        throw new RangeError("Node type ids should correspond to array positions when creating a node set");
+  }
+  /**
+  Create a copy of this set with some node properties added. The
+  arguments to this method can be created with
+  [`NodeProp.add`](#common.NodeProp.add).
+  */
+  extend(...props) {
+    let newTypes = [];
+    for (let type of this.types) {
+      let newProps = null;
+      for (let source of props) {
+        let add2 = source(type);
+        if (add2) {
+          if (!newProps)
+            newProps = Object.assign({}, type.props);
+          let value = add2[1], prop = add2[0];
+          if (prop.combine && prop.id in newProps)
+            value = prop.combine(newProps[prop.id], value);
+          newProps[prop.id] = value;
+        }
+      }
+      newTypes.push(newProps ? new NodeType(type.name, newProps, type.id, type.flags) : type);
+    }
+    return new _NodeSet(newTypes);
+  }
+};
 var CachedNode = /* @__PURE__ */ new WeakMap();
 var CachedInnerNode = /* @__PURE__ */ new WeakMap();
 var IterMode;
-(function(IterMode11) {
-  IterMode11[IterMode11["ExcludeBuffers"] = 1] = "ExcludeBuffers";
-  IterMode11[IterMode11["IncludeAnonymous"] = 2] = "IncludeAnonymous";
-  IterMode11[IterMode11["IgnoreMounts"] = 4] = "IgnoreMounts";
-  IterMode11[IterMode11["IgnoreOverlays"] = 8] = "IgnoreOverlays";
-  IterMode11[IterMode11["EnterBracketed"] = 16] = "EnterBracketed";
+(function(IterMode2) {
+  IterMode2[IterMode2["ExcludeBuffers"] = 1] = "ExcludeBuffers";
+  IterMode2[IterMode2["IncludeAnonymous"] = 2] = "IncludeAnonymous";
+  IterMode2[IterMode2["IgnoreMounts"] = 4] = "IgnoreMounts";
+  IterMode2[IterMode2["IgnoreOverlays"] = 8] = "IgnoreOverlays";
+  IterMode2[IterMode2["EnterBracketed"] = 16] = "EnterBracketed";
 })(IterMode || (IterMode = {}));
 var Tree = class _Tree {
   /**
@@ -14704,7 +14740,7 @@ function checkSide(side, pos, from, to) {
   }
 }
 function resolveNode(node, pos, side, overlays) {
-  var _a7;
+  var _a2;
   while (node.from == node.to || (side < 1 ? node.from >= pos : node.from > pos) || (side > -1 ? node.to <= pos : node.to < pos)) {
     let parent = !overlays && node instanceof TreeNode && node.index < 0 ? null : node.parent;
     if (!parent)
@@ -14714,7 +14750,7 @@ function resolveNode(node, pos, side, overlays) {
   let mode = overlays ? 0 : IterMode.IgnoreOverlays;
   if (overlays)
     for (let scan = node, parent = scan.parent; parent; scan = parent, parent = scan.parent) {
-      if (scan instanceof TreeNode && scan.index < 0 && ((_a7 = parent.enter(pos, side, mode)) === null || _a7 === void 0 ? void 0 : _a7.from) != scan.from)
+      if (scan instanceof TreeNode && scan.index < 0 && ((_a2 = parent.enter(pos, side, mode)) === null || _a2 === void 0 ? void 0 : _a2.from) != scan.from)
         node = parent;
     }
   for (; ; ) {
@@ -15450,7 +15486,7 @@ function hasChild(tree) {
   return tree.children.some((ch) => ch instanceof TreeBuffer || !ch.type.isAnonymous || hasChild(ch));
 }
 function buildTree(data2) {
-  var _a7;
+  var _a2;
   let { buffer, nodeSet, maxBufferLength = DefaultBufferLength, reused = [], minRepeatType = nodeSet.types.length } = data2;
   let cursor2 = Array.isArray(buffer) ? new FlatBufferCursor(buffer, buffer.length) : buffer;
   let types2 = nodeSet.types;
@@ -15585,8 +15621,8 @@ function buildTree(data2) {
     let size = 0, start = 0, skip = 0, minStart = fork.end - maxBufferLength;
     let result = { size: 0, start: 0, skip: 0 };
     scan: for (let minPos = fork.pos - maxSize; fork.pos > minPos; ) {
-      let nodeSize11 = fork.size;
-      if (fork.id == inRepeat && nodeSize11 >= 0) {
+      let nodeSize2 = fork.size;
+      if (fork.id == inRepeat && nodeSize2 >= 0) {
         result.size = size;
         result.start = start;
         result.skip = skip;
@@ -15595,8 +15631,8 @@ function buildTree(data2) {
         fork.next();
         continue;
       }
-      let startPos = fork.pos - nodeSize11;
-      if (nodeSize11 < 0 || startPos < minPos || fork.start < minStart)
+      let startPos = fork.pos - nodeSize2;
+      if (nodeSize2 < 0 || startPos < minPos || fork.start < minStart)
         break;
       let localSkipped = fork.id >= minRepeatType ? 4 : 0;
       let nodeStart2 = fork.start;
@@ -15613,7 +15649,7 @@ function buildTree(data2) {
         fork.next();
       }
       start = nodeStart2;
-      size += nodeSize11;
+      size += nodeSize2;
       skip += localSkipped;
     }
     if (inRepeat < 0 || size == maxSize) {
@@ -15647,7 +15683,7 @@ function buildTree(data2) {
   let children = [], positions = [];
   while (cursor2.pos > 0)
     takeNode(data2.start || 0, data2.bufferStart || 0, children, positions, -1, 0);
-  let length = (_a7 = data2.length) !== null && _a7 !== void 0 ? _a7 : children.length ? positions[0] + children[0].length : 0;
+  let length = (_a2 = data2.length) !== null && _a2 !== void 0 ? _a2 : children.length ? positions[0] + children[0].length : 0;
   return new Tree(types2[data2.topID], children.reverse(), positions.reverse(), length);
 }
 var nodeSizeCache = /* @__PURE__ */ new WeakMap();
@@ -15704,6 +15740,52 @@ function balanceRange(balanceType, children, positions, from, to, start, length,
   divide(children, positions, from, to, 0);
   return (mkTop || mkTree)(localChildren, localPositions, length);
 }
+var NodeWeakMap = class {
+  constructor() {
+    this.map = /* @__PURE__ */ new WeakMap();
+  }
+  setBuffer(buffer, index, value) {
+    let inner = this.map.get(buffer);
+    if (!inner)
+      this.map.set(buffer, inner = /* @__PURE__ */ new Map());
+    inner.set(index, value);
+  }
+  getBuffer(buffer, index) {
+    let inner = this.map.get(buffer);
+    return inner && inner.get(index);
+  }
+  /**
+  Set the value for this syntax node.
+  */
+  set(node, value) {
+    if (node instanceof BufferNode)
+      this.setBuffer(node.context.buffer, node.index, value);
+    else if (node instanceof TreeNode)
+      this.map.set(node.tree, value);
+  }
+  /**
+  Retrieve value for this syntax node, if it exists in the map.
+  */
+  get(node) {
+    return node instanceof BufferNode ? this.getBuffer(node.context.buffer, node.index) : node instanceof TreeNode ? this.map.get(node.tree) : void 0;
+  }
+  /**
+  Set the value for the node that a cursor currently points to.
+  */
+  cursorSet(cursor2, value) {
+    if (cursor2.buffer)
+      this.setBuffer(cursor2.buffer.buffer, cursor2.index, value);
+    else
+      this.map.set(cursor2.tree, value);
+  }
+  /**
+  Retrieve the value for the node that a cursor currently points
+  to.
+  */
+  cursorGet(cursor2) {
+    return cursor2.buffer ? this.getBuffer(cursor2.buffer.buffer, cursor2.index) : this.map.get(cursor2.tree);
+  }
+};
 var TreeFragment = class _TreeFragment {
   /**
   Construct a tree fragment. You'll usually want to use
@@ -15813,8 +15895,8 @@ var Parser = class {
   }
 };
 var StringInput = class {
-  constructor(string11) {
-    this.string = string11;
+  constructor(string7) {
+    this.string = string7;
   }
   get length() {
     return this.string.length;
@@ -15829,39 +15911,420 @@ var StringInput = class {
     return this.string.slice(from, to);
   }
 };
+function parseMixed(nest) {
+  return (parse, input, fragments, ranges) => new MixedParse(parse, nest, input, fragments, ranges);
+}
+var InnerParse = class {
+  constructor(parser5, parse, overlay, bracketed, target, from) {
+    this.parser = parser5;
+    this.parse = parse;
+    this.overlay = overlay;
+    this.bracketed = bracketed;
+    this.target = target;
+    this.from = from;
+  }
+};
+function checkRanges(ranges) {
+  if (!ranges.length || ranges.some((r) => r.from >= r.to))
+    throw new RangeError("Invalid inner parse ranges given: " + JSON.stringify(ranges));
+}
+var ActiveOverlay = class {
+  constructor(parser5, predicate, mounts, index, start, bracketed, target, prev) {
+    this.parser = parser5;
+    this.predicate = predicate;
+    this.mounts = mounts;
+    this.index = index;
+    this.start = start;
+    this.bracketed = bracketed;
+    this.target = target;
+    this.prev = prev;
+    this.depth = 0;
+    this.ranges = [];
+  }
+};
 var stoppedInner = new NodeProp({ perNode: true });
+var MixedParse = class {
+  constructor(base2, nest, input, fragments, ranges) {
+    this.nest = nest;
+    this.input = input;
+    this.fragments = fragments;
+    this.ranges = ranges;
+    this.inner = [];
+    this.innerDone = 0;
+    this.baseTree = null;
+    this.stoppedAt = null;
+    this.baseParse = base2;
+  }
+  advance() {
+    if (this.baseParse) {
+      let done2 = this.baseParse.advance();
+      if (!done2)
+        return null;
+      this.baseParse = null;
+      this.baseTree = done2;
+      this.startInner();
+      if (this.stoppedAt != null)
+        for (let inner2 of this.inner)
+          inner2.parse.stopAt(this.stoppedAt);
+    }
+    if (this.innerDone == this.inner.length) {
+      let result = this.baseTree;
+      if (this.stoppedAt != null)
+        result = new Tree(result.type, result.children, result.positions, result.length, result.propValues.concat([[stoppedInner, this.stoppedAt]]));
+      return result;
+    }
+    let inner = this.inner[this.innerDone], done = inner.parse.advance();
+    if (done) {
+      this.innerDone++;
+      let props = Object.assign(/* @__PURE__ */ Object.create(null), inner.target.props);
+      props[NodeProp.mounted.id] = new MountedTree(done, inner.overlay, inner.parser, inner.bracketed);
+      inner.target.props = props;
+    }
+    return null;
+  }
+  get parsedPos() {
+    if (this.baseParse)
+      return 0;
+    let pos = this.input.length;
+    for (let i = this.innerDone; i < this.inner.length; i++) {
+      if (this.inner[i].from < pos)
+        pos = Math.min(pos, this.inner[i].parse.parsedPos);
+    }
+    return pos;
+  }
+  stopAt(pos) {
+    this.stoppedAt = pos;
+    if (this.baseParse)
+      this.baseParse.stopAt(pos);
+    else
+      for (let i = this.innerDone; i < this.inner.length; i++)
+        this.inner[i].parse.stopAt(pos);
+  }
+  startInner() {
+    let fragmentCursor = new FragmentCursor(this.fragments);
+    let overlay = null;
+    let covered = null;
+    let cursor2 = new TreeCursor(new TreeNode(this.baseTree, this.ranges[0].from, 0, null), IterMode.IncludeAnonymous | IterMode.IgnoreMounts);
+    scan: for (let nest, isCovered; ; ) {
+      let enter = true, range;
+      if (this.stoppedAt != null && cursor2.from >= this.stoppedAt) {
+        enter = false;
+      } else if (fragmentCursor.hasNode(cursor2)) {
+        if (overlay) {
+          let match = overlay.mounts.find((m) => m.frag.from <= cursor2.from && m.frag.to >= cursor2.to && m.mount.overlay);
+          if (match)
+            for (let r of match.mount.overlay) {
+              let from = r.from + match.pos, to = r.to + match.pos;
+              if (from >= cursor2.from && to <= cursor2.to && !overlay.ranges.some((r2) => r2.from < to && r2.to > from))
+                overlay.ranges.push({ from, to });
+            }
+        }
+        enter = false;
+      } else if (covered && (isCovered = checkCover(covered.ranges, cursor2.from, cursor2.to))) {
+        enter = isCovered != 2;
+      } else if (!cursor2.type.isAnonymous && (nest = this.nest(cursor2, this.input)) && (cursor2.from < cursor2.to || !nest.overlay)) {
+        if (!cursor2.tree) {
+          materialize(cursor2);
+          if (overlay)
+            overlay.depth++;
+          if (covered)
+            covered.depth++;
+        }
+        let oldMounts = fragmentCursor.findMounts(cursor2.from, nest.parser);
+        if (typeof nest.overlay == "function") {
+          overlay = new ActiveOverlay(nest.parser, nest.overlay, oldMounts, this.inner.length, cursor2.from, !!nest.bracketed, cursor2.tree, overlay);
+        } else {
+          let ranges = punchRanges(this.ranges, nest.overlay || (cursor2.from < cursor2.to ? [new Range2(cursor2.from, cursor2.to)] : []));
+          if (ranges.length)
+            checkRanges(ranges);
+          if (ranges.length || !nest.overlay)
+            this.inner.push(new InnerParse(nest.parser, ranges.length ? nest.parser.startParse(this.input, enterFragments(oldMounts, ranges), ranges) : nest.parser.startParse(""), nest.overlay ? nest.overlay.map((r) => new Range2(r.from - cursor2.from, r.to - cursor2.from)) : null, !!nest.bracketed, cursor2.tree, ranges.length ? ranges[0].from : cursor2.from));
+          if (!nest.overlay)
+            enter = false;
+          else if (ranges.length)
+            covered = { ranges, depth: 0, prev: covered };
+        }
+      } else if (overlay && (range = overlay.predicate(cursor2))) {
+        if (range === true)
+          range = new Range2(cursor2.from, cursor2.to);
+        if (range.from < range.to) {
+          let last = overlay.ranges.length - 1;
+          if (last >= 0 && overlay.ranges[last].to == range.from)
+            overlay.ranges[last] = { from: overlay.ranges[last].from, to: range.to };
+          else
+            overlay.ranges.push(range);
+        }
+      }
+      if (enter && cursor2.firstChild()) {
+        if (overlay)
+          overlay.depth++;
+        if (covered)
+          covered.depth++;
+      } else {
+        for (; ; ) {
+          if (cursor2.nextSibling())
+            break;
+          if (!cursor2.parent())
+            break scan;
+          if (overlay && !--overlay.depth) {
+            let ranges = punchRanges(this.ranges, overlay.ranges);
+            if (ranges.length) {
+              checkRanges(ranges);
+              this.inner.splice(overlay.index, 0, new InnerParse(overlay.parser, overlay.parser.startParse(this.input, enterFragments(overlay.mounts, ranges), ranges), overlay.ranges.map((r) => new Range2(r.from - overlay.start, r.to - overlay.start)), overlay.bracketed, overlay.target, ranges[0].from));
+            }
+            overlay = overlay.prev;
+          }
+          if (covered && !--covered.depth)
+            covered = covered.prev;
+        }
+      }
+    }
+  }
+};
+function checkCover(covered, from, to) {
+  for (let range of covered) {
+    if (range.from >= to)
+      break;
+    if (range.to > from)
+      return range.from <= from && range.to >= to ? 2 : 1;
+  }
+  return 0;
+}
+function sliceBuf(buf, startI, endI, nodes, positions, off) {
+  if (startI < endI) {
+    let from = buf.buffer[startI + 1];
+    nodes.push(buf.slice(startI, endI, from));
+    positions.push(from - off);
+  }
+}
+function materialize(cursor2) {
+  let { node } = cursor2, stack = [];
+  let buffer = node.context.buffer;
+  do {
+    stack.push(cursor2.index);
+    cursor2.parent();
+  } while (!cursor2.tree);
+  let base2 = cursor2.tree, i = base2.children.indexOf(buffer);
+  let buf = base2.children[i], b = buf.buffer, newStack = [i];
+  function split(startI, endI, type, innerOffset, length, stackPos) {
+    let targetI = stack[stackPos];
+    let children = [], positions = [];
+    sliceBuf(buf, startI, targetI, children, positions, innerOffset);
+    let from = b[targetI + 1], to = b[targetI + 2];
+    newStack.push(children.length);
+    let child = stackPos ? split(targetI + 4, b[targetI + 3], buf.set.types[b[targetI]], from, to - from, stackPos - 1) : node.toTree();
+    children.push(child);
+    positions.push(from - innerOffset);
+    sliceBuf(buf, b[targetI + 3], endI, children, positions, innerOffset);
+    return new Tree(type, children, positions, length);
+  }
+  base2.children[i] = split(0, b.length, NodeType.none, 0, buf.length, stack.length - 1);
+  for (let index of newStack) {
+    let tree = cursor2.tree.children[index], pos = cursor2.tree.positions[index];
+    cursor2.yield(new TreeNode(tree, pos + cursor2.from, index, cursor2._tree));
+  }
+}
+var StructureCursor = class {
+  constructor(root, offset) {
+    this.offset = offset;
+    this.done = false;
+    this.cursor = root.cursor(IterMode.IncludeAnonymous | IterMode.IgnoreMounts);
+  }
+  // Move to the first node (in pre-order) that starts at or after `pos`.
+  moveTo(pos) {
+    let { cursor: cursor2 } = this, p = pos - this.offset;
+    while (!this.done && cursor2.from < p) {
+      if (cursor2.to >= pos && cursor2.enter(p, 1, IterMode.IgnoreOverlays | IterMode.ExcludeBuffers)) ;
+      else if (cursor2.to <= pos) {
+        if (!cursor2.next(false))
+          this.done = true;
+      } else {
+        break;
+      }
+    }
+  }
+  hasNode(cursor2) {
+    this.moveTo(cursor2.from);
+    if (!this.done && this.cursor.from + this.offset == cursor2.from && this.cursor.tree) {
+      for (let tree = this.cursor.tree; ; ) {
+        if (tree == cursor2.tree)
+          return true;
+        if (tree.children.length && tree.positions[0] == 0 && tree.children[0] instanceof Tree)
+          tree = tree.children[0];
+        else
+          break;
+      }
+    }
+    return false;
+  }
+};
+var FragmentCursor = class {
+  constructor(fragments) {
+    var _a2;
+    this.fragments = fragments;
+    this.curTo = 0;
+    this.fragI = 0;
+    if (fragments.length) {
+      let first = this.curFrag = fragments[0];
+      this.curTo = (_a2 = first.tree.prop(stoppedInner)) !== null && _a2 !== void 0 ? _a2 : first.to;
+      this.inner = new StructureCursor(first.tree, -first.offset);
+    } else {
+      this.curFrag = this.inner = null;
+    }
+  }
+  hasNode(node) {
+    while (this.curFrag && node.from >= this.curTo)
+      this.nextFrag();
+    return this.curFrag && this.curFrag.from <= node.from && this.curTo >= node.to && this.inner.hasNode(node);
+  }
+  nextFrag() {
+    var _a2;
+    this.fragI++;
+    if (this.fragI == this.fragments.length) {
+      this.curFrag = this.inner = null;
+    } else {
+      let frag = this.curFrag = this.fragments[this.fragI];
+      this.curTo = (_a2 = frag.tree.prop(stoppedInner)) !== null && _a2 !== void 0 ? _a2 : frag.to;
+      this.inner = new StructureCursor(frag.tree, -frag.offset);
+    }
+  }
+  findMounts(pos, parser5) {
+    var _a2;
+    let result = [];
+    if (this.inner) {
+      this.inner.cursor.moveTo(pos, 1);
+      for (let pos2 = this.inner.cursor.node; pos2; pos2 = pos2.parent) {
+        let mount = (_a2 = pos2.tree) === null || _a2 === void 0 ? void 0 : _a2.prop(NodeProp.mounted);
+        if (mount && mount.parser == parser5) {
+          for (let i = this.fragI; i < this.fragments.length; i++) {
+            let frag = this.fragments[i];
+            if (frag.from >= pos2.to)
+              break;
+            if (frag.tree == this.curFrag.tree)
+              result.push({
+                frag,
+                pos: pos2.from - frag.offset,
+                mount
+              });
+          }
+        }
+      }
+    }
+    return result;
+  }
+};
+function punchRanges(outer, ranges) {
+  let copy = null, current = ranges;
+  for (let i = 1, j = 0; i < outer.length; i++) {
+    let gapFrom = outer[i - 1].to, gapTo = outer[i].from;
+    for (; j < current.length; j++) {
+      let r = current[j];
+      if (r.from >= gapTo)
+        break;
+      if (r.to <= gapFrom)
+        continue;
+      if (!copy)
+        current = copy = ranges.slice();
+      if (r.from < gapFrom) {
+        copy[j] = new Range2(r.from, gapFrom);
+        if (r.to > gapTo)
+          copy.splice(j + 1, 0, new Range2(gapTo, r.to));
+      } else if (r.to > gapTo) {
+        copy[j--] = new Range2(gapTo, r.to);
+      } else {
+        copy.splice(j--, 1);
+      }
+    }
+  }
+  return current;
+}
+function findCoverChanges(a, b, from, to) {
+  let iA = 0, iB = 0, inA = false, inB = false, pos = -1e9;
+  let result = [];
+  for (; ; ) {
+    let nextA = iA == a.length ? 1e9 : inA ? a[iA].to : a[iA].from;
+    let nextB = iB == b.length ? 1e9 : inB ? b[iB].to : b[iB].from;
+    if (inA != inB) {
+      let start = Math.max(pos, from), end = Math.min(nextA, nextB, to);
+      if (start < end)
+        result.push(new Range2(start, end));
+    }
+    pos = Math.min(nextA, nextB);
+    if (pos == 1e9)
+      break;
+    if (nextA == pos) {
+      if (!inA)
+        inA = true;
+      else {
+        inA = false;
+        iA++;
+      }
+    }
+    if (nextB == pos) {
+      if (!inB)
+        inB = true;
+      else {
+        inB = false;
+        iB++;
+      }
+    }
+  }
+  return result;
+}
+function enterFragments(mounts, ranges) {
+  let result = [];
+  for (let { pos, mount, frag } of mounts) {
+    let startPos = pos + (mount.overlay ? mount.overlay[0].from : 0), endPos = startPos + mount.tree.length;
+    let from = Math.max(frag.from, startPos), to = Math.min(frag.to, endPos);
+    if (mount.overlay) {
+      let overlay = mount.overlay.map((r) => new Range2(r.from + pos, r.to + pos));
+      let changes = findCoverChanges(ranges, overlay, from, to);
+      for (let i = 0, pos2 = from; ; i++) {
+        let last = i == changes.length, end = last ? to : changes[i].from;
+        if (end > pos2)
+          result.push(new TreeFragment(pos2, end, mount.tree, -startPos, frag.from >= pos2 || frag.openStart, frag.to <= end || frag.openEnd));
+        if (last)
+          break;
+        pos2 = changes[i].to;
+      }
+    } else {
+      result.push(new TreeFragment(from, to, mount.tree, -startPos, frag.from >= startPos || frag.openStart, frag.to <= endPos || frag.openEnd));
+    }
+  }
+  return result;
+}
 
-// node_modules/codemirror/node_modules/@lezer/highlight/dist/index.js
+// node_modules/@codemirror/lang-markdown/node_modules/@lezer/highlight/dist/index.js
 var nextTagID = 0;
 var Tag = class _Tag {
   /**
   @internal
   */
-  constructor(name11, set, base2, modified) {
-    this.name = name11;
+  constructor(name7, set, base2, modified) {
+    this.name = name7;
     this.set = set;
     this.base = base2;
     this.modified = modified;
     this.id = nextTagID++;
   }
   toString() {
-    let { name: name11 } = this;
+    let { name: name7 } = this;
     for (let mod of this.modified)
       if (mod.name)
-        name11 = `${mod.name}(${name11})`;
-    return name11;
+        name7 = `${mod.name}(${name7})`;
+    return name7;
   }
   static define(nameOrParent, parent) {
-    let name11 = typeof nameOrParent == "string" ? nameOrParent : "?";
+    let name7 = typeof nameOrParent == "string" ? nameOrParent : "?";
     if (nameOrParent instanceof _Tag)
       parent = nameOrParent;
     if (parent === null || parent === void 0 ? void 0 : parent.base)
       throw new Error("Can not derive from a modified tag");
-    let tag = new _Tag(name11, [], null, []);
+    let tag = new _Tag(name7, [], null, []);
     tag.set.push(tag);
     if (parent)
-      for (let t11 of parent.set)
-        tag.set.push(t11);
+      for (let t7 of parent.set)
+        tag.set.push(t7);
     return tag;
   }
   /**
@@ -15876,8 +16339,8 @@ var Tag = class _Tag {
   example `m1(m2(m3(t1)))` is a subtype of `m1(m2(t1))`,
   `m1(m3(t1)`, and so on.
   */
-  static defineModifier(name11) {
-    let mod = new Modifier(name11);
+  static defineModifier(name7) {
+    let mod = new Modifier(name7);
     return (tag) => {
       if (tag.modified.indexOf(mod) > -1)
         return tag;
@@ -15887,15 +16350,15 @@ var Tag = class _Tag {
 };
 var nextModifierID = 0;
 var Modifier = class _Modifier {
-  constructor(name11) {
-    this.name = name11;
+  constructor(name7) {
+    this.name = name7;
     this.instances = [];
     this.id = nextModifierID++;
   }
   static get(base2, mods) {
     if (!mods.length)
       return base2;
-    let exists = mods[0].instances.find((t11) => t11.base == base2 && sameArray2(mods, t11.modified));
+    let exists = mods[0].instances.find((t7) => t7.base == base2 && sameArray2(mods, t7.modified));
     if (exists)
       return exists;
     let set = [], tag = new Tag(base2.name, set, base2, mods);
@@ -15924,9 +16387,9 @@ function powerSet(array) {
 function styleTags(spec) {
   let byName = /* @__PURE__ */ Object.create(null);
   for (let prop in spec) {
-    let tags12 = spec[prop];
-    if (!Array.isArray(tags12))
-      tags12 = [tags12];
+    let tags8 = spec[prop];
+    if (!Array.isArray(tags8))
+      tags8 = [tags8];
     for (let part of prop.split(" "))
       if (part) {
         let pieces = [], mode = 2, rest = part;
@@ -15954,7 +16417,7 @@ function styleTags(spec) {
         let last = pieces.length - 1, inner = pieces[last];
         if (!inner)
           throw new RangeError("Invalid path: " + part);
-        let rule = new Rule(tags12, mode, last > 0 ? pieces.slice(0, last) : null);
+        let rule = new Rule(tags8, mode, last > 0 ? pieces.slice(0, last) : null);
         byName[inner] = rule.sort(byName[inner]);
       }
   }
@@ -15984,8 +16447,8 @@ var ruleNodeProp = new NodeProp({
   }
 });
 var Rule = class {
-  constructor(tags12, mode, context, next) {
-    this.tags = tags12;
+  constructor(tags8, mode, context, next) {
+    this.tags = tags8;
     this.mode = mode;
     this.context = context;
     this.next = next;
@@ -16009,9 +16472,9 @@ var Rule = class {
   }
 };
 Rule.empty = new Rule([], 2, null);
-function tagHighlighter(tags12, options) {
+function tagHighlighter(tags8, options) {
   let map = /* @__PURE__ */ Object.create(null);
-  for (let style of tags12) {
+  for (let style of tags8) {
     if (!Array.isArray(style.tag))
       map[style.tag.id] = style.class;
     else
@@ -16020,9 +16483,9 @@ function tagHighlighter(tags12, options) {
   }
   let { scope, all = null } = options || {};
   return {
-    style: (tags13) => {
+    style: (tags9) => {
       let cls = all;
-      for (let tag of tags13) {
+      for (let tag of tags9) {
         for (let sub of tag.set) {
           let tagClass = map[sub.id];
           if (tagClass) {
@@ -16036,10 +16499,10 @@ function tagHighlighter(tags12, options) {
     scope
   };
 }
-function highlightTags(highlighters, tags12) {
+function highlightTags(highlighters, tags8) {
   let result = null;
   for (let highlighter of highlighters) {
-    let value = highlighter.style(tags12);
+    let value = highlighter.style(tags8);
     if (value)
       result = result ? result + " " + value : value;
   }
@@ -16092,12 +16555,12 @@ var HighlightBuilder = class {
     if (mounted && mounted.overlay) {
       let inner = cursor2.node.enter(mounted.overlay[0].from + start, 1);
       let innerHighlighters = this.highlighters.filter((h) => !h.scope || h.scope(mounted.tree.type));
-      let hasChild11 = cursor2.firstChild();
+      let hasChild2 = cursor2.firstChild();
       for (let i = 0, pos = start; ; i++) {
         let next = i < mounted.overlay.length ? mounted.overlay[i] : null;
         let nextPos = next ? next.from + start : end;
         let rangeFrom2 = Math.max(from, pos), rangeTo2 = Math.min(to, nextPos);
-        if (rangeFrom2 < rangeTo2 && hasChild11) {
+        if (rangeFrom2 < rangeTo2 && hasChild2) {
           while (cursor2.from < rangeTo2) {
             this.highlightRange(cursor2, rangeFrom2, rangeTo2, inheritedClass, highlighters);
             this.startSpan(Math.min(rangeTo2, cursor2.to), cls);
@@ -16113,7 +16576,7 @@ var HighlightBuilder = class {
           this.startSpan(Math.min(to, pos), cls);
         }
       }
-      if (hasChild11)
+      if (hasChild2)
         cursor2.parent();
     } else if (cursor2.firstChild()) {
       if (mounted)
@@ -16517,10 +16980,10 @@ var tags = {
   */
   special: Tag.defineModifier("special")
 };
-for (let name11 in tags) {
-  let val = tags[name11];
+for (let name7 in tags) {
+  let val = tags[name7];
   if (val instanceof Tag)
-    val.name = name11;
+    val.name = name7;
 }
 var classHighlighter = tagHighlighter([
   { tag: tags.link, class: "tok-link" },
@@ -16555,9 +17018,14 @@ var classHighlighter = tagHighlighter([
   { tag: tags.punctuation, class: "tok-punctuation" }
 ]);
 
-// node_modules/codemirror/node_modules/@codemirror/language/dist/index.js
+// node_modules/@codemirror/lang-markdown/node_modules/@codemirror/language/dist/index.js
 var _a;
 var languageDataProp = /* @__PURE__ */ new NodeProp();
+function defineLanguageFacet(baseData) {
+  return Facet.define({
+    combine: baseData ? (values2) => values2.concat(baseData) : void 0
+  });
+}
 var sublanguageProp = /* @__PURE__ */ new NodeProp();
 var Language = class {
   /**
@@ -16567,9 +17035,9 @@ var Language = class {
   configure your parser to [attach](https://codemirror.net/6/docs/ref/#language.languageDataProp) it
   to the language's outer syntax node.
   */
-  constructor(data2, parser5, extraExtensions = [], name11 = "") {
+  constructor(data2, parser5, extraExtensions = [], name7 = "") {
     this.data = data2;
-    this.name = name11;
+    this.name = name7;
     if (!EditorState.prototype.hasOwnProperty("tree"))
       Object.defineProperty(EditorState.prototype, "tree", { get() {
         return syntaxTree(this);
@@ -16660,6 +17128,31 @@ function topNodeAt(state, pos, side) {
   }
   return tree;
 }
+var LRLanguage = class _LRLanguage extends Language {
+  constructor(data2, parser5, name7) {
+    super(data2, parser5, [], name7);
+    this.parser = parser5;
+  }
+  /**
+  Define a language from a parser.
+  */
+  static define(spec) {
+    let data2 = defineLanguageFacet(spec.languageData);
+    return new _LRLanguage(data2, spec.parser.configure({
+      props: [languageDataProp.add((type) => type.isTop ? data2 : void 0)]
+    }), spec.name);
+  }
+  /**
+  Create a new instance of this language with a reconfigured
+  version of its parser and optionally a new name.
+  */
+  configure(options, name7) {
+    return new _LRLanguage(this.data, this.parser.configure(options), name7 || this.name);
+  }
+  get allowsNesting() {
+    return this.parser.hasWrappers();
+  }
+};
 function syntaxTree(state) {
   let field = state.field(Language.state, false);
   return field ? field.tree : Tree.empty;
@@ -16731,7 +17224,7 @@ var ParseContext = class _ParseContext {
       return true;
     }
     return this.withContext(() => {
-      var _a7;
+      var _a2;
       if (typeof until == "number") {
         let endTime = Date.now() + until;
         until = () => Date.now() > endTime;
@@ -16744,7 +17237,7 @@ var ParseContext = class _ParseContext {
         let done = this.parse.advance();
         if (done) {
           this.fragments = this.withoutTempSkipped(TreeFragment.addTree(done, this.fragments, this.parse.stoppedAt != null));
-          this.treeLen = (_a7 = this.parse.stoppedAt) !== null && _a7 !== void 0 ? _a7 : this.state.doc.length;
+          this.treeLen = (_a2 = this.parse.stoppedAt) !== null && _a2 !== void 0 ? _a2 : this.state.doc.length;
           this.tree = done;
           this.parse = null;
           if (this.treeLen < (upto !== null && upto !== void 0 ? upto : this.state.doc.length))
@@ -17039,15 +17532,99 @@ var language = /* @__PURE__ */ Facet.define({
   combine(languages) {
     return languages.length ? languages[0] : null;
   },
-  enables: (language7) => [
+  enables: (language2) => [
     Language.state,
     parseWorker,
-    EditorView.contentAttributes.compute([language7], (state) => {
-      let lang = state.facet(language7);
+    EditorView.contentAttributes.compute([language2], (state) => {
+      let lang = state.facet(language2);
       return lang && lang.name ? { "data-language": lang.name } : {};
     })
   ]
 });
+var LanguageSupport = class {
+  /**
+  Create a language support object.
+  */
+  constructor(language2, support = []) {
+    this.language = language2;
+    this.support = support;
+    this.extension = [language2, support];
+  }
+};
+var LanguageDescription = class _LanguageDescription {
+  constructor(name7, alias, extensions, filename, loadFunc, support = void 0) {
+    this.name = name7;
+    this.alias = alias;
+    this.extensions = extensions;
+    this.filename = filename;
+    this.loadFunc = loadFunc;
+    this.support = support;
+    this.loading = null;
+  }
+  /**
+  Start loading the the language. Will return a promise that
+  resolves to a [`LanguageSupport`](https://codemirror.net/6/docs/ref/#language.LanguageSupport)
+  object when the language successfully loads.
+  */
+  load() {
+    return this.loading || (this.loading = this.loadFunc().then((support) => this.support = support, (err) => {
+      this.loading = null;
+      throw err;
+    }));
+  }
+  /**
+  Create a language description.
+  */
+  static of(spec) {
+    let { load, support } = spec;
+    if (!load) {
+      if (!support)
+        throw new RangeError("Must pass either 'load' or 'support' to LanguageDescription.of");
+      load = () => Promise.resolve(support);
+    }
+    return new _LanguageDescription(spec.name, (spec.alias || []).concat(spec.name).map((s) => s.toLowerCase()), spec.extensions || [], spec.filename, load, support);
+  }
+  /**
+  Look for a language in the given array of descriptions that
+  matches the filename. Will first match
+  [`filename`](https://codemirror.net/6/docs/ref/#language.LanguageDescription.filename) patterns,
+  and then [extensions](https://codemirror.net/6/docs/ref/#language.LanguageDescription.extensions),
+  and return the first language that matches.
+  */
+  static matchFilename(descs, filename) {
+    for (let d of descs)
+      if (d.filename && d.filename.test(filename))
+        return d;
+    let ext = /\.([^.]+)$/.exec(filename);
+    if (ext) {
+      for (let d of descs)
+        if (d.extensions.indexOf(ext[1]) > -1)
+          return d;
+    }
+    return null;
+  }
+  /**
+  Look for a language whose name or alias matches the the given
+  name (case-insensitively). If `fuzzy` is true, and no direct
+  matchs is found, this'll also search for a language whose name
+  or alias occurs in the string (for names shorter than three
+  characters, only when surrounded by non-word characters).
+  */
+  static matchLanguageName(descs, name7, fuzzy = true) {
+    name7 = name7.toLowerCase();
+    for (let d of descs)
+      if (d.alias.some((a) => a == name7))
+        return d;
+    if (fuzzy)
+      for (let d of descs)
+        for (let a of d.alias) {
+          let found = name7.indexOf(a);
+          if (found > -1 && (a.length > 2 || !/\w/.test(name7[found - 1]) && !/\w/.test(name7[found + a.length])))
+            return d;
+        }
+    return null;
+  }
+};
 var indentService = /* @__PURE__ */ Facet.define();
 var indentUnit = /* @__PURE__ */ Facet.define({
   combine: (values2) => {
@@ -17293,6 +17870,9 @@ function bracketedAligned(context) {
     pos = next.to;
   }
 }
+function delimitedIndent({ closing: closing2, align = true, units = 1 }) {
+  return (context) => delimitedStrategy(context, align, units, closing2);
+}
 function delimitedStrategy(context, align, units, closing2, closedAt) {
   let after = context.textAfter, space4 = after.match(/^\s*/)[0].length;
   let closed = closing2 && after.slice(space4, space4 + closing2.length) == closing2 || closedAt == context.pos + space4;
@@ -17300,6 +17880,13 @@ function delimitedStrategy(context, align, units, closing2, closedAt) {
   if (aligned)
     return closed ? context.column(aligned.from) : context.column(aligned.to);
   return context.baseIndent + (closed ? 0 : context.unit * units);
+}
+var flatIndent = (context) => context.baseIndent;
+function continuedIndent({ except, units = 1 } = {}) {
+  return (context) => {
+    let matchExcept = except && except.test(context.textAfter);
+    return context.baseIndent + (matchExcept ? 0 : units * context.unit);
+  };
 }
 var DontIndentBeyond = 200;
 function indentOnInput() {
@@ -17334,6 +17921,10 @@ function indentOnInput() {
 }
 var foldService = /* @__PURE__ */ Facet.define();
 var foldNodeProp = /* @__PURE__ */ new NodeProp();
+function foldInside(node) {
+  let first = node.firstChild, last = node.lastChild;
+  return first && first.to < last.from ? { from: first.to, to: last.type.isError ? node.to : last.from } : null;
+}
 function syntaxFolding(state, start, end) {
   let tree = syntaxTree(state);
   if (tree.length < end)
@@ -17441,9 +18032,9 @@ function clearTouchedFolds(folded, from, to = from) {
   });
 }
 function findFold(state, from, to) {
-  var _a7;
+  var _a2;
   let found = null;
-  (_a7 = state.field(foldState, false)) === null || _a7 === void 0 ? void 0 : _a7.between(from, to, (from2, to2) => {
+  (_a2 = state.field(foldState, false)) === null || _a2 === void 0 ? void 0 : _a2.between(from, to, (from2, to2) => {
     if (!found || found.from > from2)
       found = { from: from2, to: to2 };
   });
@@ -17621,8 +18212,8 @@ function foldGutter(config2 = {}) {
     gutter({
       class: "cm-foldGutter",
       markers(view) {
-        var _a7;
-        return ((_a7 = view.plugin(markers)) === null || _a7 === void 0 ? void 0 : _a7.markers) || RangeSet.empty;
+        var _a2;
+        return ((_a2 = view.plugin(markers)) === null || _a2 === void 0 ? void 0 : _a2.markers) || RangeSet.empty;
       },
       initialSpacer() {
         return new FoldMarker(fullConfig, false);
@@ -17968,8 +18559,8 @@ function matchPlainBrackets(state, pos, dir, tree, tokenType, maxScanDistance, b
   if (dir < 0 ? !pos : pos == state.doc.length)
     return null;
   let startCh = dir < 0 ? state.sliceDoc(pos - 1, pos) : state.sliceDoc(pos, pos + 1);
-  let bracket11 = brackets.indexOf(startCh);
-  if (bracket11 < 0 || bracket11 % 2 == 0 != dir > 0)
+  let bracket7 = brackets.indexOf(startCh);
+  if (bracket7 < 0 || bracket7 % 2 == 0 != dir > 0)
     return null;
   let startToken = { from: dir < 0 ? pos - 1 : pos, to: dir > 0 ? pos + 1 : pos };
   let iter = state.doc.iterRange(pos, dir > 0 ? state.doc.length : 0), depth = 0;
@@ -17985,7 +18576,7 @@ function matchPlainBrackets(state, pos, dir, tree, tokenType, maxScanDistance, b
       if (found % 2 == 0 == dir > 0) {
         depth++;
       } else if (depth == 1) {
-        return { start: startToken, end: { from: basePos + pos2, to: basePos + pos2 + 1 }, matched: found >> 1 == bracket11 >> 1 };
+        return { start: startToken, end: { from: basePos + pos2, to: basePos + pos2 + 1 }, matched: found >> 1 == bracket7 >> 1 };
       } else {
         depth--;
       }
@@ -18000,7 +18591,7 @@ var typeArray = [NodeType.none];
 var warned = [];
 var byTag = /* @__PURE__ */ Object.create(null);
 var defaultTable = /* @__PURE__ */ Object.create(null);
-for (let [legacyName, name11] of [
+for (let [legacyName, name7] of [
   ["variable", "variableName"],
   ["variable-2", "variableName.special"],
   ["string-2", "string.special"],
@@ -18014,7 +18605,7 @@ for (let [legacyName, name11] of [
   ["header", "heading"],
   ["property", "propertyName"]
 ])
-  defaultTable[legacyName] = /* @__PURE__ */ createTokenType(noTokens, name11);
+  defaultTable[legacyName] = /* @__PURE__ */ createTokenType(noTokens, name7);
 function warnForPart(part, msg) {
   if (warned.indexOf(part) > -1)
     return;
@@ -18023,9 +18614,9 @@ function warnForPart(part, msg) {
 }
 function createTokenType(extra, tagStr) {
   let tags$1 = [];
-  for (let name12 of tagStr.split(" ")) {
+  for (let name8 of tagStr.split(" ")) {
     let found = [];
-    for (let part of name12.split(".")) {
+    for (let part of name8.split(".")) {
       let value = extra[part] || tags[part];
       if (!value) {
         warnForPart(part, `Unknown highlighting tag ${part}`);
@@ -18046,14 +18637,14 @@ function createTokenType(extra, tagStr) {
   }
   if (!tags$1.length)
     return 0;
-  let name11 = tagStr.replace(/ /g, "_"), key = name11 + " " + tags$1.map((t11) => t11.id);
+  let name7 = tagStr.replace(/ /g, "_"), key = name7 + " " + tags$1.map((t7) => t7.id);
   let known = byTag[key];
   if (known)
     return known.id;
   let type = byTag[key] = NodeType.define({
     id: typeArray.length,
-    name: name11,
-    props: [styleTags({ [name11]: tags$1 })]
+    name: name7,
+    props: [styleTags({ [name7]: tags$1 })]
   });
   typeArray.push(type);
   return type.id;
@@ -18162,9 +18753,9 @@ function changeBlockComment(option, state, ranges = state.selection.ranges) {
     })) };
   } else if (option != 1 && comments.some((c) => c)) {
     let changes = [];
-    for (let i = 0, comment11; i < comments.length; i++)
-      if (comment11 = comments[i]) {
-        let token = tokens[i], { open, close } = comment11;
+    for (let i = 0, comment7; i < comments.length; i++)
+      if (comment7 = comments[i]) {
+        let token = tokens[i], { open, close } = comment7;
         changes.push({ from: open.pos - token.open.length, to: open.pos + open.margin }, { from: close.pos - close.margin, to: close.pos + token.close.length });
       }
     return { changes };
@@ -18187,10 +18778,10 @@ function changeLineComment(option, state, ranges = state.selection.ranges) {
         prevLine = line.from;
         let indent = /^\s*/.exec(line.text)[0].length;
         let empty2 = indent == line.length;
-        let comment11 = line.text.slice(indent, indent + token.length) == token ? indent : -1;
+        let comment7 = line.text.slice(indent, indent + token.length) == token ? indent : -1;
         if (indent < line.text.length && indent < minIndent)
           minIndent = indent;
-        lines.push({ line, comment: comment11, token, indent, empty: empty2, single: false });
+        lines.push({ line, comment: comment7, token, indent, empty: empty2, single: false });
       }
       pos = line.to + 1;
     }
@@ -18211,9 +18802,9 @@ function changeLineComment(option, state, ranges = state.selection.ranges) {
     return { changes: changeSet, selection: state.selection.map(changeSet, 1) };
   } else if (option != 1 && lines.some((l) => l.comment >= 0)) {
     let changes = [];
-    for (let { line, comment: comment11, token } of lines)
-      if (comment11 >= 0) {
-        let from = line.from + comment11, to = from + token.length;
+    for (let { line, comment: comment7, token } of lines)
+      if (comment7 >= 0) {
+        let from = line.from + comment7, to = from + token.length;
         if (line.text[to - line.from] == " ")
           to++;
         changes.push({ from, to });
@@ -18321,9 +18912,9 @@ var HistEvent = class _HistEvent {
     return new _HistEvent(this.changes, this.effects, this.mapped, this.startSelection, after);
   }
   toJSON() {
-    var _a7, _b, _c;
+    var _a2, _b, _c;
     return {
-      changes: (_a7 = this.changes) === null || _a7 === void 0 ? void 0 : _a7.toJSON(),
+      changes: (_a2 = this.changes) === null || _a2 === void 0 ? void 0 : _a2.toJSON(),
       mapped: (_b = this.mapped) === null || _b === void 0 ? void 0 : _b.toJSON(),
       startSelection: (_c = this.startSelection) === null || _c === void 0 ? void 0 : _c.toJSON(),
       selectionsAfter: this.selectionsAfter.map((s) => s.toJSON())
@@ -18358,11 +18949,11 @@ function updateBranch(branch, to, maxLen, newEvent) {
 }
 function isAdjacent(a, b) {
   let ranges = [], isAdjacent2 = false;
-  a.iterChangedRanges((f, t11) => ranges.push(f, t11));
-  b.iterChangedRanges((_f, _t, f, t11) => {
+  a.iterChangedRanges((f, t7) => ranges.push(f, t7));
+  b.iterChangedRanges((_f, _t, f, t7) => {
     for (let i = 0; i < ranges.length; ) {
       let from = ranges[i++], to = ranges[i++];
-      if (t11 >= from && f <= to)
+      if (t7 >= from && f <= to)
         isAdjacent2 = true;
     }
   });
@@ -18536,8 +19127,8 @@ function moveBySyntax(state, start, forward) {
     else
       at = forward ? next.to : next.from;
   }
-  let bracket11 = pos.type.prop(bracketProp), match, newPos;
-  if (bracket11 && (match = forward ? matchBrackets(state, pos.from, 1) : matchBrackets(state, pos.to, -1)) && match.matched)
+  let bracket7 = pos.type.prop(bracketProp), match, newPos;
+  if (bracket7 && (match = forward ? matchBrackets(state, pos.from, 1) : matchBrackets(state, pos.to, -1)) && match.matched)
     newPos = forward ? match.end.to : match.end.from;
   else
     newPos = forward ? pos.to : pos.from;
@@ -19406,7 +19997,7 @@ function validRegExp(source) {
   try {
     new RegExp(source, baseFlags);
     return true;
-  } catch (_a7) {
+  } catch (_a2) {
     return false;
   }
 }
@@ -19982,14 +20573,14 @@ function createSearchPanel(view) {
   return view.state.facet(searchConfigFacet).createPanel(view);
 }
 function defaultQuery(state, fallback) {
-  var _a7, _b, _c, _d, _e;
+  var _a2, _b, _c, _d, _e;
   let sel = state.selection.main;
   let selText = sel.empty || sel.to > sel.from + 100 ? "" : state.sliceDoc(sel.from, sel.to);
   if (fallback && !selText)
     return fallback;
   let config2 = state.facet(searchConfigFacet);
   return new SearchQuery({
-    search: ((_a7 = fallback === null || fallback === void 0 ? void 0 : fallback.literal) !== null && _a7 !== void 0 ? _a7 : config2.literal) ? selText : selText.replace(/\n/g, "\\n"),
+    search: ((_a2 = fallback === null || fallback === void 0 ? void 0 : fallback.literal) !== null && _a2 !== void 0 ? _a2 : config2.literal) ? selText : selText.replace(/\n/g, "\\n"),
     caseSensitive: (_b = fallback === null || fallback === void 0 ? void 0 : fallback.caseSensitive) !== null && _b !== void 0 ? _b : config2.caseSensitive,
     literal: (_c = fallback === null || fallback === void 0 ? void 0 : fallback.literal) !== null && _c !== void 0 ? _c : config2.literal,
     regexp: (_d = fallback === null || fallback === void 0 ? void 0 : fallback.regexp) !== null && _d !== void 0 ? _d : config2.regexp,
@@ -20090,8 +20681,8 @@ var SearchPanel = class {
       checked: query.wholeWord,
       onchange: this.commit
     });
-    function button(name11, onclick, content11) {
-      return crelt("button", { class: "cm-button", name: name11, onclick, type: "button" }, content11);
+    function button(name7, onclick, content7) {
+      return crelt("button", { class: "cm-button", name: name7, onclick, type: "button" }, content7);
     }
     this.dom = crelt("div", { onkeydown: (e) => this.keydown(e), class: "cm-search" }, [
       this.searchField,
@@ -20331,12 +20922,12 @@ function cur(state) {
   return state.selection.main.from;
 }
 function ensureAnchor(expr, start) {
-  var _a7;
+  var _a2;
   let { source } = expr;
   let addStart = start && source[0] != "^", addEnd = source[source.length - 1] != "$";
   if (!addStart && !addEnd)
     return expr;
-  return new RegExp(`${addStart ? "^" : ""}(?:${source})${addEnd ? "$" : ""}`, (_a7 = expr.flags) !== null && _a7 !== void 0 ? _a7 : expr.ignoreCase ? "i" : "");
+  return new RegExp(`${addStart ? "^" : ""}(?:${source})${addEnd ? "$" : ""}`, (_a2 = expr.flags) !== null && _a2 !== void 0 ? _a2 : expr.ignoreCase ? "i" : "");
 }
 var pickedCompletion = /* @__PURE__ */ Annotation.define();
 function insertCompletionText(state, text, from, to) {
@@ -20573,9 +21164,9 @@ function defaultPositionInfo(view, list, option, info, space4, tooltip) {
 }
 var setSelectedEffect = /* @__PURE__ */ StateEffect.define();
 function optionContent(config2) {
-  let content11 = config2.addToOptions.slice();
+  let content7 = config2.addToOptions.slice();
   if (config2.icons)
-    content11.push({
+    content7.push({
       render(completion) {
         let icon = document.createElement("div");
         icon.classList.add("cm-completionIcon");
@@ -20586,7 +21177,7 @@ function optionContent(config2) {
       },
       position: 20
     });
-  content11.push({
+  content7.push({
     render(completion, _s, _v, match) {
       let labelElt = document.createElement("span");
       labelElt.className = "cm-completionLabel";
@@ -20616,7 +21207,7 @@ function optionContent(config2) {
     },
     position: 80
   });
-  return content11.sort((a, b) => a.position - b.position).map((a) => a.render);
+  return content7.sort((a, b) => a.position - b.position).map((a) => a.render);
 }
 function rangeAroundSelected(total, selected, max) {
   if (total <= max)
@@ -20691,7 +21282,7 @@ var CompletionTooltip = class {
     });
   }
   update(update) {
-    var _a7;
+    var _a2;
     let cState = update.state.field(this.stateField);
     let prevState = update.startState.field(this.stateField);
     this.updateTooltipClass(update.state);
@@ -20702,7 +21293,7 @@ var CompletionTooltip = class {
         this.showOptions(options, cState.id);
       }
       this.updateSel();
-      if (disabled != ((_a7 = prevState.open) === null || _a7 === void 0 ? void 0 : _a7.disabled))
+      if (disabled != ((_a2 = prevState.open) === null || _a2 === void 0 ? void 0 : _a2.disabled))
         this.dom.classList.toggle("cm-tooltip-autocomplete-disabled", !!disabled);
     }
   }
@@ -20750,16 +21341,16 @@ var CompletionTooltip = class {
       }
     }
   }
-  addInfoPane(content11, completion) {
+  addInfoPane(content7, completion) {
     this.destroyInfo();
     let wrap = this.info = document.createElement("div");
     wrap.className = "cm-tooltip cm-completionInfo";
     wrap.id = "cm-completionInfo-" + Math.floor(Math.random() * 65535).toString(16);
-    if (content11.nodeType != null) {
-      wrap.appendChild(content11);
+    if (content7.nodeType != null) {
+      wrap.appendChild(content7);
       this.infoDestroy = null;
     } else {
-      let { dom, destroy } = content11;
+      let { dom, destroy } = content7;
       wrap.appendChild(dom);
       this.infoDestroy = destroy || null;
     }
@@ -20828,14 +21419,14 @@ var CompletionTooltip = class {
     for (let i = range.from; i < range.to; i++) {
       let { completion, match } = options[i], { section } = completion;
       if (section) {
-        let name11 = typeof section == "string" ? section : section.name;
-        if (name11 != curSection && (i > range.from || range.from == 0)) {
-          curSection = name11;
+        let name7 = typeof section == "string" ? section : section.name;
+        if (name7 != curSection && (i > range.from || range.from == 0)) {
+          curSection = name7;
           if (typeof section != "string" && section.header) {
             ul.appendChild(section.header(section));
           } else {
             let header = ul.appendChild(document.createElement("completion-section"));
-            header.textContent = name11;
+            header.textContent = name7;
           }
         }
       }
@@ -20893,9 +21484,9 @@ function sortOptions(active, state) {
     if (section) {
       if (!sections)
         sections = [];
-      let name11 = typeof section == "string" ? section : section.name;
-      if (!sections.some((s) => s.name == name11))
-        sections.push(typeof section == "string" ? { name: name11 } : section);
+      let name7 = typeof section == "string" ? section : section.name;
+      if (!sections.some((s) => s.name == name7))
+        sections.push(typeof section == "string" ? { name: name7 } : section);
     }
   };
   let conf = state.facet(completionConfig);
@@ -20915,10 +21506,10 @@ function sortOptions(active, state) {
             let score2 = match.score + (option.boost || 0);
             addOption(new Option(option, a.source, matched, score2));
             if (typeof option.section == "object" && option.section.rank === "dynamic") {
-              let { name: name11 } = option.section;
+              let { name: name7 } = option.section;
               if (!dynamicSectionScore)
                 dynamicSectionScore = /* @__PURE__ */ Object.create(null);
-              dynamicSectionScore[name11] = Math.max(score2, dynamicSectionScore[name11] || -1e9);
+              dynamicSectionScore[name7] = Math.max(score2, dynamicSectionScore[name7] || -1e9);
             }
           }
       }
@@ -21145,7 +21736,7 @@ var ActiveResult = class _ActiveResult extends ActiveSource {
     return true;
   }
   updateFor(tr, type) {
-    var _a7;
+    var _a2;
     if (!(type & 3))
       return this.map(tr.changes);
     let result = this.result;
@@ -21163,7 +21754,7 @@ var ActiveResult = class _ActiveResult extends ActiveSource {
     if (checkValid(result.validFor, tr.state, from, to))
       return new _ActiveResult(this.source, this.explicit, limit, result, from, to);
     if (result.update && (result = result.update(result, from, to, new CompletionContext(tr.state, pos, false))))
-      return new _ActiveResult(this.source, this.explicit, limit, result, result.from, (_a7 = result.to) !== null && _a7 !== void 0 ? _a7 : cur(tr.state));
+      return new _ActiveResult(this.source, this.explicit, limit, result, result.from, (_a2 = result.to) !== null && _a2 !== void 0 ? _a2 : cur(tr.state));
     return new ActiveSource(this.source, 1, this.explicit);
   }
   map(mapping) {
@@ -21358,7 +21949,7 @@ var completionPlugin = /* @__PURE__ */ ViewPlugin.fromClass(class {
   // For each finished query in this.running, try to create a result
   // or, if appropriate, restart the query.
   accept() {
-    var _a7;
+    var _a2;
     if (this.debounceAccept > -1)
       clearTimeout(this.debounceAccept);
     this.debounceAccept = -1;
@@ -21372,7 +21963,7 @@ var completionPlugin = /* @__PURE__ */ ViewPlugin.fromClass(class {
       if (query.done) {
         let pos = cur(query.updates.length ? query.updates[0].startState : this.view.state);
         let limit = Math.min(pos, query.done.from + (query.active.explicit ? 0 : 1));
-        let active = new ActiveResult(query.active.source, query.active.explicit, limit, query.done, query.done.from, (_a7 = query.done.to) !== null && _a7 !== void 0 ? _a7 : pos);
+        let active = new ActiveResult(query.active.source, query.active.explicit, limit, query.done, query.done.from, (_a2 = query.done.to) !== null && _a2 !== void 0 ? _a2 : pos);
         for (let tr of query.updates)
           active = active.update(tr, conf);
         if (active.hasResult()) {
@@ -21642,14 +22233,14 @@ var deleteBracketPair = ({ state, dispatch }) => {
 var closeBracketsKeymap = [
   { key: "Backspace", run: deleteBracketPair }
 ];
-function insertBracket(state, bracket11) {
+function insertBracket(state, bracket7) {
   let conf = config(state, state.selection.main.head);
   let tokens = conf.brackets || defaults2.brackets;
   for (let tok of tokens) {
     let closed = closing(codePointAt2(tok, 0));
-    if (bracket11 == tok)
+    if (bracket7 == tok)
       return closed == tok ? handleSame(state, tok, tokens.indexOf(tok + tok + tok) > -1, conf) : handleOpen(state, tok, closed, conf.before || defaults2.before);
-    if (bracket11 == closed && closedBracketAt(state, state.selection.main.from))
+    if (bracket7 == closed && closedBracketAt(state, state.selection.main.from))
       return handleClose(state, tok, closed);
   }
   return null;
@@ -21725,10 +22316,10 @@ function handleSame(state, token, allowTriple, config2) {
         };
       } else if (closedBracketAt(state, pos)) {
         let isTriple = allowTriple && state.sliceDoc(pos, pos + token.length * 3) == token + token + token;
-        let content11 = isTriple ? token + token + token : token;
+        let content7 = isTriple ? token + token + token : token;
         return {
-          changes: { from: pos, to: pos + content11.length, insert: content11 },
-          range: EditorSelection.cursor(pos + content11.length)
+          changes: { from: pos, to: pos + content7.length, insert: content7 },
+          range: EditorSelection.cursor(pos + content7.length)
         };
       }
     } else if (allowTriple && state.sliceDoc(pos - 2 * token.length, pos) == token + token && (start = canStartStringAt(state, pos - 2 * token.length, stringPrefixes)) > -1 && nodeStart(state, start)) {
@@ -22049,7 +22640,7 @@ var lintConfig = /* @__PURE__ */ Facet.define({
         markerFilter: combineFilter,
         tooltipFilter: combineFilter,
         needsRefresh: (a, b) => !a ? b : !b ? a : (u) => a(u) || b(u),
-        hideOn: (a, b) => !a ? b : !b ? a : (t11, x, y) => a(t11, x, y) || b(t11, x, y),
+        hideOn: (a, b) => !a ? b : !b ? a : (t7, x, y) => a(t7, x, y) || b(t7, x, y),
         autoPanel: (a, b) => a || b
       })
     };
@@ -22061,9 +22652,9 @@ function combineFilter(a, b) {
 function assignKeys(actions) {
   let assigned = [];
   if (actions)
-    actions: for (let { name: name11 } of actions) {
-      for (let i = 0; i < name11.length; i++) {
-        let ch = name11[i];
+    actions: for (let { name: name7 } of actions) {
+      for (let i = 0; i < name7.length; i++) {
+        let ch = name7[i];
         if (/[a-zA-Z]/.test(ch) && !assigned.some((c) => c.toLowerCase() == ch.toLowerCase())) {
           assigned.push(ch);
           continue actions;
@@ -22074,9 +22665,9 @@ function assignKeys(actions) {
   return assigned;
 }
 function renderDiagnostic(view, diagnostic, inPanel) {
-  var _a7;
+  var _a2;
   let keys2 = inPanel ? assignKeys(diagnostic.actions) : [];
-  return crelt("li", { class: "cm-diagnostic cm-diagnostic-" + diagnostic.severity }, crelt("span", { class: "cm-diagnosticText" }, diagnostic.renderMessage ? diagnostic.renderMessage(view) : diagnostic.message), (_a7 = diagnostic.actions) === null || _a7 === void 0 ? void 0 : _a7.map((action, i) => {
+  return crelt("li", { class: "cm-diagnostic cm-diagnostic-" + diagnostic.severity }, crelt("span", { class: "cm-diagnosticText" }, diagnostic.renderMessage ? diagnostic.renderMessage(view) : diagnostic.message), (_a2 = diagnostic.actions) === null || _a2 === void 0 ? void 0 : _a2.map((action, i) => {
     let fired = false, click = (e) => {
       e.preventDefault();
       if (fired)
@@ -22086,11 +22677,11 @@ function renderDiagnostic(view, diagnostic, inPanel) {
       if (found)
         action.apply(view, found.from, found.to);
     };
-    let { name: name11 } = action, keyIndex = keys2[i] ? name11.indexOf(keys2[i]) : -1;
-    let nameElt = keyIndex < 0 ? name11 : [
-      name11.slice(0, keyIndex),
-      crelt("u", name11.slice(keyIndex, keyIndex + 1)),
-      name11.slice(keyIndex + 1)
+    let { name: name7 } = action, keyIndex = keys2[i] ? name7.indexOf(keys2[i]) : -1;
+    let nameElt = keyIndex < 0 ? name7 : [
+      name7.slice(0, keyIndex),
+      crelt("u", name7.slice(keyIndex, keyIndex + 1)),
+      name7.slice(keyIndex + 1)
     ];
     let markClass = action.markClass ? " " + action.markClass : "";
     return crelt("button", {
@@ -22098,7 +22689,7 @@ function renderDiagnostic(view, diagnostic, inPanel) {
       class: "cm-diagnosticAction" + markClass,
       onclick: click,
       onmousedown: click,
-      "aria-label": ` Action: ${name11}${keyIndex < 0 ? "" : ` (access key "${keys2[i]})"`}.`
+      "aria-label": ` Action: ${name7}${keyIndex < 0 ? "" : ` (access key "${keys2[i]})"`}.`
     }, nameElt);
   }), diagnostic.source && crelt("div", { class: "cm-diagnosticSource" }, diagnostic.source));
 }
@@ -22291,8 +22882,8 @@ var LintPanel = class _LintPanel {
     return new _LintPanel(view);
   }
 };
-function svg(content11, attrs = `viewBox="0 0 40 40"`) {
-  return `url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" ${attrs}>${encodeURIComponent(content11)}</svg>')`;
+function svg(content7, attrs = `viewBox="0 0 40 40"`) {
+  return `url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" ${attrs}>${encodeURIComponent(content7)}</svg>')`;
 }
 function underline(color) {
   return svg(`<path d="m0 2.5 l2 -1.5 l1 0 l2 1.5 l1 0" stroke="${color}" fill="none" stroke-width=".7"/>`, `width="6" height="3"`);
@@ -22451,1625 +23042,121 @@ var basicSetup = /* @__PURE__ */ (() => [
   ])
 ])();
 
-// node_modules/@codemirror/lang-markdown/node_modules/@lezer/common/dist/index.js
-var DefaultBufferLength2 = 1024;
-var nextPropID2 = 0;
-var Range3 = class {
-  constructor(from, to) {
-    this.from = from;
-    this.to = to;
-  }
-};
-var NodeProp2 = class {
+// node_modules/@codemirror/lang-markdown/node_modules/@codemirror/autocomplete/dist/index.js
+var CompletionContext2 = class {
   /**
-  Create a new node prop type.
+  Create a new completion context. (Mostly useful for testing
+  completion sources—in the editor, the extension will create
+  these for you.)
   */
-  constructor(config2 = {}) {
-    this.id = nextPropID2++;
-    this.perNode = !!config2.perNode;
-    this.deserialize = config2.deserialize || (() => {
-      throw new Error("This node type doesn't define a deserialize function");
-    });
-    this.combine = config2.combine || null;
+  constructor(state, pos, explicit, view) {
+    this.state = state;
+    this.pos = pos;
+    this.explicit = explicit;
+    this.view = view;
+    this.abortListeners = [];
+    this.abortOnDocChange = false;
   }
   /**
-  This is meant to be used with
-  [`NodeSet.extend`](#common.NodeSet.extend) or
-  [`LRParser.configure`](#lr.ParserConfig.props) to compute
-  prop values for each node type in the set. Takes a [match
-  object](#common.NodeType^match) or function that returns undefined
-  if the node type doesn't get this prop, and the prop's value if
-  it does.
+  Get the extent, content, and (if there is a token) type of the
+  token before `this.pos`.
   */
-  add(match) {
-    if (this.perNode)
-      throw new RangeError("Can't add per-node props to node types");
-    if (typeof match != "function")
-      match = NodeType2.match(match);
-    return (type) => {
-      let result = match(type);
-      return result === void 0 ? null : [this, result];
-    };
-  }
-};
-NodeProp2.closedBy = new NodeProp2({ deserialize: (str) => str.split(" ") });
-NodeProp2.openedBy = new NodeProp2({ deserialize: (str) => str.split(" ") });
-NodeProp2.group = new NodeProp2({ deserialize: (str) => str.split(" ") });
-NodeProp2.isolate = new NodeProp2({ deserialize: (value) => {
-  if (value && value != "rtl" && value != "ltr" && value != "auto")
-    throw new RangeError("Invalid value for isolate: " + value);
-  return value || "auto";
-} });
-NodeProp2.contextHash = new NodeProp2({ perNode: true });
-NodeProp2.lookAhead = new NodeProp2({ perNode: true });
-NodeProp2.mounted = new NodeProp2({ perNode: true });
-var MountedTree2 = class {
-  constructor(tree, overlay, parser5, bracketed = false) {
-    this.tree = tree;
-    this.overlay = overlay;
-    this.parser = parser5;
-    this.bracketed = bracketed;
+  tokenBefore(types2) {
+    let token = syntaxTree(this.state).resolveInner(this.pos, -1);
+    while (token && types2.indexOf(token.name) < 0)
+      token = token.parent;
+    return token ? {
+      from: token.from,
+      to: this.pos,
+      text: this.state.sliceDoc(token.from, this.pos),
+      type: token.type
+    } : null;
   }
   /**
-  @internal
+  Get the match of the given expression directly before the
+  cursor.
   */
-  static get(tree) {
-    return tree && tree.props && tree.props[NodeProp2.mounted.id];
+  matchBefore(expr) {
+    let line = this.state.doc.lineAt(this.pos);
+    let start = Math.max(line.from, this.pos - 250);
+    let str = line.text.slice(start - line.from, this.pos - line.from);
+    let found = str.search(ensureAnchor2(expr, false));
+    return found < 0 ? null : { from: start + found, to: this.pos, text: str.slice(found) };
   }
-};
-var noProps2 = /* @__PURE__ */ Object.create(null);
-var NodeType2 = class _NodeType {
   /**
-  @internal
+  Yields true when the query has been aborted. Can be useful in
+  asynchronous queries to avoid doing work that will be ignored.
   */
-  constructor(name11, props, id3, flags = 0) {
-    this.name = name11;
-    this.props = props;
-    this.id = id3;
-    this.flags = flags;
+  get aborted() {
+    return this.abortListeners == null;
   }
   /**
-  Define a node type.
-  */
-  static define(spec) {
-    let props = spec.props && spec.props.length ? /* @__PURE__ */ Object.create(null) : noProps2;
-    let flags = (spec.top ? 1 : 0) | (spec.skipped ? 2 : 0) | (spec.error ? 4 : 0) | (spec.name == null ? 8 : 0);
-    let type = new _NodeType(spec.name || "", props, spec.id, flags);
-    if (spec.props)
-      for (let src of spec.props) {
-        if (!Array.isArray(src))
-          src = src(type);
-        if (src) {
-          if (src[0].perNode)
-            throw new RangeError("Can't store a per-node prop on a node type");
-          props[src[0].id] = src[1];
-        }
-      }
-    return type;
-  }
-  /**
-  Retrieves a node prop for this type. Will return `undefined` if
-  the prop isn't present on this node.
-  */
-  prop(prop) {
-    return this.props[prop.id];
-  }
-  /**
-  True when this is the top node of a grammar.
-  */
-  get isTop() {
-    return (this.flags & 1) > 0;
-  }
-  /**
-  True when this node is produced by a skip rule.
-  */
-  get isSkipped() {
-    return (this.flags & 2) > 0;
-  }
-  /**
-  Indicates whether this is an error node.
-  */
-  get isError() {
-    return (this.flags & 4) > 0;
-  }
-  /**
-  When true, this node type doesn't correspond to a user-declared
-  named node, for example because it is used to cache repetition.
-  */
-  get isAnonymous() {
-    return (this.flags & 8) > 0;
-  }
-  /**
-  Returns true when this node's name or one of its
-  [groups](#common.NodeProp^group) matches the given string.
-  */
-  is(name11) {
-    if (typeof name11 == "string") {
-      if (this.name == name11)
-        return true;
-      let group = this.prop(NodeProp2.group);
-      return group ? group.indexOf(name11) > -1 : false;
-    }
-    return this.id == name11;
-  }
-  /**
-  Create a function from node types to arbitrary values by
-  specifying an object whose property names are node or
-  [group](#common.NodeProp^group) names. Often useful with
-  [`NodeProp.add`](#common.NodeProp.add). You can put multiple
-  names, separated by spaces, in a single property name to map
-  multiple node names to a single value.
-  */
-  static match(map) {
-    let direct = /* @__PURE__ */ Object.create(null);
-    for (let prop in map)
-      for (let name11 of prop.split(" "))
-        direct[name11] = map[prop];
-    return (node) => {
-      for (let groups = node.prop(NodeProp2.group), i = -1; i < (groups ? groups.length : 0); i++) {
-        let found = direct[i < 0 ? node.name : groups[i]];
-        if (found)
-          return found;
-      }
-    };
-  }
-};
-NodeType2.none = new NodeType2(
-  "",
-  /* @__PURE__ */ Object.create(null),
-  0,
-  8
-  /* NodeFlag.Anonymous */
-);
-var CachedNode2 = /* @__PURE__ */ new WeakMap();
-var CachedInnerNode2 = /* @__PURE__ */ new WeakMap();
-var IterMode2;
-(function(IterMode11) {
-  IterMode11[IterMode11["ExcludeBuffers"] = 1] = "ExcludeBuffers";
-  IterMode11[IterMode11["IncludeAnonymous"] = 2] = "IncludeAnonymous";
-  IterMode11[IterMode11["IgnoreMounts"] = 4] = "IgnoreMounts";
-  IterMode11[IterMode11["IgnoreOverlays"] = 8] = "IgnoreOverlays";
-  IterMode11[IterMode11["EnterBracketed"] = 16] = "EnterBracketed";
-})(IterMode2 || (IterMode2 = {}));
-var Tree2 = class _Tree {
-  /**
-  Construct a new tree. See also [`Tree.build`](#common.Tree^build).
-  */
-  constructor(type, children, positions, length, props) {
-    this.type = type;
-    this.children = children;
-    this.positions = positions;
-    this.length = length;
-    this.props = null;
-    if (props && props.length) {
-      this.props = /* @__PURE__ */ Object.create(null);
-      for (let [prop, value] of props)
-        this.props[typeof prop == "number" ? prop : prop.id] = value;
-    }
-  }
-  /**
-  @internal
-  */
-  toString() {
-    let mounted = MountedTree2.get(this);
-    if (mounted && !mounted.overlay)
-      return mounted.tree.toString();
-    let children = "";
-    for (let ch of this.children) {
-      let str = ch.toString();
-      if (str) {
-        if (children)
-          children += ",";
-        children += str;
-      }
-    }
-    return !this.type.name ? children : (/\W/.test(this.type.name) && !this.type.isError ? JSON.stringify(this.type.name) : this.type.name) + (children.length ? "(" + children + ")" : "");
-  }
-  /**
-  Get a [tree cursor](#common.TreeCursor) positioned at the top of
-  the tree. Mode can be used to [control](#common.IterMode) which
-  nodes the cursor visits.
-  */
-  cursor(mode = 0) {
-    return new TreeCursor2(this.topNode, mode);
-  }
-  /**
-  Get a [tree cursor](#common.TreeCursor) pointing into this tree
-  at the given position and side (see
-  [`moveTo`](#common.TreeCursor.moveTo).
-  */
-  cursorAt(pos, side = 0, mode = 0) {
-    let scope = CachedNode2.get(this) || this.topNode;
-    let cursor2 = new TreeCursor2(scope);
-    cursor2.moveTo(pos, side);
-    CachedNode2.set(this, cursor2._tree);
-    return cursor2;
-  }
-  /**
-  Get a [syntax node](#common.SyntaxNode) object for the top of the
-  tree.
-  */
-  get topNode() {
-    return new TreeNode2(this, 0, 0, null);
-  }
-  /**
-  Get the [syntax node](#common.SyntaxNode) at the given position.
-  If `side` is -1, this will move into nodes that end at the
-  position. If 1, it'll move into nodes that start at the
-  position. With 0, it'll only enter nodes that cover the position
-  from both sides.
+  Allows you to register abort handlers, which will be called when
+  the query is
+  [aborted](https://codemirror.net/6/docs/ref/#autocomplete.CompletionContext.aborted).
   
-  Note that this will not enter
-  [overlays](#common.MountedTree.overlay), and you often want
-  [`resolveInner`](#common.Tree.resolveInner) instead.
+  By default, running queries will not be aborted for regular
+  typing or backspacing, on the assumption that they are likely to
+  return a result with a
+  [`validFor`](https://codemirror.net/6/docs/ref/#autocomplete.CompletionResult.validFor) field that
+  allows the result to be used after all. Passing `onDocChange:
+  true` will cause this query to be aborted for any document
+  change.
   */
-  resolve(pos, side = 0) {
-    let node = resolveNode2(CachedNode2.get(this) || this.topNode, pos, side, false);
-    CachedNode2.set(this, node);
-    return node;
-  }
-  /**
-  Like [`resolve`](#common.Tree.resolve), but will enter
-  [overlaid](#common.MountedTree.overlay) nodes, producing a syntax node
-  pointing into the innermost overlaid tree at the given position
-  (with parent links going through all parent structure, including
-  the host trees).
-  */
-  resolveInner(pos, side = 0) {
-    let node = resolveNode2(CachedInnerNode2.get(this) || this.topNode, pos, side, true);
-    CachedInnerNode2.set(this, node);
-    return node;
-  }
-  /**
-  In some situations, it can be useful to iterate through all
-  nodes around a position, including those in overlays that don't
-  directly cover the position. This method gives you an iterator
-  that will produce all nodes, from small to big, around the given
-  position.
-  */
-  resolveStack(pos, side = 0) {
-    return stackIterator2(this, pos, side);
-  }
-  /**
-  Iterate over the tree and its children, calling `enter` for any
-  node that touches the `from`/`to` region (if given) before
-  running over such a node's children, and `leave` (if given) when
-  leaving the node. When `enter` returns `false`, that node will
-  not have its children iterated over (or `leave` called).
-  */
-  iterate(spec) {
-    let { enter, leave, from = 0, to = this.length } = spec;
-    let mode = spec.mode || 0, anon = (mode & IterMode2.IncludeAnonymous) > 0;
-    for (let c = this.cursor(mode | IterMode2.IncludeAnonymous); ; ) {
-      let entered = false;
-      if (c.from <= to && c.to >= from && (!anon && c.type.isAnonymous || enter(c) !== false)) {
-        if (c.firstChild())
-          continue;
-        entered = true;
-      }
-      for (; ; ) {
-        if (entered && leave && (anon || !c.type.isAnonymous))
-          leave(c);
-        if (c.nextSibling())
-          break;
-        if (!c.parent())
-          return;
-        entered = true;
-      }
+  addEventListener(type, listener, options) {
+    if (type == "abort" && this.abortListeners) {
+      this.abortListeners.push(listener);
+      if (options && options.onDocChange)
+        this.abortOnDocChange = true;
     }
-  }
-  /**
-  Get the value of the given [node prop](#common.NodeProp) for this
-  node. Works with both per-node and per-type props.
-  */
-  prop(prop) {
-    return !prop.perNode ? this.type.prop(prop) : this.props ? this.props[prop.id] : void 0;
-  }
-  /**
-  Returns the node's [per-node props](#common.NodeProp.perNode) in a
-  format that can be passed to the [`Tree`](#common.Tree)
-  constructor.
-  */
-  get propValues() {
-    let result = [];
-    if (this.props)
-      for (let id3 in this.props)
-        result.push([+id3, this.props[id3]]);
-    return result;
-  }
-  /**
-  Balance the direct children of this tree, producing a copy of
-  which may have children grouped into subtrees with type
-  [`NodeType.none`](#common.NodeType^none).
-  */
-  balance(config2 = {}) {
-    return this.children.length <= 8 ? this : balanceRange2(NodeType2.none, this.children, this.positions, 0, this.children.length, 0, this.length, (children, positions, length) => new _Tree(this.type, children, positions, length, this.propValues), config2.makeTree || ((children, positions, length) => new _Tree(NodeType2.none, children, positions, length)));
-  }
-  /**
-  Build a tree from a postfix-ordered buffer of node information,
-  or a cursor over such a buffer.
-  */
-  static build(data2) {
-    return buildTree2(data2);
   }
 };
-Tree2.empty = new Tree2(NodeType2.none, [], [], 0);
-var FlatBufferCursor2 = class _FlatBufferCursor {
-  constructor(buffer, index) {
-    this.buffer = buffer;
-    this.index = index;
-  }
-  get id() {
-    return this.buffer[this.index - 4];
-  }
-  get start() {
-    return this.buffer[this.index - 3];
-  }
-  get end() {
-    return this.buffer[this.index - 2];
-  }
-  get size() {
-    return this.buffer[this.index - 1];
-  }
-  get pos() {
-    return this.index;
-  }
-  next() {
-    this.index -= 4;
-  }
-  fork() {
-    return new _FlatBufferCursor(this.buffer, this.index);
-  }
-};
-var TreeBuffer2 = class _TreeBuffer {
-  /**
-  Create a tree buffer.
-  */
-  constructor(buffer, length, set) {
-    this.buffer = buffer;
-    this.length = length;
-    this.set = set;
-  }
-  /**
-  @internal
-  */
-  get type() {
-    return NodeType2.none;
-  }
-  /**
-  @internal
-  */
-  toString() {
-    let result = [];
-    for (let index = 0; index < this.buffer.length; ) {
-      result.push(this.childString(index));
-      index = this.buffer[index + 3];
-    }
-    return result.join(",");
-  }
-  /**
-  @internal
-  */
-  childString(index) {
-    let id3 = this.buffer[index], endIndex = this.buffer[index + 3];
-    let type = this.set.types[id3], result = type.name;
-    if (/\W/.test(result) && !type.isError)
-      result = JSON.stringify(result);
-    index += 4;
-    if (endIndex == index)
-      return result;
-    let children = [];
-    while (index < endIndex) {
-      children.push(this.childString(index));
-      index = this.buffer[index + 3];
-    }
-    return result + "(" + children.join(",") + ")";
-  }
-  /**
-  @internal
-  */
-  findChild(startIndex, endIndex, dir, pos, side) {
-    let { buffer } = this, pick = -1;
-    for (let i = startIndex; i != endIndex; i = buffer[i + 3]) {
-      if (checkSide2(side, pos, buffer[i + 1], buffer[i + 2])) {
-        pick = i;
-        if (dir > 0)
-          break;
-      }
-    }
-    return pick;
-  }
-  /**
-  @internal
-  */
-  slice(startI, endI, from) {
-    let b = this.buffer;
-    let copy = new Uint16Array(endI - startI), len = 0;
-    for (let i = startI, j = 0; i < endI; ) {
-      copy[j++] = b[i++];
-      copy[j++] = b[i++] - from;
-      let to = copy[j++] = b[i++] - from;
-      copy[j++] = b[i++] - startI;
-      len = Math.max(len, to);
-    }
-    return new _TreeBuffer(copy, len, this.set);
-  }
-};
-function checkSide2(side, pos, from, to) {
-  switch (side) {
-    case -2:
-      return from < pos;
-    case -1:
-      return to >= pos && from < pos;
-    case 0:
-      return from < pos && to > pos;
-    case 1:
-      return from <= pos && to > pos;
-    case 2:
-      return to > pos;
-    case 4:
-      return true;
-  }
+function ensureAnchor2(expr, start) {
+  var _a2;
+  let { source } = expr;
+  let addStart = start && source[0] != "^", addEnd = source[source.length - 1] != "$";
+  if (!addStart && !addEnd)
+    return expr;
+  return new RegExp(`${addStart ? "^" : ""}(?:${source})${addEnd ? "$" : ""}`, (_a2 = expr.flags) !== null && _a2 !== void 0 ? _a2 : expr.ignoreCase ? "i" : "");
 }
-function resolveNode2(node, pos, side, overlays) {
-  var _a7;
-  while (node.from == node.to || (side < 1 ? node.from >= pos : node.from > pos) || (side > -1 ? node.to <= pos : node.to < pos)) {
-    let parent = !overlays && node instanceof TreeNode2 && node.index < 0 ? null : node.parent;
-    if (!parent)
-      return node;
-    node = parent;
-  }
-  let mode = overlays ? 0 : IterMode2.IgnoreOverlays;
-  if (overlays)
-    for (let scan = node, parent = scan.parent; parent; scan = parent, parent = scan.parent) {
-      if (scan instanceof TreeNode2 && scan.index < 0 && ((_a7 = parent.enter(pos, side, mode)) === null || _a7 === void 0 ? void 0 : _a7.from) != scan.from)
-        node = parent;
-    }
-  for (; ; ) {
-    let inner = node.enter(pos, side, mode);
-    if (!inner)
-      return node;
-    node = inner;
-  }
-}
-var BaseNode2 = class {
-  cursor(mode = 0) {
-    return new TreeCursor2(this, mode);
-  }
-  getChild(type, before = null, after = null) {
-    let r = getChildren2(this, type, before, after);
-    return r.length ? r[0] : null;
-  }
-  getChildren(type, before = null, after = null) {
-    return getChildren2(this, type, before, after);
-  }
-  resolve(pos, side = 0) {
-    return resolveNode2(this, pos, side, false);
-  }
-  resolveInner(pos, side = 0) {
-    return resolveNode2(this, pos, side, true);
-  }
-  matchContext(context) {
-    return matchNodeContext2(this.parent, context);
-  }
-  enterUnfinishedNodesBefore(pos) {
-    let scan = this.childBefore(pos), node = this;
-    while (scan) {
-      let last = scan.lastChild;
-      if (!last || last.to != scan.to)
-        break;
-      if (last.type.isError && last.from == last.to) {
-        node = scan;
-        scan = last.prevSibling;
-      } else {
-        scan = last;
-      }
-    }
-    return node;
-  }
-  get node() {
-    return this;
-  }
-  get next() {
-    return this.parent;
-  }
-};
-var TreeNode2 = class _TreeNode extends BaseNode2 {
-  constructor(_tree, from, index, _parent) {
-    super();
-    this._tree = _tree;
-    this.from = from;
-    this.index = index;
-    this._parent = _parent;
-  }
-  get type() {
-    return this._tree.type;
-  }
-  get name() {
-    return this._tree.type.name;
-  }
-  get to() {
-    return this.from + this._tree.length;
-  }
-  nextChild(i, dir, pos, side, mode = 0) {
-    for (let parent = this; ; ) {
-      for (let { children, positions } = parent._tree, e = dir > 0 ? children.length : -1; i != e; i += dir) {
-        let next = children[i], start = positions[i] + parent.from, mounted;
-        if (!(mode & IterMode2.EnterBracketed && next instanceof Tree2 && (mounted = MountedTree2.get(next)) && !mounted.overlay && mounted.bracketed && pos >= start && pos <= start + next.length) && !checkSide2(side, pos, start, start + next.length))
-          continue;
-        if (next instanceof TreeBuffer2) {
-          if (mode & IterMode2.ExcludeBuffers)
-            continue;
-          let index = next.findChild(0, next.buffer.length, dir, pos - start, side);
-          if (index > -1)
-            return new BufferNode2(new BufferContext2(parent, next, i, start), null, index);
-        } else if (mode & IterMode2.IncludeAnonymous || (!next.type.isAnonymous || hasChild2(next))) {
-          let mounted2;
-          if (!(mode & IterMode2.IgnoreMounts) && (mounted2 = MountedTree2.get(next)) && !mounted2.overlay)
-            return new _TreeNode(mounted2.tree, start, i, parent);
-          let inner = new _TreeNode(next, start, i, parent);
-          return mode & IterMode2.IncludeAnonymous || !inner.type.isAnonymous ? inner : inner.nextChild(dir < 0 ? next.children.length - 1 : 0, dir, pos, side, mode);
-        }
-      }
-      if (mode & IterMode2.IncludeAnonymous || !parent.type.isAnonymous)
-        return null;
-      if (parent.index >= 0)
-        i = parent.index + dir;
-      else
-        i = dir < 0 ? -1 : parent._parent._tree.children.length;
-      parent = parent._parent;
-      if (!parent)
-        return null;
-    }
-  }
-  get firstChild() {
-    return this.nextChild(
-      0,
-      1,
-      0,
-      4
-      /* Side.DontCare */
-    );
-  }
-  get lastChild() {
-    return this.nextChild(
-      this._tree.children.length - 1,
-      -1,
-      0,
-      4
-      /* Side.DontCare */
-    );
-  }
-  childAfter(pos) {
-    return this.nextChild(
-      0,
-      1,
-      pos,
-      2
-      /* Side.After */
-    );
-  }
-  childBefore(pos) {
-    return this.nextChild(
-      this._tree.children.length - 1,
-      -1,
-      pos,
-      -2
-      /* Side.Before */
-    );
-  }
-  prop(prop) {
-    return this._tree.prop(prop);
-  }
-  enter(pos, side, mode = 0) {
-    let mounted;
-    if (!(mode & IterMode2.IgnoreOverlays) && (mounted = MountedTree2.get(this._tree)) && mounted.overlay) {
-      let rPos = pos - this.from, enterBracketed = mode & IterMode2.EnterBracketed && mounted.bracketed;
-      for (let { from, to } of mounted.overlay) {
-        if ((side > 0 || enterBracketed ? from <= rPos : from < rPos) && (side < 0 || enterBracketed ? to >= rPos : to > rPos))
-          return new _TreeNode(mounted.tree, mounted.overlay[0].from + this.from, -1, this);
-      }
-    }
-    return this.nextChild(0, 1, pos, side, mode);
-  }
-  nextSignificantParent() {
-    let val = this;
-    while (val.type.isAnonymous && val._parent)
-      val = val._parent;
-    return val;
-  }
-  get parent() {
-    return this._parent ? this._parent.nextSignificantParent() : null;
-  }
-  get nextSibling() {
-    return this._parent && this.index >= 0 ? this._parent.nextChild(
-      this.index + 1,
-      1,
-      0,
-      4
-      /* Side.DontCare */
-    ) : null;
-  }
-  get prevSibling() {
-    return this._parent && this.index >= 0 ? this._parent.nextChild(
-      this.index - 1,
-      -1,
-      0,
-      4
-      /* Side.DontCare */
-    ) : null;
-  }
-  get tree() {
-    return this._tree;
-  }
-  toTree() {
-    return this._tree;
-  }
-  /**
-  @internal
-  */
-  toString() {
-    return this._tree.toString();
-  }
-};
-function getChildren2(node, type, before, after) {
-  let cur2 = node.cursor(), result = [];
-  if (!cur2.firstChild())
-    return result;
-  if (before != null)
-    for (let found = false; !found; ) {
-      found = cur2.type.is(before);
-      if (!cur2.nextSibling())
-        return result;
-    }
-  for (; ; ) {
-    if (after != null && cur2.type.is(after))
-      return result;
-    if (cur2.type.is(type))
-      result.push(cur2.node);
-    if (!cur2.nextSibling())
-      return after == null ? result : [];
-  }
-}
-function matchNodeContext2(node, context, i = context.length - 1) {
-  for (let p = node; i >= 0; p = p.parent) {
-    if (!p)
-      return false;
-    if (!p.type.isAnonymous) {
-      if (context[i] && context[i] != p.name)
-        return false;
-      i--;
-    }
-  }
-  return true;
-}
-var BufferContext2 = class {
-  constructor(parent, buffer, index, start) {
-    this.parent = parent;
-    this.buffer = buffer;
-    this.index = index;
-    this.start = start;
-  }
-};
-var BufferNode2 = class _BufferNode extends BaseNode2 {
-  get name() {
-    return this.type.name;
-  }
-  get from() {
-    return this.context.start + this.context.buffer.buffer[this.index + 1];
-  }
-  get to() {
-    return this.context.start + this.context.buffer.buffer[this.index + 2];
-  }
-  constructor(context, _parent, index) {
-    super();
-    this.context = context;
-    this._parent = _parent;
-    this.index = index;
-    this.type = context.buffer.set.types[context.buffer.buffer[index]];
-  }
-  child(dir, pos, side) {
-    let { buffer } = this.context;
-    let index = buffer.findChild(this.index + 4, buffer.buffer[this.index + 3], dir, pos - this.context.start, side);
-    return index < 0 ? null : new _BufferNode(this.context, this, index);
-  }
-  get firstChild() {
-    return this.child(
-      1,
-      0,
-      4
-      /* Side.DontCare */
-    );
-  }
-  get lastChild() {
-    return this.child(
-      -1,
-      0,
-      4
-      /* Side.DontCare */
-    );
-  }
-  childAfter(pos) {
-    return this.child(
-      1,
-      pos,
-      2
-      /* Side.After */
-    );
-  }
-  childBefore(pos) {
-    return this.child(
-      -1,
-      pos,
-      -2
-      /* Side.Before */
-    );
-  }
-  prop(prop) {
-    return this.type.prop(prop);
-  }
-  enter(pos, side, mode = 0) {
-    if (mode & IterMode2.ExcludeBuffers)
-      return null;
-    let { buffer } = this.context;
-    let index = buffer.findChild(this.index + 4, buffer.buffer[this.index + 3], side > 0 ? 1 : -1, pos - this.context.start, side);
-    return index < 0 ? null : new _BufferNode(this.context, this, index);
-  }
-  get parent() {
-    return this._parent || this.context.parent.nextSignificantParent();
-  }
-  externalSibling(dir) {
-    return this._parent ? null : this.context.parent.nextChild(
-      this.context.index + dir,
-      dir,
-      0,
-      4
-      /* Side.DontCare */
-    );
-  }
-  get nextSibling() {
-    let { buffer } = this.context;
-    let after = buffer.buffer[this.index + 3];
-    if (after < (this._parent ? buffer.buffer[this._parent.index + 3] : buffer.buffer.length))
-      return new _BufferNode(this.context, this._parent, after);
-    return this.externalSibling(1);
-  }
-  get prevSibling() {
-    let { buffer } = this.context;
-    let parentStart = this._parent ? this._parent.index + 4 : 0;
-    if (this.index == parentStart)
-      return this.externalSibling(-1);
-    return new _BufferNode(this.context, this._parent, buffer.findChild(
-      parentStart,
-      this.index,
-      -1,
-      0,
-      4
-      /* Side.DontCare */
-    ));
-  }
-  get tree() {
-    return null;
-  }
-  toTree() {
-    let children = [], positions = [];
-    let { buffer } = this.context;
-    let startI = this.index + 4, endI = buffer.buffer[this.index + 3];
-    if (endI > startI) {
-      let from = buffer.buffer[this.index + 1];
-      children.push(buffer.slice(startI, endI, from));
-      positions.push(0);
-    }
-    return new Tree2(this.type, children, positions, this.to - this.from);
-  }
-  /**
-  @internal
-  */
-  toString() {
-    return this.context.buffer.childString(this.index);
-  }
-};
-function iterStack2(heads) {
-  if (!heads.length)
-    return null;
-  let pick = 0, picked = heads[0];
-  for (let i = 1; i < heads.length; i++) {
-    let node = heads[i];
-    if (node.from > picked.from || node.to < picked.to) {
-      picked = node;
-      pick = i;
-    }
-  }
-  let next = picked instanceof TreeNode2 && picked.index < 0 ? null : picked.parent;
-  let newHeads = heads.slice();
-  if (next)
-    newHeads[pick] = next;
-  else
-    newHeads.splice(pick, 1);
-  return new StackIterator2(newHeads, picked);
-}
-var StackIterator2 = class {
-  constructor(heads, node) {
-    this.heads = heads;
-    this.node = node;
-  }
-  get next() {
-    return iterStack2(this.heads);
-  }
-};
-function stackIterator2(tree, pos, side) {
-  let inner = tree.resolveInner(pos, side), layers = null;
-  for (let scan = inner instanceof TreeNode2 ? inner : inner.context.parent; scan; scan = scan.parent) {
-    if (scan.index < 0) {
-      let parent = scan.parent;
-      (layers || (layers = [inner])).push(parent.resolve(pos, side));
-      scan = parent;
-    } else {
-      let mount = MountedTree2.get(scan.tree);
-      if (mount && mount.overlay && mount.overlay[0].from <= pos && mount.overlay[mount.overlay.length - 1].to >= pos) {
-        let root = new TreeNode2(mount.tree, mount.overlay[0].from + scan.from, -1, scan);
-        (layers || (layers = [inner])).push(resolveNode2(root, pos, side, false));
-      }
-    }
-  }
-  return layers ? iterStack2(layers) : inner;
-}
-var TreeCursor2 = class {
-  /**
-  Shorthand for `.type.name`.
-  */
-  get name() {
-    return this.type.name;
-  }
-  /**
-  @internal
-  */
-  constructor(node, mode = 0) {
-    this.buffer = null;
-    this.stack = [];
-    this.index = 0;
-    this.bufferNode = null;
-    this.mode = mode & ~IterMode2.EnterBracketed;
-    if (node instanceof TreeNode2) {
-      this.yieldNode(node);
-    } else {
-      this._tree = node.context.parent;
-      this.buffer = node.context;
-      for (let n = node._parent; n; n = n._parent)
-        this.stack.unshift(n.index);
-      this.bufferNode = node;
-      this.yieldBuf(node.index);
-    }
-  }
-  yieldNode(node) {
-    if (!node)
-      return false;
-    this._tree = node;
-    this.type = node.type;
-    this.from = node.from;
-    this.to = node.to;
-    return true;
-  }
-  yieldBuf(index, type) {
-    this.index = index;
-    let { start, buffer } = this.buffer;
-    this.type = type || buffer.set.types[buffer.buffer[index]];
-    this.from = start + buffer.buffer[index + 1];
-    this.to = start + buffer.buffer[index + 2];
-    return true;
-  }
-  /**
-  @internal
-  */
-  yield(node) {
-    if (!node)
-      return false;
-    if (node instanceof TreeNode2) {
-      this.buffer = null;
-      return this.yieldNode(node);
-    }
-    this.buffer = node.context;
-    return this.yieldBuf(node.index, node.type);
-  }
-  /**
-  @internal
-  */
-  toString() {
-    return this.buffer ? this.buffer.buffer.childString(this.index) : this._tree.toString();
-  }
-  /**
-  @internal
-  */
-  enterChild(dir, pos, side) {
-    if (!this.buffer)
-      return this.yield(this._tree.nextChild(dir < 0 ? this._tree._tree.children.length - 1 : 0, dir, pos, side, this.mode));
-    let { buffer } = this.buffer;
-    let index = buffer.findChild(this.index + 4, buffer.buffer[this.index + 3], dir, pos - this.buffer.start, side);
-    if (index < 0)
-      return false;
-    this.stack.push(this.index);
-    return this.yieldBuf(index);
-  }
-  /**
-  Move the cursor to this node's first child. When this returns
-  false, the node has no child, and the cursor has not been moved.
-  */
-  firstChild() {
-    return this.enterChild(
-      1,
-      0,
-      4
-      /* Side.DontCare */
-    );
-  }
-  /**
-  Move the cursor to this node's last child.
-  */
-  lastChild() {
-    return this.enterChild(
-      -1,
-      0,
-      4
-      /* Side.DontCare */
-    );
-  }
-  /**
-  Move the cursor to the first child that ends after `pos`.
-  */
-  childAfter(pos) {
-    return this.enterChild(
-      1,
-      pos,
-      2
-      /* Side.After */
-    );
-  }
-  /**
-  Move to the last child that starts before `pos`.
-  */
-  childBefore(pos) {
-    return this.enterChild(
-      -1,
-      pos,
-      -2
-      /* Side.Before */
-    );
-  }
-  /**
-  Move the cursor to the child around `pos`. If side is -1 the
-  child may end at that position, when 1 it may start there. This
-  will also enter [overlaid](#common.MountedTree.overlay)
-  [mounted](#common.NodeProp^mounted) trees unless `overlays` is
-  set to false.
-  */
-  enter(pos, side, mode = this.mode) {
-    if (!this.buffer)
-      return this.yield(this._tree.enter(pos, side, mode));
-    return mode & IterMode2.ExcludeBuffers ? false : this.enterChild(1, pos, side);
-  }
-  /**
-  Move to the node's parent node, if this isn't the top node.
-  */
-  parent() {
-    if (!this.buffer)
-      return this.yieldNode(this.mode & IterMode2.IncludeAnonymous ? this._tree._parent : this._tree.parent);
-    if (this.stack.length)
-      return this.yieldBuf(this.stack.pop());
-    let parent = this.mode & IterMode2.IncludeAnonymous ? this.buffer.parent : this.buffer.parent.nextSignificantParent();
-    this.buffer = null;
-    return this.yieldNode(parent);
-  }
-  /**
-  @internal
-  */
-  sibling(dir) {
-    if (!this.buffer)
-      return !this._tree._parent ? false : this.yield(this._tree.index < 0 ? null : this._tree._parent.nextChild(this._tree.index + dir, dir, 0, 4, this.mode));
-    let { buffer } = this.buffer, d = this.stack.length - 1;
-    if (dir < 0) {
-      let parentStart = d < 0 ? 0 : this.stack[d] + 4;
-      if (this.index != parentStart)
-        return this.yieldBuf(buffer.findChild(
-          parentStart,
-          this.index,
-          -1,
-          0,
-          4
-          /* Side.DontCare */
-        ));
-    } else {
-      let after = buffer.buffer[this.index + 3];
-      if (after < (d < 0 ? buffer.buffer.length : buffer.buffer[this.stack[d] + 3]))
-        return this.yieldBuf(after);
-    }
-    return d < 0 ? this.yield(this.buffer.parent.nextChild(this.buffer.index + dir, dir, 0, 4, this.mode)) : false;
-  }
-  /**
-  Move to this node's next sibling, if any.
-  */
-  nextSibling() {
-    return this.sibling(1);
-  }
-  /**
-  Move to this node's previous sibling, if any.
-  */
-  prevSibling() {
-    return this.sibling(-1);
-  }
-  atLastNode(dir) {
-    let index, parent, { buffer } = this;
-    if (buffer) {
-      if (dir > 0) {
-        if (this.index < buffer.buffer.buffer.length)
-          return false;
-      } else {
-        for (let i = 0; i < this.index; i++)
-          if (buffer.buffer.buffer[i + 3] < this.index)
-            return false;
-      }
-      ({ index, parent } = buffer);
-    } else {
-      ({ index, _parent: parent } = this._tree);
-    }
-    for (; parent; { index, _parent: parent } = parent) {
-      if (index > -1)
-        for (let i = index + dir, e = dir < 0 ? -1 : parent._tree.children.length; i != e; i += dir) {
-          let child = parent._tree.children[i];
-          if (this.mode & IterMode2.IncludeAnonymous || child instanceof TreeBuffer2 || !child.type.isAnonymous || hasChild2(child))
-            return false;
-        }
-    }
-    return true;
-  }
-  move(dir, enter) {
-    if (enter && this.enterChild(
-      dir,
-      0,
-      4
-      /* Side.DontCare */
-    ))
-      return true;
-    for (; ; ) {
-      if (this.sibling(dir))
-        return true;
-      if (this.atLastNode(dir) || !this.parent())
-        return false;
-    }
-  }
-  /**
-  Move to the next node in a
-  [pre-order](https://en.wikipedia.org/wiki/Tree_traversal#Pre-order,_NLR)
-  traversal, going from a node to its first child or, if the
-  current node is empty or `enter` is false, its next sibling or
-  the next sibling of the first parent node that has one.
-  */
-  next(enter = true) {
-    return this.move(1, enter);
-  }
-  /**
-  Move to the next node in a last-to-first pre-order traversal. A
-  node is followed by its last child or, if it has none, its
-  previous sibling or the previous sibling of the first parent
-  node that has one.
-  */
-  prev(enter = true) {
-    return this.move(-1, enter);
-  }
-  /**
-  Move the cursor to the innermost node that covers `pos`. If
-  `side` is -1, it will enter nodes that end at `pos`. If it is 1,
-  it will enter nodes that start at `pos`.
-  */
-  moveTo(pos, side = 0) {
-    while (this.from == this.to || (side < 1 ? this.from >= pos : this.from > pos) || (side > -1 ? this.to <= pos : this.to < pos))
-      if (!this.parent())
-        break;
-    while (this.enterChild(1, pos, side)) {
-    }
-    return this;
-  }
-  /**
-  Get a [syntax node](#common.SyntaxNode) at the cursor's current
-  position.
-  */
-  get node() {
-    if (!this.buffer)
-      return this._tree;
-    let cache2 = this.bufferNode, result = null, depth = 0;
-    if (cache2 && cache2.context == this.buffer) {
-      scan: for (let index = this.index, d = this.stack.length; d >= 0; ) {
-        for (let c = cache2; c; c = c._parent)
-          if (c.index == index) {
-            if (index == this.index)
-              return c;
-            result = c;
-            depth = d + 1;
-            break scan;
-          }
-        index = this.stack[--d];
-      }
-    }
-    for (let i = depth; i < this.stack.length; i++)
-      result = new BufferNode2(this.buffer, result, this.stack[i]);
-    return this.bufferNode = new BufferNode2(this.buffer, result, this.index);
-  }
-  /**
-  Get the [tree](#common.Tree) that represents the current node, if
-  any. Will return null when the node is in a [tree
-  buffer](#common.TreeBuffer).
-  */
-  get tree() {
-    return this.buffer ? null : this._tree._tree;
-  }
-  /**
-  Iterate over the current node and all its descendants, calling
-  `enter` when entering a node and `leave`, if given, when leaving
-  one. When `enter` returns `false`, any children of that node are
-  skipped, and `leave` isn't called for it.
-  */
-  iterate(enter, leave) {
-    for (let depth = 0; ; ) {
-      let mustLeave = false;
-      if (this.type.isAnonymous || enter(this) !== false) {
-        if (this.firstChild()) {
-          depth++;
-          continue;
-        }
-        if (!this.type.isAnonymous)
-          mustLeave = true;
-      }
-      for (; ; ) {
-        if (mustLeave && leave)
-          leave(this);
-        mustLeave = this.type.isAnonymous;
-        if (!depth)
-          return;
-        if (this.nextSibling())
-          break;
-        this.parent();
-        depth--;
-        mustLeave = true;
-      }
-    }
-  }
-  /**
-  Test whether the current node matches a given context—a sequence
-  of direct parent node names. Empty strings in the context array
-  are treated as wildcards.
-  */
-  matchContext(context) {
-    if (!this.buffer)
-      return matchNodeContext2(this.node.parent, context);
-    let { buffer } = this.buffer, { types: types2 } = buffer.set;
-    for (let i = context.length - 1, d = this.stack.length - 1; i >= 0; d--) {
-      if (d < 0)
-        return matchNodeContext2(this._tree, context, i);
-      let type = types2[buffer.buffer[this.stack[d]]];
-      if (!type.isAnonymous) {
-        if (context[i] && context[i] != type.name)
-          return false;
-        i--;
-      }
-    }
-    return true;
-  }
-};
-function hasChild2(tree) {
-  return tree.children.some((ch) => ch instanceof TreeBuffer2 || !ch.type.isAnonymous || hasChild2(ch));
-}
-function buildTree2(data2) {
-  var _a7;
-  let { buffer, nodeSet, maxBufferLength = DefaultBufferLength2, reused = [], minRepeatType = nodeSet.types.length } = data2;
-  let cursor2 = Array.isArray(buffer) ? new FlatBufferCursor2(buffer, buffer.length) : buffer;
-  let types2 = nodeSet.types;
-  let contextHash = 0, lookAhead = 0;
-  function takeNode(parentStart, minPos, children2, positions2, inRepeat, depth) {
-    let { id: id3, start, end, size } = cursor2;
-    let lookAheadAtStart = lookAhead, contextAtStart = contextHash;
-    if (size < 0) {
-      cursor2.next();
-      if (size == -1) {
-        let node2 = reused[id3];
-        children2.push(node2);
-        positions2.push(start - parentStart);
-        return;
-      } else if (size == -3) {
-        contextHash = id3;
-        return;
-      } else if (size == -4) {
-        lookAhead = id3;
-        return;
-      } else {
-        throw new RangeError(`Unrecognized record size: ${size}`);
-      }
-    }
-    let type = types2[id3], node, buffer2;
-    let startPos = start - parentStart;
-    if (end - start <= maxBufferLength && (buffer2 = findBufferSize(cursor2.pos - minPos, inRepeat))) {
-      let data3 = new Uint16Array(buffer2.size - buffer2.skip);
-      let endPos = cursor2.pos - buffer2.size, index = data3.length;
-      while (cursor2.pos > endPos)
-        index = copyToBuffer(buffer2.start, data3, index);
-      node = new TreeBuffer2(data3, end - buffer2.start, nodeSet);
-      startPos = buffer2.start - parentStart;
-    } else {
-      let endPos = cursor2.pos - size;
-      cursor2.next();
-      let localChildren = [], localPositions = [];
-      let localInRepeat = id3 >= minRepeatType ? id3 : -1;
-      let lastGroup = 0, lastEnd = end;
-      while (cursor2.pos > endPos) {
-        if (localInRepeat >= 0 && cursor2.id == localInRepeat && cursor2.size >= 0) {
-          if (cursor2.end <= lastEnd - maxBufferLength) {
-            makeRepeatLeaf(localChildren, localPositions, start, lastGroup, cursor2.end, lastEnd, localInRepeat, lookAheadAtStart, contextAtStart);
-            lastGroup = localChildren.length;
-            lastEnd = cursor2.end;
-          }
-          cursor2.next();
-        } else if (depth > 2500) {
-          takeFlatNode(start, endPos, localChildren, localPositions);
-        } else {
-          takeNode(start, endPos, localChildren, localPositions, localInRepeat, depth + 1);
-        }
-      }
-      if (localInRepeat >= 0 && lastGroup > 0 && lastGroup < localChildren.length)
-        makeRepeatLeaf(localChildren, localPositions, start, lastGroup, start, lastEnd, localInRepeat, lookAheadAtStart, contextAtStart);
-      localChildren.reverse();
-      localPositions.reverse();
-      if (localInRepeat > -1 && lastGroup > 0) {
-        let make = makeBalanced(type, contextAtStart);
-        node = balanceRange2(type, localChildren, localPositions, 0, localChildren.length, 0, end - start, make, make);
-      } else {
-        node = makeTree(type, localChildren, localPositions, end - start, lookAheadAtStart - end, contextAtStart);
-      }
-    }
-    children2.push(node);
-    positions2.push(startPos);
-  }
-  function takeFlatNode(parentStart, minPos, children2, positions2) {
-    let nodes = [];
-    let nodeCount = 0, stopAt = -1;
-    while (cursor2.pos > minPos) {
-      let { id: id3, start, end, size } = cursor2;
-      if (size > 4) {
-        cursor2.next();
-      } else if (stopAt > -1 && start < stopAt) {
-        break;
-      } else {
-        if (stopAt < 0)
-          stopAt = end - maxBufferLength;
-        nodes.push(id3, start, end);
-        nodeCount++;
-        cursor2.next();
-      }
-    }
-    if (nodeCount) {
-      let buffer2 = new Uint16Array(nodeCount * 4);
-      let start = nodes[nodes.length - 2];
-      for (let i = nodes.length - 3, j = 0; i >= 0; i -= 3) {
-        buffer2[j++] = nodes[i];
-        buffer2[j++] = nodes[i + 1] - start;
-        buffer2[j++] = nodes[i + 2] - start;
-        buffer2[j++] = j;
-      }
-      children2.push(new TreeBuffer2(buffer2, nodes[2] - start, nodeSet));
-      positions2.push(start - parentStart);
-    }
-  }
-  function makeBalanced(type, contextHash2) {
-    return (children2, positions2, length2) => {
-      let lookAhead2 = 0, lastI = children2.length - 1, last, lookAheadProp;
-      if (lastI >= 0 && (last = children2[lastI]) instanceof Tree2) {
-        if (!lastI && last.type == type && last.length == length2)
-          return last;
-        if (lookAheadProp = last.prop(NodeProp2.lookAhead))
-          lookAhead2 = positions2[lastI] + last.length + lookAheadProp;
-      }
-      return makeTree(type, children2, positions2, length2, lookAhead2, contextHash2);
-    };
-  }
-  function makeRepeatLeaf(children2, positions2, base2, i, from, to, type, lookAhead2, contextHash2) {
-    let localChildren = [], localPositions = [];
-    while (children2.length > i) {
-      localChildren.push(children2.pop());
-      localPositions.push(positions2.pop() + base2 - from);
-    }
-    children2.push(makeTree(nodeSet.types[type], localChildren, localPositions, to - from, lookAhead2 - to, contextHash2));
-    positions2.push(from - base2);
-  }
-  function makeTree(type, children2, positions2, length2, lookAhead2, contextHash2, props) {
-    if (contextHash2) {
-      let pair4 = [NodeProp2.contextHash, contextHash2];
-      props = props ? [pair4].concat(props) : [pair4];
-    }
-    if (lookAhead2 > 25) {
-      let pair4 = [NodeProp2.lookAhead, lookAhead2];
-      props = props ? [pair4].concat(props) : [pair4];
-    }
-    return new Tree2(type, children2, positions2, length2, props);
-  }
-  function findBufferSize(maxSize, inRepeat) {
-    let fork = cursor2.fork();
-    let size = 0, start = 0, skip = 0, minStart = fork.end - maxBufferLength;
-    let result = { size: 0, start: 0, skip: 0 };
-    scan: for (let minPos = fork.pos - maxSize; fork.pos > minPos; ) {
-      let nodeSize11 = fork.size;
-      if (fork.id == inRepeat && nodeSize11 >= 0) {
-        result.size = size;
-        result.start = start;
-        result.skip = skip;
-        skip += 4;
-        size += 4;
-        fork.next();
-        continue;
-      }
-      let startPos = fork.pos - nodeSize11;
-      if (nodeSize11 < 0 || startPos < minPos || fork.start < minStart)
-        break;
-      let localSkipped = fork.id >= minRepeatType ? 4 : 0;
-      let nodeStart2 = fork.start;
-      fork.next();
-      while (fork.pos > startPos) {
-        if (fork.size < 0) {
-          if (fork.size == -3 || fork.size == -4)
-            localSkipped += 4;
-          else
-            break scan;
-        } else if (fork.id >= minRepeatType) {
-          localSkipped += 4;
-        }
-        fork.next();
-      }
-      start = nodeStart2;
-      size += nodeSize11;
-      skip += localSkipped;
-    }
-    if (inRepeat < 0 || size == maxSize) {
-      result.size = size;
-      result.start = start;
-      result.skip = skip;
-    }
-    return result.size > 4 ? result : void 0;
-  }
-  function copyToBuffer(bufferStart, buffer2, index) {
-    let { id: id3, start, end, size } = cursor2;
-    cursor2.next();
-    if (size >= 0 && id3 < minRepeatType) {
-      let startIndex = index;
-      if (size > 4) {
-        let endPos = cursor2.pos - (size - 4);
-        while (cursor2.pos > endPos)
-          index = copyToBuffer(bufferStart, buffer2, index);
-      }
-      buffer2[--index] = startIndex;
-      buffer2[--index] = end - bufferStart;
-      buffer2[--index] = start - bufferStart;
-      buffer2[--index] = id3;
-    } else if (size == -3) {
-      contextHash = id3;
-    } else if (size == -4) {
-      lookAhead = id3;
-    }
-    return index;
-  }
-  let children = [], positions = [];
-  while (cursor2.pos > 0)
-    takeNode(data2.start || 0, data2.bufferStart || 0, children, positions, -1, 0);
-  let length = (_a7 = data2.length) !== null && _a7 !== void 0 ? _a7 : children.length ? positions[0] + children[0].length : 0;
-  return new Tree2(types2[data2.topID], children.reverse(), positions.reverse(), length);
-}
-var nodeSizeCache2 = /* @__PURE__ */ new WeakMap();
-function nodeSize2(balanceType, node) {
-  if (!balanceType.isAnonymous || node instanceof TreeBuffer2 || node.type != balanceType)
-    return 1;
-  let size = nodeSizeCache2.get(node);
-  if (size == null) {
-    size = 1;
-    for (let child of node.children) {
-      if (child.type != balanceType || !(child instanceof Tree2)) {
-        size = 1;
-        break;
-      }
-      size += nodeSize2(balanceType, child);
-    }
-    nodeSizeCache2.set(node, size);
-  }
-  return size;
-}
-function balanceRange2(balanceType, children, positions, from, to, start, length, mkTop, mkTree) {
-  let total = 0;
-  for (let i = from; i < to; i++)
-    total += nodeSize2(balanceType, children[i]);
-  let maxChild = Math.ceil(
-    total * 1.5 / 8
-    /* Balance.BranchFactor */
-  );
-  let localChildren = [], localPositions = [];
-  function divide(children2, positions2, from2, to2, offset) {
-    for (let i = from2; i < to2; ) {
-      let groupFrom = i, groupStart = positions2[i], groupSize = nodeSize2(balanceType, children2[i]);
-      i++;
-      for (; i < to2; i++) {
-        let nextSize = nodeSize2(balanceType, children2[i]);
-        if (groupSize + nextSize >= maxChild)
-          break;
-        groupSize += nextSize;
-      }
-      if (i == groupFrom + 1) {
-        if (groupSize > maxChild) {
-          let only = children2[groupFrom];
-          divide(only.children, only.positions, 0, only.children.length, positions2[groupFrom] + offset);
-          continue;
-        }
-        localChildren.push(children2[groupFrom]);
-      } else {
-        let length2 = positions2[i - 1] + children2[i - 1].length - groupStart;
-        localChildren.push(balanceRange2(balanceType, children2, positions2, groupFrom, i, groupStart, length2, null, mkTree));
-      }
-      localPositions.push(groupStart + offset - start);
-    }
-  }
-  divide(children, positions, from, to, 0);
-  return (mkTop || mkTree)(localChildren, localPositions, length);
-}
-var TreeFragment2 = class _TreeFragment {
-  /**
-  Construct a tree fragment. You'll usually want to use
-  [`addTree`](#common.TreeFragment^addTree) and
-  [`applyChanges`](#common.TreeFragment^applyChanges) instead of
-  calling this directly.
-  */
-  constructor(from, to, tree, offset, openStart = false, openEnd = false) {
-    this.from = from;
-    this.to = to;
-    this.tree = tree;
-    this.offset = offset;
-    this.open = (openStart ? 1 : 0) | (openEnd ? 2 : 0);
-  }
-  /**
-  Whether the start of the fragment represents the start of a
-  parse, or the end of a change. (In the second case, it may not
-  be safe to reuse some nodes at the start, depending on the
-  parsing algorithm.)
-  */
-  get openStart() {
-    return (this.open & 1) > 0;
-  }
-  /**
-  Whether the end of the fragment represents the end of a
-  full-document parse, or the start of a change.
-  */
-  get openEnd() {
-    return (this.open & 2) > 0;
-  }
-  /**
-  Create a set of fragments from a freshly parsed tree, or update
-  an existing set of fragments by replacing the ones that overlap
-  with a tree with content from the new tree. When `partial` is
-  true, the parse is treated as incomplete, and the resulting
-  fragment has [`openEnd`](#common.TreeFragment.openEnd) set to
-  true.
-  */
-  static addTree(tree, fragments = [], partial = false) {
-    let result = [new _TreeFragment(0, tree.length, tree, 0, false, partial)];
-    for (let f of fragments)
-      if (f.to > tree.length)
-        result.push(f);
-    return result;
-  }
-  /**
-  Apply a set of edits to an array of fragments, removing or
-  splitting fragments as necessary to remove edited ranges, and
-  adjusting offsets for fragments that moved.
-  */
-  static applyChanges(fragments, changes, minGap = 128) {
-    if (!changes.length)
-      return fragments;
-    let result = [];
-    let fI = 1, nextF = fragments.length ? fragments[0] : null;
-    for (let cI = 0, pos = 0, off = 0; ; cI++) {
-      let nextC = cI < changes.length ? changes[cI] : null;
-      let nextPos = nextC ? nextC.fromA : 1e9;
-      if (nextPos - pos >= minGap)
-        while (nextF && nextF.from < nextPos) {
-          let cut = nextF;
-          if (pos >= cut.from || nextPos <= cut.to || off) {
-            let fFrom = Math.max(cut.from, pos) - off, fTo = Math.min(cut.to, nextPos) - off;
-            cut = fFrom >= fTo ? null : new _TreeFragment(fFrom, fTo, cut.tree, cut.offset + off, cI > 0, !!nextC);
-          }
-          if (cut)
-            result.push(cut);
-          if (nextF.to > nextPos)
-            break;
-          nextF = fI < fragments.length ? fragments[fI++] : null;
-        }
-      if (!nextC)
-        break;
-      pos = nextC.toA;
-      off = nextC.toA - nextC.toB;
-    }
-    return result;
-  }
-};
-var Parser2 = class {
-  /**
-  Start a parse, returning a [partial parse](#common.PartialParse)
-  object. [`fragments`](#common.TreeFragment) can be passed in to
-  make the parse incremental.
-  
-  By default, the entire input is parsed. You can pass `ranges`,
-  which should be a sorted array of non-empty, non-overlapping
-  ranges, to parse only those ranges. The tree returned in that
-  case will start at `ranges[0].from`.
-  */
-  startParse(input, fragments, ranges) {
-    if (typeof input == "string")
-      input = new StringInput2(input);
-    ranges = !ranges ? [new Range3(0, input.length)] : ranges.length ? ranges.map((r) => new Range3(r.from, r.to)) : [new Range3(0, 0)];
-    return this.createParse(input, fragments || [], ranges);
-  }
-  /**
-  Run a full parse, returning the resulting tree.
-  */
-  parse(input, fragments, ranges) {
-    let parse = this.startParse(input, fragments, ranges);
-    for (; ; ) {
-      let done = parse.advance();
-      if (done)
-        return done;
-    }
-  }
-};
-var StringInput2 = class {
-  constructor(string11) {
-    this.string = string11;
-  }
-  get length() {
-    return this.string.length;
-  }
-  chunk(from) {
-    return this.string.slice(from);
-  }
-  get lineChunks() {
-    return false;
-  }
-  read(from, to) {
-    return this.string.slice(from, to);
-  }
-};
-var stoppedInner2 = new NodeProp2({ perNode: true });
+var windows2 = typeof navigator == "object" && /* @__PURE__ */ /Win/.test(navigator.platform);
+var closedBracket2 = /* @__PURE__ */ new class extends RangeValue {
+}();
+closedBracket2.startSide = 1;
+closedBracket2.endSide = -1;
+var android2 = typeof navigator == "object" && /* @__PURE__ */ /Android\b/.test(navigator.userAgent);
 
-// node_modules/@codemirror/lang-markdown/node_modules/@lezer/highlight/dist/index.js
+// node_modules/@lezer/markdown/node_modules/@lezer/highlight/dist/index.js
 var nextTagID2 = 0;
 var Tag2 = class _Tag {
   /**
   @internal
   */
-  constructor(name11, set, base2, modified) {
-    this.name = name11;
+  constructor(name7, set, base2, modified) {
+    this.name = name7;
     this.set = set;
     this.base = base2;
     this.modified = modified;
     this.id = nextTagID2++;
   }
   toString() {
-    let { name: name11 } = this;
+    let { name: name7 } = this;
     for (let mod of this.modified)
       if (mod.name)
-        name11 = `${mod.name}(${name11})`;
-    return name11;
+        name7 = `${mod.name}(${name7})`;
+    return name7;
   }
   static define(nameOrParent, parent) {
-    let name11 = typeof nameOrParent == "string" ? nameOrParent : "?";
+    let name7 = typeof nameOrParent == "string" ? nameOrParent : "?";
     if (nameOrParent instanceof _Tag)
       parent = nameOrParent;
     if (parent === null || parent === void 0 ? void 0 : parent.base)
       throw new Error("Can not derive from a modified tag");
-    let tag = new _Tag(name11, [], null, []);
+    let tag = new _Tag(name7, [], null, []);
     tag.set.push(tag);
     if (parent)
-      for (let t11 of parent.set)
-        tag.set.push(t11);
+      for (let t7 of parent.set)
+        tag.set.push(t7);
     return tag;
   }
   /**
@@ -24084,8 +23171,8 @@ var Tag2 = class _Tag {
   example `m1(m2(m3(t1)))` is a subtype of `m1(m2(t1))`,
   `m1(m3(t1)`, and so on.
   */
-  static defineModifier(name11) {
-    let mod = new Modifier2(name11);
+  static defineModifier(name7) {
+    let mod = new Modifier2(name7);
     return (tag) => {
       if (tag.modified.indexOf(mod) > -1)
         return tag;
@@ -24095,15 +23182,15 @@ var Tag2 = class _Tag {
 };
 var nextModifierID2 = 0;
 var Modifier2 = class _Modifier {
-  constructor(name11) {
-    this.name = name11;
+  constructor(name7) {
+    this.name = name7;
     this.instances = [];
     this.id = nextModifierID2++;
   }
   static get(base2, mods) {
     if (!mods.length)
       return base2;
-    let exists = mods[0].instances.find((t11) => t11.base == base2 && sameArray3(mods, t11.modified));
+    let exists = mods[0].instances.find((t7) => t7.base == base2 && sameArray3(mods, t7.modified));
     if (exists)
       return exists;
     let set = [], tag = new Tag2(base2.name, set, base2, mods);
@@ -24132,9 +23219,9 @@ function powerSet2(array) {
 function styleTags2(spec) {
   let byName = /* @__PURE__ */ Object.create(null);
   for (let prop in spec) {
-    let tags12 = spec[prop];
-    if (!Array.isArray(tags12))
-      tags12 = [tags12];
+    let tags8 = spec[prop];
+    if (!Array.isArray(tags8))
+      tags8 = [tags8];
     for (let part of prop.split(" "))
       if (part) {
         let pieces = [], mode = 2, rest = part;
@@ -24162,13 +23249,13 @@ function styleTags2(spec) {
         let last = pieces.length - 1, inner = pieces[last];
         if (!inner)
           throw new RangeError("Invalid path: " + part);
-        let rule = new Rule2(tags12, mode, last > 0 ? pieces.slice(0, last) : null);
+        let rule = new Rule2(tags8, mode, last > 0 ? pieces.slice(0, last) : null);
         byName[inner] = rule.sort(byName[inner]);
       }
   }
   return ruleNodeProp2.add(byName);
 }
-var ruleNodeProp2 = new NodeProp2({
+var ruleNodeProp2 = new NodeProp({
   combine(a, b) {
     let cur2, root, take;
     while (a || b) {
@@ -24192,8 +23279,8 @@ var ruleNodeProp2 = new NodeProp2({
   }
 });
 var Rule2 = class {
-  constructor(tags12, mode, context, next) {
-    this.tags = tags12;
+  constructor(tags8, mode, context, next) {
+    this.tags = tags8;
     this.mode = mode;
     this.context = context;
     this.next = next;
@@ -24217,9 +23304,9 @@ var Rule2 = class {
   }
 };
 Rule2.empty = new Rule2([], 2, null);
-function tagHighlighter2(tags12, options) {
+function tagHighlighter2(tags8, options) {
   let map = /* @__PURE__ */ Object.create(null);
-  for (let style of tags12) {
+  for (let style of tags8) {
     if (!Array.isArray(style.tag))
       map[style.tag.id] = style.class;
     else
@@ -24228,9 +23315,9 @@ function tagHighlighter2(tags12, options) {
   }
   let { scope, all = null } = options || {};
   return {
-    style: (tags13) => {
+    style: (tags9) => {
       let cls = all;
-      for (let tag of tags13) {
+      for (let tag of tags9) {
         for (let sub of tag.set) {
           let tagClass = map[sub.id];
           if (tagClass) {
@@ -24625,10 +23712,10 @@ var tags2 = {
   */
   special: Tag2.defineModifier("special")
 };
-for (let name11 in tags2) {
-  let val = tags2[name11];
+for (let name7 in tags2) {
+  let val = tags2[name7];
   if (val instanceof Tag2)
-    val.name = name11;
+    val.name = name7;
 }
 var classHighlighter2 = tagHighlighter2([
   { tag: tags2.link, class: "tok-link" },
@@ -24663,3502 +23750,6 @@ var classHighlighter2 = tagHighlighter2([
   { tag: tags2.punctuation, class: "tok-punctuation" }
 ]);
 
-// node_modules/@codemirror/lang-markdown/node_modules/@codemirror/language/dist/index.js
-var _a2;
-var languageDataProp2 = /* @__PURE__ */ new NodeProp2();
-function defineLanguageFacet(baseData) {
-  return Facet.define({
-    combine: baseData ? (values2) => values2.concat(baseData) : void 0
-  });
-}
-var sublanguageProp2 = /* @__PURE__ */ new NodeProp2();
-var Language2 = class {
-  /**
-  Construct a language object. If you need to invoke this
-  directly, first define a data facet with
-  [`defineLanguageFacet`](https://codemirror.net/6/docs/ref/#language.defineLanguageFacet), and then
-  configure your parser to [attach](https://codemirror.net/6/docs/ref/#language.languageDataProp) it
-  to the language's outer syntax node.
-  */
-  constructor(data2, parser5, extraExtensions = [], name11 = "") {
-    this.data = data2;
-    this.name = name11;
-    if (!EditorState.prototype.hasOwnProperty("tree"))
-      Object.defineProperty(EditorState.prototype, "tree", { get() {
-        return syntaxTree2(this);
-      } });
-    this.parser = parser5;
-    this.extension = [
-      language2.of(this),
-      EditorState.languageData.of((state, pos, side) => {
-        let top2 = topNodeAt2(state, pos, side), data3 = top2.type.prop(languageDataProp2);
-        if (!data3)
-          return [];
-        let base2 = state.facet(data3), sub = top2.type.prop(sublanguageProp2);
-        if (sub) {
-          let innerNode = top2.resolve(pos - top2.from, side);
-          for (let sublang of sub)
-            if (sublang.test(innerNode, state)) {
-              let data4 = state.facet(sublang.facet);
-              return sublang.type == "replace" ? data4 : data4.concat(base2);
-            }
-        }
-        return base2;
-      })
-    ].concat(extraExtensions);
-  }
-  /**
-  Query whether this language is active at the given position.
-  */
-  isActiveAt(state, pos, side = -1) {
-    return topNodeAt2(state, pos, side).type.prop(languageDataProp2) == this.data;
-  }
-  /**
-  Find the document regions that were parsed using this language.
-  The returned regions will _include_ any nested languages rooted
-  in this language, when those exist.
-  */
-  findRegions(state) {
-    let lang = state.facet(language2);
-    if ((lang === null || lang === void 0 ? void 0 : lang.data) == this.data)
-      return [{ from: 0, to: state.doc.length }];
-    if (!lang || !lang.allowsNesting)
-      return [];
-    let result = [];
-    let explore = (tree, from) => {
-      if (tree.prop(languageDataProp2) == this.data) {
-        result.push({ from, to: from + tree.length });
-        return;
-      }
-      let mount = tree.prop(NodeProp2.mounted);
-      if (mount) {
-        if (mount.tree.prop(languageDataProp2) == this.data) {
-          if (mount.overlay)
-            for (let r of mount.overlay)
-              result.push({ from: r.from + from, to: r.to + from });
-          else
-            result.push({ from, to: from + tree.length });
-          return;
-        } else if (mount.overlay) {
-          let size = result.length;
-          explore(mount.tree, mount.overlay[0].from + from);
-          if (result.length > size)
-            return;
-        }
-      }
-      for (let i = 0; i < tree.children.length; i++) {
-        let ch = tree.children[i];
-        if (ch instanceof Tree2)
-          explore(ch, tree.positions[i] + from);
-      }
-    };
-    explore(syntaxTree2(state), 0);
-    return result;
-  }
-  /**
-  Indicates whether this language allows nested languages. The
-  default implementation returns true.
-  */
-  get allowsNesting() {
-    return true;
-  }
-};
-Language2.setState = /* @__PURE__ */ StateEffect.define();
-function topNodeAt2(state, pos, side) {
-  let topLang = state.facet(language2), tree = syntaxTree2(state).topNode;
-  if (!topLang || topLang.allowsNesting) {
-    for (let node = tree; node; node = node.enter(pos, side, IterMode2.ExcludeBuffers | IterMode2.EnterBracketed))
-      if (node.type.isTop)
-        tree = node;
-  }
-  return tree;
-}
-function syntaxTree2(state) {
-  let field = state.field(Language2.state, false);
-  return field ? field.tree : Tree2.empty;
-}
-var DocInput2 = class {
-  /**
-  Create an input object for the given document.
-  */
-  constructor(doc2) {
-    this.doc = doc2;
-    this.cursorPos = 0;
-    this.string = "";
-    this.cursor = doc2.iter();
-  }
-  get length() {
-    return this.doc.length;
-  }
-  syncTo(pos) {
-    this.string = this.cursor.next(pos - this.cursorPos).value;
-    this.cursorPos = pos + this.string.length;
-    return this.cursorPos - this.string.length;
-  }
-  chunk(pos) {
-    this.syncTo(pos);
-    return this.string;
-  }
-  get lineChunks() {
-    return true;
-  }
-  read(from, to) {
-    let stringStart = this.cursorPos - this.string.length;
-    if (from < stringStart || to >= this.cursorPos)
-      return this.doc.sliceString(from, to);
-    else
-      return this.string.slice(from - stringStart, to - stringStart);
-  }
-};
-var currentContext2 = null;
-var ParseContext2 = class _ParseContext {
-  constructor(parser5, state, fragments = [], tree, treeLen, viewport, skipped, scheduleOn) {
-    this.parser = parser5;
-    this.state = state;
-    this.fragments = fragments;
-    this.tree = tree;
-    this.treeLen = treeLen;
-    this.viewport = viewport;
-    this.skipped = skipped;
-    this.scheduleOn = scheduleOn;
-    this.parse = null;
-    this.tempSkipped = [];
-  }
-  /**
-  @internal
-  */
-  static create(parser5, state, viewport) {
-    return new _ParseContext(parser5, state, [], Tree2.empty, 0, viewport, [], null);
-  }
-  startParse() {
-    return this.parser.startParse(new DocInput2(this.state.doc), this.fragments);
-  }
-  /**
-  @internal
-  */
-  work(until, upto) {
-    if (upto != null && upto >= this.state.doc.length)
-      upto = void 0;
-    if (this.tree != Tree2.empty && this.isDone(upto !== null && upto !== void 0 ? upto : this.state.doc.length)) {
-      this.takeTree();
-      return true;
-    }
-    return this.withContext(() => {
-      var _a7;
-      if (typeof until == "number") {
-        let endTime = Date.now() + until;
-        until = () => Date.now() > endTime;
-      }
-      if (!this.parse)
-        this.parse = this.startParse();
-      if (upto != null && (this.parse.stoppedAt == null || this.parse.stoppedAt > upto) && upto < this.state.doc.length)
-        this.parse.stopAt(upto);
-      for (; ; ) {
-        let done = this.parse.advance();
-        if (done) {
-          this.fragments = this.withoutTempSkipped(TreeFragment2.addTree(done, this.fragments, this.parse.stoppedAt != null));
-          this.treeLen = (_a7 = this.parse.stoppedAt) !== null && _a7 !== void 0 ? _a7 : this.state.doc.length;
-          this.tree = done;
-          this.parse = null;
-          if (this.treeLen < (upto !== null && upto !== void 0 ? upto : this.state.doc.length))
-            this.parse = this.startParse();
-          else
-            return true;
-        }
-        if (until())
-          return false;
-      }
-    });
-  }
-  /**
-  @internal
-  */
-  takeTree() {
-    let pos, tree;
-    if (this.parse && (pos = this.parse.parsedPos) >= this.treeLen) {
-      if (this.parse.stoppedAt == null || this.parse.stoppedAt > pos)
-        this.parse.stopAt(pos);
-      this.withContext(() => {
-        while (!(tree = this.parse.advance())) {
-        }
-      });
-      this.treeLen = pos;
-      this.tree = tree;
-      this.fragments = this.withoutTempSkipped(TreeFragment2.addTree(this.tree, this.fragments, true));
-      this.parse = null;
-    }
-  }
-  withContext(f) {
-    let prev = currentContext2;
-    currentContext2 = this;
-    try {
-      return f();
-    } finally {
-      currentContext2 = prev;
-    }
-  }
-  withoutTempSkipped(fragments) {
-    for (let r; r = this.tempSkipped.pop(); )
-      fragments = cutFragments2(fragments, r.from, r.to);
-    return fragments;
-  }
-  /**
-  @internal
-  */
-  changes(changes, newState) {
-    let { fragments, tree, treeLen, viewport, skipped } = this;
-    this.takeTree();
-    if (!changes.empty) {
-      let ranges = [];
-      changes.iterChangedRanges((fromA, toA, fromB, toB) => ranges.push({ fromA, toA, fromB, toB }));
-      fragments = TreeFragment2.applyChanges(fragments, ranges);
-      tree = Tree2.empty;
-      treeLen = 0;
-      viewport = { from: changes.mapPos(viewport.from, -1), to: changes.mapPos(viewport.to, 1) };
-      if (this.skipped.length) {
-        skipped = [];
-        for (let r of this.skipped) {
-          let from = changes.mapPos(r.from, 1), to = changes.mapPos(r.to, -1);
-          if (from < to)
-            skipped.push({ from, to });
-        }
-      }
-    }
-    return new _ParseContext(this.parser, newState, fragments, tree, treeLen, viewport, skipped, this.scheduleOn);
-  }
-  /**
-  @internal
-  */
-  updateViewport(viewport) {
-    if (this.viewport.from == viewport.from && this.viewport.to == viewport.to)
-      return false;
-    this.viewport = viewport;
-    let startLen = this.skipped.length;
-    for (let i = 0; i < this.skipped.length; i++) {
-      let { from, to } = this.skipped[i];
-      if (from < viewport.to && to > viewport.from) {
-        this.fragments = cutFragments2(this.fragments, from, to);
-        this.skipped.splice(i--, 1);
-      }
-    }
-    if (this.skipped.length >= startLen)
-      return false;
-    this.reset();
-    return true;
-  }
-  /**
-  @internal
-  */
-  reset() {
-    if (this.parse) {
-      this.takeTree();
-      this.parse = null;
-    }
-  }
-  /**
-  Notify the parse scheduler that the given region was skipped
-  because it wasn't in view, and the parse should be restarted
-  when it comes into view.
-  */
-  skipUntilInView(from, to) {
-    this.skipped.push({ from, to });
-  }
-  /**
-  Returns a parser intended to be used as placeholder when
-  asynchronously loading a nested parser. It'll skip its input and
-  mark it as not-really-parsed, so that the next update will parse
-  it again.
-  
-  When `until` is given, a reparse will be scheduled when that
-  promise resolves.
-  */
-  static getSkippingParser(until) {
-    return new class extends Parser2 {
-      createParse(input, fragments, ranges) {
-        let from = ranges[0].from, to = ranges[ranges.length - 1].to;
-        let parser5 = {
-          parsedPos: from,
-          advance() {
-            let cx = currentContext2;
-            if (cx) {
-              for (let r of ranges)
-                cx.tempSkipped.push(r);
-              if (until)
-                cx.scheduleOn = cx.scheduleOn ? Promise.all([cx.scheduleOn, until]) : until;
-            }
-            this.parsedPos = to;
-            return new Tree2(NodeType2.none, [], [], to - from);
-          },
-          stoppedAt: null,
-          stopAt() {
-          }
-        };
-        return parser5;
-      }
-    }();
-  }
-  /**
-  @internal
-  */
-  isDone(upto) {
-    upto = Math.min(upto, this.state.doc.length);
-    let frags = this.fragments;
-    return this.treeLen >= upto && frags.length && frags[0].from == 0 && frags[0].to >= upto;
-  }
-  /**
-  Get the context for the current parse, or `null` if no editor
-  parse is in progress.
-  */
-  static get() {
-    return currentContext2;
-  }
-};
-function cutFragments2(fragments, from, to) {
-  return TreeFragment2.applyChanges(fragments, [{ fromA: from, toA: to, fromB: from, toB: to }]);
-}
-var LanguageState2 = class _LanguageState {
-  constructor(context) {
-    this.context = context;
-    this.tree = context.tree;
-  }
-  apply(tr) {
-    if (!tr.docChanged && this.tree == this.context.tree)
-      return this;
-    let newCx = this.context.changes(tr.changes, tr.state);
-    let upto = this.context.treeLen == tr.startState.doc.length ? void 0 : Math.max(tr.changes.mapPos(this.context.treeLen), newCx.viewport.to);
-    if (!newCx.work(20, upto))
-      newCx.takeTree();
-    return new _LanguageState(newCx);
-  }
-  static init(state) {
-    let vpTo = Math.min(3e3, state.doc.length);
-    let parseState = ParseContext2.create(state.facet(language2).parser, state, { from: 0, to: vpTo });
-    if (!parseState.work(20, vpTo))
-      parseState.takeTree();
-    return new _LanguageState(parseState);
-  }
-};
-Language2.state = /* @__PURE__ */ StateField.define({
-  create: LanguageState2.init,
-  update(value, tr) {
-    for (let e of tr.effects)
-      if (e.is(Language2.setState))
-        return e.value;
-    if (tr.startState.facet(language2) != tr.state.facet(language2))
-      return LanguageState2.init(tr.state);
-    return value.apply(tr);
-  }
-});
-var requestIdle2 = (callback) => {
-  let timeout = setTimeout(
-    () => callback(),
-    500
-    /* Work.MaxPause */
-  );
-  return () => clearTimeout(timeout);
-};
-if (typeof requestIdleCallback != "undefined")
-  requestIdle2 = (callback) => {
-    let idle = -1, timeout = setTimeout(
-      () => {
-        idle = requestIdleCallback(callback, {
-          timeout: 500 - 100
-          /* Work.MinPause */
-        });
-      },
-      100
-      /* Work.MinPause */
-    );
-    return () => idle < 0 ? clearTimeout(timeout) : cancelIdleCallback(idle);
-  };
-var isInputPending2 = typeof navigator != "undefined" && ((_a2 = navigator.scheduling) === null || _a2 === void 0 ? void 0 : _a2.isInputPending) ? () => navigator.scheduling.isInputPending() : null;
-var parseWorker2 = /* @__PURE__ */ ViewPlugin.fromClass(class ParseWorker2 {
-  constructor(view) {
-    this.view = view;
-    this.working = null;
-    this.workScheduled = 0;
-    this.chunkEnd = -1;
-    this.chunkBudget = -1;
-    this.work = this.work.bind(this);
-    this.scheduleWork();
-  }
-  update(update) {
-    let cx = this.view.state.field(Language2.state).context;
-    if (cx.updateViewport(update.view.viewport) || this.view.viewport.to > cx.treeLen)
-      this.scheduleWork();
-    if (update.docChanged || update.selectionSet) {
-      if (this.view.hasFocus)
-        this.chunkBudget += 50;
-      this.scheduleWork();
-    }
-    this.checkAsyncSchedule(cx);
-  }
-  scheduleWork() {
-    if (this.working)
-      return;
-    let { state } = this.view, field = state.field(Language2.state);
-    if (field.tree != field.context.tree || !field.context.isDone(state.doc.length))
-      this.working = requestIdle2(this.work);
-  }
-  work(deadline) {
-    this.working = null;
-    let now = Date.now();
-    if (this.chunkEnd < now && (this.chunkEnd < 0 || this.view.hasFocus)) {
-      this.chunkEnd = now + 3e4;
-      this.chunkBudget = 3e3;
-    }
-    if (this.chunkBudget <= 0)
-      return;
-    let { state, viewport: { to: vpTo } } = this.view, field = state.field(Language2.state);
-    if (field.tree == field.context.tree && field.context.isDone(
-      vpTo + 1e5
-      /* Work.MaxParseAhead */
-    ))
-      return;
-    let endTime = Date.now() + Math.min(this.chunkBudget, 100, deadline && !isInputPending2 ? Math.max(25, deadline.timeRemaining() - 5) : 1e9);
-    let viewportFirst = field.context.treeLen < vpTo && state.doc.length > vpTo + 1e3;
-    let done = field.context.work(() => {
-      return isInputPending2 && isInputPending2() || Date.now() > endTime;
-    }, vpTo + (viewportFirst ? 0 : 1e5));
-    this.chunkBudget -= Date.now() - now;
-    if (done || this.chunkBudget <= 0) {
-      field.context.takeTree();
-      this.view.dispatch({ effects: Language2.setState.of(new LanguageState2(field.context)) });
-    }
-    if (this.chunkBudget > 0 && !(done && !viewportFirst))
-      this.scheduleWork();
-    this.checkAsyncSchedule(field.context);
-  }
-  checkAsyncSchedule(cx) {
-    if (cx.scheduleOn) {
-      this.workScheduled++;
-      cx.scheduleOn.then(() => this.scheduleWork()).catch((err) => logException(this.view.state, err)).then(() => this.workScheduled--);
-      cx.scheduleOn = null;
-    }
-  }
-  destroy() {
-    if (this.working)
-      this.working();
-  }
-  isWorking() {
-    return !!(this.working || this.workScheduled > 0);
-  }
-}, {
-  eventHandlers: { focus() {
-    this.scheduleWork();
-  } }
-});
-var language2 = /* @__PURE__ */ Facet.define({
-  combine(languages) {
-    return languages.length ? languages[0] : null;
-  },
-  enables: (language7) => [
-    Language2.state,
-    parseWorker2,
-    EditorView.contentAttributes.compute([language7], (state) => {
-      let lang = state.facet(language7);
-      return lang && lang.name ? { "data-language": lang.name } : {};
-    })
-  ]
-});
-var LanguageSupport = class {
-  /**
-  Create a language support object.
-  */
-  constructor(language7, support = []) {
-    this.language = language7;
-    this.support = support;
-    this.extension = [language7, support];
-  }
-};
-var LanguageDescription = class _LanguageDescription {
-  constructor(name11, alias, extensions, filename, loadFunc, support = void 0) {
-    this.name = name11;
-    this.alias = alias;
-    this.extensions = extensions;
-    this.filename = filename;
-    this.loadFunc = loadFunc;
-    this.support = support;
-    this.loading = null;
-  }
-  /**
-  Start loading the the language. Will return a promise that
-  resolves to a [`LanguageSupport`](https://codemirror.net/6/docs/ref/#language.LanguageSupport)
-  object when the language successfully loads.
-  */
-  load() {
-    return this.loading || (this.loading = this.loadFunc().then((support) => this.support = support, (err) => {
-      this.loading = null;
-      throw err;
-    }));
-  }
-  /**
-  Create a language description.
-  */
-  static of(spec) {
-    let { load, support } = spec;
-    if (!load) {
-      if (!support)
-        throw new RangeError("Must pass either 'load' or 'support' to LanguageDescription.of");
-      load = () => Promise.resolve(support);
-    }
-    return new _LanguageDescription(spec.name, (spec.alias || []).concat(spec.name).map((s) => s.toLowerCase()), spec.extensions || [], spec.filename, load, support);
-  }
-  /**
-  Look for a language in the given array of descriptions that
-  matches the filename. Will first match
-  [`filename`](https://codemirror.net/6/docs/ref/#language.LanguageDescription.filename) patterns,
-  and then [extensions](https://codemirror.net/6/docs/ref/#language.LanguageDescription.extensions),
-  and return the first language that matches.
-  */
-  static matchFilename(descs, filename) {
-    for (let d of descs)
-      if (d.filename && d.filename.test(filename))
-        return d;
-    let ext = /\.([^.]+)$/.exec(filename);
-    if (ext) {
-      for (let d of descs)
-        if (d.extensions.indexOf(ext[1]) > -1)
-          return d;
-    }
-    return null;
-  }
-  /**
-  Look for a language whose name or alias matches the the given
-  name (case-insensitively). If `fuzzy` is true, and no direct
-  matchs is found, this'll also search for a language whose name
-  or alias occurs in the string (for names shorter than three
-  characters, only when surrounded by non-word characters).
-  */
-  static matchLanguageName(descs, name11, fuzzy = true) {
-    name11 = name11.toLowerCase();
-    for (let d of descs)
-      if (d.alias.some((a) => a == name11))
-        return d;
-    if (fuzzy)
-      for (let d of descs)
-        for (let a of d.alias) {
-          let found = name11.indexOf(a);
-          if (found > -1 && (a.length > 2 || !/\w/.test(name11[found - 1]) && !/\w/.test(name11[found + a.length])))
-            return d;
-        }
-    return null;
-  }
-};
-var indentUnit2 = /* @__PURE__ */ Facet.define({
-  combine: (values2) => {
-    if (!values2.length)
-      return "  ";
-    let unit = values2[0];
-    if (!unit || /\S/.test(unit) || Array.from(unit).some((e) => e != unit[0]))
-      throw new Error("Invalid indent unit: " + JSON.stringify(values2[0]));
-    return unit;
-  }
-});
-var indentNodeProp2 = /* @__PURE__ */ new NodeProp2();
-var foldService2 = /* @__PURE__ */ Facet.define();
-var foldNodeProp2 = /* @__PURE__ */ new NodeProp2();
-var HighlightStyle2 = class _HighlightStyle {
-  constructor(specs, options) {
-    this.specs = specs;
-    let modSpec;
-    function def(spec) {
-      let cls = StyleModule.newName();
-      (modSpec || (modSpec = /* @__PURE__ */ Object.create(null)))["." + cls] = spec;
-      return cls;
-    }
-    const all = typeof options.all == "string" ? options.all : options.all ? def(options.all) : void 0;
-    const scopeOpt = options.scope;
-    this.scope = scopeOpt instanceof Language2 ? (type) => type.prop(languageDataProp2) == scopeOpt.data : scopeOpt ? (type) => type == scopeOpt : void 0;
-    this.style = tagHighlighter2(specs.map((style) => ({
-      tag: style.tag,
-      class: style.class || def(Object.assign({}, style, { tag: null }))
-    })), {
-      all
-    }).style;
-    this.module = modSpec ? new StyleModule(modSpec) : null;
-    this.themeType = options.themeType;
-  }
-  /**
-  Create a highlighter style that associates the given styles to
-  the given tags. The specs must be objects that hold a style tag
-  or array of tags in their `tag` property, and either a single
-  `class` property providing a static CSS class (for highlighter
-  that rely on external styling), or a
-  [`style-mod`](https://github.com/marijnh/style-mod#documentation)-style
-  set of CSS properties (which define the styling for those tags).
-  
-  The CSS rules created for a highlighter will be emitted in the
-  order of the spec's properties. That means that for elements that
-  have multiple tags associated with them, styles defined further
-  down in the list will have a higher CSS precedence than styles
-  defined earlier.
-  */
-  static define(specs, options) {
-    return new _HighlightStyle(specs, options || {});
-  }
-};
-var defaultHighlightStyle2 = /* @__PURE__ */ HighlightStyle2.define([
-  {
-    tag: tags2.meta,
-    color: "#404740"
-  },
-  {
-    tag: tags2.link,
-    textDecoration: "underline"
-  },
-  {
-    tag: tags2.heading,
-    textDecoration: "underline",
-    fontWeight: "bold"
-  },
-  {
-    tag: tags2.emphasis,
-    fontStyle: "italic"
-  },
-  {
-    tag: tags2.strong,
-    fontWeight: "bold"
-  },
-  {
-    tag: tags2.strikethrough,
-    textDecoration: "line-through"
-  },
-  {
-    tag: tags2.keyword,
-    color: "#708"
-  },
-  {
-    tag: [tags2.atom, tags2.bool, tags2.url, tags2.contentSeparator, tags2.labelName],
-    color: "#219"
-  },
-  {
-    tag: [tags2.literal, tags2.inserted],
-    color: "#164"
-  },
-  {
-    tag: [tags2.string, tags2.deleted],
-    color: "#a11"
-  },
-  {
-    tag: [tags2.regexp, tags2.escape, /* @__PURE__ */ tags2.special(tags2.string)],
-    color: "#e40"
-  },
-  {
-    tag: /* @__PURE__ */ tags2.definition(tags2.variableName),
-    color: "#00f"
-  },
-  {
-    tag: /* @__PURE__ */ tags2.local(tags2.variableName),
-    color: "#30a"
-  },
-  {
-    tag: [tags2.typeName, tags2.namespace],
-    color: "#085"
-  },
-  {
-    tag: tags2.className,
-    color: "#167"
-  },
-  {
-    tag: [/* @__PURE__ */ tags2.special(tags2.variableName), tags2.macroName],
-    color: "#256"
-  },
-  {
-    tag: /* @__PURE__ */ tags2.definition(tags2.propertyName),
-    color: "#00c"
-  },
-  {
-    tag: tags2.comment,
-    color: "#940"
-  },
-  {
-    tag: tags2.invalid,
-    color: "#f00"
-  }
-]);
-var noTokens2 = /* @__PURE__ */ Object.create(null);
-var typeArray2 = [NodeType2.none];
-var warned2 = [];
-var byTag2 = /* @__PURE__ */ Object.create(null);
-var defaultTable2 = /* @__PURE__ */ Object.create(null);
-for (let [legacyName, name11] of [
-  ["variable", "variableName"],
-  ["variable-2", "variableName.special"],
-  ["string-2", "string.special"],
-  ["def", "variableName.definition"],
-  ["tag", "tagName"],
-  ["attribute", "attributeName"],
-  ["type", "typeName"],
-  ["builtin", "variableName.standard"],
-  ["qualifier", "modifier"],
-  ["error", "invalid"],
-  ["header", "heading"],
-  ["property", "propertyName"]
-])
-  defaultTable2[legacyName] = /* @__PURE__ */ createTokenType2(noTokens2, name11);
-function warnForPart2(part, msg) {
-  if (warned2.indexOf(part) > -1)
-    return;
-  warned2.push(part);
-  console.warn(msg);
-}
-function createTokenType2(extra, tagStr) {
-  let tags$1 = [];
-  for (let name12 of tagStr.split(" ")) {
-    let found = [];
-    for (let part of name12.split(".")) {
-      let value = extra[part] || tags2[part];
-      if (!value) {
-        warnForPart2(part, `Unknown highlighting tag ${part}`);
-      } else if (typeof value == "function") {
-        if (!found.length)
-          warnForPart2(part, `Modifier ${part} used at start of tag`);
-        else
-          found = found.map(value);
-      } else {
-        if (found.length)
-          warnForPart2(part, `Tag ${part} used as modifier`);
-        else
-          found = Array.isArray(value) ? value : [value];
-      }
-    }
-    for (let tag of found)
-      tags$1.push(tag);
-  }
-  if (!tags$1.length)
-    return 0;
-  let name11 = tagStr.replace(/ /g, "_"), key = name11 + " " + tags$1.map((t11) => t11.id);
-  let known = byTag2[key];
-  if (known)
-    return known.id;
-  let type = byTag2[key] = NodeType2.define({
-    id: typeArray2.length,
-    name: name11,
-    props: [styleTags2({ [name11]: tags$1 })]
-  });
-  typeArray2.push(type);
-  return type.id;
-}
-var marks2 = {
-  rtl: /* @__PURE__ */ Decoration.mark({ class: "cm-iso", inclusive: true, attributes: { dir: "rtl" }, bidiIsolate: Direction.RTL }),
-  ltr: /* @__PURE__ */ Decoration.mark({ class: "cm-iso", inclusive: true, attributes: { dir: "ltr" }, bidiIsolate: Direction.LTR }),
-  auto: /* @__PURE__ */ Decoration.mark({ class: "cm-iso", inclusive: true, attributes: { dir: "auto" }, bidiIsolate: null })
-};
-
-// node_modules/@codemirror/lang-markdown/node_modules/@codemirror/autocomplete/dist/index.js
-var CompletionContext2 = class {
-  /**
-  Create a new completion context. (Mostly useful for testing
-  completion sources—in the editor, the extension will create
-  these for you.)
-  */
-  constructor(state, pos, explicit, view) {
-    this.state = state;
-    this.pos = pos;
-    this.explicit = explicit;
-    this.view = view;
-    this.abortListeners = [];
-    this.abortOnDocChange = false;
-  }
-  /**
-  Get the extent, content, and (if there is a token) type of the
-  token before `this.pos`.
-  */
-  tokenBefore(types2) {
-    let token = syntaxTree2(this.state).resolveInner(this.pos, -1);
-    while (token && types2.indexOf(token.name) < 0)
-      token = token.parent;
-    return token ? {
-      from: token.from,
-      to: this.pos,
-      text: this.state.sliceDoc(token.from, this.pos),
-      type: token.type
-    } : null;
-  }
-  /**
-  Get the match of the given expression directly before the
-  cursor.
-  */
-  matchBefore(expr) {
-    let line = this.state.doc.lineAt(this.pos);
-    let start = Math.max(line.from, this.pos - 250);
-    let str = line.text.slice(start - line.from, this.pos - line.from);
-    let found = str.search(ensureAnchor2(expr, false));
-    return found < 0 ? null : { from: start + found, to: this.pos, text: str.slice(found) };
-  }
-  /**
-  Yields true when the query has been aborted. Can be useful in
-  asynchronous queries to avoid doing work that will be ignored.
-  */
-  get aborted() {
-    return this.abortListeners == null;
-  }
-  /**
-  Allows you to register abort handlers, which will be called when
-  the query is
-  [aborted](https://codemirror.net/6/docs/ref/#autocomplete.CompletionContext.aborted).
-  
-  By default, running queries will not be aborted for regular
-  typing or backspacing, on the assumption that they are likely to
-  return a result with a
-  [`validFor`](https://codemirror.net/6/docs/ref/#autocomplete.CompletionResult.validFor) field that
-  allows the result to be used after all. Passing `onDocChange:
-  true` will cause this query to be aborted for any document
-  change.
-  */
-  addEventListener(type, listener, options) {
-    if (type == "abort" && this.abortListeners) {
-      this.abortListeners.push(listener);
-      if (options && options.onDocChange)
-        this.abortOnDocChange = true;
-    }
-  }
-};
-function ensureAnchor2(expr, start) {
-  var _a7;
-  let { source } = expr;
-  let addStart = start && source[0] != "^", addEnd = source[source.length - 1] != "$";
-  if (!addStart && !addEnd)
-    return expr;
-  return new RegExp(`${addStart ? "^" : ""}(?:${source})${addEnd ? "$" : ""}`, (_a7 = expr.flags) !== null && _a7 !== void 0 ? _a7 : expr.ignoreCase ? "i" : "");
-}
-var windows2 = typeof navigator == "object" && /* @__PURE__ */ /Win/.test(navigator.platform);
-var closedBracket2 = /* @__PURE__ */ new class extends RangeValue {
-}();
-closedBracket2.startSide = 1;
-closedBracket2.endSide = -1;
-var android2 = typeof navigator == "object" && /* @__PURE__ */ /Android\b/.test(navigator.userAgent);
-
-// node_modules/@lezer/markdown/node_modules/@lezer/common/dist/index.js
-var DefaultBufferLength3 = 1024;
-var nextPropID3 = 0;
-var Range4 = class {
-  constructor(from, to) {
-    this.from = from;
-    this.to = to;
-  }
-};
-var NodeProp3 = class {
-  /**
-  Create a new node prop type.
-  */
-  constructor(config2 = {}) {
-    this.id = nextPropID3++;
-    this.perNode = !!config2.perNode;
-    this.deserialize = config2.deserialize || (() => {
-      throw new Error("This node type doesn't define a deserialize function");
-    });
-    this.combine = config2.combine || null;
-  }
-  /**
-  This is meant to be used with
-  [`NodeSet.extend`](#common.NodeSet.extend) or
-  [`LRParser.configure`](#lr.ParserConfig.props) to compute
-  prop values for each node type in the set. Takes a [match
-  object](#common.NodeType^match) or function that returns undefined
-  if the node type doesn't get this prop, and the prop's value if
-  it does.
-  */
-  add(match) {
-    if (this.perNode)
-      throw new RangeError("Can't add per-node props to node types");
-    if (typeof match != "function")
-      match = NodeType3.match(match);
-    return (type) => {
-      let result = match(type);
-      return result === void 0 ? null : [this, result];
-    };
-  }
-};
-NodeProp3.closedBy = new NodeProp3({ deserialize: (str) => str.split(" ") });
-NodeProp3.openedBy = new NodeProp3({ deserialize: (str) => str.split(" ") });
-NodeProp3.group = new NodeProp3({ deserialize: (str) => str.split(" ") });
-NodeProp3.isolate = new NodeProp3({ deserialize: (value) => {
-  if (value && value != "rtl" && value != "ltr" && value != "auto")
-    throw new RangeError("Invalid value for isolate: " + value);
-  return value || "auto";
-} });
-NodeProp3.contextHash = new NodeProp3({ perNode: true });
-NodeProp3.lookAhead = new NodeProp3({ perNode: true });
-NodeProp3.mounted = new NodeProp3({ perNode: true });
-var MountedTree3 = class {
-  constructor(tree, overlay, parser5, bracketed = false) {
-    this.tree = tree;
-    this.overlay = overlay;
-    this.parser = parser5;
-    this.bracketed = bracketed;
-  }
-  /**
-  @internal
-  */
-  static get(tree) {
-    return tree && tree.props && tree.props[NodeProp3.mounted.id];
-  }
-};
-var noProps3 = /* @__PURE__ */ Object.create(null);
-var NodeType3 = class _NodeType {
-  /**
-  @internal
-  */
-  constructor(name11, props, id3, flags = 0) {
-    this.name = name11;
-    this.props = props;
-    this.id = id3;
-    this.flags = flags;
-  }
-  /**
-  Define a node type.
-  */
-  static define(spec) {
-    let props = spec.props && spec.props.length ? /* @__PURE__ */ Object.create(null) : noProps3;
-    let flags = (spec.top ? 1 : 0) | (spec.skipped ? 2 : 0) | (spec.error ? 4 : 0) | (spec.name == null ? 8 : 0);
-    let type = new _NodeType(spec.name || "", props, spec.id, flags);
-    if (spec.props)
-      for (let src of spec.props) {
-        if (!Array.isArray(src))
-          src = src(type);
-        if (src) {
-          if (src[0].perNode)
-            throw new RangeError("Can't store a per-node prop on a node type");
-          props[src[0].id] = src[1];
-        }
-      }
-    return type;
-  }
-  /**
-  Retrieves a node prop for this type. Will return `undefined` if
-  the prop isn't present on this node.
-  */
-  prop(prop) {
-    return this.props[prop.id];
-  }
-  /**
-  True when this is the top node of a grammar.
-  */
-  get isTop() {
-    return (this.flags & 1) > 0;
-  }
-  /**
-  True when this node is produced by a skip rule.
-  */
-  get isSkipped() {
-    return (this.flags & 2) > 0;
-  }
-  /**
-  Indicates whether this is an error node.
-  */
-  get isError() {
-    return (this.flags & 4) > 0;
-  }
-  /**
-  When true, this node type doesn't correspond to a user-declared
-  named node, for example because it is used to cache repetition.
-  */
-  get isAnonymous() {
-    return (this.flags & 8) > 0;
-  }
-  /**
-  Returns true when this node's name or one of its
-  [groups](#common.NodeProp^group) matches the given string.
-  */
-  is(name11) {
-    if (typeof name11 == "string") {
-      if (this.name == name11)
-        return true;
-      let group = this.prop(NodeProp3.group);
-      return group ? group.indexOf(name11) > -1 : false;
-    }
-    return this.id == name11;
-  }
-  /**
-  Create a function from node types to arbitrary values by
-  specifying an object whose property names are node or
-  [group](#common.NodeProp^group) names. Often useful with
-  [`NodeProp.add`](#common.NodeProp.add). You can put multiple
-  names, separated by spaces, in a single property name to map
-  multiple node names to a single value.
-  */
-  static match(map) {
-    let direct = /* @__PURE__ */ Object.create(null);
-    for (let prop in map)
-      for (let name11 of prop.split(" "))
-        direct[name11] = map[prop];
-    return (node) => {
-      for (let groups = node.prop(NodeProp3.group), i = -1; i < (groups ? groups.length : 0); i++) {
-        let found = direct[i < 0 ? node.name : groups[i]];
-        if (found)
-          return found;
-      }
-    };
-  }
-};
-NodeType3.none = new NodeType3(
-  "",
-  /* @__PURE__ */ Object.create(null),
-  0,
-  8
-  /* NodeFlag.Anonymous */
-);
-var NodeSet3 = class _NodeSet {
-  /**
-  Create a set with the given types. The `id` property of each
-  type should correspond to its position within the array.
-  */
-  constructor(types2) {
-    this.types = types2;
-    for (let i = 0; i < types2.length; i++)
-      if (types2[i].id != i)
-        throw new RangeError("Node type ids should correspond to array positions when creating a node set");
-  }
-  /**
-  Create a copy of this set with some node properties added. The
-  arguments to this method can be created with
-  [`NodeProp.add`](#common.NodeProp.add).
-  */
-  extend(...props) {
-    let newTypes = [];
-    for (let type of this.types) {
-      let newProps = null;
-      for (let source of props) {
-        let add2 = source(type);
-        if (add2) {
-          if (!newProps)
-            newProps = Object.assign({}, type.props);
-          let value = add2[1], prop = add2[0];
-          if (prop.combine && prop.id in newProps)
-            value = prop.combine(newProps[prop.id], value);
-          newProps[prop.id] = value;
-        }
-      }
-      newTypes.push(newProps ? new NodeType3(type.name, newProps, type.id, type.flags) : type);
-    }
-    return new _NodeSet(newTypes);
-  }
-};
-var CachedNode3 = /* @__PURE__ */ new WeakMap();
-var CachedInnerNode3 = /* @__PURE__ */ new WeakMap();
-var IterMode3;
-(function(IterMode11) {
-  IterMode11[IterMode11["ExcludeBuffers"] = 1] = "ExcludeBuffers";
-  IterMode11[IterMode11["IncludeAnonymous"] = 2] = "IncludeAnonymous";
-  IterMode11[IterMode11["IgnoreMounts"] = 4] = "IgnoreMounts";
-  IterMode11[IterMode11["IgnoreOverlays"] = 8] = "IgnoreOverlays";
-  IterMode11[IterMode11["EnterBracketed"] = 16] = "EnterBracketed";
-})(IterMode3 || (IterMode3 = {}));
-var Tree3 = class _Tree {
-  /**
-  Construct a new tree. See also [`Tree.build`](#common.Tree^build).
-  */
-  constructor(type, children, positions, length, props) {
-    this.type = type;
-    this.children = children;
-    this.positions = positions;
-    this.length = length;
-    this.props = null;
-    if (props && props.length) {
-      this.props = /* @__PURE__ */ Object.create(null);
-      for (let [prop, value] of props)
-        this.props[typeof prop == "number" ? prop : prop.id] = value;
-    }
-  }
-  /**
-  @internal
-  */
-  toString() {
-    let mounted = MountedTree3.get(this);
-    if (mounted && !mounted.overlay)
-      return mounted.tree.toString();
-    let children = "";
-    for (let ch of this.children) {
-      let str = ch.toString();
-      if (str) {
-        if (children)
-          children += ",";
-        children += str;
-      }
-    }
-    return !this.type.name ? children : (/\W/.test(this.type.name) && !this.type.isError ? JSON.stringify(this.type.name) : this.type.name) + (children.length ? "(" + children + ")" : "");
-  }
-  /**
-  Get a [tree cursor](#common.TreeCursor) positioned at the top of
-  the tree. Mode can be used to [control](#common.IterMode) which
-  nodes the cursor visits.
-  */
-  cursor(mode = 0) {
-    return new TreeCursor3(this.topNode, mode);
-  }
-  /**
-  Get a [tree cursor](#common.TreeCursor) pointing into this tree
-  at the given position and side (see
-  [`moveTo`](#common.TreeCursor.moveTo).
-  */
-  cursorAt(pos, side = 0, mode = 0) {
-    let scope = CachedNode3.get(this) || this.topNode;
-    let cursor2 = new TreeCursor3(scope);
-    cursor2.moveTo(pos, side);
-    CachedNode3.set(this, cursor2._tree);
-    return cursor2;
-  }
-  /**
-  Get a [syntax node](#common.SyntaxNode) object for the top of the
-  tree.
-  */
-  get topNode() {
-    return new TreeNode3(this, 0, 0, null);
-  }
-  /**
-  Get the [syntax node](#common.SyntaxNode) at the given position.
-  If `side` is -1, this will move into nodes that end at the
-  position. If 1, it'll move into nodes that start at the
-  position. With 0, it'll only enter nodes that cover the position
-  from both sides.
-  
-  Note that this will not enter
-  [overlays](#common.MountedTree.overlay), and you often want
-  [`resolveInner`](#common.Tree.resolveInner) instead.
-  */
-  resolve(pos, side = 0) {
-    let node = resolveNode3(CachedNode3.get(this) || this.topNode, pos, side, false);
-    CachedNode3.set(this, node);
-    return node;
-  }
-  /**
-  Like [`resolve`](#common.Tree.resolve), but will enter
-  [overlaid](#common.MountedTree.overlay) nodes, producing a syntax node
-  pointing into the innermost overlaid tree at the given position
-  (with parent links going through all parent structure, including
-  the host trees).
-  */
-  resolveInner(pos, side = 0) {
-    let node = resolveNode3(CachedInnerNode3.get(this) || this.topNode, pos, side, true);
-    CachedInnerNode3.set(this, node);
-    return node;
-  }
-  /**
-  In some situations, it can be useful to iterate through all
-  nodes around a position, including those in overlays that don't
-  directly cover the position. This method gives you an iterator
-  that will produce all nodes, from small to big, around the given
-  position.
-  */
-  resolveStack(pos, side = 0) {
-    return stackIterator3(this, pos, side);
-  }
-  /**
-  Iterate over the tree and its children, calling `enter` for any
-  node that touches the `from`/`to` region (if given) before
-  running over such a node's children, and `leave` (if given) when
-  leaving the node. When `enter` returns `false`, that node will
-  not have its children iterated over (or `leave` called).
-  */
-  iterate(spec) {
-    let { enter, leave, from = 0, to = this.length } = spec;
-    let mode = spec.mode || 0, anon = (mode & IterMode3.IncludeAnonymous) > 0;
-    for (let c = this.cursor(mode | IterMode3.IncludeAnonymous); ; ) {
-      let entered = false;
-      if (c.from <= to && c.to >= from && (!anon && c.type.isAnonymous || enter(c) !== false)) {
-        if (c.firstChild())
-          continue;
-        entered = true;
-      }
-      for (; ; ) {
-        if (entered && leave && (anon || !c.type.isAnonymous))
-          leave(c);
-        if (c.nextSibling())
-          break;
-        if (!c.parent())
-          return;
-        entered = true;
-      }
-    }
-  }
-  /**
-  Get the value of the given [node prop](#common.NodeProp) for this
-  node. Works with both per-node and per-type props.
-  */
-  prop(prop) {
-    return !prop.perNode ? this.type.prop(prop) : this.props ? this.props[prop.id] : void 0;
-  }
-  /**
-  Returns the node's [per-node props](#common.NodeProp.perNode) in a
-  format that can be passed to the [`Tree`](#common.Tree)
-  constructor.
-  */
-  get propValues() {
-    let result = [];
-    if (this.props)
-      for (let id3 in this.props)
-        result.push([+id3, this.props[id3]]);
-    return result;
-  }
-  /**
-  Balance the direct children of this tree, producing a copy of
-  which may have children grouped into subtrees with type
-  [`NodeType.none`](#common.NodeType^none).
-  */
-  balance(config2 = {}) {
-    return this.children.length <= 8 ? this : balanceRange3(NodeType3.none, this.children, this.positions, 0, this.children.length, 0, this.length, (children, positions, length) => new _Tree(this.type, children, positions, length, this.propValues), config2.makeTree || ((children, positions, length) => new _Tree(NodeType3.none, children, positions, length)));
-  }
-  /**
-  Build a tree from a postfix-ordered buffer of node information,
-  or a cursor over such a buffer.
-  */
-  static build(data2) {
-    return buildTree3(data2);
-  }
-};
-Tree3.empty = new Tree3(NodeType3.none, [], [], 0);
-var FlatBufferCursor3 = class _FlatBufferCursor {
-  constructor(buffer, index) {
-    this.buffer = buffer;
-    this.index = index;
-  }
-  get id() {
-    return this.buffer[this.index - 4];
-  }
-  get start() {
-    return this.buffer[this.index - 3];
-  }
-  get end() {
-    return this.buffer[this.index - 2];
-  }
-  get size() {
-    return this.buffer[this.index - 1];
-  }
-  get pos() {
-    return this.index;
-  }
-  next() {
-    this.index -= 4;
-  }
-  fork() {
-    return new _FlatBufferCursor(this.buffer, this.index);
-  }
-};
-var TreeBuffer3 = class _TreeBuffer {
-  /**
-  Create a tree buffer.
-  */
-  constructor(buffer, length, set) {
-    this.buffer = buffer;
-    this.length = length;
-    this.set = set;
-  }
-  /**
-  @internal
-  */
-  get type() {
-    return NodeType3.none;
-  }
-  /**
-  @internal
-  */
-  toString() {
-    let result = [];
-    for (let index = 0; index < this.buffer.length; ) {
-      result.push(this.childString(index));
-      index = this.buffer[index + 3];
-    }
-    return result.join(",");
-  }
-  /**
-  @internal
-  */
-  childString(index) {
-    let id3 = this.buffer[index], endIndex = this.buffer[index + 3];
-    let type = this.set.types[id3], result = type.name;
-    if (/\W/.test(result) && !type.isError)
-      result = JSON.stringify(result);
-    index += 4;
-    if (endIndex == index)
-      return result;
-    let children = [];
-    while (index < endIndex) {
-      children.push(this.childString(index));
-      index = this.buffer[index + 3];
-    }
-    return result + "(" + children.join(",") + ")";
-  }
-  /**
-  @internal
-  */
-  findChild(startIndex, endIndex, dir, pos, side) {
-    let { buffer } = this, pick = -1;
-    for (let i = startIndex; i != endIndex; i = buffer[i + 3]) {
-      if (checkSide3(side, pos, buffer[i + 1], buffer[i + 2])) {
-        pick = i;
-        if (dir > 0)
-          break;
-      }
-    }
-    return pick;
-  }
-  /**
-  @internal
-  */
-  slice(startI, endI, from) {
-    let b = this.buffer;
-    let copy = new Uint16Array(endI - startI), len = 0;
-    for (let i = startI, j = 0; i < endI; ) {
-      copy[j++] = b[i++];
-      copy[j++] = b[i++] - from;
-      let to = copy[j++] = b[i++] - from;
-      copy[j++] = b[i++] - startI;
-      len = Math.max(len, to);
-    }
-    return new _TreeBuffer(copy, len, this.set);
-  }
-};
-function checkSide3(side, pos, from, to) {
-  switch (side) {
-    case -2:
-      return from < pos;
-    case -1:
-      return to >= pos && from < pos;
-    case 0:
-      return from < pos && to > pos;
-    case 1:
-      return from <= pos && to > pos;
-    case 2:
-      return to > pos;
-    case 4:
-      return true;
-  }
-}
-function resolveNode3(node, pos, side, overlays) {
-  var _a7;
-  while (node.from == node.to || (side < 1 ? node.from >= pos : node.from > pos) || (side > -1 ? node.to <= pos : node.to < pos)) {
-    let parent = !overlays && node instanceof TreeNode3 && node.index < 0 ? null : node.parent;
-    if (!parent)
-      return node;
-    node = parent;
-  }
-  let mode = overlays ? 0 : IterMode3.IgnoreOverlays;
-  if (overlays)
-    for (let scan = node, parent = scan.parent; parent; scan = parent, parent = scan.parent) {
-      if (scan instanceof TreeNode3 && scan.index < 0 && ((_a7 = parent.enter(pos, side, mode)) === null || _a7 === void 0 ? void 0 : _a7.from) != scan.from)
-        node = parent;
-    }
-  for (; ; ) {
-    let inner = node.enter(pos, side, mode);
-    if (!inner)
-      return node;
-    node = inner;
-  }
-}
-var BaseNode3 = class {
-  cursor(mode = 0) {
-    return new TreeCursor3(this, mode);
-  }
-  getChild(type, before = null, after = null) {
-    let r = getChildren3(this, type, before, after);
-    return r.length ? r[0] : null;
-  }
-  getChildren(type, before = null, after = null) {
-    return getChildren3(this, type, before, after);
-  }
-  resolve(pos, side = 0) {
-    return resolveNode3(this, pos, side, false);
-  }
-  resolveInner(pos, side = 0) {
-    return resolveNode3(this, pos, side, true);
-  }
-  matchContext(context) {
-    return matchNodeContext3(this.parent, context);
-  }
-  enterUnfinishedNodesBefore(pos) {
-    let scan = this.childBefore(pos), node = this;
-    while (scan) {
-      let last = scan.lastChild;
-      if (!last || last.to != scan.to)
-        break;
-      if (last.type.isError && last.from == last.to) {
-        node = scan;
-        scan = last.prevSibling;
-      } else {
-        scan = last;
-      }
-    }
-    return node;
-  }
-  get node() {
-    return this;
-  }
-  get next() {
-    return this.parent;
-  }
-};
-var TreeNode3 = class _TreeNode extends BaseNode3 {
-  constructor(_tree, from, index, _parent) {
-    super();
-    this._tree = _tree;
-    this.from = from;
-    this.index = index;
-    this._parent = _parent;
-  }
-  get type() {
-    return this._tree.type;
-  }
-  get name() {
-    return this._tree.type.name;
-  }
-  get to() {
-    return this.from + this._tree.length;
-  }
-  nextChild(i, dir, pos, side, mode = 0) {
-    for (let parent = this; ; ) {
-      for (let { children, positions } = parent._tree, e = dir > 0 ? children.length : -1; i != e; i += dir) {
-        let next = children[i], start = positions[i] + parent.from, mounted;
-        if (!(mode & IterMode3.EnterBracketed && next instanceof Tree3 && (mounted = MountedTree3.get(next)) && !mounted.overlay && mounted.bracketed && pos >= start && pos <= start + next.length) && !checkSide3(side, pos, start, start + next.length))
-          continue;
-        if (next instanceof TreeBuffer3) {
-          if (mode & IterMode3.ExcludeBuffers)
-            continue;
-          let index = next.findChild(0, next.buffer.length, dir, pos - start, side);
-          if (index > -1)
-            return new BufferNode3(new BufferContext3(parent, next, i, start), null, index);
-        } else if (mode & IterMode3.IncludeAnonymous || (!next.type.isAnonymous || hasChild3(next))) {
-          let mounted2;
-          if (!(mode & IterMode3.IgnoreMounts) && (mounted2 = MountedTree3.get(next)) && !mounted2.overlay)
-            return new _TreeNode(mounted2.tree, start, i, parent);
-          let inner = new _TreeNode(next, start, i, parent);
-          return mode & IterMode3.IncludeAnonymous || !inner.type.isAnonymous ? inner : inner.nextChild(dir < 0 ? next.children.length - 1 : 0, dir, pos, side, mode);
-        }
-      }
-      if (mode & IterMode3.IncludeAnonymous || !parent.type.isAnonymous)
-        return null;
-      if (parent.index >= 0)
-        i = parent.index + dir;
-      else
-        i = dir < 0 ? -1 : parent._parent._tree.children.length;
-      parent = parent._parent;
-      if (!parent)
-        return null;
-    }
-  }
-  get firstChild() {
-    return this.nextChild(
-      0,
-      1,
-      0,
-      4
-      /* Side.DontCare */
-    );
-  }
-  get lastChild() {
-    return this.nextChild(
-      this._tree.children.length - 1,
-      -1,
-      0,
-      4
-      /* Side.DontCare */
-    );
-  }
-  childAfter(pos) {
-    return this.nextChild(
-      0,
-      1,
-      pos,
-      2
-      /* Side.After */
-    );
-  }
-  childBefore(pos) {
-    return this.nextChild(
-      this._tree.children.length - 1,
-      -1,
-      pos,
-      -2
-      /* Side.Before */
-    );
-  }
-  prop(prop) {
-    return this._tree.prop(prop);
-  }
-  enter(pos, side, mode = 0) {
-    let mounted;
-    if (!(mode & IterMode3.IgnoreOverlays) && (mounted = MountedTree3.get(this._tree)) && mounted.overlay) {
-      let rPos = pos - this.from, enterBracketed = mode & IterMode3.EnterBracketed && mounted.bracketed;
-      for (let { from, to } of mounted.overlay) {
-        if ((side > 0 || enterBracketed ? from <= rPos : from < rPos) && (side < 0 || enterBracketed ? to >= rPos : to > rPos))
-          return new _TreeNode(mounted.tree, mounted.overlay[0].from + this.from, -1, this);
-      }
-    }
-    return this.nextChild(0, 1, pos, side, mode);
-  }
-  nextSignificantParent() {
-    let val = this;
-    while (val.type.isAnonymous && val._parent)
-      val = val._parent;
-    return val;
-  }
-  get parent() {
-    return this._parent ? this._parent.nextSignificantParent() : null;
-  }
-  get nextSibling() {
-    return this._parent && this.index >= 0 ? this._parent.nextChild(
-      this.index + 1,
-      1,
-      0,
-      4
-      /* Side.DontCare */
-    ) : null;
-  }
-  get prevSibling() {
-    return this._parent && this.index >= 0 ? this._parent.nextChild(
-      this.index - 1,
-      -1,
-      0,
-      4
-      /* Side.DontCare */
-    ) : null;
-  }
-  get tree() {
-    return this._tree;
-  }
-  toTree() {
-    return this._tree;
-  }
-  /**
-  @internal
-  */
-  toString() {
-    return this._tree.toString();
-  }
-};
-function getChildren3(node, type, before, after) {
-  let cur2 = node.cursor(), result = [];
-  if (!cur2.firstChild())
-    return result;
-  if (before != null)
-    for (let found = false; !found; ) {
-      found = cur2.type.is(before);
-      if (!cur2.nextSibling())
-        return result;
-    }
-  for (; ; ) {
-    if (after != null && cur2.type.is(after))
-      return result;
-    if (cur2.type.is(type))
-      result.push(cur2.node);
-    if (!cur2.nextSibling())
-      return after == null ? result : [];
-  }
-}
-function matchNodeContext3(node, context, i = context.length - 1) {
-  for (let p = node; i >= 0; p = p.parent) {
-    if (!p)
-      return false;
-    if (!p.type.isAnonymous) {
-      if (context[i] && context[i] != p.name)
-        return false;
-      i--;
-    }
-  }
-  return true;
-}
-var BufferContext3 = class {
-  constructor(parent, buffer, index, start) {
-    this.parent = parent;
-    this.buffer = buffer;
-    this.index = index;
-    this.start = start;
-  }
-};
-var BufferNode3 = class _BufferNode extends BaseNode3 {
-  get name() {
-    return this.type.name;
-  }
-  get from() {
-    return this.context.start + this.context.buffer.buffer[this.index + 1];
-  }
-  get to() {
-    return this.context.start + this.context.buffer.buffer[this.index + 2];
-  }
-  constructor(context, _parent, index) {
-    super();
-    this.context = context;
-    this._parent = _parent;
-    this.index = index;
-    this.type = context.buffer.set.types[context.buffer.buffer[index]];
-  }
-  child(dir, pos, side) {
-    let { buffer } = this.context;
-    let index = buffer.findChild(this.index + 4, buffer.buffer[this.index + 3], dir, pos - this.context.start, side);
-    return index < 0 ? null : new _BufferNode(this.context, this, index);
-  }
-  get firstChild() {
-    return this.child(
-      1,
-      0,
-      4
-      /* Side.DontCare */
-    );
-  }
-  get lastChild() {
-    return this.child(
-      -1,
-      0,
-      4
-      /* Side.DontCare */
-    );
-  }
-  childAfter(pos) {
-    return this.child(
-      1,
-      pos,
-      2
-      /* Side.After */
-    );
-  }
-  childBefore(pos) {
-    return this.child(
-      -1,
-      pos,
-      -2
-      /* Side.Before */
-    );
-  }
-  prop(prop) {
-    return this.type.prop(prop);
-  }
-  enter(pos, side, mode = 0) {
-    if (mode & IterMode3.ExcludeBuffers)
-      return null;
-    let { buffer } = this.context;
-    let index = buffer.findChild(this.index + 4, buffer.buffer[this.index + 3], side > 0 ? 1 : -1, pos - this.context.start, side);
-    return index < 0 ? null : new _BufferNode(this.context, this, index);
-  }
-  get parent() {
-    return this._parent || this.context.parent.nextSignificantParent();
-  }
-  externalSibling(dir) {
-    return this._parent ? null : this.context.parent.nextChild(
-      this.context.index + dir,
-      dir,
-      0,
-      4
-      /* Side.DontCare */
-    );
-  }
-  get nextSibling() {
-    let { buffer } = this.context;
-    let after = buffer.buffer[this.index + 3];
-    if (after < (this._parent ? buffer.buffer[this._parent.index + 3] : buffer.buffer.length))
-      return new _BufferNode(this.context, this._parent, after);
-    return this.externalSibling(1);
-  }
-  get prevSibling() {
-    let { buffer } = this.context;
-    let parentStart = this._parent ? this._parent.index + 4 : 0;
-    if (this.index == parentStart)
-      return this.externalSibling(-1);
-    return new _BufferNode(this.context, this._parent, buffer.findChild(
-      parentStart,
-      this.index,
-      -1,
-      0,
-      4
-      /* Side.DontCare */
-    ));
-  }
-  get tree() {
-    return null;
-  }
-  toTree() {
-    let children = [], positions = [];
-    let { buffer } = this.context;
-    let startI = this.index + 4, endI = buffer.buffer[this.index + 3];
-    if (endI > startI) {
-      let from = buffer.buffer[this.index + 1];
-      children.push(buffer.slice(startI, endI, from));
-      positions.push(0);
-    }
-    return new Tree3(this.type, children, positions, this.to - this.from);
-  }
-  /**
-  @internal
-  */
-  toString() {
-    return this.context.buffer.childString(this.index);
-  }
-};
-function iterStack3(heads) {
-  if (!heads.length)
-    return null;
-  let pick = 0, picked = heads[0];
-  for (let i = 1; i < heads.length; i++) {
-    let node = heads[i];
-    if (node.from > picked.from || node.to < picked.to) {
-      picked = node;
-      pick = i;
-    }
-  }
-  let next = picked instanceof TreeNode3 && picked.index < 0 ? null : picked.parent;
-  let newHeads = heads.slice();
-  if (next)
-    newHeads[pick] = next;
-  else
-    newHeads.splice(pick, 1);
-  return new StackIterator3(newHeads, picked);
-}
-var StackIterator3 = class {
-  constructor(heads, node) {
-    this.heads = heads;
-    this.node = node;
-  }
-  get next() {
-    return iterStack3(this.heads);
-  }
-};
-function stackIterator3(tree, pos, side) {
-  let inner = tree.resolveInner(pos, side), layers = null;
-  for (let scan = inner instanceof TreeNode3 ? inner : inner.context.parent; scan; scan = scan.parent) {
-    if (scan.index < 0) {
-      let parent = scan.parent;
-      (layers || (layers = [inner])).push(parent.resolve(pos, side));
-      scan = parent;
-    } else {
-      let mount = MountedTree3.get(scan.tree);
-      if (mount && mount.overlay && mount.overlay[0].from <= pos && mount.overlay[mount.overlay.length - 1].to >= pos) {
-        let root = new TreeNode3(mount.tree, mount.overlay[0].from + scan.from, -1, scan);
-        (layers || (layers = [inner])).push(resolveNode3(root, pos, side, false));
-      }
-    }
-  }
-  return layers ? iterStack3(layers) : inner;
-}
-var TreeCursor3 = class {
-  /**
-  Shorthand for `.type.name`.
-  */
-  get name() {
-    return this.type.name;
-  }
-  /**
-  @internal
-  */
-  constructor(node, mode = 0) {
-    this.buffer = null;
-    this.stack = [];
-    this.index = 0;
-    this.bufferNode = null;
-    this.mode = mode & ~IterMode3.EnterBracketed;
-    if (node instanceof TreeNode3) {
-      this.yieldNode(node);
-    } else {
-      this._tree = node.context.parent;
-      this.buffer = node.context;
-      for (let n = node._parent; n; n = n._parent)
-        this.stack.unshift(n.index);
-      this.bufferNode = node;
-      this.yieldBuf(node.index);
-    }
-  }
-  yieldNode(node) {
-    if (!node)
-      return false;
-    this._tree = node;
-    this.type = node.type;
-    this.from = node.from;
-    this.to = node.to;
-    return true;
-  }
-  yieldBuf(index, type) {
-    this.index = index;
-    let { start, buffer } = this.buffer;
-    this.type = type || buffer.set.types[buffer.buffer[index]];
-    this.from = start + buffer.buffer[index + 1];
-    this.to = start + buffer.buffer[index + 2];
-    return true;
-  }
-  /**
-  @internal
-  */
-  yield(node) {
-    if (!node)
-      return false;
-    if (node instanceof TreeNode3) {
-      this.buffer = null;
-      return this.yieldNode(node);
-    }
-    this.buffer = node.context;
-    return this.yieldBuf(node.index, node.type);
-  }
-  /**
-  @internal
-  */
-  toString() {
-    return this.buffer ? this.buffer.buffer.childString(this.index) : this._tree.toString();
-  }
-  /**
-  @internal
-  */
-  enterChild(dir, pos, side) {
-    if (!this.buffer)
-      return this.yield(this._tree.nextChild(dir < 0 ? this._tree._tree.children.length - 1 : 0, dir, pos, side, this.mode));
-    let { buffer } = this.buffer;
-    let index = buffer.findChild(this.index + 4, buffer.buffer[this.index + 3], dir, pos - this.buffer.start, side);
-    if (index < 0)
-      return false;
-    this.stack.push(this.index);
-    return this.yieldBuf(index);
-  }
-  /**
-  Move the cursor to this node's first child. When this returns
-  false, the node has no child, and the cursor has not been moved.
-  */
-  firstChild() {
-    return this.enterChild(
-      1,
-      0,
-      4
-      /* Side.DontCare */
-    );
-  }
-  /**
-  Move the cursor to this node's last child.
-  */
-  lastChild() {
-    return this.enterChild(
-      -1,
-      0,
-      4
-      /* Side.DontCare */
-    );
-  }
-  /**
-  Move the cursor to the first child that ends after `pos`.
-  */
-  childAfter(pos) {
-    return this.enterChild(
-      1,
-      pos,
-      2
-      /* Side.After */
-    );
-  }
-  /**
-  Move to the last child that starts before `pos`.
-  */
-  childBefore(pos) {
-    return this.enterChild(
-      -1,
-      pos,
-      -2
-      /* Side.Before */
-    );
-  }
-  /**
-  Move the cursor to the child around `pos`. If side is -1 the
-  child may end at that position, when 1 it may start there. This
-  will also enter [overlaid](#common.MountedTree.overlay)
-  [mounted](#common.NodeProp^mounted) trees unless `overlays` is
-  set to false.
-  */
-  enter(pos, side, mode = this.mode) {
-    if (!this.buffer)
-      return this.yield(this._tree.enter(pos, side, mode));
-    return mode & IterMode3.ExcludeBuffers ? false : this.enterChild(1, pos, side);
-  }
-  /**
-  Move to the node's parent node, if this isn't the top node.
-  */
-  parent() {
-    if (!this.buffer)
-      return this.yieldNode(this.mode & IterMode3.IncludeAnonymous ? this._tree._parent : this._tree.parent);
-    if (this.stack.length)
-      return this.yieldBuf(this.stack.pop());
-    let parent = this.mode & IterMode3.IncludeAnonymous ? this.buffer.parent : this.buffer.parent.nextSignificantParent();
-    this.buffer = null;
-    return this.yieldNode(parent);
-  }
-  /**
-  @internal
-  */
-  sibling(dir) {
-    if (!this.buffer)
-      return !this._tree._parent ? false : this.yield(this._tree.index < 0 ? null : this._tree._parent.nextChild(this._tree.index + dir, dir, 0, 4, this.mode));
-    let { buffer } = this.buffer, d = this.stack.length - 1;
-    if (dir < 0) {
-      let parentStart = d < 0 ? 0 : this.stack[d] + 4;
-      if (this.index != parentStart)
-        return this.yieldBuf(buffer.findChild(
-          parentStart,
-          this.index,
-          -1,
-          0,
-          4
-          /* Side.DontCare */
-        ));
-    } else {
-      let after = buffer.buffer[this.index + 3];
-      if (after < (d < 0 ? buffer.buffer.length : buffer.buffer[this.stack[d] + 3]))
-        return this.yieldBuf(after);
-    }
-    return d < 0 ? this.yield(this.buffer.parent.nextChild(this.buffer.index + dir, dir, 0, 4, this.mode)) : false;
-  }
-  /**
-  Move to this node's next sibling, if any.
-  */
-  nextSibling() {
-    return this.sibling(1);
-  }
-  /**
-  Move to this node's previous sibling, if any.
-  */
-  prevSibling() {
-    return this.sibling(-1);
-  }
-  atLastNode(dir) {
-    let index, parent, { buffer } = this;
-    if (buffer) {
-      if (dir > 0) {
-        if (this.index < buffer.buffer.buffer.length)
-          return false;
-      } else {
-        for (let i = 0; i < this.index; i++)
-          if (buffer.buffer.buffer[i + 3] < this.index)
-            return false;
-      }
-      ({ index, parent } = buffer);
-    } else {
-      ({ index, _parent: parent } = this._tree);
-    }
-    for (; parent; { index, _parent: parent } = parent) {
-      if (index > -1)
-        for (let i = index + dir, e = dir < 0 ? -1 : parent._tree.children.length; i != e; i += dir) {
-          let child = parent._tree.children[i];
-          if (this.mode & IterMode3.IncludeAnonymous || child instanceof TreeBuffer3 || !child.type.isAnonymous || hasChild3(child))
-            return false;
-        }
-    }
-    return true;
-  }
-  move(dir, enter) {
-    if (enter && this.enterChild(
-      dir,
-      0,
-      4
-      /* Side.DontCare */
-    ))
-      return true;
-    for (; ; ) {
-      if (this.sibling(dir))
-        return true;
-      if (this.atLastNode(dir) || !this.parent())
-        return false;
-    }
-  }
-  /**
-  Move to the next node in a
-  [pre-order](https://en.wikipedia.org/wiki/Tree_traversal#Pre-order,_NLR)
-  traversal, going from a node to its first child or, if the
-  current node is empty or `enter` is false, its next sibling or
-  the next sibling of the first parent node that has one.
-  */
-  next(enter = true) {
-    return this.move(1, enter);
-  }
-  /**
-  Move to the next node in a last-to-first pre-order traversal. A
-  node is followed by its last child or, if it has none, its
-  previous sibling or the previous sibling of the first parent
-  node that has one.
-  */
-  prev(enter = true) {
-    return this.move(-1, enter);
-  }
-  /**
-  Move the cursor to the innermost node that covers `pos`. If
-  `side` is -1, it will enter nodes that end at `pos`. If it is 1,
-  it will enter nodes that start at `pos`.
-  */
-  moveTo(pos, side = 0) {
-    while (this.from == this.to || (side < 1 ? this.from >= pos : this.from > pos) || (side > -1 ? this.to <= pos : this.to < pos))
-      if (!this.parent())
-        break;
-    while (this.enterChild(1, pos, side)) {
-    }
-    return this;
-  }
-  /**
-  Get a [syntax node](#common.SyntaxNode) at the cursor's current
-  position.
-  */
-  get node() {
-    if (!this.buffer)
-      return this._tree;
-    let cache2 = this.bufferNode, result = null, depth = 0;
-    if (cache2 && cache2.context == this.buffer) {
-      scan: for (let index = this.index, d = this.stack.length; d >= 0; ) {
-        for (let c = cache2; c; c = c._parent)
-          if (c.index == index) {
-            if (index == this.index)
-              return c;
-            result = c;
-            depth = d + 1;
-            break scan;
-          }
-        index = this.stack[--d];
-      }
-    }
-    for (let i = depth; i < this.stack.length; i++)
-      result = new BufferNode3(this.buffer, result, this.stack[i]);
-    return this.bufferNode = new BufferNode3(this.buffer, result, this.index);
-  }
-  /**
-  Get the [tree](#common.Tree) that represents the current node, if
-  any. Will return null when the node is in a [tree
-  buffer](#common.TreeBuffer).
-  */
-  get tree() {
-    return this.buffer ? null : this._tree._tree;
-  }
-  /**
-  Iterate over the current node and all its descendants, calling
-  `enter` when entering a node and `leave`, if given, when leaving
-  one. When `enter` returns `false`, any children of that node are
-  skipped, and `leave` isn't called for it.
-  */
-  iterate(enter, leave) {
-    for (let depth = 0; ; ) {
-      let mustLeave = false;
-      if (this.type.isAnonymous || enter(this) !== false) {
-        if (this.firstChild()) {
-          depth++;
-          continue;
-        }
-        if (!this.type.isAnonymous)
-          mustLeave = true;
-      }
-      for (; ; ) {
-        if (mustLeave && leave)
-          leave(this);
-        mustLeave = this.type.isAnonymous;
-        if (!depth)
-          return;
-        if (this.nextSibling())
-          break;
-        this.parent();
-        depth--;
-        mustLeave = true;
-      }
-    }
-  }
-  /**
-  Test whether the current node matches a given context—a sequence
-  of direct parent node names. Empty strings in the context array
-  are treated as wildcards.
-  */
-  matchContext(context) {
-    if (!this.buffer)
-      return matchNodeContext3(this.node.parent, context);
-    let { buffer } = this.buffer, { types: types2 } = buffer.set;
-    for (let i = context.length - 1, d = this.stack.length - 1; i >= 0; d--) {
-      if (d < 0)
-        return matchNodeContext3(this._tree, context, i);
-      let type = types2[buffer.buffer[this.stack[d]]];
-      if (!type.isAnonymous) {
-        if (context[i] && context[i] != type.name)
-          return false;
-        i--;
-      }
-    }
-    return true;
-  }
-};
-function hasChild3(tree) {
-  return tree.children.some((ch) => ch instanceof TreeBuffer3 || !ch.type.isAnonymous || hasChild3(ch));
-}
-function buildTree3(data2) {
-  var _a7;
-  let { buffer, nodeSet, maxBufferLength = DefaultBufferLength3, reused = [], minRepeatType = nodeSet.types.length } = data2;
-  let cursor2 = Array.isArray(buffer) ? new FlatBufferCursor3(buffer, buffer.length) : buffer;
-  let types2 = nodeSet.types;
-  let contextHash = 0, lookAhead = 0;
-  function takeNode(parentStart, minPos, children2, positions2, inRepeat, depth) {
-    let { id: id3, start, end, size } = cursor2;
-    let lookAheadAtStart = lookAhead, contextAtStart = contextHash;
-    if (size < 0) {
-      cursor2.next();
-      if (size == -1) {
-        let node2 = reused[id3];
-        children2.push(node2);
-        positions2.push(start - parentStart);
-        return;
-      } else if (size == -3) {
-        contextHash = id3;
-        return;
-      } else if (size == -4) {
-        lookAhead = id3;
-        return;
-      } else {
-        throw new RangeError(`Unrecognized record size: ${size}`);
-      }
-    }
-    let type = types2[id3], node, buffer2;
-    let startPos = start - parentStart;
-    if (end - start <= maxBufferLength && (buffer2 = findBufferSize(cursor2.pos - minPos, inRepeat))) {
-      let data3 = new Uint16Array(buffer2.size - buffer2.skip);
-      let endPos = cursor2.pos - buffer2.size, index = data3.length;
-      while (cursor2.pos > endPos)
-        index = copyToBuffer(buffer2.start, data3, index);
-      node = new TreeBuffer3(data3, end - buffer2.start, nodeSet);
-      startPos = buffer2.start - parentStart;
-    } else {
-      let endPos = cursor2.pos - size;
-      cursor2.next();
-      let localChildren = [], localPositions = [];
-      let localInRepeat = id3 >= minRepeatType ? id3 : -1;
-      let lastGroup = 0, lastEnd = end;
-      while (cursor2.pos > endPos) {
-        if (localInRepeat >= 0 && cursor2.id == localInRepeat && cursor2.size >= 0) {
-          if (cursor2.end <= lastEnd - maxBufferLength) {
-            makeRepeatLeaf(localChildren, localPositions, start, lastGroup, cursor2.end, lastEnd, localInRepeat, lookAheadAtStart, contextAtStart);
-            lastGroup = localChildren.length;
-            lastEnd = cursor2.end;
-          }
-          cursor2.next();
-        } else if (depth > 2500) {
-          takeFlatNode(start, endPos, localChildren, localPositions);
-        } else {
-          takeNode(start, endPos, localChildren, localPositions, localInRepeat, depth + 1);
-        }
-      }
-      if (localInRepeat >= 0 && lastGroup > 0 && lastGroup < localChildren.length)
-        makeRepeatLeaf(localChildren, localPositions, start, lastGroup, start, lastEnd, localInRepeat, lookAheadAtStart, contextAtStart);
-      localChildren.reverse();
-      localPositions.reverse();
-      if (localInRepeat > -1 && lastGroup > 0) {
-        let make = makeBalanced(type, contextAtStart);
-        node = balanceRange3(type, localChildren, localPositions, 0, localChildren.length, 0, end - start, make, make);
-      } else {
-        node = makeTree(type, localChildren, localPositions, end - start, lookAheadAtStart - end, contextAtStart);
-      }
-    }
-    children2.push(node);
-    positions2.push(startPos);
-  }
-  function takeFlatNode(parentStart, minPos, children2, positions2) {
-    let nodes = [];
-    let nodeCount = 0, stopAt = -1;
-    while (cursor2.pos > minPos) {
-      let { id: id3, start, end, size } = cursor2;
-      if (size > 4) {
-        cursor2.next();
-      } else if (stopAt > -1 && start < stopAt) {
-        break;
-      } else {
-        if (stopAt < 0)
-          stopAt = end - maxBufferLength;
-        nodes.push(id3, start, end);
-        nodeCount++;
-        cursor2.next();
-      }
-    }
-    if (nodeCount) {
-      let buffer2 = new Uint16Array(nodeCount * 4);
-      let start = nodes[nodes.length - 2];
-      for (let i = nodes.length - 3, j = 0; i >= 0; i -= 3) {
-        buffer2[j++] = nodes[i];
-        buffer2[j++] = nodes[i + 1] - start;
-        buffer2[j++] = nodes[i + 2] - start;
-        buffer2[j++] = j;
-      }
-      children2.push(new TreeBuffer3(buffer2, nodes[2] - start, nodeSet));
-      positions2.push(start - parentStart);
-    }
-  }
-  function makeBalanced(type, contextHash2) {
-    return (children2, positions2, length2) => {
-      let lookAhead2 = 0, lastI = children2.length - 1, last, lookAheadProp;
-      if (lastI >= 0 && (last = children2[lastI]) instanceof Tree3) {
-        if (!lastI && last.type == type && last.length == length2)
-          return last;
-        if (lookAheadProp = last.prop(NodeProp3.lookAhead))
-          lookAhead2 = positions2[lastI] + last.length + lookAheadProp;
-      }
-      return makeTree(type, children2, positions2, length2, lookAhead2, contextHash2);
-    };
-  }
-  function makeRepeatLeaf(children2, positions2, base2, i, from, to, type, lookAhead2, contextHash2) {
-    let localChildren = [], localPositions = [];
-    while (children2.length > i) {
-      localChildren.push(children2.pop());
-      localPositions.push(positions2.pop() + base2 - from);
-    }
-    children2.push(makeTree(nodeSet.types[type], localChildren, localPositions, to - from, lookAhead2 - to, contextHash2));
-    positions2.push(from - base2);
-  }
-  function makeTree(type, children2, positions2, length2, lookAhead2, contextHash2, props) {
-    if (contextHash2) {
-      let pair4 = [NodeProp3.contextHash, contextHash2];
-      props = props ? [pair4].concat(props) : [pair4];
-    }
-    if (lookAhead2 > 25) {
-      let pair4 = [NodeProp3.lookAhead, lookAhead2];
-      props = props ? [pair4].concat(props) : [pair4];
-    }
-    return new Tree3(type, children2, positions2, length2, props);
-  }
-  function findBufferSize(maxSize, inRepeat) {
-    let fork = cursor2.fork();
-    let size = 0, start = 0, skip = 0, minStart = fork.end - maxBufferLength;
-    let result = { size: 0, start: 0, skip: 0 };
-    scan: for (let minPos = fork.pos - maxSize; fork.pos > minPos; ) {
-      let nodeSize11 = fork.size;
-      if (fork.id == inRepeat && nodeSize11 >= 0) {
-        result.size = size;
-        result.start = start;
-        result.skip = skip;
-        skip += 4;
-        size += 4;
-        fork.next();
-        continue;
-      }
-      let startPos = fork.pos - nodeSize11;
-      if (nodeSize11 < 0 || startPos < minPos || fork.start < minStart)
-        break;
-      let localSkipped = fork.id >= minRepeatType ? 4 : 0;
-      let nodeStart2 = fork.start;
-      fork.next();
-      while (fork.pos > startPos) {
-        if (fork.size < 0) {
-          if (fork.size == -3 || fork.size == -4)
-            localSkipped += 4;
-          else
-            break scan;
-        } else if (fork.id >= minRepeatType) {
-          localSkipped += 4;
-        }
-        fork.next();
-      }
-      start = nodeStart2;
-      size += nodeSize11;
-      skip += localSkipped;
-    }
-    if (inRepeat < 0 || size == maxSize) {
-      result.size = size;
-      result.start = start;
-      result.skip = skip;
-    }
-    return result.size > 4 ? result : void 0;
-  }
-  function copyToBuffer(bufferStart, buffer2, index) {
-    let { id: id3, start, end, size } = cursor2;
-    cursor2.next();
-    if (size >= 0 && id3 < minRepeatType) {
-      let startIndex = index;
-      if (size > 4) {
-        let endPos = cursor2.pos - (size - 4);
-        while (cursor2.pos > endPos)
-          index = copyToBuffer(bufferStart, buffer2, index);
-      }
-      buffer2[--index] = startIndex;
-      buffer2[--index] = end - bufferStart;
-      buffer2[--index] = start - bufferStart;
-      buffer2[--index] = id3;
-    } else if (size == -3) {
-      contextHash = id3;
-    } else if (size == -4) {
-      lookAhead = id3;
-    }
-    return index;
-  }
-  let children = [], positions = [];
-  while (cursor2.pos > 0)
-    takeNode(data2.start || 0, data2.bufferStart || 0, children, positions, -1, 0);
-  let length = (_a7 = data2.length) !== null && _a7 !== void 0 ? _a7 : children.length ? positions[0] + children[0].length : 0;
-  return new Tree3(types2[data2.topID], children.reverse(), positions.reverse(), length);
-}
-var nodeSizeCache3 = /* @__PURE__ */ new WeakMap();
-function nodeSize3(balanceType, node) {
-  if (!balanceType.isAnonymous || node instanceof TreeBuffer3 || node.type != balanceType)
-    return 1;
-  let size = nodeSizeCache3.get(node);
-  if (size == null) {
-    size = 1;
-    for (let child of node.children) {
-      if (child.type != balanceType || !(child instanceof Tree3)) {
-        size = 1;
-        break;
-      }
-      size += nodeSize3(balanceType, child);
-    }
-    nodeSizeCache3.set(node, size);
-  }
-  return size;
-}
-function balanceRange3(balanceType, children, positions, from, to, start, length, mkTop, mkTree) {
-  let total = 0;
-  for (let i = from; i < to; i++)
-    total += nodeSize3(balanceType, children[i]);
-  let maxChild = Math.ceil(
-    total * 1.5 / 8
-    /* Balance.BranchFactor */
-  );
-  let localChildren = [], localPositions = [];
-  function divide(children2, positions2, from2, to2, offset) {
-    for (let i = from2; i < to2; ) {
-      let groupFrom = i, groupStart = positions2[i], groupSize = nodeSize3(balanceType, children2[i]);
-      i++;
-      for (; i < to2; i++) {
-        let nextSize = nodeSize3(balanceType, children2[i]);
-        if (groupSize + nextSize >= maxChild)
-          break;
-        groupSize += nextSize;
-      }
-      if (i == groupFrom + 1) {
-        if (groupSize > maxChild) {
-          let only = children2[groupFrom];
-          divide(only.children, only.positions, 0, only.children.length, positions2[groupFrom] + offset);
-          continue;
-        }
-        localChildren.push(children2[groupFrom]);
-      } else {
-        let length2 = positions2[i - 1] + children2[i - 1].length - groupStart;
-        localChildren.push(balanceRange3(balanceType, children2, positions2, groupFrom, i, groupStart, length2, null, mkTree));
-      }
-      localPositions.push(groupStart + offset - start);
-    }
-  }
-  divide(children, positions, from, to, 0);
-  return (mkTop || mkTree)(localChildren, localPositions, length);
-}
-var TreeFragment3 = class _TreeFragment {
-  /**
-  Construct a tree fragment. You'll usually want to use
-  [`addTree`](#common.TreeFragment^addTree) and
-  [`applyChanges`](#common.TreeFragment^applyChanges) instead of
-  calling this directly.
-  */
-  constructor(from, to, tree, offset, openStart = false, openEnd = false) {
-    this.from = from;
-    this.to = to;
-    this.tree = tree;
-    this.offset = offset;
-    this.open = (openStart ? 1 : 0) | (openEnd ? 2 : 0);
-  }
-  /**
-  Whether the start of the fragment represents the start of a
-  parse, or the end of a change. (In the second case, it may not
-  be safe to reuse some nodes at the start, depending on the
-  parsing algorithm.)
-  */
-  get openStart() {
-    return (this.open & 1) > 0;
-  }
-  /**
-  Whether the end of the fragment represents the end of a
-  full-document parse, or the start of a change.
-  */
-  get openEnd() {
-    return (this.open & 2) > 0;
-  }
-  /**
-  Create a set of fragments from a freshly parsed tree, or update
-  an existing set of fragments by replacing the ones that overlap
-  with a tree with content from the new tree. When `partial` is
-  true, the parse is treated as incomplete, and the resulting
-  fragment has [`openEnd`](#common.TreeFragment.openEnd) set to
-  true.
-  */
-  static addTree(tree, fragments = [], partial = false) {
-    let result = [new _TreeFragment(0, tree.length, tree, 0, false, partial)];
-    for (let f of fragments)
-      if (f.to > tree.length)
-        result.push(f);
-    return result;
-  }
-  /**
-  Apply a set of edits to an array of fragments, removing or
-  splitting fragments as necessary to remove edited ranges, and
-  adjusting offsets for fragments that moved.
-  */
-  static applyChanges(fragments, changes, minGap = 128) {
-    if (!changes.length)
-      return fragments;
-    let result = [];
-    let fI = 1, nextF = fragments.length ? fragments[0] : null;
-    for (let cI = 0, pos = 0, off = 0; ; cI++) {
-      let nextC = cI < changes.length ? changes[cI] : null;
-      let nextPos = nextC ? nextC.fromA : 1e9;
-      if (nextPos - pos >= minGap)
-        while (nextF && nextF.from < nextPos) {
-          let cut = nextF;
-          if (pos >= cut.from || nextPos <= cut.to || off) {
-            let fFrom = Math.max(cut.from, pos) - off, fTo = Math.min(cut.to, nextPos) - off;
-            cut = fFrom >= fTo ? null : new _TreeFragment(fFrom, fTo, cut.tree, cut.offset + off, cI > 0, !!nextC);
-          }
-          if (cut)
-            result.push(cut);
-          if (nextF.to > nextPos)
-            break;
-          nextF = fI < fragments.length ? fragments[fI++] : null;
-        }
-      if (!nextC)
-        break;
-      pos = nextC.toA;
-      off = nextC.toA - nextC.toB;
-    }
-    return result;
-  }
-};
-var Parser3 = class {
-  /**
-  Start a parse, returning a [partial parse](#common.PartialParse)
-  object. [`fragments`](#common.TreeFragment) can be passed in to
-  make the parse incremental.
-  
-  By default, the entire input is parsed. You can pass `ranges`,
-  which should be a sorted array of non-empty, non-overlapping
-  ranges, to parse only those ranges. The tree returned in that
-  case will start at `ranges[0].from`.
-  */
-  startParse(input, fragments, ranges) {
-    if (typeof input == "string")
-      input = new StringInput3(input);
-    ranges = !ranges ? [new Range4(0, input.length)] : ranges.length ? ranges.map((r) => new Range4(r.from, r.to)) : [new Range4(0, 0)];
-    return this.createParse(input, fragments || [], ranges);
-  }
-  /**
-  Run a full parse, returning the resulting tree.
-  */
-  parse(input, fragments, ranges) {
-    let parse = this.startParse(input, fragments, ranges);
-    for (; ; ) {
-      let done = parse.advance();
-      if (done)
-        return done;
-    }
-  }
-};
-var StringInput3 = class {
-  constructor(string11) {
-    this.string = string11;
-  }
-  get length() {
-    return this.string.length;
-  }
-  chunk(from) {
-    return this.string.slice(from);
-  }
-  get lineChunks() {
-    return false;
-  }
-  read(from, to) {
-    return this.string.slice(from, to);
-  }
-};
-function parseMixed(nest) {
-  return (parse, input, fragments, ranges) => new MixedParse(parse, nest, input, fragments, ranges);
-}
-var InnerParse = class {
-  constructor(parser5, parse, overlay, bracketed, target, from) {
-    this.parser = parser5;
-    this.parse = parse;
-    this.overlay = overlay;
-    this.bracketed = bracketed;
-    this.target = target;
-    this.from = from;
-  }
-};
-function checkRanges(ranges) {
-  if (!ranges.length || ranges.some((r) => r.from >= r.to))
-    throw new RangeError("Invalid inner parse ranges given: " + JSON.stringify(ranges));
-}
-var ActiveOverlay = class {
-  constructor(parser5, predicate, mounts, index, start, bracketed, target, prev) {
-    this.parser = parser5;
-    this.predicate = predicate;
-    this.mounts = mounts;
-    this.index = index;
-    this.start = start;
-    this.bracketed = bracketed;
-    this.target = target;
-    this.prev = prev;
-    this.depth = 0;
-    this.ranges = [];
-  }
-};
-var stoppedInner3 = new NodeProp3({ perNode: true });
-var MixedParse = class {
-  constructor(base2, nest, input, fragments, ranges) {
-    this.nest = nest;
-    this.input = input;
-    this.fragments = fragments;
-    this.ranges = ranges;
-    this.inner = [];
-    this.innerDone = 0;
-    this.baseTree = null;
-    this.stoppedAt = null;
-    this.baseParse = base2;
-  }
-  advance() {
-    if (this.baseParse) {
-      let done2 = this.baseParse.advance();
-      if (!done2)
-        return null;
-      this.baseParse = null;
-      this.baseTree = done2;
-      this.startInner();
-      if (this.stoppedAt != null)
-        for (let inner2 of this.inner)
-          inner2.parse.stopAt(this.stoppedAt);
-    }
-    if (this.innerDone == this.inner.length) {
-      let result = this.baseTree;
-      if (this.stoppedAt != null)
-        result = new Tree3(result.type, result.children, result.positions, result.length, result.propValues.concat([[stoppedInner3, this.stoppedAt]]));
-      return result;
-    }
-    let inner = this.inner[this.innerDone], done = inner.parse.advance();
-    if (done) {
-      this.innerDone++;
-      let props = Object.assign(/* @__PURE__ */ Object.create(null), inner.target.props);
-      props[NodeProp3.mounted.id] = new MountedTree3(done, inner.overlay, inner.parser, inner.bracketed);
-      inner.target.props = props;
-    }
-    return null;
-  }
-  get parsedPos() {
-    if (this.baseParse)
-      return 0;
-    let pos = this.input.length;
-    for (let i = this.innerDone; i < this.inner.length; i++) {
-      if (this.inner[i].from < pos)
-        pos = Math.min(pos, this.inner[i].parse.parsedPos);
-    }
-    return pos;
-  }
-  stopAt(pos) {
-    this.stoppedAt = pos;
-    if (this.baseParse)
-      this.baseParse.stopAt(pos);
-    else
-      for (let i = this.innerDone; i < this.inner.length; i++)
-        this.inner[i].parse.stopAt(pos);
-  }
-  startInner() {
-    let fragmentCursor = new FragmentCursor(this.fragments);
-    let overlay = null;
-    let covered = null;
-    let cursor2 = new TreeCursor3(new TreeNode3(this.baseTree, this.ranges[0].from, 0, null), IterMode3.IncludeAnonymous | IterMode3.IgnoreMounts);
-    scan: for (let nest, isCovered; ; ) {
-      let enter = true, range;
-      if (this.stoppedAt != null && cursor2.from >= this.stoppedAt) {
-        enter = false;
-      } else if (fragmentCursor.hasNode(cursor2)) {
-        if (overlay) {
-          let match = overlay.mounts.find((m) => m.frag.from <= cursor2.from && m.frag.to >= cursor2.to && m.mount.overlay);
-          if (match)
-            for (let r of match.mount.overlay) {
-              let from = r.from + match.pos, to = r.to + match.pos;
-              if (from >= cursor2.from && to <= cursor2.to && !overlay.ranges.some((r2) => r2.from < to && r2.to > from))
-                overlay.ranges.push({ from, to });
-            }
-        }
-        enter = false;
-      } else if (covered && (isCovered = checkCover(covered.ranges, cursor2.from, cursor2.to))) {
-        enter = isCovered != 2;
-      } else if (!cursor2.type.isAnonymous && (nest = this.nest(cursor2, this.input)) && (cursor2.from < cursor2.to || !nest.overlay)) {
-        if (!cursor2.tree) {
-          materialize(cursor2);
-          if (overlay)
-            overlay.depth++;
-          if (covered)
-            covered.depth++;
-        }
-        let oldMounts = fragmentCursor.findMounts(cursor2.from, nest.parser);
-        if (typeof nest.overlay == "function") {
-          overlay = new ActiveOverlay(nest.parser, nest.overlay, oldMounts, this.inner.length, cursor2.from, !!nest.bracketed, cursor2.tree, overlay);
-        } else {
-          let ranges = punchRanges(this.ranges, nest.overlay || (cursor2.from < cursor2.to ? [new Range4(cursor2.from, cursor2.to)] : []));
-          if (ranges.length)
-            checkRanges(ranges);
-          if (ranges.length || !nest.overlay)
-            this.inner.push(new InnerParse(nest.parser, ranges.length ? nest.parser.startParse(this.input, enterFragments(oldMounts, ranges), ranges) : nest.parser.startParse(""), nest.overlay ? nest.overlay.map((r) => new Range4(r.from - cursor2.from, r.to - cursor2.from)) : null, !!nest.bracketed, cursor2.tree, ranges.length ? ranges[0].from : cursor2.from));
-          if (!nest.overlay)
-            enter = false;
-          else if (ranges.length)
-            covered = { ranges, depth: 0, prev: covered };
-        }
-      } else if (overlay && (range = overlay.predicate(cursor2))) {
-        if (range === true)
-          range = new Range4(cursor2.from, cursor2.to);
-        if (range.from < range.to) {
-          let last = overlay.ranges.length - 1;
-          if (last >= 0 && overlay.ranges[last].to == range.from)
-            overlay.ranges[last] = { from: overlay.ranges[last].from, to: range.to };
-          else
-            overlay.ranges.push(range);
-        }
-      }
-      if (enter && cursor2.firstChild()) {
-        if (overlay)
-          overlay.depth++;
-        if (covered)
-          covered.depth++;
-      } else {
-        for (; ; ) {
-          if (cursor2.nextSibling())
-            break;
-          if (!cursor2.parent())
-            break scan;
-          if (overlay && !--overlay.depth) {
-            let ranges = punchRanges(this.ranges, overlay.ranges);
-            if (ranges.length) {
-              checkRanges(ranges);
-              this.inner.splice(overlay.index, 0, new InnerParse(overlay.parser, overlay.parser.startParse(this.input, enterFragments(overlay.mounts, ranges), ranges), overlay.ranges.map((r) => new Range4(r.from - overlay.start, r.to - overlay.start)), overlay.bracketed, overlay.target, ranges[0].from));
-            }
-            overlay = overlay.prev;
-          }
-          if (covered && !--covered.depth)
-            covered = covered.prev;
-        }
-      }
-    }
-  }
-};
-function checkCover(covered, from, to) {
-  for (let range of covered) {
-    if (range.from >= to)
-      break;
-    if (range.to > from)
-      return range.from <= from && range.to >= to ? 2 : 1;
-  }
-  return 0;
-}
-function sliceBuf(buf, startI, endI, nodes, positions, off) {
-  if (startI < endI) {
-    let from = buf.buffer[startI + 1];
-    nodes.push(buf.slice(startI, endI, from));
-    positions.push(from - off);
-  }
-}
-function materialize(cursor2) {
-  let { node } = cursor2, stack = [];
-  let buffer = node.context.buffer;
-  do {
-    stack.push(cursor2.index);
-    cursor2.parent();
-  } while (!cursor2.tree);
-  let base2 = cursor2.tree, i = base2.children.indexOf(buffer);
-  let buf = base2.children[i], b = buf.buffer, newStack = [i];
-  function split(startI, endI, type, innerOffset, length, stackPos) {
-    let targetI = stack[stackPos];
-    let children = [], positions = [];
-    sliceBuf(buf, startI, targetI, children, positions, innerOffset);
-    let from = b[targetI + 1], to = b[targetI + 2];
-    newStack.push(children.length);
-    let child = stackPos ? split(targetI + 4, b[targetI + 3], buf.set.types[b[targetI]], from, to - from, stackPos - 1) : node.toTree();
-    children.push(child);
-    positions.push(from - innerOffset);
-    sliceBuf(buf, b[targetI + 3], endI, children, positions, innerOffset);
-    return new Tree3(type, children, positions, length);
-  }
-  base2.children[i] = split(0, b.length, NodeType3.none, 0, buf.length, stack.length - 1);
-  for (let index of newStack) {
-    let tree = cursor2.tree.children[index], pos = cursor2.tree.positions[index];
-    cursor2.yield(new TreeNode3(tree, pos + cursor2.from, index, cursor2._tree));
-  }
-}
-var StructureCursor = class {
-  constructor(root, offset) {
-    this.offset = offset;
-    this.done = false;
-    this.cursor = root.cursor(IterMode3.IncludeAnonymous | IterMode3.IgnoreMounts);
-  }
-  // Move to the first node (in pre-order) that starts at or after `pos`.
-  moveTo(pos) {
-    let { cursor: cursor2 } = this, p = pos - this.offset;
-    while (!this.done && cursor2.from < p) {
-      if (cursor2.to >= pos && cursor2.enter(p, 1, IterMode3.IgnoreOverlays | IterMode3.ExcludeBuffers)) ;
-      else if (cursor2.to <= pos) {
-        if (!cursor2.next(false))
-          this.done = true;
-      } else {
-        break;
-      }
-    }
-  }
-  hasNode(cursor2) {
-    this.moveTo(cursor2.from);
-    if (!this.done && this.cursor.from + this.offset == cursor2.from && this.cursor.tree) {
-      for (let tree = this.cursor.tree; ; ) {
-        if (tree == cursor2.tree)
-          return true;
-        if (tree.children.length && tree.positions[0] == 0 && tree.children[0] instanceof Tree3)
-          tree = tree.children[0];
-        else
-          break;
-      }
-    }
-    return false;
-  }
-};
-var FragmentCursor = class {
-  constructor(fragments) {
-    var _a7;
-    this.fragments = fragments;
-    this.curTo = 0;
-    this.fragI = 0;
-    if (fragments.length) {
-      let first = this.curFrag = fragments[0];
-      this.curTo = (_a7 = first.tree.prop(stoppedInner3)) !== null && _a7 !== void 0 ? _a7 : first.to;
-      this.inner = new StructureCursor(first.tree, -first.offset);
-    } else {
-      this.curFrag = this.inner = null;
-    }
-  }
-  hasNode(node) {
-    while (this.curFrag && node.from >= this.curTo)
-      this.nextFrag();
-    return this.curFrag && this.curFrag.from <= node.from && this.curTo >= node.to && this.inner.hasNode(node);
-  }
-  nextFrag() {
-    var _a7;
-    this.fragI++;
-    if (this.fragI == this.fragments.length) {
-      this.curFrag = this.inner = null;
-    } else {
-      let frag = this.curFrag = this.fragments[this.fragI];
-      this.curTo = (_a7 = frag.tree.prop(stoppedInner3)) !== null && _a7 !== void 0 ? _a7 : frag.to;
-      this.inner = new StructureCursor(frag.tree, -frag.offset);
-    }
-  }
-  findMounts(pos, parser5) {
-    var _a7;
-    let result = [];
-    if (this.inner) {
-      this.inner.cursor.moveTo(pos, 1);
-      for (let pos2 = this.inner.cursor.node; pos2; pos2 = pos2.parent) {
-        let mount = (_a7 = pos2.tree) === null || _a7 === void 0 ? void 0 : _a7.prop(NodeProp3.mounted);
-        if (mount && mount.parser == parser5) {
-          for (let i = this.fragI; i < this.fragments.length; i++) {
-            let frag = this.fragments[i];
-            if (frag.from >= pos2.to)
-              break;
-            if (frag.tree == this.curFrag.tree)
-              result.push({
-                frag,
-                pos: pos2.from - frag.offset,
-                mount
-              });
-          }
-        }
-      }
-    }
-    return result;
-  }
-};
-function punchRanges(outer, ranges) {
-  let copy = null, current = ranges;
-  for (let i = 1, j = 0; i < outer.length; i++) {
-    let gapFrom = outer[i - 1].to, gapTo = outer[i].from;
-    for (; j < current.length; j++) {
-      let r = current[j];
-      if (r.from >= gapTo)
-        break;
-      if (r.to <= gapFrom)
-        continue;
-      if (!copy)
-        current = copy = ranges.slice();
-      if (r.from < gapFrom) {
-        copy[j] = new Range4(r.from, gapFrom);
-        if (r.to > gapTo)
-          copy.splice(j + 1, 0, new Range4(gapTo, r.to));
-      } else if (r.to > gapTo) {
-        copy[j--] = new Range4(gapTo, r.to);
-      } else {
-        copy.splice(j--, 1);
-      }
-    }
-  }
-  return current;
-}
-function findCoverChanges(a, b, from, to) {
-  let iA = 0, iB = 0, inA = false, inB = false, pos = -1e9;
-  let result = [];
-  for (; ; ) {
-    let nextA = iA == a.length ? 1e9 : inA ? a[iA].to : a[iA].from;
-    let nextB = iB == b.length ? 1e9 : inB ? b[iB].to : b[iB].from;
-    if (inA != inB) {
-      let start = Math.max(pos, from), end = Math.min(nextA, nextB, to);
-      if (start < end)
-        result.push(new Range4(start, end));
-    }
-    pos = Math.min(nextA, nextB);
-    if (pos == 1e9)
-      break;
-    if (nextA == pos) {
-      if (!inA)
-        inA = true;
-      else {
-        inA = false;
-        iA++;
-      }
-    }
-    if (nextB == pos) {
-      if (!inB)
-        inB = true;
-      else {
-        inB = false;
-        iB++;
-      }
-    }
-  }
-  return result;
-}
-function enterFragments(mounts, ranges) {
-  let result = [];
-  for (let { pos, mount, frag } of mounts) {
-    let startPos = pos + (mount.overlay ? mount.overlay[0].from : 0), endPos = startPos + mount.tree.length;
-    let from = Math.max(frag.from, startPos), to = Math.min(frag.to, endPos);
-    if (mount.overlay) {
-      let overlay = mount.overlay.map((r) => new Range4(r.from + pos, r.to + pos));
-      let changes = findCoverChanges(ranges, overlay, from, to);
-      for (let i = 0, pos2 = from; ; i++) {
-        let last = i == changes.length, end = last ? to : changes[i].from;
-        if (end > pos2)
-          result.push(new TreeFragment3(pos2, end, mount.tree, -startPos, frag.from >= pos2 || frag.openStart, frag.to <= end || frag.openEnd));
-        if (last)
-          break;
-        pos2 = changes[i].to;
-      }
-    } else {
-      result.push(new TreeFragment3(from, to, mount.tree, -startPos, frag.from >= startPos || frag.openStart, frag.to <= endPos || frag.openEnd));
-    }
-  }
-  return result;
-}
-
-// node_modules/@lezer/markdown/node_modules/@lezer/highlight/dist/index.js
-var nextTagID3 = 0;
-var Tag3 = class _Tag {
-  /**
-  @internal
-  */
-  constructor(name11, set, base2, modified) {
-    this.name = name11;
-    this.set = set;
-    this.base = base2;
-    this.modified = modified;
-    this.id = nextTagID3++;
-  }
-  toString() {
-    let { name: name11 } = this;
-    for (let mod of this.modified)
-      if (mod.name)
-        name11 = `${mod.name}(${name11})`;
-    return name11;
-  }
-  static define(nameOrParent, parent) {
-    let name11 = typeof nameOrParent == "string" ? nameOrParent : "?";
-    if (nameOrParent instanceof _Tag)
-      parent = nameOrParent;
-    if (parent === null || parent === void 0 ? void 0 : parent.base)
-      throw new Error("Can not derive from a modified tag");
-    let tag = new _Tag(name11, [], null, []);
-    tag.set.push(tag);
-    if (parent)
-      for (let t11 of parent.set)
-        tag.set.push(t11);
-    return tag;
-  }
-  /**
-  Define a tag _modifier_, which is a function that, given a tag,
-  will return a tag that is a subtag of the original. Applying the
-  same modifier to a twice tag will return the same value (`m1(t1)
-  == m1(t1)`) and applying multiple modifiers will, regardless or
-  order, produce the same tag (`m1(m2(t1)) == m2(m1(t1))`).
-  
-  When multiple modifiers are applied to a given base tag, each
-  smaller set of modifiers is registered as a parent, so that for
-  example `m1(m2(m3(t1)))` is a subtype of `m1(m2(t1))`,
-  `m1(m3(t1)`, and so on.
-  */
-  static defineModifier(name11) {
-    let mod = new Modifier3(name11);
-    return (tag) => {
-      if (tag.modified.indexOf(mod) > -1)
-        return tag;
-      return Modifier3.get(tag.base || tag, tag.modified.concat(mod).sort((a, b) => a.id - b.id));
-    };
-  }
-};
-var nextModifierID3 = 0;
-var Modifier3 = class _Modifier {
-  constructor(name11) {
-    this.name = name11;
-    this.instances = [];
-    this.id = nextModifierID3++;
-  }
-  static get(base2, mods) {
-    if (!mods.length)
-      return base2;
-    let exists = mods[0].instances.find((t11) => t11.base == base2 && sameArray4(mods, t11.modified));
-    if (exists)
-      return exists;
-    let set = [], tag = new Tag3(base2.name, set, base2, mods);
-    for (let m of mods)
-      m.instances.push(tag);
-    let configs = powerSet3(mods);
-    for (let parent of base2.set)
-      if (!parent.modified.length)
-        for (let config2 of configs)
-          set.push(_Modifier.get(parent, config2));
-    return tag;
-  }
-};
-function sameArray4(a, b) {
-  return a.length == b.length && a.every((x, i) => x == b[i]);
-}
-function powerSet3(array) {
-  let sets = [[]];
-  for (let i = 0; i < array.length; i++) {
-    for (let j = 0, e = sets.length; j < e; j++) {
-      sets.push(sets[j].concat(array[i]));
-    }
-  }
-  return sets.sort((a, b) => b.length - a.length);
-}
-function styleTags3(spec) {
-  let byName = /* @__PURE__ */ Object.create(null);
-  for (let prop in spec) {
-    let tags12 = spec[prop];
-    if (!Array.isArray(tags12))
-      tags12 = [tags12];
-    for (let part of prop.split(" "))
-      if (part) {
-        let pieces = [], mode = 2, rest = part;
-        for (let pos = 0; ; ) {
-          if (rest == "..." && pos > 0 && pos + 3 == part.length) {
-            mode = 1;
-            break;
-          }
-          let m = /^"(?:[^"\\]|\\.)*?"|[^\/!]+/.exec(rest);
-          if (!m)
-            throw new RangeError("Invalid path: " + part);
-          pieces.push(m[0] == "*" ? "" : m[0][0] == '"' ? JSON.parse(m[0]) : m[0]);
-          pos += m[0].length;
-          if (pos == part.length)
-            break;
-          let next = part[pos++];
-          if (pos == part.length && next == "!") {
-            mode = 0;
-            break;
-          }
-          if (next != "/")
-            throw new RangeError("Invalid path: " + part);
-          rest = part.slice(pos);
-        }
-        let last = pieces.length - 1, inner = pieces[last];
-        if (!inner)
-          throw new RangeError("Invalid path: " + part);
-        let rule = new Rule3(tags12, mode, last > 0 ? pieces.slice(0, last) : null);
-        byName[inner] = rule.sort(byName[inner]);
-      }
-  }
-  return ruleNodeProp3.add(byName);
-}
-var ruleNodeProp3 = new NodeProp3({
-  combine(a, b) {
-    let cur2, root, take;
-    while (a || b) {
-      if (!a || b && a.depth >= b.depth) {
-        take = b;
-        b = b.next;
-      } else {
-        take = a;
-        a = a.next;
-      }
-      if (cur2 && cur2.mode == take.mode && !take.context && !cur2.context)
-        continue;
-      let copy = new Rule3(take.tags, take.mode, take.context);
-      if (cur2)
-        cur2.next = copy;
-      else
-        root = copy;
-      cur2 = copy;
-    }
-    return root;
-  }
-});
-var Rule3 = class {
-  constructor(tags12, mode, context, next) {
-    this.tags = tags12;
-    this.mode = mode;
-    this.context = context;
-    this.next = next;
-  }
-  get opaque() {
-    return this.mode == 0;
-  }
-  get inherit() {
-    return this.mode == 1;
-  }
-  sort(other) {
-    if (!other || other.depth < this.depth) {
-      this.next = other;
-      return this;
-    }
-    other.next = this.sort(other.next);
-    return other;
-  }
-  get depth() {
-    return this.context ? this.context.length : 0;
-  }
-};
-Rule3.empty = new Rule3([], 2, null);
-function tagHighlighter3(tags12, options) {
-  let map = /* @__PURE__ */ Object.create(null);
-  for (let style of tags12) {
-    if (!Array.isArray(style.tag))
-      map[style.tag.id] = style.class;
-    else
-      for (let tag of style.tag)
-        map[tag.id] = style.class;
-  }
-  let { scope, all = null } = options || {};
-  return {
-    style: (tags13) => {
-      let cls = all;
-      for (let tag of tags13) {
-        for (let sub of tag.set) {
-          let tagClass = map[sub.id];
-          if (tagClass) {
-            cls = cls ? cls + " " + tagClass : tagClass;
-            break;
-          }
-        }
-      }
-      return cls;
-    },
-    scope
-  };
-}
-var t3 = Tag3.define;
-var comment3 = t3();
-var name3 = t3();
-var typeName3 = t3(name3);
-var propertyName3 = t3(name3);
-var literal3 = t3();
-var string3 = t3(literal3);
-var number3 = t3(literal3);
-var content3 = t3();
-var heading3 = t3(content3);
-var keyword3 = t3();
-var operator3 = t3();
-var punctuation3 = t3();
-var bracket3 = t3(punctuation3);
-var meta3 = t3();
-var tags3 = {
-  /**
-  A comment.
-  */
-  comment: comment3,
-  /**
-  A line [comment](#highlight.tags.comment).
-  */
-  lineComment: t3(comment3),
-  /**
-  A block [comment](#highlight.tags.comment).
-  */
-  blockComment: t3(comment3),
-  /**
-  A documentation [comment](#highlight.tags.comment).
-  */
-  docComment: t3(comment3),
-  /**
-  Any kind of identifier.
-  */
-  name: name3,
-  /**
-  The [name](#highlight.tags.name) of a variable.
-  */
-  variableName: t3(name3),
-  /**
-  A type [name](#highlight.tags.name).
-  */
-  typeName: typeName3,
-  /**
-  A tag name (subtag of [`typeName`](#highlight.tags.typeName)).
-  */
-  tagName: t3(typeName3),
-  /**
-  A property or field [name](#highlight.tags.name).
-  */
-  propertyName: propertyName3,
-  /**
-  An attribute name (subtag of [`propertyName`](#highlight.tags.propertyName)).
-  */
-  attributeName: t3(propertyName3),
-  /**
-  The [name](#highlight.tags.name) of a class.
-  */
-  className: t3(name3),
-  /**
-  A label [name](#highlight.tags.name).
-  */
-  labelName: t3(name3),
-  /**
-  A namespace [name](#highlight.tags.name).
-  */
-  namespace: t3(name3),
-  /**
-  The [name](#highlight.tags.name) of a macro.
-  */
-  macroName: t3(name3),
-  /**
-  A literal value.
-  */
-  literal: literal3,
-  /**
-  A string [literal](#highlight.tags.literal).
-  */
-  string: string3,
-  /**
-  A documentation [string](#highlight.tags.string).
-  */
-  docString: t3(string3),
-  /**
-  A character literal (subtag of [string](#highlight.tags.string)).
-  */
-  character: t3(string3),
-  /**
-  An attribute value (subtag of [string](#highlight.tags.string)).
-  */
-  attributeValue: t3(string3),
-  /**
-  A number [literal](#highlight.tags.literal).
-  */
-  number: number3,
-  /**
-  An integer [number](#highlight.tags.number) literal.
-  */
-  integer: t3(number3),
-  /**
-  A floating-point [number](#highlight.tags.number) literal.
-  */
-  float: t3(number3),
-  /**
-  A boolean [literal](#highlight.tags.literal).
-  */
-  bool: t3(literal3),
-  /**
-  Regular expression [literal](#highlight.tags.literal).
-  */
-  regexp: t3(literal3),
-  /**
-  An escape [literal](#highlight.tags.literal), for example a
-  backslash escape in a string.
-  */
-  escape: t3(literal3),
-  /**
-  A color [literal](#highlight.tags.literal).
-  */
-  color: t3(literal3),
-  /**
-  A URL [literal](#highlight.tags.literal).
-  */
-  url: t3(literal3),
-  /**
-  A language keyword.
-  */
-  keyword: keyword3,
-  /**
-  The [keyword](#highlight.tags.keyword) for the self or this
-  object.
-  */
-  self: t3(keyword3),
-  /**
-  The [keyword](#highlight.tags.keyword) for null.
-  */
-  null: t3(keyword3),
-  /**
-  A [keyword](#highlight.tags.keyword) denoting some atomic value.
-  */
-  atom: t3(keyword3),
-  /**
-  A [keyword](#highlight.tags.keyword) that represents a unit.
-  */
-  unit: t3(keyword3),
-  /**
-  A modifier [keyword](#highlight.tags.keyword).
-  */
-  modifier: t3(keyword3),
-  /**
-  A [keyword](#highlight.tags.keyword) that acts as an operator.
-  */
-  operatorKeyword: t3(keyword3),
-  /**
-  A control-flow related [keyword](#highlight.tags.keyword).
-  */
-  controlKeyword: t3(keyword3),
-  /**
-  A [keyword](#highlight.tags.keyword) that defines something.
-  */
-  definitionKeyword: t3(keyword3),
-  /**
-  A [keyword](#highlight.tags.keyword) related to defining or
-  interfacing with modules.
-  */
-  moduleKeyword: t3(keyword3),
-  /**
-  An operator.
-  */
-  operator: operator3,
-  /**
-  An [operator](#highlight.tags.operator) that dereferences something.
-  */
-  derefOperator: t3(operator3),
-  /**
-  Arithmetic-related [operator](#highlight.tags.operator).
-  */
-  arithmeticOperator: t3(operator3),
-  /**
-  Logical [operator](#highlight.tags.operator).
-  */
-  logicOperator: t3(operator3),
-  /**
-  Bit [operator](#highlight.tags.operator).
-  */
-  bitwiseOperator: t3(operator3),
-  /**
-  Comparison [operator](#highlight.tags.operator).
-  */
-  compareOperator: t3(operator3),
-  /**
-  [Operator](#highlight.tags.operator) that updates its operand.
-  */
-  updateOperator: t3(operator3),
-  /**
-  [Operator](#highlight.tags.operator) that defines something.
-  */
-  definitionOperator: t3(operator3),
-  /**
-  Type-related [operator](#highlight.tags.operator).
-  */
-  typeOperator: t3(operator3),
-  /**
-  Control-flow [operator](#highlight.tags.operator).
-  */
-  controlOperator: t3(operator3),
-  /**
-  Program or markup punctuation.
-  */
-  punctuation: punctuation3,
-  /**
-  [Punctuation](#highlight.tags.punctuation) that separates
-  things.
-  */
-  separator: t3(punctuation3),
-  /**
-  Bracket-style [punctuation](#highlight.tags.punctuation).
-  */
-  bracket: bracket3,
-  /**
-  Angle [brackets](#highlight.tags.bracket) (usually `<` and `>`
-  tokens).
-  */
-  angleBracket: t3(bracket3),
-  /**
-  Square [brackets](#highlight.tags.bracket) (usually `[` and `]`
-  tokens).
-  */
-  squareBracket: t3(bracket3),
-  /**
-  Parentheses (usually `(` and `)` tokens). Subtag of
-  [bracket](#highlight.tags.bracket).
-  */
-  paren: t3(bracket3),
-  /**
-  Braces (usually `{` and `}` tokens). Subtag of
-  [bracket](#highlight.tags.bracket).
-  */
-  brace: t3(bracket3),
-  /**
-  Content, for example plain text in XML or markup documents.
-  */
-  content: content3,
-  /**
-  [Content](#highlight.tags.content) that represents a heading.
-  */
-  heading: heading3,
-  /**
-  A level 1 [heading](#highlight.tags.heading).
-  */
-  heading1: t3(heading3),
-  /**
-  A level 2 [heading](#highlight.tags.heading).
-  */
-  heading2: t3(heading3),
-  /**
-  A level 3 [heading](#highlight.tags.heading).
-  */
-  heading3: t3(heading3),
-  /**
-  A level 4 [heading](#highlight.tags.heading).
-  */
-  heading4: t3(heading3),
-  /**
-  A level 5 [heading](#highlight.tags.heading).
-  */
-  heading5: t3(heading3),
-  /**
-  A level 6 [heading](#highlight.tags.heading).
-  */
-  heading6: t3(heading3),
-  /**
-  A prose [content](#highlight.tags.content) separator (such as a horizontal rule).
-  */
-  contentSeparator: t3(content3),
-  /**
-  [Content](#highlight.tags.content) that represents a list.
-  */
-  list: t3(content3),
-  /**
-  [Content](#highlight.tags.content) that represents a quote.
-  */
-  quote: t3(content3),
-  /**
-  [Content](#highlight.tags.content) that is emphasized.
-  */
-  emphasis: t3(content3),
-  /**
-  [Content](#highlight.tags.content) that is styled strong.
-  */
-  strong: t3(content3),
-  /**
-  [Content](#highlight.tags.content) that is part of a link.
-  */
-  link: t3(content3),
-  /**
-  [Content](#highlight.tags.content) that is styled as code or
-  monospace.
-  */
-  monospace: t3(content3),
-  /**
-  [Content](#highlight.tags.content) that has a strike-through
-  style.
-  */
-  strikethrough: t3(content3),
-  /**
-  Inserted text in a change-tracking format.
-  */
-  inserted: t3(),
-  /**
-  Deleted text.
-  */
-  deleted: t3(),
-  /**
-  Changed text.
-  */
-  changed: t3(),
-  /**
-  An invalid or unsyntactic element.
-  */
-  invalid: t3(),
-  /**
-  Metadata or meta-instruction.
-  */
-  meta: meta3,
-  /**
-  [Metadata](#highlight.tags.meta) that applies to the entire
-  document.
-  */
-  documentMeta: t3(meta3),
-  /**
-  [Metadata](#highlight.tags.meta) that annotates or adds
-  attributes to a given syntactic element.
-  */
-  annotation: t3(meta3),
-  /**
-  Processing instruction or preprocessor directive. Subtag of
-  [meta](#highlight.tags.meta).
-  */
-  processingInstruction: t3(meta3),
-  /**
-  [Modifier](#highlight.Tag^defineModifier) that indicates that a
-  given element is being defined. Expected to be used with the
-  various [name](#highlight.tags.name) tags.
-  */
-  definition: Tag3.defineModifier("definition"),
-  /**
-  [Modifier](#highlight.Tag^defineModifier) that indicates that
-  something is constant. Mostly expected to be used with
-  [variable names](#highlight.tags.variableName).
-  */
-  constant: Tag3.defineModifier("constant"),
-  /**
-  [Modifier](#highlight.Tag^defineModifier) used to indicate that
-  a [variable](#highlight.tags.variableName) or [property
-  name](#highlight.tags.propertyName) is being called or defined
-  as a function.
-  */
-  function: Tag3.defineModifier("function"),
-  /**
-  [Modifier](#highlight.Tag^defineModifier) that can be applied to
-  [names](#highlight.tags.name) to indicate that they belong to
-  the language's standard environment.
-  */
-  standard: Tag3.defineModifier("standard"),
-  /**
-  [Modifier](#highlight.Tag^defineModifier) that indicates a given
-  [names](#highlight.tags.name) is local to some scope.
-  */
-  local: Tag3.defineModifier("local"),
-  /**
-  A generic variant [modifier](#highlight.Tag^defineModifier) that
-  can be used to tag language-specific alternative variants of
-  some common tag. It is recommended for themes to define special
-  forms of at least the [string](#highlight.tags.string) and
-  [variable name](#highlight.tags.variableName) tags, since those
-  come up a lot.
-  */
-  special: Tag3.defineModifier("special")
-};
-for (let name11 in tags3) {
-  let val = tags3[name11];
-  if (val instanceof Tag3)
-    val.name = name11;
-}
-var classHighlighter3 = tagHighlighter3([
-  { tag: tags3.link, class: "tok-link" },
-  { tag: tags3.heading, class: "tok-heading" },
-  { tag: tags3.emphasis, class: "tok-emphasis" },
-  { tag: tags3.strong, class: "tok-strong" },
-  { tag: tags3.keyword, class: "tok-keyword" },
-  { tag: tags3.atom, class: "tok-atom" },
-  { tag: tags3.bool, class: "tok-bool" },
-  { tag: tags3.url, class: "tok-url" },
-  { tag: tags3.labelName, class: "tok-labelName" },
-  { tag: tags3.inserted, class: "tok-inserted" },
-  { tag: tags3.deleted, class: "tok-deleted" },
-  { tag: tags3.literal, class: "tok-literal" },
-  { tag: tags3.string, class: "tok-string" },
-  { tag: tags3.number, class: "tok-number" },
-  { tag: [tags3.regexp, tags3.escape, tags3.special(tags3.string)], class: "tok-string2" },
-  { tag: tags3.variableName, class: "tok-variableName" },
-  { tag: tags3.local(tags3.variableName), class: "tok-variableName tok-local" },
-  { tag: tags3.definition(tags3.variableName), class: "tok-variableName tok-definition" },
-  { tag: tags3.special(tags3.variableName), class: "tok-variableName2" },
-  { tag: tags3.definition(tags3.propertyName), class: "tok-propertyName tok-definition" },
-  { tag: tags3.typeName, class: "tok-typeName" },
-  { tag: tags3.namespace, class: "tok-namespace" },
-  { tag: tags3.className, class: "tok-className" },
-  { tag: tags3.macroName, class: "tok-macroName" },
-  { tag: tags3.propertyName, class: "tok-propertyName" },
-  { tag: tags3.operator, class: "tok-operator" },
-  { tag: tags3.comment, class: "tok-comment" },
-  { tag: tags3.meta, class: "tok-meta" },
-  { tag: tags3.invalid, class: "tok-invalid" },
-  { tag: tags3.punctuation, class: "tok-punctuation" }
-]);
-
 // node_modules/@lezer/markdown/dist/index.js
 var CompositeBlock = class _CompositeBlock {
   static create(type, value, from, parentHash, end) {
@@ -28173,11 +23764,11 @@ var CompositeBlock = class _CompositeBlock {
     this.end = end;
     this.children = children;
     this.positions = positions;
-    this.hashProp = [[NodeProp3.contextHash, hash2]];
+    this.hashProp = [[NodeProp.contextHash, hash2]];
   }
   addChild(child, pos) {
-    if (child.prop(NodeProp3.contextHash) != this.hash)
-      child = new Tree3(child.type, child.children, child.positions, child.length, this.hashProp);
+    if (child.prop(NodeProp.contextHash) != this.hash)
+      child = new Tree(child.type, child.children, child.positions, child.length, this.hashProp);
     this.children.push(child);
     this.positions.push(pos);
   }
@@ -28185,8 +23776,8 @@ var CompositeBlock = class _CompositeBlock {
     let last = this.children.length - 1;
     if (last >= 0)
       end = Math.max(end, this.positions[last] + this.children[last].length + this.from);
-    return new Tree3(nodeSet.types[this.type], this.children, this.positions, end - this.from).balance({
-      makeTree: (children, positions, length) => new Tree3(NodeType3.none, children, positions, length, this.hashProp)
+    return new Tree(nodeSet.types[this.type], this.children, this.positions, end - this.from).balance({
+      makeTree: (children, positions, length) => new Tree(NodeType.none, children, positions, length, this.hashProp)
     });
   }
 };
@@ -28241,9 +23832,9 @@ var LeafBlock = class {
   /**
   @internal
   */
-  constructor(start, content11) {
+  constructor(start, content7) {
     this.start = start;
-    this.content = content11;
+    this.content = content7;
     this.marks = [];
     this.parsers = [];
   }
@@ -28496,12 +24087,12 @@ function getListIndent(line, pos) {
   let indented = line.countIndent(line.skipSpace(pos), pos, indentAfter);
   return indented >= indentAfter + 5 ? indentAfter + 1 : indented;
 }
-function addCodeText(marks7, from, to) {
-  let last = marks7.length - 1;
-  if (last >= 0 && marks7[last].to == from && marks7[last].type == Type.CodeText)
-    marks7[last].to = to;
+function addCodeText(marks2, from, to) {
+  let last = marks2.length - 1;
+  if (last >= 0 && marks2[last].to == from && marks2[last].type == Type.CodeText)
+    marks2[last].to = to;
   else
-    marks7.push(elt(Type.CodeText, from, to));
+    marks2.push(elt(Type.CodeText, from, to));
 }
 var DefaultBlockParsers = {
   LinkReference: void 0,
@@ -28511,8 +24102,8 @@ var DefaultBlockParsers = {
       return false;
     let start = line.findColumn(base2);
     let from = cx.lineStart + start, to = cx.lineStart + line.text.length;
-    let marks7 = [], pendingMarks = [];
-    addCodeText(marks7, from, to);
+    let marks2 = [], pendingMarks = [];
+    addCodeText(marks2, from, to);
     while (cx.nextLine() && line.depth >= cx.stack.length) {
       if (line.pos == line.text.length) {
         addCodeText(pendingMarks, cx.lineStart - 1, cx.lineStart);
@@ -28524,19 +24115,19 @@ var DefaultBlockParsers = {
         if (pendingMarks.length) {
           for (let m of pendingMarks) {
             if (m.type == Type.CodeText)
-              addCodeText(marks7, m.from, m.to);
+              addCodeText(marks2, m.from, m.to);
             else
-              marks7.push(m);
+              marks2.push(m);
           }
           pendingMarks = [];
         }
-        addCodeText(marks7, cx.lineStart - 1, cx.lineStart);
+        addCodeText(marks2, cx.lineStart - 1, cx.lineStart);
         for (let m of line.markers)
-          marks7.push(m);
+          marks2.push(m);
         to = cx.lineStart + line.text.length;
         let codeStart = cx.lineStart + line.findColumn(line.baseIndent + 4);
         if (codeStart < to)
-          addCodeText(marks7, codeStart, to);
+          addCodeText(marks2, codeStart, to);
       }
     }
     if (pendingMarks.length) {
@@ -28544,7 +24135,7 @@ var DefaultBlockParsers = {
       if (pendingMarks.length)
         line.markers = pendingMarks.concat(line.markers);
     }
-    cx.addNode(cx.buffer.writeElements(marks7, -from).finish(Type.CodeBlock, to - from), from);
+    cx.addNode(cx.buffer.writeElements(marks2, -from).finish(Type.CodeBlock, to - from), from);
     return true;
   },
   FencedCode(cx, line) {
@@ -28553,9 +24144,9 @@ var DefaultBlockParsers = {
       return false;
     let from = cx.lineStart + line.pos, ch = line.next, len = fenceEnd - line.pos;
     let infoFrom = line.skipSpace(fenceEnd), infoTo = skipSpaceBack(line.text, line.text.length, infoFrom);
-    let marks7 = [elt(Type.CodeMark, from, from + len)];
+    let marks2 = [elt(Type.CodeMark, from, from + len)];
     if (infoFrom < infoTo)
-      marks7.push(elt(Type.CodeInfo, cx.lineStart + infoFrom, cx.lineStart + infoTo));
+      marks2.push(elt(Type.CodeInfo, cx.lineStart + infoFrom, cx.lineStart + infoTo));
     for (let first = true, empty2 = true, hasLine = false; cx.nextLine() && line.depth >= cx.stack.length; first = false) {
       let i = line.pos;
       if (line.indent - line.baseIndent < 4)
@@ -28563,28 +24154,28 @@ var DefaultBlockParsers = {
           i++;
       if (i - line.pos >= len && line.skipSpace(i) == line.text.length) {
         for (let m of line.markers)
-          marks7.push(m);
+          marks2.push(m);
         if (empty2 && hasLine)
-          addCodeText(marks7, cx.lineStart - 1, cx.lineStart);
-        marks7.push(elt(Type.CodeMark, cx.lineStart + line.pos, cx.lineStart + i));
+          addCodeText(marks2, cx.lineStart - 1, cx.lineStart);
+        marks2.push(elt(Type.CodeMark, cx.lineStart + line.pos, cx.lineStart + i));
         cx.nextLine();
         break;
       } else {
         hasLine = true;
         if (!first) {
-          addCodeText(marks7, cx.lineStart - 1, cx.lineStart);
+          addCodeText(marks2, cx.lineStart - 1, cx.lineStart);
           empty2 = false;
         }
         for (let m of line.markers)
-          marks7.push(m);
+          marks2.push(m);
         let textStart = cx.lineStart + line.basePos, textEnd = cx.lineStart + line.text.length;
         if (textStart < textEnd) {
-          addCodeText(marks7, textStart, textEnd);
+          addCodeText(marks2, textStart, textEnd);
           empty2 = false;
         }
       }
     }
-    cx.addNode(cx.buffer.writeElements(marks7, -from).finish(Type.FencedCode, cx.prevLineEnd() - from), from);
+    cx.addNode(cx.buffer.writeElements(marks2, -from).finish(Type.FencedCode, cx.prevLineEnd() - from), from);
     return true;
   },
   Blockquote(cx, line) {
@@ -28651,20 +24242,20 @@ var DefaultBlockParsers = {
     if (type < 0)
       return false;
     let from = cx.lineStart + line.pos, end = HTMLBlockStyle[type][1];
-    let marks7 = [], trailing = end != EmptyLine;
+    let marks2 = [], trailing = end != EmptyLine;
     while (!end.test(line.text) && cx.nextLine()) {
       if (line.depth < cx.stack.length) {
         trailing = false;
         break;
       }
       for (let m of line.markers)
-        marks7.push(m);
+        marks2.push(m);
     }
     if (trailing)
       cx.nextLine();
     let nodeType = end == CommentEnd ? Type.CommentBlock : end == ProcessingEnd ? Type.ProcessingInstructionBlock : Type.HTMLBlock;
     let to = cx.prevLineEnd();
-    cx.addNode(cx.buffer.writeElements(marks7, -from).finish(nodeType, to - from), from);
+    cx.addNode(cx.buffer.writeElements(marks2, -from).finish(nodeType, to - from), from);
     return true;
   },
   SetextHeading: void 0
@@ -28681,9 +24272,9 @@ var LinkReferenceParser = class {
   nextLine(cx, line, leaf) {
     if (this.stage == -1)
       return false;
-    let content11 = leaf.content + "\n" + line.scrub();
-    let finish = this.advance(content11);
-    if (finish > -1 && finish < content11.length)
+    let content7 = leaf.content + "\n" + line.scrub();
+    let finish = this.advance(content7);
+    if (finish > -1 && finish < content7.length)
       return this.complete(cx, leaf, finish);
     return false;
   }
@@ -28707,26 +24298,26 @@ var LinkReferenceParser = class {
       this.stage = -1;
     return false;
   }
-  advance(content11) {
+  advance(content7) {
     for (; ; ) {
       if (this.stage == -1) {
         return -1;
       } else if (this.stage == 0) {
-        if (!this.nextStage(parseLinkLabel(content11, this.pos, this.start, true)))
+        if (!this.nextStage(parseLinkLabel(content7, this.pos, this.start, true)))
           return -1;
-        if (content11.charCodeAt(this.pos) != 58)
+        if (content7.charCodeAt(this.pos) != 58)
           return this.stage = -1;
         this.elts.push(elt(Type.LinkMark, this.pos + this.start, this.pos + this.start + 1));
         this.pos++;
       } else if (this.stage == 1) {
-        if (!this.nextStage(parseURL(content11, skipSpace(content11, this.pos), this.start)))
+        if (!this.nextStage(parseURL(content7, skipSpace(content7, this.pos), this.start)))
           return -1;
       } else if (this.stage == 2) {
-        let skip = skipSpace(content11, this.pos), end = 0;
+        let skip = skipSpace(content7, this.pos), end = 0;
         if (skip > this.pos) {
-          let title = parseLinkTitle(content11, skip, this.start);
+          let title = parseLinkTitle(content7, skip, this.start);
           if (title) {
-            let titleEnd = lineEnd(content11, title.to - this.start);
+            let titleEnd = lineEnd(content7, title.to - this.start);
             if (titleEnd > 0) {
               this.nextStage(title);
               end = titleEnd;
@@ -28734,10 +24325,10 @@ var LinkReferenceParser = class {
           }
         }
         if (!end)
-          end = lineEnd(content11, this.pos);
-        return end > 0 && end < content11.length ? end : -1;
+          end = lineEnd(content7, this.pos);
+        return end > 0 && end < content7.length ? end : -1;
       } else {
-        return lineEnd(content11, this.pos);
+        return lineEnd(content7, this.pos);
       }
     }
   }
@@ -28982,9 +24573,9 @@ var BlockContext = class {
       let cx = this.stack[line.depth], handler = this.parser.skipContextMarkup[cx.type];
       if (!handler)
         throw new Error("Unhandled block context " + Type[cx.type]);
-      let marks7 = this.line.markers.length;
+      let marks2 = this.line.markers.length;
       if (!handler(cx, this, line)) {
-        if (this.line.markers.length > marks7)
+        if (this.line.markers.length > marks2)
           cx.end = this.line.markers[this.line.markers.length - 1].to;
         line.forward();
         break;
@@ -29027,7 +24618,7 @@ var BlockContext = class {
   */
   addNode(block, from, to) {
     if (typeof block == "number")
-      block = new Tree3(this.parser.nodeSet.types[block], none4, none4, (to !== null && to !== void 0 ? to : this.prevLineEnd()) - from);
+      block = new Tree(this.parser.nodeSet.types[block], none4, none4, (to !== null && to !== void 0 ? to : this.prevLineEnd()) - from);
     this.block.addChild(block, from - this.block.from);
   }
   /**
@@ -29111,9 +24702,9 @@ function injectGaps(ranges, rangeI, tree, offset, dummies) {
     positions.push(from - start);
   }
   movePastNext(tree.to + offset, false);
-  return new Tree3(tree.type, children, positions, tree.to + offset - start, tree.tree ? tree.tree.propValues : void 0);
+  return new Tree(tree.type, children, positions, tree.to + offset - start, tree.tree ? tree.tree.propValues : void 0);
 }
-var MarkdownParser = class _MarkdownParser extends Parser3 {
+var MarkdownParser = class _MarkdownParser extends Parser {
   /**
   @internal
   */
@@ -29129,8 +24720,8 @@ var MarkdownParser = class _MarkdownParser extends Parser3 {
     this.inlineNames = inlineNames;
     this.wrappers = wrappers;
     this.nodeTypes = /* @__PURE__ */ Object.create(null);
-    for (let t11 of nodeSet.types)
-      this.nodeTypes[t11.name] = t11.id;
+    for (let t7 of nodeSet.types)
+      this.nodeTypes[t7.name] = t7.id;
   }
   createParse(input, fragments, ranges) {
     let parse = new BlockContext(this, input, fragments, ranges);
@@ -29151,30 +24742,30 @@ var MarkdownParser = class _MarkdownParser extends Parser3 {
       skipContextMarkup = Object.assign({}, skipContextMarkup);
       let nodeTypes2 = nodeSet.types.slice(), styles;
       for (let s of config2.defineNodes) {
-        let { name: name11, block, composite, style } = typeof s == "string" ? { name: s } : s;
-        if (nodeTypes2.some((t11) => t11.name == name11))
+        let { name: name7, block, composite, style } = typeof s == "string" ? { name: s } : s;
+        if (nodeTypes2.some((t7) => t7.name == name7))
           continue;
         if (composite)
           skipContextMarkup[nodeTypes2.length] = (bl, cx, line) => composite(cx, line, bl.value);
         let id3 = nodeTypes2.length;
         let group = composite ? ["Block", "BlockContext"] : !block ? void 0 : id3 >= Type.ATXHeading1 && id3 <= Type.SetextHeading2 ? ["Block", "LeafBlock", "Heading"] : ["Block", "LeafBlock"];
-        nodeTypes2.push(NodeType3.define({
+        nodeTypes2.push(NodeType.define({
           id: id3,
-          name: name11,
-          props: group && [[NodeProp3.group, group]]
+          name: name7,
+          props: group && [[NodeProp.group, group]]
         }));
         if (style) {
           if (!styles)
             styles = {};
-          if (Array.isArray(style) || style instanceof Tag3)
-            styles[name11] = style;
+          if (Array.isArray(style) || style instanceof Tag2)
+            styles[name7] = style;
           else
             Object.assign(styles, style);
         }
       }
-      nodeSet = new NodeSet3(nodeTypes2);
+      nodeSet = new NodeSet(nodeTypes2);
       if (styles)
-        nodeSet = nodeSet.extend(styleTags3(styles));
+        nodeSet = nodeSet.extend(styleTags2(styles));
     }
     if (nonEmpty(config2.props))
       nodeSet = nodeSet.extend(...config2.props);
@@ -29222,10 +24813,10 @@ var MarkdownParser = class _MarkdownParser extends Parser3 {
   /**
   @internal
   */
-  getNodeType(name11) {
-    let found = this.nodeTypes[name11];
+  getNodeType(name7) {
+    let found = this.nodeTypes[name7];
     if (found == null)
-      throw new RangeError(`Unknown node type '${name11}'`);
+      throw new RangeError(`Unknown node type '${name7}'`);
     return found;
   }
   /**
@@ -29275,19 +24866,19 @@ function resolveConfig(spec) {
     wrap: !wrapA ? wrapB : !wrapB ? wrapA : (inner, input, fragments, ranges) => wrapA(wrapB(inner, input, fragments, ranges), input, fragments, ranges)
   };
 }
-function findName(names, name11) {
-  let found = names.indexOf(name11);
+function findName(names, name7) {
+  let found = names.indexOf(name7);
   if (found < 0)
-    throw new RangeError(`Position specified relative to unknown parser ${name11}`);
+    throw new RangeError(`Position specified relative to unknown parser ${name7}`);
   return found;
 }
-var nodeTypes = [NodeType3.none];
-for (let i = 1, name11; name11 = Type[i]; i++) {
-  nodeTypes[i] = NodeType3.define({
+var nodeTypes = [NodeType.none];
+for (let i = 1, name7; name7 = Type[i]; i++) {
+  nodeTypes[i] = NodeType.define({
     id: i,
-    name: name11,
-    props: i >= Type.Escape ? [] : [[NodeProp3.group, i in DefaultSkipMarkup ? ["Block", "BlockContext"] : ["Block", "LeafBlock"]]],
-    top: name11 == "Document"
+    name: name7,
+    props: i >= Type.Escape ? [] : [[NodeProp.group, i in DefaultSkipMarkup ? ["Block", "BlockContext"] : ["Block", "LeafBlock"]]],
+    top: name7 == "Document"
   });
 }
 var none4 = [];
@@ -29307,7 +24898,7 @@ var Buffer = class {
     return this;
   }
   finish(type, length) {
-    return Tree3.build({
+    return Tree.build({
       buffer: this.content,
       nodeSet: this.nodeSet,
       reused: this.nodes,
@@ -29434,9 +25025,9 @@ var DefaultInline = {
         elt(Type.LinkMark, start + url[0].length, start + 1 + url[0].length)
       ]));
     }
-    let comment11 = /^!--[^>](?:-[^-]|[^-])*?-->/i.exec(after);
-    if (comment11)
-      return cx.append(elt(Type.Comment, start, start + 1 + comment11[0].length));
+    let comment7 = /^!--[^>](?:-[^-]|[^-])*?-->/i.exec(after);
+    if (comment7)
+      return cx.append(elt(Type.Comment, start, start + 1 + comment7[0].length));
     let procInst = /^\?[^]*?\?>/.exec(after);
     if (procInst)
       return cx.append(elt(Type.ProcessingInstruction, start, start + 1 + procInst[0].length));
@@ -29500,8 +25091,8 @@ var DefaultInline = {
           cx.parts[i] = null;
           return -1;
         }
-        let content11 = cx.takeContent(i);
-        let link = cx.parts[i] = finishLink(cx, content11, part.type == LinkStart ? Type.Link : Type.Image, part.from, start + 1);
+        let content7 = cx.takeContent(i);
+        let link = cx.parts[i] = finishLink(cx, content7, part.type == LinkStart ? Type.Link : Type.Image, part.from, start + 1);
         if (part.type == LinkStart)
           for (let j = 0; j < i; j++) {
             let p = cx.parts[j];
@@ -29514,10 +25105,10 @@ var DefaultInline = {
     return -1;
   }
 };
-function finishLink(cx, content11, type, start, startPos) {
+function finishLink(cx, content7, type, start, startPos) {
   let { text } = cx, next = cx.char(startPos), endPos = startPos;
-  content11.unshift(elt(Type.LinkMark, start, start + (type == Type.Image ? 2 : 1)));
-  content11.push(elt(Type.LinkMark, startPos - 1, startPos));
+  content7.unshift(elt(Type.LinkMark, start, start + (type == Type.Image ? 2 : 1)));
+  content7.push(elt(Type.LinkMark, startPos - 1, startPos));
   if (next == 40) {
     let pos = cx.skipSpace(startPos + 1);
     let dest = parseURL(text, pos - cx.offset, cx.offset), title;
@@ -29530,22 +25121,22 @@ function finishLink(cx, content11, type, start, startPos) {
       }
     }
     if (cx.char(pos) == 41) {
-      content11.push(elt(Type.LinkMark, startPos, startPos + 1));
+      content7.push(elt(Type.LinkMark, startPos, startPos + 1));
       endPos = pos + 1;
       if (dest)
-        content11.push(dest);
+        content7.push(dest);
       if (title)
-        content11.push(title);
-      content11.push(elt(Type.LinkMark, pos, endPos));
+        content7.push(title);
+      content7.push(elt(Type.LinkMark, pos, endPos));
     }
   } else if (next == 91) {
     let label = parseLinkLabel(text, startPos - cx.offset, cx.offset, false);
     if (label) {
-      content11.push(label);
+      content7.push(label);
       endPos = label.to;
     }
   }
-  return elt(type, start, endPos, content11);
+  return elt(type, start, endPos, content7);
 }
 function parseURL(text, start, offset) {
   let next = text.charCodeAt(start);
@@ -29699,7 +25290,7 @@ var InlineContext = class {
       }
       if (!open)
         continue;
-      let type = close.type.resolve, content11 = [];
+      let type = close.type.resolve, content7 = [];
       let start = open.from, end = close.to;
       if (emp) {
         let size = Math.min(2, open.to - open.from, closeSize);
@@ -29708,15 +25299,15 @@ var InlineContext = class {
         type = size == 1 ? "Emphasis" : "StrongEmphasis";
       }
       if (open.type.mark)
-        content11.push(this.elt(open.type.mark, start, open.to));
+        content7.push(this.elt(open.type.mark, start, open.to));
       for (let k = j + 1; k < i; k++) {
         if (this.parts[k] instanceof Element)
-          content11.push(this.parts[k]);
+          content7.push(this.parts[k]);
         this.parts[k] = null;
       }
       if (close.type.mark)
-        content11.push(this.elt(close.type.mark, close.from, end));
-      let element = this.elt(type, start, end, content11);
+        content7.push(this.elt(close.type.mark, close.from, end));
+      let element = this.elt(type, start, end, content7);
       this.parts[j] = emp && open.from != start ? new InlineDelimiter(open.type, open.from, start, open.side) : null;
       let keep = this.parts[i] = emp && close.to != end ? new InlineDelimiter(close.type, end, close.to, close.side) : null;
       if (keep)
@@ -29753,9 +25344,9 @@ var InlineContext = class {
   of elements.
   */
   takeContent(startIndex) {
-    let content11 = this.resolveMarkers(startIndex);
+    let content7 = this.resolveMarkers(startIndex);
     this.parts.length = startIndex;
-    return content11;
+    return content7;
   }
   /**
   Return the delimiter at the given index. Mostly useful to get
@@ -29783,13 +25374,13 @@ var InlineContext = class {
 };
 InlineContext.linkStart = LinkStart;
 InlineContext.imageStart = ImageStart;
-function injectMarks(elements, marks7) {
-  if (!marks7.length)
+function injectMarks(elements, marks2) {
+  if (!marks2.length)
     return elements;
   if (!elements.length)
-    return marks7;
+    return marks2;
   let elts = elements.slice(), eI = 0;
-  for (let mark of marks7) {
+  for (let mark of marks2) {
     while (eI < elts.length && elts[eI].to < mark.to)
       eI++;
     if (eI < elts.length && elts[eI].from < mark.from) {
@@ -29848,7 +25439,7 @@ var FragmentCursor2 = class {
   }
   matches(hash2) {
     let tree = this.cursor.tree;
-    return tree && tree.prop(NodeProp3.contextHash) == hash2;
+    return tree && tree.prop(NodeProp.contextHash) == hash2;
   }
   takeNodes(cx) {
     let cur2 = this.cursor, off = this.fragment.offset, fragEnd = this.fragmentEnd - (this.fragment.openEnd ? 1 : 0);
@@ -29864,7 +25455,7 @@ var FragmentCursor2 = class {
       if (cur2.to - off <= cx.ranges[cx.rangeI].to) {
         cx.addNode(cur2.tree, pos);
       } else {
-        let dummy = new Tree3(cx.parser.nodeSet.types[Type.Paragraph], [], [], 0, cx.block.hashProp);
+        let dummy = new Tree(cx.parser.nodeSet.types[Type.Paragraph], [], [], 0, cx.block.hashProp);
         cx.reusePlaceholders.set(dummy, cur2.tree);
         cx.addNode(dummy, pos);
       }
@@ -29898,31 +25489,31 @@ function toRelative(abs, ranges) {
   }
   return pos;
 }
-var markdownHighlighting = styleTags3({
-  "Blockquote/...": tags3.quote,
-  HorizontalRule: tags3.contentSeparator,
-  "ATXHeading1/... SetextHeading1/...": tags3.heading1,
-  "ATXHeading2/... SetextHeading2/...": tags3.heading2,
-  "ATXHeading3/...": tags3.heading3,
-  "ATXHeading4/...": tags3.heading4,
-  "ATXHeading5/...": tags3.heading5,
-  "ATXHeading6/...": tags3.heading6,
-  "Comment CommentBlock": tags3.comment,
-  Escape: tags3.escape,
-  Entity: tags3.character,
-  "Emphasis/...": tags3.emphasis,
-  "StrongEmphasis/...": tags3.strong,
-  "Link/... Image/...": tags3.link,
-  "OrderedList/... BulletList/...": tags3.list,
-  "BlockQuote/...": tags3.quote,
-  "InlineCode CodeText": tags3.monospace,
-  "URL Autolink": tags3.url,
-  "HeaderMark HardBreak QuoteMark ListMark LinkMark EmphasisMark CodeMark": tags3.processingInstruction,
-  "CodeInfo LinkLabel": tags3.labelName,
-  LinkTitle: tags3.string,
-  Paragraph: tags3.content
+var markdownHighlighting = styleTags2({
+  "Blockquote/...": tags2.quote,
+  HorizontalRule: tags2.contentSeparator,
+  "ATXHeading1/... SetextHeading1/...": tags2.heading1,
+  "ATXHeading2/... SetextHeading2/...": tags2.heading2,
+  "ATXHeading3/...": tags2.heading3,
+  "ATXHeading4/...": tags2.heading4,
+  "ATXHeading5/...": tags2.heading5,
+  "ATXHeading6/...": tags2.heading6,
+  "Comment CommentBlock": tags2.comment,
+  Escape: tags2.escape,
+  Entity: tags2.character,
+  "Emphasis/...": tags2.emphasis,
+  "StrongEmphasis/...": tags2.strong,
+  "Link/... Image/...": tags2.link,
+  "OrderedList/... BulletList/...": tags2.list,
+  "BlockQuote/...": tags2.quote,
+  "InlineCode CodeText": tags2.monospace,
+  "URL Autolink": tags2.url,
+  "HeaderMark HardBreak QuoteMark ListMark LinkMark EmphasisMark CodeMark": tags2.processingInstruction,
+  "CodeInfo LinkLabel": tags2.labelName,
+  LinkTitle: tags2.string,
+  Paragraph: tags2.content
 });
-var parser = new MarkdownParser(new NodeSet3(nodeTypes).extend(markdownHighlighting), Object.keys(DefaultBlockParsers).map((n) => DefaultBlockParsers[n]), Object.keys(DefaultBlockParsers).map((n) => DefaultLeafBlocks[n]), Object.keys(DefaultBlockParsers), DefaultEndLeaf, DefaultSkipMarkup, Object.keys(DefaultInline).map((n) => DefaultInline[n]), Object.keys(DefaultInline), []);
+var parser = new MarkdownParser(new NodeSet(nodeTypes).extend(markdownHighlighting), Object.keys(DefaultBlockParsers).map((n) => DefaultBlockParsers[n]), Object.keys(DefaultBlockParsers).map((n) => DefaultLeafBlocks[n]), Object.keys(DefaultBlockParsers), DefaultEndLeaf, DefaultSkipMarkup, Object.keys(DefaultInline).map((n) => DefaultInline[n]), Object.keys(DefaultInline), []);
 function leftOverSpace(node, from, to) {
   let ranges = [];
   for (let n = node.firstChild, pos = from; ; n = n.nextSibling) {
@@ -29960,10 +25551,10 @@ var StrikethroughDelim = { resolve: "Strikethrough", mark: "StrikethroughMark" }
 var Strikethrough = {
   defineNodes: [{
     name: "Strikethrough",
-    style: { "Strikethrough/...": tags3.strikethrough }
+    style: { "Strikethrough/...": tags2.strikethrough }
   }, {
     name: "StrikethroughMark",
-    style: tags3.processingInstruction
+    style: tags2.processingInstruction
   }],
   parseInline: [{
     name: "Strikethrough",
@@ -30037,9 +25628,9 @@ var TableParser = class {
           ];
       }
     } else if (this.rows) {
-      let content11 = [];
-      parseRow(cx, line.text, line.pos, content11, cx.lineStart);
-      this.rows.push(cx.elt("TableRow", cx.lineStart + line.pos, cx.lineStart + line.text.length, content11));
+      let content7 = [];
+      parseRow(cx, line.text, line.pos, content7, cx.lineStart);
+      this.rows.push(cx.elt("TableRow", cx.lineStart + line.pos, cx.lineStart + line.text.length, content7));
     }
     return false;
   }
@@ -30053,10 +25644,10 @@ var TableParser = class {
 var Table = {
   defineNodes: [
     { name: "Table", block: true },
-    { name: "TableHeader", style: { "TableHeader/...": tags3.heading } },
+    { name: "TableHeader", style: { "TableHeader/...": tags2.heading } },
     "TableRow",
-    { name: "TableCell", style: tags3.content },
-    { name: "TableDelimiter", style: tags3.processingInstruction }
+    { name: "TableCell", style: tags2.content },
+    { name: "TableDelimiter", style: tags2.processingInstruction }
   ],
   parseBlock: [{
     name: "Table",
@@ -30086,8 +25677,8 @@ var TaskParser = class {
 };
 var TaskList = {
   defineNodes: [
-    { name: "Task", block: true, style: tags3.list },
-    { name: "TaskMarker", style: tags3.atom }
+    { name: "Task", block: true, style: tags2.list },
+    { name: "TaskMarker", style: tags2.atom }
   ],
   parseBlock: [{
     name: "TaskList",
@@ -30189,8 +25780,8 @@ function parseSubSuper(ch, node, mark) {
 }
 var Superscript = {
   defineNodes: [
-    { name: "Superscript", style: tags3.special(tags3.content) },
-    { name: "SuperscriptMark", style: tags3.processingInstruction }
+    { name: "Superscript", style: tags2.special(tags2.content) },
+    { name: "SuperscriptMark", style: tags2.processingInstruction }
   ],
   parseInline: [{
     name: "Superscript",
@@ -30199,8 +25790,8 @@ var Superscript = {
 };
 var Subscript = {
   defineNodes: [
-    { name: "Subscript", style: tags3.special(tags3.content) },
-    { name: "SubscriptMark", style: tags3.processingInstruction }
+    { name: "Subscript", style: tags2.special(tags2.content) },
+    { name: "SubscriptMark", style: tags2.processingInstruction }
   ],
   parseInline: [{
     name: "Subscript",
@@ -30208,7 +25799,7 @@ var Subscript = {
   }]
 };
 var Emoji = {
-  defineNodes: [{ name: "Emoji", style: tags3.character }],
+  defineNodes: [{ name: "Emoji", style: tags2.character }],
   parseInline: [{
     name: "Emoji",
     parse(cx, next, pos) {
@@ -30219,2011 +25810,6 @@ var Emoji = {
     }
   }]
 };
-
-// node_modules/@lezer/html/node_modules/@lezer/common/dist/index.js
-var DefaultBufferLength4 = 1024;
-var nextPropID4 = 0;
-var Range5 = class {
-  constructor(from, to) {
-    this.from = from;
-    this.to = to;
-  }
-};
-var NodeProp4 = class {
-  /**
-  Create a new node prop type.
-  */
-  constructor(config2 = {}) {
-    this.id = nextPropID4++;
-    this.perNode = !!config2.perNode;
-    this.deserialize = config2.deserialize || (() => {
-      throw new Error("This node type doesn't define a deserialize function");
-    });
-    this.combine = config2.combine || null;
-  }
-  /**
-  This is meant to be used with
-  [`NodeSet.extend`](#common.NodeSet.extend) or
-  [`LRParser.configure`](#lr.ParserConfig.props) to compute
-  prop values for each node type in the set. Takes a [match
-  object](#common.NodeType^match) or function that returns undefined
-  if the node type doesn't get this prop, and the prop's value if
-  it does.
-  */
-  add(match) {
-    if (this.perNode)
-      throw new RangeError("Can't add per-node props to node types");
-    if (typeof match != "function")
-      match = NodeType4.match(match);
-    return (type) => {
-      let result = match(type);
-      return result === void 0 ? null : [this, result];
-    };
-  }
-};
-NodeProp4.closedBy = new NodeProp4({ deserialize: (str) => str.split(" ") });
-NodeProp4.openedBy = new NodeProp4({ deserialize: (str) => str.split(" ") });
-NodeProp4.group = new NodeProp4({ deserialize: (str) => str.split(" ") });
-NodeProp4.isolate = new NodeProp4({ deserialize: (value) => {
-  if (value && value != "rtl" && value != "ltr" && value != "auto")
-    throw new RangeError("Invalid value for isolate: " + value);
-  return value || "auto";
-} });
-NodeProp4.contextHash = new NodeProp4({ perNode: true });
-NodeProp4.lookAhead = new NodeProp4({ perNode: true });
-NodeProp4.mounted = new NodeProp4({ perNode: true });
-var MountedTree4 = class {
-  constructor(tree, overlay, parser5, bracketed = false) {
-    this.tree = tree;
-    this.overlay = overlay;
-    this.parser = parser5;
-    this.bracketed = bracketed;
-  }
-  /**
-  @internal
-  */
-  static get(tree) {
-    return tree && tree.props && tree.props[NodeProp4.mounted.id];
-  }
-};
-var noProps4 = /* @__PURE__ */ Object.create(null);
-var NodeType4 = class _NodeType {
-  /**
-  @internal
-  */
-  constructor(name11, props, id3, flags = 0) {
-    this.name = name11;
-    this.props = props;
-    this.id = id3;
-    this.flags = flags;
-  }
-  /**
-  Define a node type.
-  */
-  static define(spec) {
-    let props = spec.props && spec.props.length ? /* @__PURE__ */ Object.create(null) : noProps4;
-    let flags = (spec.top ? 1 : 0) | (spec.skipped ? 2 : 0) | (spec.error ? 4 : 0) | (spec.name == null ? 8 : 0);
-    let type = new _NodeType(spec.name || "", props, spec.id, flags);
-    if (spec.props)
-      for (let src of spec.props) {
-        if (!Array.isArray(src))
-          src = src(type);
-        if (src) {
-          if (src[0].perNode)
-            throw new RangeError("Can't store a per-node prop on a node type");
-          props[src[0].id] = src[1];
-        }
-      }
-    return type;
-  }
-  /**
-  Retrieves a node prop for this type. Will return `undefined` if
-  the prop isn't present on this node.
-  */
-  prop(prop) {
-    return this.props[prop.id];
-  }
-  /**
-  True when this is the top node of a grammar.
-  */
-  get isTop() {
-    return (this.flags & 1) > 0;
-  }
-  /**
-  True when this node is produced by a skip rule.
-  */
-  get isSkipped() {
-    return (this.flags & 2) > 0;
-  }
-  /**
-  Indicates whether this is an error node.
-  */
-  get isError() {
-    return (this.flags & 4) > 0;
-  }
-  /**
-  When true, this node type doesn't correspond to a user-declared
-  named node, for example because it is used to cache repetition.
-  */
-  get isAnonymous() {
-    return (this.flags & 8) > 0;
-  }
-  /**
-  Returns true when this node's name or one of its
-  [groups](#common.NodeProp^group) matches the given string.
-  */
-  is(name11) {
-    if (typeof name11 == "string") {
-      if (this.name == name11)
-        return true;
-      let group = this.prop(NodeProp4.group);
-      return group ? group.indexOf(name11) > -1 : false;
-    }
-    return this.id == name11;
-  }
-  /**
-  Create a function from node types to arbitrary values by
-  specifying an object whose property names are node or
-  [group](#common.NodeProp^group) names. Often useful with
-  [`NodeProp.add`](#common.NodeProp.add). You can put multiple
-  names, separated by spaces, in a single property name to map
-  multiple node names to a single value.
-  */
-  static match(map) {
-    let direct = /* @__PURE__ */ Object.create(null);
-    for (let prop in map)
-      for (let name11 of prop.split(" "))
-        direct[name11] = map[prop];
-    return (node) => {
-      for (let groups = node.prop(NodeProp4.group), i = -1; i < (groups ? groups.length : 0); i++) {
-        let found = direct[i < 0 ? node.name : groups[i]];
-        if (found)
-          return found;
-      }
-    };
-  }
-};
-NodeType4.none = new NodeType4(
-  "",
-  /* @__PURE__ */ Object.create(null),
-  0,
-  8
-  /* NodeFlag.Anonymous */
-);
-var NodeSet4 = class _NodeSet {
-  /**
-  Create a set with the given types. The `id` property of each
-  type should correspond to its position within the array.
-  */
-  constructor(types2) {
-    this.types = types2;
-    for (let i = 0; i < types2.length; i++)
-      if (types2[i].id != i)
-        throw new RangeError("Node type ids should correspond to array positions when creating a node set");
-  }
-  /**
-  Create a copy of this set with some node properties added. The
-  arguments to this method can be created with
-  [`NodeProp.add`](#common.NodeProp.add).
-  */
-  extend(...props) {
-    let newTypes = [];
-    for (let type of this.types) {
-      let newProps = null;
-      for (let source of props) {
-        let add2 = source(type);
-        if (add2) {
-          if (!newProps)
-            newProps = Object.assign({}, type.props);
-          let value = add2[1], prop = add2[0];
-          if (prop.combine && prop.id in newProps)
-            value = prop.combine(newProps[prop.id], value);
-          newProps[prop.id] = value;
-        }
-      }
-      newTypes.push(newProps ? new NodeType4(type.name, newProps, type.id, type.flags) : type);
-    }
-    return new _NodeSet(newTypes);
-  }
-};
-var CachedNode4 = /* @__PURE__ */ new WeakMap();
-var CachedInnerNode4 = /* @__PURE__ */ new WeakMap();
-var IterMode4;
-(function(IterMode11) {
-  IterMode11[IterMode11["ExcludeBuffers"] = 1] = "ExcludeBuffers";
-  IterMode11[IterMode11["IncludeAnonymous"] = 2] = "IncludeAnonymous";
-  IterMode11[IterMode11["IgnoreMounts"] = 4] = "IgnoreMounts";
-  IterMode11[IterMode11["IgnoreOverlays"] = 8] = "IgnoreOverlays";
-  IterMode11[IterMode11["EnterBracketed"] = 16] = "EnterBracketed";
-})(IterMode4 || (IterMode4 = {}));
-var Tree4 = class _Tree {
-  /**
-  Construct a new tree. See also [`Tree.build`](#common.Tree^build).
-  */
-  constructor(type, children, positions, length, props) {
-    this.type = type;
-    this.children = children;
-    this.positions = positions;
-    this.length = length;
-    this.props = null;
-    if (props && props.length) {
-      this.props = /* @__PURE__ */ Object.create(null);
-      for (let [prop, value] of props)
-        this.props[typeof prop == "number" ? prop : prop.id] = value;
-    }
-  }
-  /**
-  @internal
-  */
-  toString() {
-    let mounted = MountedTree4.get(this);
-    if (mounted && !mounted.overlay)
-      return mounted.tree.toString();
-    let children = "";
-    for (let ch of this.children) {
-      let str = ch.toString();
-      if (str) {
-        if (children)
-          children += ",";
-        children += str;
-      }
-    }
-    return !this.type.name ? children : (/\W/.test(this.type.name) && !this.type.isError ? JSON.stringify(this.type.name) : this.type.name) + (children.length ? "(" + children + ")" : "");
-  }
-  /**
-  Get a [tree cursor](#common.TreeCursor) positioned at the top of
-  the tree. Mode can be used to [control](#common.IterMode) which
-  nodes the cursor visits.
-  */
-  cursor(mode = 0) {
-    return new TreeCursor4(this.topNode, mode);
-  }
-  /**
-  Get a [tree cursor](#common.TreeCursor) pointing into this tree
-  at the given position and side (see
-  [`moveTo`](#common.TreeCursor.moveTo).
-  */
-  cursorAt(pos, side = 0, mode = 0) {
-    let scope = CachedNode4.get(this) || this.topNode;
-    let cursor2 = new TreeCursor4(scope);
-    cursor2.moveTo(pos, side);
-    CachedNode4.set(this, cursor2._tree);
-    return cursor2;
-  }
-  /**
-  Get a [syntax node](#common.SyntaxNode) object for the top of the
-  tree.
-  */
-  get topNode() {
-    return new TreeNode4(this, 0, 0, null);
-  }
-  /**
-  Get the [syntax node](#common.SyntaxNode) at the given position.
-  If `side` is -1, this will move into nodes that end at the
-  position. If 1, it'll move into nodes that start at the
-  position. With 0, it'll only enter nodes that cover the position
-  from both sides.
-  
-  Note that this will not enter
-  [overlays](#common.MountedTree.overlay), and you often want
-  [`resolveInner`](#common.Tree.resolveInner) instead.
-  */
-  resolve(pos, side = 0) {
-    let node = resolveNode4(CachedNode4.get(this) || this.topNode, pos, side, false);
-    CachedNode4.set(this, node);
-    return node;
-  }
-  /**
-  Like [`resolve`](#common.Tree.resolve), but will enter
-  [overlaid](#common.MountedTree.overlay) nodes, producing a syntax node
-  pointing into the innermost overlaid tree at the given position
-  (with parent links going through all parent structure, including
-  the host trees).
-  */
-  resolveInner(pos, side = 0) {
-    let node = resolveNode4(CachedInnerNode4.get(this) || this.topNode, pos, side, true);
-    CachedInnerNode4.set(this, node);
-    return node;
-  }
-  /**
-  In some situations, it can be useful to iterate through all
-  nodes around a position, including those in overlays that don't
-  directly cover the position. This method gives you an iterator
-  that will produce all nodes, from small to big, around the given
-  position.
-  */
-  resolveStack(pos, side = 0) {
-    return stackIterator4(this, pos, side);
-  }
-  /**
-  Iterate over the tree and its children, calling `enter` for any
-  node that touches the `from`/`to` region (if given) before
-  running over such a node's children, and `leave` (if given) when
-  leaving the node. When `enter` returns `false`, that node will
-  not have its children iterated over (or `leave` called).
-  */
-  iterate(spec) {
-    let { enter, leave, from = 0, to = this.length } = spec;
-    let mode = spec.mode || 0, anon = (mode & IterMode4.IncludeAnonymous) > 0;
-    for (let c = this.cursor(mode | IterMode4.IncludeAnonymous); ; ) {
-      let entered = false;
-      if (c.from <= to && c.to >= from && (!anon && c.type.isAnonymous || enter(c) !== false)) {
-        if (c.firstChild())
-          continue;
-        entered = true;
-      }
-      for (; ; ) {
-        if (entered && leave && (anon || !c.type.isAnonymous))
-          leave(c);
-        if (c.nextSibling())
-          break;
-        if (!c.parent())
-          return;
-        entered = true;
-      }
-    }
-  }
-  /**
-  Get the value of the given [node prop](#common.NodeProp) for this
-  node. Works with both per-node and per-type props.
-  */
-  prop(prop) {
-    return !prop.perNode ? this.type.prop(prop) : this.props ? this.props[prop.id] : void 0;
-  }
-  /**
-  Returns the node's [per-node props](#common.NodeProp.perNode) in a
-  format that can be passed to the [`Tree`](#common.Tree)
-  constructor.
-  */
-  get propValues() {
-    let result = [];
-    if (this.props)
-      for (let id3 in this.props)
-        result.push([+id3, this.props[id3]]);
-    return result;
-  }
-  /**
-  Balance the direct children of this tree, producing a copy of
-  which may have children grouped into subtrees with type
-  [`NodeType.none`](#common.NodeType^none).
-  */
-  balance(config2 = {}) {
-    return this.children.length <= 8 ? this : balanceRange4(NodeType4.none, this.children, this.positions, 0, this.children.length, 0, this.length, (children, positions, length) => new _Tree(this.type, children, positions, length, this.propValues), config2.makeTree || ((children, positions, length) => new _Tree(NodeType4.none, children, positions, length)));
-  }
-  /**
-  Build a tree from a postfix-ordered buffer of node information,
-  or a cursor over such a buffer.
-  */
-  static build(data2) {
-    return buildTree4(data2);
-  }
-};
-Tree4.empty = new Tree4(NodeType4.none, [], [], 0);
-var FlatBufferCursor4 = class _FlatBufferCursor {
-  constructor(buffer, index) {
-    this.buffer = buffer;
-    this.index = index;
-  }
-  get id() {
-    return this.buffer[this.index - 4];
-  }
-  get start() {
-    return this.buffer[this.index - 3];
-  }
-  get end() {
-    return this.buffer[this.index - 2];
-  }
-  get size() {
-    return this.buffer[this.index - 1];
-  }
-  get pos() {
-    return this.index;
-  }
-  next() {
-    this.index -= 4;
-  }
-  fork() {
-    return new _FlatBufferCursor(this.buffer, this.index);
-  }
-};
-var TreeBuffer4 = class _TreeBuffer {
-  /**
-  Create a tree buffer.
-  */
-  constructor(buffer, length, set) {
-    this.buffer = buffer;
-    this.length = length;
-    this.set = set;
-  }
-  /**
-  @internal
-  */
-  get type() {
-    return NodeType4.none;
-  }
-  /**
-  @internal
-  */
-  toString() {
-    let result = [];
-    for (let index = 0; index < this.buffer.length; ) {
-      result.push(this.childString(index));
-      index = this.buffer[index + 3];
-    }
-    return result.join(",");
-  }
-  /**
-  @internal
-  */
-  childString(index) {
-    let id3 = this.buffer[index], endIndex = this.buffer[index + 3];
-    let type = this.set.types[id3], result = type.name;
-    if (/\W/.test(result) && !type.isError)
-      result = JSON.stringify(result);
-    index += 4;
-    if (endIndex == index)
-      return result;
-    let children = [];
-    while (index < endIndex) {
-      children.push(this.childString(index));
-      index = this.buffer[index + 3];
-    }
-    return result + "(" + children.join(",") + ")";
-  }
-  /**
-  @internal
-  */
-  findChild(startIndex, endIndex, dir, pos, side) {
-    let { buffer } = this, pick = -1;
-    for (let i = startIndex; i != endIndex; i = buffer[i + 3]) {
-      if (checkSide4(side, pos, buffer[i + 1], buffer[i + 2])) {
-        pick = i;
-        if (dir > 0)
-          break;
-      }
-    }
-    return pick;
-  }
-  /**
-  @internal
-  */
-  slice(startI, endI, from) {
-    let b = this.buffer;
-    let copy = new Uint16Array(endI - startI), len = 0;
-    for (let i = startI, j = 0; i < endI; ) {
-      copy[j++] = b[i++];
-      copy[j++] = b[i++] - from;
-      let to = copy[j++] = b[i++] - from;
-      copy[j++] = b[i++] - startI;
-      len = Math.max(len, to);
-    }
-    return new _TreeBuffer(copy, len, this.set);
-  }
-};
-function checkSide4(side, pos, from, to) {
-  switch (side) {
-    case -2:
-      return from < pos;
-    case -1:
-      return to >= pos && from < pos;
-    case 0:
-      return from < pos && to > pos;
-    case 1:
-      return from <= pos && to > pos;
-    case 2:
-      return to > pos;
-    case 4:
-      return true;
-  }
-}
-function resolveNode4(node, pos, side, overlays) {
-  var _a7;
-  while (node.from == node.to || (side < 1 ? node.from >= pos : node.from > pos) || (side > -1 ? node.to <= pos : node.to < pos)) {
-    let parent = !overlays && node instanceof TreeNode4 && node.index < 0 ? null : node.parent;
-    if (!parent)
-      return node;
-    node = parent;
-  }
-  let mode = overlays ? 0 : IterMode4.IgnoreOverlays;
-  if (overlays)
-    for (let scan = node, parent = scan.parent; parent; scan = parent, parent = scan.parent) {
-      if (scan instanceof TreeNode4 && scan.index < 0 && ((_a7 = parent.enter(pos, side, mode)) === null || _a7 === void 0 ? void 0 : _a7.from) != scan.from)
-        node = parent;
-    }
-  for (; ; ) {
-    let inner = node.enter(pos, side, mode);
-    if (!inner)
-      return node;
-    node = inner;
-  }
-}
-var BaseNode4 = class {
-  cursor(mode = 0) {
-    return new TreeCursor4(this, mode);
-  }
-  getChild(type, before = null, after = null) {
-    let r = getChildren4(this, type, before, after);
-    return r.length ? r[0] : null;
-  }
-  getChildren(type, before = null, after = null) {
-    return getChildren4(this, type, before, after);
-  }
-  resolve(pos, side = 0) {
-    return resolveNode4(this, pos, side, false);
-  }
-  resolveInner(pos, side = 0) {
-    return resolveNode4(this, pos, side, true);
-  }
-  matchContext(context) {
-    return matchNodeContext4(this.parent, context);
-  }
-  enterUnfinishedNodesBefore(pos) {
-    let scan = this.childBefore(pos), node = this;
-    while (scan) {
-      let last = scan.lastChild;
-      if (!last || last.to != scan.to)
-        break;
-      if (last.type.isError && last.from == last.to) {
-        node = scan;
-        scan = last.prevSibling;
-      } else {
-        scan = last;
-      }
-    }
-    return node;
-  }
-  get node() {
-    return this;
-  }
-  get next() {
-    return this.parent;
-  }
-};
-var TreeNode4 = class _TreeNode extends BaseNode4 {
-  constructor(_tree, from, index, _parent) {
-    super();
-    this._tree = _tree;
-    this.from = from;
-    this.index = index;
-    this._parent = _parent;
-  }
-  get type() {
-    return this._tree.type;
-  }
-  get name() {
-    return this._tree.type.name;
-  }
-  get to() {
-    return this.from + this._tree.length;
-  }
-  nextChild(i, dir, pos, side, mode = 0) {
-    for (let parent = this; ; ) {
-      for (let { children, positions } = parent._tree, e = dir > 0 ? children.length : -1; i != e; i += dir) {
-        let next = children[i], start = positions[i] + parent.from, mounted;
-        if (!(mode & IterMode4.EnterBracketed && next instanceof Tree4 && (mounted = MountedTree4.get(next)) && !mounted.overlay && mounted.bracketed && pos >= start && pos <= start + next.length) && !checkSide4(side, pos, start, start + next.length))
-          continue;
-        if (next instanceof TreeBuffer4) {
-          if (mode & IterMode4.ExcludeBuffers)
-            continue;
-          let index = next.findChild(0, next.buffer.length, dir, pos - start, side);
-          if (index > -1)
-            return new BufferNode4(new BufferContext4(parent, next, i, start), null, index);
-        } else if (mode & IterMode4.IncludeAnonymous || (!next.type.isAnonymous || hasChild4(next))) {
-          let mounted2;
-          if (!(mode & IterMode4.IgnoreMounts) && (mounted2 = MountedTree4.get(next)) && !mounted2.overlay)
-            return new _TreeNode(mounted2.tree, start, i, parent);
-          let inner = new _TreeNode(next, start, i, parent);
-          return mode & IterMode4.IncludeAnonymous || !inner.type.isAnonymous ? inner : inner.nextChild(dir < 0 ? next.children.length - 1 : 0, dir, pos, side, mode);
-        }
-      }
-      if (mode & IterMode4.IncludeAnonymous || !parent.type.isAnonymous)
-        return null;
-      if (parent.index >= 0)
-        i = parent.index + dir;
-      else
-        i = dir < 0 ? -1 : parent._parent._tree.children.length;
-      parent = parent._parent;
-      if (!parent)
-        return null;
-    }
-  }
-  get firstChild() {
-    return this.nextChild(
-      0,
-      1,
-      0,
-      4
-      /* Side.DontCare */
-    );
-  }
-  get lastChild() {
-    return this.nextChild(
-      this._tree.children.length - 1,
-      -1,
-      0,
-      4
-      /* Side.DontCare */
-    );
-  }
-  childAfter(pos) {
-    return this.nextChild(
-      0,
-      1,
-      pos,
-      2
-      /* Side.After */
-    );
-  }
-  childBefore(pos) {
-    return this.nextChild(
-      this._tree.children.length - 1,
-      -1,
-      pos,
-      -2
-      /* Side.Before */
-    );
-  }
-  prop(prop) {
-    return this._tree.prop(prop);
-  }
-  enter(pos, side, mode = 0) {
-    let mounted;
-    if (!(mode & IterMode4.IgnoreOverlays) && (mounted = MountedTree4.get(this._tree)) && mounted.overlay) {
-      let rPos = pos - this.from, enterBracketed = mode & IterMode4.EnterBracketed && mounted.bracketed;
-      for (let { from, to } of mounted.overlay) {
-        if ((side > 0 || enterBracketed ? from <= rPos : from < rPos) && (side < 0 || enterBracketed ? to >= rPos : to > rPos))
-          return new _TreeNode(mounted.tree, mounted.overlay[0].from + this.from, -1, this);
-      }
-    }
-    return this.nextChild(0, 1, pos, side, mode);
-  }
-  nextSignificantParent() {
-    let val = this;
-    while (val.type.isAnonymous && val._parent)
-      val = val._parent;
-    return val;
-  }
-  get parent() {
-    return this._parent ? this._parent.nextSignificantParent() : null;
-  }
-  get nextSibling() {
-    return this._parent && this.index >= 0 ? this._parent.nextChild(
-      this.index + 1,
-      1,
-      0,
-      4
-      /* Side.DontCare */
-    ) : null;
-  }
-  get prevSibling() {
-    return this._parent && this.index >= 0 ? this._parent.nextChild(
-      this.index - 1,
-      -1,
-      0,
-      4
-      /* Side.DontCare */
-    ) : null;
-  }
-  get tree() {
-    return this._tree;
-  }
-  toTree() {
-    return this._tree;
-  }
-  /**
-  @internal
-  */
-  toString() {
-    return this._tree.toString();
-  }
-};
-function getChildren4(node, type, before, after) {
-  let cur2 = node.cursor(), result = [];
-  if (!cur2.firstChild())
-    return result;
-  if (before != null)
-    for (let found = false; !found; ) {
-      found = cur2.type.is(before);
-      if (!cur2.nextSibling())
-        return result;
-    }
-  for (; ; ) {
-    if (after != null && cur2.type.is(after))
-      return result;
-    if (cur2.type.is(type))
-      result.push(cur2.node);
-    if (!cur2.nextSibling())
-      return after == null ? result : [];
-  }
-}
-function matchNodeContext4(node, context, i = context.length - 1) {
-  for (let p = node; i >= 0; p = p.parent) {
-    if (!p)
-      return false;
-    if (!p.type.isAnonymous) {
-      if (context[i] && context[i] != p.name)
-        return false;
-      i--;
-    }
-  }
-  return true;
-}
-var BufferContext4 = class {
-  constructor(parent, buffer, index, start) {
-    this.parent = parent;
-    this.buffer = buffer;
-    this.index = index;
-    this.start = start;
-  }
-};
-var BufferNode4 = class _BufferNode extends BaseNode4 {
-  get name() {
-    return this.type.name;
-  }
-  get from() {
-    return this.context.start + this.context.buffer.buffer[this.index + 1];
-  }
-  get to() {
-    return this.context.start + this.context.buffer.buffer[this.index + 2];
-  }
-  constructor(context, _parent, index) {
-    super();
-    this.context = context;
-    this._parent = _parent;
-    this.index = index;
-    this.type = context.buffer.set.types[context.buffer.buffer[index]];
-  }
-  child(dir, pos, side) {
-    let { buffer } = this.context;
-    let index = buffer.findChild(this.index + 4, buffer.buffer[this.index + 3], dir, pos - this.context.start, side);
-    return index < 0 ? null : new _BufferNode(this.context, this, index);
-  }
-  get firstChild() {
-    return this.child(
-      1,
-      0,
-      4
-      /* Side.DontCare */
-    );
-  }
-  get lastChild() {
-    return this.child(
-      -1,
-      0,
-      4
-      /* Side.DontCare */
-    );
-  }
-  childAfter(pos) {
-    return this.child(
-      1,
-      pos,
-      2
-      /* Side.After */
-    );
-  }
-  childBefore(pos) {
-    return this.child(
-      -1,
-      pos,
-      -2
-      /* Side.Before */
-    );
-  }
-  prop(prop) {
-    return this.type.prop(prop);
-  }
-  enter(pos, side, mode = 0) {
-    if (mode & IterMode4.ExcludeBuffers)
-      return null;
-    let { buffer } = this.context;
-    let index = buffer.findChild(this.index + 4, buffer.buffer[this.index + 3], side > 0 ? 1 : -1, pos - this.context.start, side);
-    return index < 0 ? null : new _BufferNode(this.context, this, index);
-  }
-  get parent() {
-    return this._parent || this.context.parent.nextSignificantParent();
-  }
-  externalSibling(dir) {
-    return this._parent ? null : this.context.parent.nextChild(
-      this.context.index + dir,
-      dir,
-      0,
-      4
-      /* Side.DontCare */
-    );
-  }
-  get nextSibling() {
-    let { buffer } = this.context;
-    let after = buffer.buffer[this.index + 3];
-    if (after < (this._parent ? buffer.buffer[this._parent.index + 3] : buffer.buffer.length))
-      return new _BufferNode(this.context, this._parent, after);
-    return this.externalSibling(1);
-  }
-  get prevSibling() {
-    let { buffer } = this.context;
-    let parentStart = this._parent ? this._parent.index + 4 : 0;
-    if (this.index == parentStart)
-      return this.externalSibling(-1);
-    return new _BufferNode(this.context, this._parent, buffer.findChild(
-      parentStart,
-      this.index,
-      -1,
-      0,
-      4
-      /* Side.DontCare */
-    ));
-  }
-  get tree() {
-    return null;
-  }
-  toTree() {
-    let children = [], positions = [];
-    let { buffer } = this.context;
-    let startI = this.index + 4, endI = buffer.buffer[this.index + 3];
-    if (endI > startI) {
-      let from = buffer.buffer[this.index + 1];
-      children.push(buffer.slice(startI, endI, from));
-      positions.push(0);
-    }
-    return new Tree4(this.type, children, positions, this.to - this.from);
-  }
-  /**
-  @internal
-  */
-  toString() {
-    return this.context.buffer.childString(this.index);
-  }
-};
-function iterStack4(heads) {
-  if (!heads.length)
-    return null;
-  let pick = 0, picked = heads[0];
-  for (let i = 1; i < heads.length; i++) {
-    let node = heads[i];
-    if (node.from > picked.from || node.to < picked.to) {
-      picked = node;
-      pick = i;
-    }
-  }
-  let next = picked instanceof TreeNode4 && picked.index < 0 ? null : picked.parent;
-  let newHeads = heads.slice();
-  if (next)
-    newHeads[pick] = next;
-  else
-    newHeads.splice(pick, 1);
-  return new StackIterator4(newHeads, picked);
-}
-var StackIterator4 = class {
-  constructor(heads, node) {
-    this.heads = heads;
-    this.node = node;
-  }
-  get next() {
-    return iterStack4(this.heads);
-  }
-};
-function stackIterator4(tree, pos, side) {
-  let inner = tree.resolveInner(pos, side), layers = null;
-  for (let scan = inner instanceof TreeNode4 ? inner : inner.context.parent; scan; scan = scan.parent) {
-    if (scan.index < 0) {
-      let parent = scan.parent;
-      (layers || (layers = [inner])).push(parent.resolve(pos, side));
-      scan = parent;
-    } else {
-      let mount = MountedTree4.get(scan.tree);
-      if (mount && mount.overlay && mount.overlay[0].from <= pos && mount.overlay[mount.overlay.length - 1].to >= pos) {
-        let root = new TreeNode4(mount.tree, mount.overlay[0].from + scan.from, -1, scan);
-        (layers || (layers = [inner])).push(resolveNode4(root, pos, side, false));
-      }
-    }
-  }
-  return layers ? iterStack4(layers) : inner;
-}
-var TreeCursor4 = class {
-  /**
-  Shorthand for `.type.name`.
-  */
-  get name() {
-    return this.type.name;
-  }
-  /**
-  @internal
-  */
-  constructor(node, mode = 0) {
-    this.buffer = null;
-    this.stack = [];
-    this.index = 0;
-    this.bufferNode = null;
-    this.mode = mode & ~IterMode4.EnterBracketed;
-    if (node instanceof TreeNode4) {
-      this.yieldNode(node);
-    } else {
-      this._tree = node.context.parent;
-      this.buffer = node.context;
-      for (let n = node._parent; n; n = n._parent)
-        this.stack.unshift(n.index);
-      this.bufferNode = node;
-      this.yieldBuf(node.index);
-    }
-  }
-  yieldNode(node) {
-    if (!node)
-      return false;
-    this._tree = node;
-    this.type = node.type;
-    this.from = node.from;
-    this.to = node.to;
-    return true;
-  }
-  yieldBuf(index, type) {
-    this.index = index;
-    let { start, buffer } = this.buffer;
-    this.type = type || buffer.set.types[buffer.buffer[index]];
-    this.from = start + buffer.buffer[index + 1];
-    this.to = start + buffer.buffer[index + 2];
-    return true;
-  }
-  /**
-  @internal
-  */
-  yield(node) {
-    if (!node)
-      return false;
-    if (node instanceof TreeNode4) {
-      this.buffer = null;
-      return this.yieldNode(node);
-    }
-    this.buffer = node.context;
-    return this.yieldBuf(node.index, node.type);
-  }
-  /**
-  @internal
-  */
-  toString() {
-    return this.buffer ? this.buffer.buffer.childString(this.index) : this._tree.toString();
-  }
-  /**
-  @internal
-  */
-  enterChild(dir, pos, side) {
-    if (!this.buffer)
-      return this.yield(this._tree.nextChild(dir < 0 ? this._tree._tree.children.length - 1 : 0, dir, pos, side, this.mode));
-    let { buffer } = this.buffer;
-    let index = buffer.findChild(this.index + 4, buffer.buffer[this.index + 3], dir, pos - this.buffer.start, side);
-    if (index < 0)
-      return false;
-    this.stack.push(this.index);
-    return this.yieldBuf(index);
-  }
-  /**
-  Move the cursor to this node's first child. When this returns
-  false, the node has no child, and the cursor has not been moved.
-  */
-  firstChild() {
-    return this.enterChild(
-      1,
-      0,
-      4
-      /* Side.DontCare */
-    );
-  }
-  /**
-  Move the cursor to this node's last child.
-  */
-  lastChild() {
-    return this.enterChild(
-      -1,
-      0,
-      4
-      /* Side.DontCare */
-    );
-  }
-  /**
-  Move the cursor to the first child that ends after `pos`.
-  */
-  childAfter(pos) {
-    return this.enterChild(
-      1,
-      pos,
-      2
-      /* Side.After */
-    );
-  }
-  /**
-  Move to the last child that starts before `pos`.
-  */
-  childBefore(pos) {
-    return this.enterChild(
-      -1,
-      pos,
-      -2
-      /* Side.Before */
-    );
-  }
-  /**
-  Move the cursor to the child around `pos`. If side is -1 the
-  child may end at that position, when 1 it may start there. This
-  will also enter [overlaid](#common.MountedTree.overlay)
-  [mounted](#common.NodeProp^mounted) trees unless `overlays` is
-  set to false.
-  */
-  enter(pos, side, mode = this.mode) {
-    if (!this.buffer)
-      return this.yield(this._tree.enter(pos, side, mode));
-    return mode & IterMode4.ExcludeBuffers ? false : this.enterChild(1, pos, side);
-  }
-  /**
-  Move to the node's parent node, if this isn't the top node.
-  */
-  parent() {
-    if (!this.buffer)
-      return this.yieldNode(this.mode & IterMode4.IncludeAnonymous ? this._tree._parent : this._tree.parent);
-    if (this.stack.length)
-      return this.yieldBuf(this.stack.pop());
-    let parent = this.mode & IterMode4.IncludeAnonymous ? this.buffer.parent : this.buffer.parent.nextSignificantParent();
-    this.buffer = null;
-    return this.yieldNode(parent);
-  }
-  /**
-  @internal
-  */
-  sibling(dir) {
-    if (!this.buffer)
-      return !this._tree._parent ? false : this.yield(this._tree.index < 0 ? null : this._tree._parent.nextChild(this._tree.index + dir, dir, 0, 4, this.mode));
-    let { buffer } = this.buffer, d = this.stack.length - 1;
-    if (dir < 0) {
-      let parentStart = d < 0 ? 0 : this.stack[d] + 4;
-      if (this.index != parentStart)
-        return this.yieldBuf(buffer.findChild(
-          parentStart,
-          this.index,
-          -1,
-          0,
-          4
-          /* Side.DontCare */
-        ));
-    } else {
-      let after = buffer.buffer[this.index + 3];
-      if (after < (d < 0 ? buffer.buffer.length : buffer.buffer[this.stack[d] + 3]))
-        return this.yieldBuf(after);
-    }
-    return d < 0 ? this.yield(this.buffer.parent.nextChild(this.buffer.index + dir, dir, 0, 4, this.mode)) : false;
-  }
-  /**
-  Move to this node's next sibling, if any.
-  */
-  nextSibling() {
-    return this.sibling(1);
-  }
-  /**
-  Move to this node's previous sibling, if any.
-  */
-  prevSibling() {
-    return this.sibling(-1);
-  }
-  atLastNode(dir) {
-    let index, parent, { buffer } = this;
-    if (buffer) {
-      if (dir > 0) {
-        if (this.index < buffer.buffer.buffer.length)
-          return false;
-      } else {
-        for (let i = 0; i < this.index; i++)
-          if (buffer.buffer.buffer[i + 3] < this.index)
-            return false;
-      }
-      ({ index, parent } = buffer);
-    } else {
-      ({ index, _parent: parent } = this._tree);
-    }
-    for (; parent; { index, _parent: parent } = parent) {
-      if (index > -1)
-        for (let i = index + dir, e = dir < 0 ? -1 : parent._tree.children.length; i != e; i += dir) {
-          let child = parent._tree.children[i];
-          if (this.mode & IterMode4.IncludeAnonymous || child instanceof TreeBuffer4 || !child.type.isAnonymous || hasChild4(child))
-            return false;
-        }
-    }
-    return true;
-  }
-  move(dir, enter) {
-    if (enter && this.enterChild(
-      dir,
-      0,
-      4
-      /* Side.DontCare */
-    ))
-      return true;
-    for (; ; ) {
-      if (this.sibling(dir))
-        return true;
-      if (this.atLastNode(dir) || !this.parent())
-        return false;
-    }
-  }
-  /**
-  Move to the next node in a
-  [pre-order](https://en.wikipedia.org/wiki/Tree_traversal#Pre-order,_NLR)
-  traversal, going from a node to its first child or, if the
-  current node is empty or `enter` is false, its next sibling or
-  the next sibling of the first parent node that has one.
-  */
-  next(enter = true) {
-    return this.move(1, enter);
-  }
-  /**
-  Move to the next node in a last-to-first pre-order traversal. A
-  node is followed by its last child or, if it has none, its
-  previous sibling or the previous sibling of the first parent
-  node that has one.
-  */
-  prev(enter = true) {
-    return this.move(-1, enter);
-  }
-  /**
-  Move the cursor to the innermost node that covers `pos`. If
-  `side` is -1, it will enter nodes that end at `pos`. If it is 1,
-  it will enter nodes that start at `pos`.
-  */
-  moveTo(pos, side = 0) {
-    while (this.from == this.to || (side < 1 ? this.from >= pos : this.from > pos) || (side > -1 ? this.to <= pos : this.to < pos))
-      if (!this.parent())
-        break;
-    while (this.enterChild(1, pos, side)) {
-    }
-    return this;
-  }
-  /**
-  Get a [syntax node](#common.SyntaxNode) at the cursor's current
-  position.
-  */
-  get node() {
-    if (!this.buffer)
-      return this._tree;
-    let cache2 = this.bufferNode, result = null, depth = 0;
-    if (cache2 && cache2.context == this.buffer) {
-      scan: for (let index = this.index, d = this.stack.length; d >= 0; ) {
-        for (let c = cache2; c; c = c._parent)
-          if (c.index == index) {
-            if (index == this.index)
-              return c;
-            result = c;
-            depth = d + 1;
-            break scan;
-          }
-        index = this.stack[--d];
-      }
-    }
-    for (let i = depth; i < this.stack.length; i++)
-      result = new BufferNode4(this.buffer, result, this.stack[i]);
-    return this.bufferNode = new BufferNode4(this.buffer, result, this.index);
-  }
-  /**
-  Get the [tree](#common.Tree) that represents the current node, if
-  any. Will return null when the node is in a [tree
-  buffer](#common.TreeBuffer).
-  */
-  get tree() {
-    return this.buffer ? null : this._tree._tree;
-  }
-  /**
-  Iterate over the current node and all its descendants, calling
-  `enter` when entering a node and `leave`, if given, when leaving
-  one. When `enter` returns `false`, any children of that node are
-  skipped, and `leave` isn't called for it.
-  */
-  iterate(enter, leave) {
-    for (let depth = 0; ; ) {
-      let mustLeave = false;
-      if (this.type.isAnonymous || enter(this) !== false) {
-        if (this.firstChild()) {
-          depth++;
-          continue;
-        }
-        if (!this.type.isAnonymous)
-          mustLeave = true;
-      }
-      for (; ; ) {
-        if (mustLeave && leave)
-          leave(this);
-        mustLeave = this.type.isAnonymous;
-        if (!depth)
-          return;
-        if (this.nextSibling())
-          break;
-        this.parent();
-        depth--;
-        mustLeave = true;
-      }
-    }
-  }
-  /**
-  Test whether the current node matches a given context—a sequence
-  of direct parent node names. Empty strings in the context array
-  are treated as wildcards.
-  */
-  matchContext(context) {
-    if (!this.buffer)
-      return matchNodeContext4(this.node.parent, context);
-    let { buffer } = this.buffer, { types: types2 } = buffer.set;
-    for (let i = context.length - 1, d = this.stack.length - 1; i >= 0; d--) {
-      if (d < 0)
-        return matchNodeContext4(this._tree, context, i);
-      let type = types2[buffer.buffer[this.stack[d]]];
-      if (!type.isAnonymous) {
-        if (context[i] && context[i] != type.name)
-          return false;
-        i--;
-      }
-    }
-    return true;
-  }
-};
-function hasChild4(tree) {
-  return tree.children.some((ch) => ch instanceof TreeBuffer4 || !ch.type.isAnonymous || hasChild4(ch));
-}
-function buildTree4(data2) {
-  var _a7;
-  let { buffer, nodeSet, maxBufferLength = DefaultBufferLength4, reused = [], minRepeatType = nodeSet.types.length } = data2;
-  let cursor2 = Array.isArray(buffer) ? new FlatBufferCursor4(buffer, buffer.length) : buffer;
-  let types2 = nodeSet.types;
-  let contextHash = 0, lookAhead = 0;
-  function takeNode(parentStart, minPos, children2, positions2, inRepeat, depth) {
-    let { id: id3, start, end, size } = cursor2;
-    let lookAheadAtStart = lookAhead, contextAtStart = contextHash;
-    if (size < 0) {
-      cursor2.next();
-      if (size == -1) {
-        let node2 = reused[id3];
-        children2.push(node2);
-        positions2.push(start - parentStart);
-        return;
-      } else if (size == -3) {
-        contextHash = id3;
-        return;
-      } else if (size == -4) {
-        lookAhead = id3;
-        return;
-      } else {
-        throw new RangeError(`Unrecognized record size: ${size}`);
-      }
-    }
-    let type = types2[id3], node, buffer2;
-    let startPos = start - parentStart;
-    if (end - start <= maxBufferLength && (buffer2 = findBufferSize(cursor2.pos - minPos, inRepeat))) {
-      let data3 = new Uint16Array(buffer2.size - buffer2.skip);
-      let endPos = cursor2.pos - buffer2.size, index = data3.length;
-      while (cursor2.pos > endPos)
-        index = copyToBuffer(buffer2.start, data3, index);
-      node = new TreeBuffer4(data3, end - buffer2.start, nodeSet);
-      startPos = buffer2.start - parentStart;
-    } else {
-      let endPos = cursor2.pos - size;
-      cursor2.next();
-      let localChildren = [], localPositions = [];
-      let localInRepeat = id3 >= minRepeatType ? id3 : -1;
-      let lastGroup = 0, lastEnd = end;
-      while (cursor2.pos > endPos) {
-        if (localInRepeat >= 0 && cursor2.id == localInRepeat && cursor2.size >= 0) {
-          if (cursor2.end <= lastEnd - maxBufferLength) {
-            makeRepeatLeaf(localChildren, localPositions, start, lastGroup, cursor2.end, lastEnd, localInRepeat, lookAheadAtStart, contextAtStart);
-            lastGroup = localChildren.length;
-            lastEnd = cursor2.end;
-          }
-          cursor2.next();
-        } else if (depth > 2500) {
-          takeFlatNode(start, endPos, localChildren, localPositions);
-        } else {
-          takeNode(start, endPos, localChildren, localPositions, localInRepeat, depth + 1);
-        }
-      }
-      if (localInRepeat >= 0 && lastGroup > 0 && lastGroup < localChildren.length)
-        makeRepeatLeaf(localChildren, localPositions, start, lastGroup, start, lastEnd, localInRepeat, lookAheadAtStart, contextAtStart);
-      localChildren.reverse();
-      localPositions.reverse();
-      if (localInRepeat > -1 && lastGroup > 0) {
-        let make = makeBalanced(type, contextAtStart);
-        node = balanceRange4(type, localChildren, localPositions, 0, localChildren.length, 0, end - start, make, make);
-      } else {
-        node = makeTree(type, localChildren, localPositions, end - start, lookAheadAtStart - end, contextAtStart);
-      }
-    }
-    children2.push(node);
-    positions2.push(startPos);
-  }
-  function takeFlatNode(parentStart, minPos, children2, positions2) {
-    let nodes = [];
-    let nodeCount = 0, stopAt = -1;
-    while (cursor2.pos > minPos) {
-      let { id: id3, start, end, size } = cursor2;
-      if (size > 4) {
-        cursor2.next();
-      } else if (stopAt > -1 && start < stopAt) {
-        break;
-      } else {
-        if (stopAt < 0)
-          stopAt = end - maxBufferLength;
-        nodes.push(id3, start, end);
-        nodeCount++;
-        cursor2.next();
-      }
-    }
-    if (nodeCount) {
-      let buffer2 = new Uint16Array(nodeCount * 4);
-      let start = nodes[nodes.length - 2];
-      for (let i = nodes.length - 3, j = 0; i >= 0; i -= 3) {
-        buffer2[j++] = nodes[i];
-        buffer2[j++] = nodes[i + 1] - start;
-        buffer2[j++] = nodes[i + 2] - start;
-        buffer2[j++] = j;
-      }
-      children2.push(new TreeBuffer4(buffer2, nodes[2] - start, nodeSet));
-      positions2.push(start - parentStart);
-    }
-  }
-  function makeBalanced(type, contextHash2) {
-    return (children2, positions2, length2) => {
-      let lookAhead2 = 0, lastI = children2.length - 1, last, lookAheadProp;
-      if (lastI >= 0 && (last = children2[lastI]) instanceof Tree4) {
-        if (!lastI && last.type == type && last.length == length2)
-          return last;
-        if (lookAheadProp = last.prop(NodeProp4.lookAhead))
-          lookAhead2 = positions2[lastI] + last.length + lookAheadProp;
-      }
-      return makeTree(type, children2, positions2, length2, lookAhead2, contextHash2);
-    };
-  }
-  function makeRepeatLeaf(children2, positions2, base2, i, from, to, type, lookAhead2, contextHash2) {
-    let localChildren = [], localPositions = [];
-    while (children2.length > i) {
-      localChildren.push(children2.pop());
-      localPositions.push(positions2.pop() + base2 - from);
-    }
-    children2.push(makeTree(nodeSet.types[type], localChildren, localPositions, to - from, lookAhead2 - to, contextHash2));
-    positions2.push(from - base2);
-  }
-  function makeTree(type, children2, positions2, length2, lookAhead2, contextHash2, props) {
-    if (contextHash2) {
-      let pair4 = [NodeProp4.contextHash, contextHash2];
-      props = props ? [pair4].concat(props) : [pair4];
-    }
-    if (lookAhead2 > 25) {
-      let pair4 = [NodeProp4.lookAhead, lookAhead2];
-      props = props ? [pair4].concat(props) : [pair4];
-    }
-    return new Tree4(type, children2, positions2, length2, props);
-  }
-  function findBufferSize(maxSize, inRepeat) {
-    let fork = cursor2.fork();
-    let size = 0, start = 0, skip = 0, minStart = fork.end - maxBufferLength;
-    let result = { size: 0, start: 0, skip: 0 };
-    scan: for (let minPos = fork.pos - maxSize; fork.pos > minPos; ) {
-      let nodeSize11 = fork.size;
-      if (fork.id == inRepeat && nodeSize11 >= 0) {
-        result.size = size;
-        result.start = start;
-        result.skip = skip;
-        skip += 4;
-        size += 4;
-        fork.next();
-        continue;
-      }
-      let startPos = fork.pos - nodeSize11;
-      if (nodeSize11 < 0 || startPos < minPos || fork.start < minStart)
-        break;
-      let localSkipped = fork.id >= minRepeatType ? 4 : 0;
-      let nodeStart2 = fork.start;
-      fork.next();
-      while (fork.pos > startPos) {
-        if (fork.size < 0) {
-          if (fork.size == -3 || fork.size == -4)
-            localSkipped += 4;
-          else
-            break scan;
-        } else if (fork.id >= minRepeatType) {
-          localSkipped += 4;
-        }
-        fork.next();
-      }
-      start = nodeStart2;
-      size += nodeSize11;
-      skip += localSkipped;
-    }
-    if (inRepeat < 0 || size == maxSize) {
-      result.size = size;
-      result.start = start;
-      result.skip = skip;
-    }
-    return result.size > 4 ? result : void 0;
-  }
-  function copyToBuffer(bufferStart, buffer2, index) {
-    let { id: id3, start, end, size } = cursor2;
-    cursor2.next();
-    if (size >= 0 && id3 < minRepeatType) {
-      let startIndex = index;
-      if (size > 4) {
-        let endPos = cursor2.pos - (size - 4);
-        while (cursor2.pos > endPos)
-          index = copyToBuffer(bufferStart, buffer2, index);
-      }
-      buffer2[--index] = startIndex;
-      buffer2[--index] = end - bufferStart;
-      buffer2[--index] = start - bufferStart;
-      buffer2[--index] = id3;
-    } else if (size == -3) {
-      contextHash = id3;
-    } else if (size == -4) {
-      lookAhead = id3;
-    }
-    return index;
-  }
-  let children = [], positions = [];
-  while (cursor2.pos > 0)
-    takeNode(data2.start || 0, data2.bufferStart || 0, children, positions, -1, 0);
-  let length = (_a7 = data2.length) !== null && _a7 !== void 0 ? _a7 : children.length ? positions[0] + children[0].length : 0;
-  return new Tree4(types2[data2.topID], children.reverse(), positions.reverse(), length);
-}
-var nodeSizeCache4 = /* @__PURE__ */ new WeakMap();
-function nodeSize4(balanceType, node) {
-  if (!balanceType.isAnonymous || node instanceof TreeBuffer4 || node.type != balanceType)
-    return 1;
-  let size = nodeSizeCache4.get(node);
-  if (size == null) {
-    size = 1;
-    for (let child of node.children) {
-      if (child.type != balanceType || !(child instanceof Tree4)) {
-        size = 1;
-        break;
-      }
-      size += nodeSize4(balanceType, child);
-    }
-    nodeSizeCache4.set(node, size);
-  }
-  return size;
-}
-function balanceRange4(balanceType, children, positions, from, to, start, length, mkTop, mkTree) {
-  let total = 0;
-  for (let i = from; i < to; i++)
-    total += nodeSize4(balanceType, children[i]);
-  let maxChild = Math.ceil(
-    total * 1.5 / 8
-    /* Balance.BranchFactor */
-  );
-  let localChildren = [], localPositions = [];
-  function divide(children2, positions2, from2, to2, offset) {
-    for (let i = from2; i < to2; ) {
-      let groupFrom = i, groupStart = positions2[i], groupSize = nodeSize4(balanceType, children2[i]);
-      i++;
-      for (; i < to2; i++) {
-        let nextSize = nodeSize4(balanceType, children2[i]);
-        if (groupSize + nextSize >= maxChild)
-          break;
-        groupSize += nextSize;
-      }
-      if (i == groupFrom + 1) {
-        if (groupSize > maxChild) {
-          let only = children2[groupFrom];
-          divide(only.children, only.positions, 0, only.children.length, positions2[groupFrom] + offset);
-          continue;
-        }
-        localChildren.push(children2[groupFrom]);
-      } else {
-        let length2 = positions2[i - 1] + children2[i - 1].length - groupStart;
-        localChildren.push(balanceRange4(balanceType, children2, positions2, groupFrom, i, groupStart, length2, null, mkTree));
-      }
-      localPositions.push(groupStart + offset - start);
-    }
-  }
-  divide(children, positions, from, to, 0);
-  return (mkTop || mkTree)(localChildren, localPositions, length);
-}
-var TreeFragment4 = class _TreeFragment {
-  /**
-  Construct a tree fragment. You'll usually want to use
-  [`addTree`](#common.TreeFragment^addTree) and
-  [`applyChanges`](#common.TreeFragment^applyChanges) instead of
-  calling this directly.
-  */
-  constructor(from, to, tree, offset, openStart = false, openEnd = false) {
-    this.from = from;
-    this.to = to;
-    this.tree = tree;
-    this.offset = offset;
-    this.open = (openStart ? 1 : 0) | (openEnd ? 2 : 0);
-  }
-  /**
-  Whether the start of the fragment represents the start of a
-  parse, or the end of a change. (In the second case, it may not
-  be safe to reuse some nodes at the start, depending on the
-  parsing algorithm.)
-  */
-  get openStart() {
-    return (this.open & 1) > 0;
-  }
-  /**
-  Whether the end of the fragment represents the end of a
-  full-document parse, or the start of a change.
-  */
-  get openEnd() {
-    return (this.open & 2) > 0;
-  }
-  /**
-  Create a set of fragments from a freshly parsed tree, or update
-  an existing set of fragments by replacing the ones that overlap
-  with a tree with content from the new tree. When `partial` is
-  true, the parse is treated as incomplete, and the resulting
-  fragment has [`openEnd`](#common.TreeFragment.openEnd) set to
-  true.
-  */
-  static addTree(tree, fragments = [], partial = false) {
-    let result = [new _TreeFragment(0, tree.length, tree, 0, false, partial)];
-    for (let f of fragments)
-      if (f.to > tree.length)
-        result.push(f);
-    return result;
-  }
-  /**
-  Apply a set of edits to an array of fragments, removing or
-  splitting fragments as necessary to remove edited ranges, and
-  adjusting offsets for fragments that moved.
-  */
-  static applyChanges(fragments, changes, minGap = 128) {
-    if (!changes.length)
-      return fragments;
-    let result = [];
-    let fI = 1, nextF = fragments.length ? fragments[0] : null;
-    for (let cI = 0, pos = 0, off = 0; ; cI++) {
-      let nextC = cI < changes.length ? changes[cI] : null;
-      let nextPos = nextC ? nextC.fromA : 1e9;
-      if (nextPos - pos >= minGap)
-        while (nextF && nextF.from < nextPos) {
-          let cut = nextF;
-          if (pos >= cut.from || nextPos <= cut.to || off) {
-            let fFrom = Math.max(cut.from, pos) - off, fTo = Math.min(cut.to, nextPos) - off;
-            cut = fFrom >= fTo ? null : new _TreeFragment(fFrom, fTo, cut.tree, cut.offset + off, cI > 0, !!nextC);
-          }
-          if (cut)
-            result.push(cut);
-          if (nextF.to > nextPos)
-            break;
-          nextF = fI < fragments.length ? fragments[fI++] : null;
-        }
-      if (!nextC)
-        break;
-      pos = nextC.toA;
-      off = nextC.toA - nextC.toB;
-    }
-    return result;
-  }
-};
-var Parser4 = class {
-  /**
-  Start a parse, returning a [partial parse](#common.PartialParse)
-  object. [`fragments`](#common.TreeFragment) can be passed in to
-  make the parse incremental.
-  
-  By default, the entire input is parsed. You can pass `ranges`,
-  which should be a sorted array of non-empty, non-overlapping
-  ranges, to parse only those ranges. The tree returned in that
-  case will start at `ranges[0].from`.
-  */
-  startParse(input, fragments, ranges) {
-    if (typeof input == "string")
-      input = new StringInput4(input);
-    ranges = !ranges ? [new Range5(0, input.length)] : ranges.length ? ranges.map((r) => new Range5(r.from, r.to)) : [new Range5(0, 0)];
-    return this.createParse(input, fragments || [], ranges);
-  }
-  /**
-  Run a full parse, returning the resulting tree.
-  */
-  parse(input, fragments, ranges) {
-    let parse = this.startParse(input, fragments, ranges);
-    for (; ; ) {
-      let done = parse.advance();
-      if (done)
-        return done;
-    }
-  }
-};
-var StringInput4 = class {
-  constructor(string11) {
-    this.string = string11;
-  }
-  get length() {
-    return this.string.length;
-  }
-  chunk(from) {
-    return this.string.slice(from);
-  }
-  get lineChunks() {
-    return false;
-  }
-  read(from, to) {
-    return this.string.slice(from, to);
-  }
-};
-function parseMixed2(nest) {
-  return (parse, input, fragments, ranges) => new MixedParse2(parse, nest, input, fragments, ranges);
-}
-var InnerParse2 = class {
-  constructor(parser5, parse, overlay, bracketed, target, from) {
-    this.parser = parser5;
-    this.parse = parse;
-    this.overlay = overlay;
-    this.bracketed = bracketed;
-    this.target = target;
-    this.from = from;
-  }
-};
-function checkRanges2(ranges) {
-  if (!ranges.length || ranges.some((r) => r.from >= r.to))
-    throw new RangeError("Invalid inner parse ranges given: " + JSON.stringify(ranges));
-}
-var ActiveOverlay2 = class {
-  constructor(parser5, predicate, mounts, index, start, bracketed, target, prev) {
-    this.parser = parser5;
-    this.predicate = predicate;
-    this.mounts = mounts;
-    this.index = index;
-    this.start = start;
-    this.bracketed = bracketed;
-    this.target = target;
-    this.prev = prev;
-    this.depth = 0;
-    this.ranges = [];
-  }
-};
-var stoppedInner4 = new NodeProp4({ perNode: true });
-var MixedParse2 = class {
-  constructor(base2, nest, input, fragments, ranges) {
-    this.nest = nest;
-    this.input = input;
-    this.fragments = fragments;
-    this.ranges = ranges;
-    this.inner = [];
-    this.innerDone = 0;
-    this.baseTree = null;
-    this.stoppedAt = null;
-    this.baseParse = base2;
-  }
-  advance() {
-    if (this.baseParse) {
-      let done2 = this.baseParse.advance();
-      if (!done2)
-        return null;
-      this.baseParse = null;
-      this.baseTree = done2;
-      this.startInner();
-      if (this.stoppedAt != null)
-        for (let inner2 of this.inner)
-          inner2.parse.stopAt(this.stoppedAt);
-    }
-    if (this.innerDone == this.inner.length) {
-      let result = this.baseTree;
-      if (this.stoppedAt != null)
-        result = new Tree4(result.type, result.children, result.positions, result.length, result.propValues.concat([[stoppedInner4, this.stoppedAt]]));
-      return result;
-    }
-    let inner = this.inner[this.innerDone], done = inner.parse.advance();
-    if (done) {
-      this.innerDone++;
-      let props = Object.assign(/* @__PURE__ */ Object.create(null), inner.target.props);
-      props[NodeProp4.mounted.id] = new MountedTree4(done, inner.overlay, inner.parser, inner.bracketed);
-      inner.target.props = props;
-    }
-    return null;
-  }
-  get parsedPos() {
-    if (this.baseParse)
-      return 0;
-    let pos = this.input.length;
-    for (let i = this.innerDone; i < this.inner.length; i++) {
-      if (this.inner[i].from < pos)
-        pos = Math.min(pos, this.inner[i].parse.parsedPos);
-    }
-    return pos;
-  }
-  stopAt(pos) {
-    this.stoppedAt = pos;
-    if (this.baseParse)
-      this.baseParse.stopAt(pos);
-    else
-      for (let i = this.innerDone; i < this.inner.length; i++)
-        this.inner[i].parse.stopAt(pos);
-  }
-  startInner() {
-    let fragmentCursor = new FragmentCursor3(this.fragments);
-    let overlay = null;
-    let covered = null;
-    let cursor2 = new TreeCursor4(new TreeNode4(this.baseTree, this.ranges[0].from, 0, null), IterMode4.IncludeAnonymous | IterMode4.IgnoreMounts);
-    scan: for (let nest, isCovered; ; ) {
-      let enter = true, range;
-      if (this.stoppedAt != null && cursor2.from >= this.stoppedAt) {
-        enter = false;
-      } else if (fragmentCursor.hasNode(cursor2)) {
-        if (overlay) {
-          let match = overlay.mounts.find((m) => m.frag.from <= cursor2.from && m.frag.to >= cursor2.to && m.mount.overlay);
-          if (match)
-            for (let r of match.mount.overlay) {
-              let from = r.from + match.pos, to = r.to + match.pos;
-              if (from >= cursor2.from && to <= cursor2.to && !overlay.ranges.some((r2) => r2.from < to && r2.to > from))
-                overlay.ranges.push({ from, to });
-            }
-        }
-        enter = false;
-      } else if (covered && (isCovered = checkCover2(covered.ranges, cursor2.from, cursor2.to))) {
-        enter = isCovered != 2;
-      } else if (!cursor2.type.isAnonymous && (nest = this.nest(cursor2, this.input)) && (cursor2.from < cursor2.to || !nest.overlay)) {
-        if (!cursor2.tree) {
-          materialize2(cursor2);
-          if (overlay)
-            overlay.depth++;
-          if (covered)
-            covered.depth++;
-        }
-        let oldMounts = fragmentCursor.findMounts(cursor2.from, nest.parser);
-        if (typeof nest.overlay == "function") {
-          overlay = new ActiveOverlay2(nest.parser, nest.overlay, oldMounts, this.inner.length, cursor2.from, !!nest.bracketed, cursor2.tree, overlay);
-        } else {
-          let ranges = punchRanges2(this.ranges, nest.overlay || (cursor2.from < cursor2.to ? [new Range5(cursor2.from, cursor2.to)] : []));
-          if (ranges.length)
-            checkRanges2(ranges);
-          if (ranges.length || !nest.overlay)
-            this.inner.push(new InnerParse2(nest.parser, ranges.length ? nest.parser.startParse(this.input, enterFragments2(oldMounts, ranges), ranges) : nest.parser.startParse(""), nest.overlay ? nest.overlay.map((r) => new Range5(r.from - cursor2.from, r.to - cursor2.from)) : null, !!nest.bracketed, cursor2.tree, ranges.length ? ranges[0].from : cursor2.from));
-          if (!nest.overlay)
-            enter = false;
-          else if (ranges.length)
-            covered = { ranges, depth: 0, prev: covered };
-        }
-      } else if (overlay && (range = overlay.predicate(cursor2))) {
-        if (range === true)
-          range = new Range5(cursor2.from, cursor2.to);
-        if (range.from < range.to) {
-          let last = overlay.ranges.length - 1;
-          if (last >= 0 && overlay.ranges[last].to == range.from)
-            overlay.ranges[last] = { from: overlay.ranges[last].from, to: range.to };
-          else
-            overlay.ranges.push(range);
-        }
-      }
-      if (enter && cursor2.firstChild()) {
-        if (overlay)
-          overlay.depth++;
-        if (covered)
-          covered.depth++;
-      } else {
-        for (; ; ) {
-          if (cursor2.nextSibling())
-            break;
-          if (!cursor2.parent())
-            break scan;
-          if (overlay && !--overlay.depth) {
-            let ranges = punchRanges2(this.ranges, overlay.ranges);
-            if (ranges.length) {
-              checkRanges2(ranges);
-              this.inner.splice(overlay.index, 0, new InnerParse2(overlay.parser, overlay.parser.startParse(this.input, enterFragments2(overlay.mounts, ranges), ranges), overlay.ranges.map((r) => new Range5(r.from - overlay.start, r.to - overlay.start)), overlay.bracketed, overlay.target, ranges[0].from));
-            }
-            overlay = overlay.prev;
-          }
-          if (covered && !--covered.depth)
-            covered = covered.prev;
-        }
-      }
-    }
-  }
-};
-function checkCover2(covered, from, to) {
-  for (let range of covered) {
-    if (range.from >= to)
-      break;
-    if (range.to > from)
-      return range.from <= from && range.to >= to ? 2 : 1;
-  }
-  return 0;
-}
-function sliceBuf2(buf, startI, endI, nodes, positions, off) {
-  if (startI < endI) {
-    let from = buf.buffer[startI + 1];
-    nodes.push(buf.slice(startI, endI, from));
-    positions.push(from - off);
-  }
-}
-function materialize2(cursor2) {
-  let { node } = cursor2, stack = [];
-  let buffer = node.context.buffer;
-  do {
-    stack.push(cursor2.index);
-    cursor2.parent();
-  } while (!cursor2.tree);
-  let base2 = cursor2.tree, i = base2.children.indexOf(buffer);
-  let buf = base2.children[i], b = buf.buffer, newStack = [i];
-  function split(startI, endI, type, innerOffset, length, stackPos) {
-    let targetI = stack[stackPos];
-    let children = [], positions = [];
-    sliceBuf2(buf, startI, targetI, children, positions, innerOffset);
-    let from = b[targetI + 1], to = b[targetI + 2];
-    newStack.push(children.length);
-    let child = stackPos ? split(targetI + 4, b[targetI + 3], buf.set.types[b[targetI]], from, to - from, stackPos - 1) : node.toTree();
-    children.push(child);
-    positions.push(from - innerOffset);
-    sliceBuf2(buf, b[targetI + 3], endI, children, positions, innerOffset);
-    return new Tree4(type, children, positions, length);
-  }
-  base2.children[i] = split(0, b.length, NodeType4.none, 0, buf.length, stack.length - 1);
-  for (let index of newStack) {
-    let tree = cursor2.tree.children[index], pos = cursor2.tree.positions[index];
-    cursor2.yield(new TreeNode4(tree, pos + cursor2.from, index, cursor2._tree));
-  }
-}
-var StructureCursor2 = class {
-  constructor(root, offset) {
-    this.offset = offset;
-    this.done = false;
-    this.cursor = root.cursor(IterMode4.IncludeAnonymous | IterMode4.IgnoreMounts);
-  }
-  // Move to the first node (in pre-order) that starts at or after `pos`.
-  moveTo(pos) {
-    let { cursor: cursor2 } = this, p = pos - this.offset;
-    while (!this.done && cursor2.from < p) {
-      if (cursor2.to >= pos && cursor2.enter(p, 1, IterMode4.IgnoreOverlays | IterMode4.ExcludeBuffers)) ;
-      else if (cursor2.to <= pos) {
-        if (!cursor2.next(false))
-          this.done = true;
-      } else {
-        break;
-      }
-    }
-  }
-  hasNode(cursor2) {
-    this.moveTo(cursor2.from);
-    if (!this.done && this.cursor.from + this.offset == cursor2.from && this.cursor.tree) {
-      for (let tree = this.cursor.tree; ; ) {
-        if (tree == cursor2.tree)
-          return true;
-        if (tree.children.length && tree.positions[0] == 0 && tree.children[0] instanceof Tree4)
-          tree = tree.children[0];
-        else
-          break;
-      }
-    }
-    return false;
-  }
-};
-var FragmentCursor3 = class {
-  constructor(fragments) {
-    var _a7;
-    this.fragments = fragments;
-    this.curTo = 0;
-    this.fragI = 0;
-    if (fragments.length) {
-      let first = this.curFrag = fragments[0];
-      this.curTo = (_a7 = first.tree.prop(stoppedInner4)) !== null && _a7 !== void 0 ? _a7 : first.to;
-      this.inner = new StructureCursor2(first.tree, -first.offset);
-    } else {
-      this.curFrag = this.inner = null;
-    }
-  }
-  hasNode(node) {
-    while (this.curFrag && node.from >= this.curTo)
-      this.nextFrag();
-    return this.curFrag && this.curFrag.from <= node.from && this.curTo >= node.to && this.inner.hasNode(node);
-  }
-  nextFrag() {
-    var _a7;
-    this.fragI++;
-    if (this.fragI == this.fragments.length) {
-      this.curFrag = this.inner = null;
-    } else {
-      let frag = this.curFrag = this.fragments[this.fragI];
-      this.curTo = (_a7 = frag.tree.prop(stoppedInner4)) !== null && _a7 !== void 0 ? _a7 : frag.to;
-      this.inner = new StructureCursor2(frag.tree, -frag.offset);
-    }
-  }
-  findMounts(pos, parser5) {
-    var _a7;
-    let result = [];
-    if (this.inner) {
-      this.inner.cursor.moveTo(pos, 1);
-      for (let pos2 = this.inner.cursor.node; pos2; pos2 = pos2.parent) {
-        let mount = (_a7 = pos2.tree) === null || _a7 === void 0 ? void 0 : _a7.prop(NodeProp4.mounted);
-        if (mount && mount.parser == parser5) {
-          for (let i = this.fragI; i < this.fragments.length; i++) {
-            let frag = this.fragments[i];
-            if (frag.from >= pos2.to)
-              break;
-            if (frag.tree == this.curFrag.tree)
-              result.push({
-                frag,
-                pos: pos2.from - frag.offset,
-                mount
-              });
-          }
-        }
-      }
-    }
-    return result;
-  }
-};
-function punchRanges2(outer, ranges) {
-  let copy = null, current = ranges;
-  for (let i = 1, j = 0; i < outer.length; i++) {
-    let gapFrom = outer[i - 1].to, gapTo = outer[i].from;
-    for (; j < current.length; j++) {
-      let r = current[j];
-      if (r.from >= gapTo)
-        break;
-      if (r.to <= gapFrom)
-        continue;
-      if (!copy)
-        current = copy = ranges.slice();
-      if (r.from < gapFrom) {
-        copy[j] = new Range5(r.from, gapFrom);
-        if (r.to > gapTo)
-          copy.splice(j + 1, 0, new Range5(gapTo, r.to));
-      } else if (r.to > gapTo) {
-        copy[j--] = new Range5(gapTo, r.to);
-      } else {
-        copy.splice(j--, 1);
-      }
-    }
-  }
-  return current;
-}
-function findCoverChanges2(a, b, from, to) {
-  let iA = 0, iB = 0, inA = false, inB = false, pos = -1e9;
-  let result = [];
-  for (; ; ) {
-    let nextA = iA == a.length ? 1e9 : inA ? a[iA].to : a[iA].from;
-    let nextB = iB == b.length ? 1e9 : inB ? b[iB].to : b[iB].from;
-    if (inA != inB) {
-      let start = Math.max(pos, from), end = Math.min(nextA, nextB, to);
-      if (start < end)
-        result.push(new Range5(start, end));
-    }
-    pos = Math.min(nextA, nextB);
-    if (pos == 1e9)
-      break;
-    if (nextA == pos) {
-      if (!inA)
-        inA = true;
-      else {
-        inA = false;
-        iA++;
-      }
-    }
-    if (nextB == pos) {
-      if (!inB)
-        inB = true;
-      else {
-        inB = false;
-        iB++;
-      }
-    }
-  }
-  return result;
-}
-function enterFragments2(mounts, ranges) {
-  let result = [];
-  for (let { pos, mount, frag } of mounts) {
-    let startPos = pos + (mount.overlay ? mount.overlay[0].from : 0), endPos = startPos + mount.tree.length;
-    let from = Math.max(frag.from, startPos), to = Math.min(frag.to, endPos);
-    if (mount.overlay) {
-      let overlay = mount.overlay.map((r) => new Range5(r.from + pos, r.to + pos));
-      let changes = findCoverChanges2(ranges, overlay, from, to);
-      for (let i = 0, pos2 = from; ; i++) {
-        let last = i == changes.length, end = last ? to : changes[i].from;
-        if (end > pos2)
-          result.push(new TreeFragment4(pos2, end, mount.tree, -startPos, frag.from >= pos2 || frag.openStart, frag.to <= end || frag.openEnd));
-        if (last)
-          break;
-        pos2 = changes[i].to;
-      }
-    } else {
-      result.push(new TreeFragment4(from, to, mount.tree, -startPos, frag.from >= startPos || frag.openStart, frag.to <= endPos || frag.openEnd));
-    }
-  }
-  return result;
-}
 
 // node_modules/@lezer/html/node_modules/@lezer/lr/dist/index.js
 var Stack = class _Stack {
@@ -32280,7 +25866,7 @@ var Stack = class _Stack {
   @internal
   */
   reduce(action) {
-    var _a7;
+    var _a2;
     let depth = action >> 19, type = action & 65535;
     let { parser: parser5 } = this.p;
     let lookaheadRecord = this.reducePos < this.pos - 25 && this.setLookAhead(this.pos);
@@ -32301,7 +25887,7 @@ var Stack = class _Stack {
     if (type < parser5.minRepeatTerm && start == this.reducePos && this.reducePos < this.pos)
       this.reducePos = this.pos;
     let size = this.reducePos - start;
-    if (size >= 2e3 && !((_a7 = this.p.parser.nodeSet.types[type]) === null || _a7 === void 0 ? void 0 : _a7.isAnonymous)) {
+    if (size >= 2e3 && !((_a2 = this.p.parser.nodeSet.types[type]) === null || _a2 === void 0 ? void 0 : _a2.isAnonymous)) {
       if (start == this.p.lastBigReductionStart) {
         this.p.bigReductionCount++;
         this.p.lastBigReductionSize = size;
@@ -33132,7 +26718,7 @@ function overrides(token, prev, tableData, tableOffset) {
 var verbose = typeof process != "undefined" && process.env && /\bparse\b/.test(process.env.LOG);
 var stackIDs = null;
 function cutAt(tree, pos, side) {
-  let cursor2 = tree.cursor(IterMode4.IncludeAnonymous);
+  let cursor2 = tree.cursor(IterMode.IncludeAnonymous);
   cursor2.moveTo(pos);
   for (; ; ) {
     if (!(side < 0 ? cursor2.childBefore(pos) : cursor2.childAfter(pos)))
@@ -33154,7 +26740,7 @@ function cutAt(tree, pos, side) {
       }
   }
 }
-var FragmentCursor4 = class {
+var FragmentCursor3 = class {
   constructor(fragments, nodeSet) {
     this.fragments = fragments;
     this.nodeSet = nodeSet;
@@ -33212,13 +26798,13 @@ var FragmentCursor4 = class {
         this.nextStart = start;
         return null;
       }
-      if (next instanceof Tree4) {
+      if (next instanceof Tree) {
         if (start == pos) {
           if (start < this.safeFrom)
             return null;
           let end = start + next.length;
           if (end <= this.safeTo) {
-            let lookAhead = next.prop(NodeProp4.lookAhead);
+            let lookAhead = next.prop(NodeProp.lookAhead);
             if (!lookAhead || end + lookAhead < this.fragment.to)
               return next;
           }
@@ -33374,7 +26960,7 @@ var Parse = class {
     this.topTerm = parser5.top[1];
     let { from } = ranges[0];
     this.stacks = [Stack.start(this, parser5.top[0], from)];
-    this.fragments = fragments.length && this.stream.end - from > parser5.bufferLength * 4 ? new FragmentCursor4(fragments, parser5.nodeSet) : null;
+    this.fragments = fragments.length && this.stream.end - from > parser5.bufferLength * 4 ? new FragmentCursor3(fragments, parser5.nodeSet) : null;
   }
   get parsedPos() {
     return this.minStackPos;
@@ -33495,16 +27081,16 @@ var Parse = class {
       let strictCx = stack.curContext && stack.curContext.tracker.strict, cxHash = strictCx ? stack.curContext.hash : 0;
       for (let cached = this.fragments.nodeAt(start); cached; ) {
         let match = this.parser.nodeSet.types[cached.type.id] == cached.type ? parser5.getGoto(stack.state, cached.type.id) : -1;
-        if (match > -1 && cached.length && (!strictCx || (cached.prop(NodeProp4.contextHash) || 0) == cxHash)) {
+        if (match > -1 && cached.length && (!strictCx || (cached.prop(NodeProp.contextHash) || 0) == cxHash)) {
           stack.useNode(cached, match);
           if (verbose)
             console.log(base2 + this.stackID(stack) + ` (via reuse of ${parser5.getName(cached.type.id)})`);
           return true;
         }
-        if (!(cached instanceof Tree4) || cached.children.length == 0 || cached.positions[0] > 0)
+        if (!(cached instanceof Tree) || cached.children.length == 0 || cached.positions[0] > 0)
           break;
         let inner = cached.children[0];
-        if (inner instanceof Tree4 && cached.positions[0] == 0)
+        if (inner instanceof Tree && cached.positions[0] == 0)
           cached = inner;
         else
           break;
@@ -33612,7 +27198,7 @@ var Parse = class {
   // Convert the stack's buffer to a syntax tree.
   stackToTree(stack) {
     stack.close();
-    return Tree4.build({
+    return Tree.build({
       buffer: StackBufferCursor.create(stack),
       nodeSet: this.parser.nodeSet,
       topID: this.topTerm,
@@ -33665,7 +27251,7 @@ var ContextTracker = class {
     this.strict = spec.strict !== false;
   }
 };
-var LRParser = class _LRParser extends Parser4 {
+var LRParser = class _LRParser extends Parser {
   /**
   @internal
   */
@@ -33689,7 +27275,7 @@ var LRParser = class _LRParser extends Parser4 {
       for (let propSpec of spec.nodeProps) {
         let prop = propSpec[0];
         if (typeof prop == "string")
-          prop = NodeProp4[prop];
+          prop = NodeProp[prop];
         for (let i = 1; i < propSpec.length; ) {
           let next = propSpec[i++];
           if (next >= 0) {
@@ -33702,8 +27288,8 @@ var LRParser = class _LRParser extends Parser4 {
           }
         }
       }
-    this.nodeSet = new NodeSet4(nodeNames.map((name11, i) => NodeType4.define({
-      name: i >= this.minRepeatTerm ? void 0 : name11,
+    this.nodeSet = new NodeSet(nodeNames.map((name7, i) => NodeType.define({
+      name: i >= this.minRepeatTerm ? void 0 : name7,
       id: i,
       props: nodeProps[i],
       top: topTerms.indexOf(i) > -1,
@@ -33713,7 +27299,7 @@ var LRParser = class _LRParser extends Parser4 {
     if (spec.propSources)
       this.nodeSet = this.nodeSet.extend(...spec.propSources);
     this.strict = false;
-    this.bufferLength = DefaultBufferLength4;
+    this.bufferLength = DefaultBufferLength;
     let tokenArray = decodeArray(spec.tokenData);
     this.context = spec.context;
     this.specializerSpecs = spec.specialized || [];
@@ -33873,9 +27459,9 @@ var LRParser = class _LRParser extends Parser4 {
       copy.top = info;
     }
     if (config2.tokenizers)
-      copy.tokenizers = this.tokenizers.map((t11) => {
-        let found = config2.tokenizers.find((r) => r.from == t11);
-        return found ? found.to : t11;
+      copy.tokenizers = this.tokenizers.map((t7) => {
+        let found = config2.tokenizers.find((r) => r.from == t7);
+        return found ? found.to : t7;
       });
     if (config2.specializers) {
       copy.specializers = this.specializers.slice();
@@ -33988,36 +27574,36 @@ function getSpecializer(spec) {
 }
 
 // node_modules/@lezer/html/node_modules/@lezer/highlight/dist/index.js
-var nextTagID4 = 0;
-var Tag4 = class _Tag {
+var nextTagID3 = 0;
+var Tag3 = class _Tag {
   /**
   @internal
   */
-  constructor(name11, set, base2, modified) {
-    this.name = name11;
+  constructor(name7, set, base2, modified) {
+    this.name = name7;
     this.set = set;
     this.base = base2;
     this.modified = modified;
-    this.id = nextTagID4++;
+    this.id = nextTagID3++;
   }
   toString() {
-    let { name: name11 } = this;
+    let { name: name7 } = this;
     for (let mod of this.modified)
       if (mod.name)
-        name11 = `${mod.name}(${name11})`;
-    return name11;
+        name7 = `${mod.name}(${name7})`;
+    return name7;
   }
   static define(nameOrParent, parent) {
-    let name11 = typeof nameOrParent == "string" ? nameOrParent : "?";
+    let name7 = typeof nameOrParent == "string" ? nameOrParent : "?";
     if (nameOrParent instanceof _Tag)
       parent = nameOrParent;
     if (parent === null || parent === void 0 ? void 0 : parent.base)
       throw new Error("Can not derive from a modified tag");
-    let tag = new _Tag(name11, [], null, []);
+    let tag = new _Tag(name7, [], null, []);
     tag.set.push(tag);
     if (parent)
-      for (let t11 of parent.set)
-        tag.set.push(t11);
+      for (let t7 of parent.set)
+        tag.set.push(t7);
     return tag;
   }
   /**
@@ -34032,32 +27618,32 @@ var Tag4 = class _Tag {
   example `m1(m2(m3(t1)))` is a subtype of `m1(m2(t1))`,
   `m1(m3(t1)`, and so on.
   */
-  static defineModifier(name11) {
-    let mod = new Modifier4(name11);
+  static defineModifier(name7) {
+    let mod = new Modifier3(name7);
     return (tag) => {
       if (tag.modified.indexOf(mod) > -1)
         return tag;
-      return Modifier4.get(tag.base || tag, tag.modified.concat(mod).sort((a, b) => a.id - b.id));
+      return Modifier3.get(tag.base || tag, tag.modified.concat(mod).sort((a, b) => a.id - b.id));
     };
   }
 };
-var nextModifierID4 = 0;
-var Modifier4 = class _Modifier {
-  constructor(name11) {
-    this.name = name11;
+var nextModifierID3 = 0;
+var Modifier3 = class _Modifier {
+  constructor(name7) {
+    this.name = name7;
     this.instances = [];
-    this.id = nextModifierID4++;
+    this.id = nextModifierID3++;
   }
   static get(base2, mods) {
     if (!mods.length)
       return base2;
-    let exists = mods[0].instances.find((t11) => t11.base == base2 && sameArray5(mods, t11.modified));
+    let exists = mods[0].instances.find((t7) => t7.base == base2 && sameArray4(mods, t7.modified));
     if (exists)
       return exists;
-    let set = [], tag = new Tag4(base2.name, set, base2, mods);
+    let set = [], tag = new Tag3(base2.name, set, base2, mods);
     for (let m of mods)
       m.instances.push(tag);
-    let configs = powerSet4(mods);
+    let configs = powerSet3(mods);
     for (let parent of base2.set)
       if (!parent.modified.length)
         for (let config2 of configs)
@@ -34065,10 +27651,10 @@ var Modifier4 = class _Modifier {
     return tag;
   }
 };
-function sameArray5(a, b) {
+function sameArray4(a, b) {
   return a.length == b.length && a.every((x, i) => x == b[i]);
 }
-function powerSet4(array) {
+function powerSet3(array) {
   let sets = [[]];
   for (let i = 0; i < array.length; i++) {
     for (let j = 0, e = sets.length; j < e; j++) {
@@ -34077,12 +27663,12 @@ function powerSet4(array) {
   }
   return sets.sort((a, b) => b.length - a.length);
 }
-function styleTags4(spec) {
+function styleTags3(spec) {
   let byName = /* @__PURE__ */ Object.create(null);
   for (let prop in spec) {
-    let tags12 = spec[prop];
-    if (!Array.isArray(tags12))
-      tags12 = [tags12];
+    let tags8 = spec[prop];
+    if (!Array.isArray(tags8))
+      tags8 = [tags8];
     for (let part of prop.split(" "))
       if (part) {
         let pieces = [], mode = 2, rest = part;
@@ -34110,13 +27696,13 @@ function styleTags4(spec) {
         let last = pieces.length - 1, inner = pieces[last];
         if (!inner)
           throw new RangeError("Invalid path: " + part);
-        let rule = new Rule4(tags12, mode, last > 0 ? pieces.slice(0, last) : null);
+        let rule = new Rule3(tags8, mode, last > 0 ? pieces.slice(0, last) : null);
         byName[inner] = rule.sort(byName[inner]);
       }
   }
-  return ruleNodeProp4.add(byName);
+  return ruleNodeProp3.add(byName);
 }
-var ruleNodeProp4 = new NodeProp4({
+var ruleNodeProp3 = new NodeProp({
   combine(a, b) {
     let cur2, root, take;
     while (a || b) {
@@ -34129,7 +27715,7 @@ var ruleNodeProp4 = new NodeProp4({
       }
       if (cur2 && cur2.mode == take.mode && !take.context && !cur2.context)
         continue;
-      let copy = new Rule4(take.tags, take.mode, take.context);
+      let copy = new Rule3(take.tags, take.mode, take.context);
       if (cur2)
         cur2.next = copy;
       else
@@ -34139,9 +27725,9 @@ var ruleNodeProp4 = new NodeProp4({
     return root;
   }
 });
-var Rule4 = class {
-  constructor(tags12, mode, context, next) {
-    this.tags = tags12;
+var Rule3 = class {
+  constructor(tags8, mode, context, next) {
+    this.tags = tags8;
     this.mode = mode;
     this.context = context;
     this.next = next;
@@ -34164,10 +27750,10 @@ var Rule4 = class {
     return this.context ? this.context.length : 0;
   }
 };
-Rule4.empty = new Rule4([], 2, null);
-function tagHighlighter4(tags12, options) {
+Rule3.empty = new Rule3([], 2, null);
+function tagHighlighter3(tags8, options) {
   let map = /* @__PURE__ */ Object.create(null);
-  for (let style of tags12) {
+  for (let style of tags8) {
     if (!Array.isArray(style.tag))
       map[style.tag.id] = style.class;
     else
@@ -34176,9 +27762,9 @@ function tagHighlighter4(tags12, options) {
   }
   let { scope, all = null } = options || {};
   return {
-    style: (tags13) => {
+    style: (tags9) => {
       let cls = all;
-      for (let tag of tags13) {
+      for (let tag of tags9) {
         for (let sub of tag.set) {
           let tagClass = map[sub.id];
           if (tagClass) {
@@ -34192,377 +27778,377 @@ function tagHighlighter4(tags12, options) {
     scope
   };
 }
-var t4 = Tag4.define;
-var comment4 = t4();
-var name4 = t4();
-var typeName4 = t4(name4);
-var propertyName4 = t4(name4);
-var literal4 = t4();
-var string4 = t4(literal4);
-var number4 = t4(literal4);
-var content4 = t4();
-var heading4 = t4(content4);
-var keyword4 = t4();
-var operator4 = t4();
-var punctuation4 = t4();
-var bracket4 = t4(punctuation4);
-var meta4 = t4();
-var tags4 = {
+var t3 = Tag3.define;
+var comment3 = t3();
+var name3 = t3();
+var typeName3 = t3(name3);
+var propertyName3 = t3(name3);
+var literal3 = t3();
+var string3 = t3(literal3);
+var number3 = t3(literal3);
+var content3 = t3();
+var heading3 = t3(content3);
+var keyword3 = t3();
+var operator3 = t3();
+var punctuation3 = t3();
+var bracket3 = t3(punctuation3);
+var meta3 = t3();
+var tags3 = {
   /**
   A comment.
   */
-  comment: comment4,
+  comment: comment3,
   /**
   A line [comment](#highlight.tags.comment).
   */
-  lineComment: t4(comment4),
+  lineComment: t3(comment3),
   /**
   A block [comment](#highlight.tags.comment).
   */
-  blockComment: t4(comment4),
+  blockComment: t3(comment3),
   /**
   A documentation [comment](#highlight.tags.comment).
   */
-  docComment: t4(comment4),
+  docComment: t3(comment3),
   /**
   Any kind of identifier.
   */
-  name: name4,
+  name: name3,
   /**
   The [name](#highlight.tags.name) of a variable.
   */
-  variableName: t4(name4),
+  variableName: t3(name3),
   /**
   A type [name](#highlight.tags.name).
   */
-  typeName: typeName4,
+  typeName: typeName3,
   /**
   A tag name (subtag of [`typeName`](#highlight.tags.typeName)).
   */
-  tagName: t4(typeName4),
+  tagName: t3(typeName3),
   /**
   A property or field [name](#highlight.tags.name).
   */
-  propertyName: propertyName4,
+  propertyName: propertyName3,
   /**
   An attribute name (subtag of [`propertyName`](#highlight.tags.propertyName)).
   */
-  attributeName: t4(propertyName4),
+  attributeName: t3(propertyName3),
   /**
   The [name](#highlight.tags.name) of a class.
   */
-  className: t4(name4),
+  className: t3(name3),
   /**
   A label [name](#highlight.tags.name).
   */
-  labelName: t4(name4),
+  labelName: t3(name3),
   /**
   A namespace [name](#highlight.tags.name).
   */
-  namespace: t4(name4),
+  namespace: t3(name3),
   /**
   The [name](#highlight.tags.name) of a macro.
   */
-  macroName: t4(name4),
+  macroName: t3(name3),
   /**
   A literal value.
   */
-  literal: literal4,
+  literal: literal3,
   /**
   A string [literal](#highlight.tags.literal).
   */
-  string: string4,
+  string: string3,
   /**
   A documentation [string](#highlight.tags.string).
   */
-  docString: t4(string4),
+  docString: t3(string3),
   /**
   A character literal (subtag of [string](#highlight.tags.string)).
   */
-  character: t4(string4),
+  character: t3(string3),
   /**
   An attribute value (subtag of [string](#highlight.tags.string)).
   */
-  attributeValue: t4(string4),
+  attributeValue: t3(string3),
   /**
   A number [literal](#highlight.tags.literal).
   */
-  number: number4,
+  number: number3,
   /**
   An integer [number](#highlight.tags.number) literal.
   */
-  integer: t4(number4),
+  integer: t3(number3),
   /**
   A floating-point [number](#highlight.tags.number) literal.
   */
-  float: t4(number4),
+  float: t3(number3),
   /**
   A boolean [literal](#highlight.tags.literal).
   */
-  bool: t4(literal4),
+  bool: t3(literal3),
   /**
   Regular expression [literal](#highlight.tags.literal).
   */
-  regexp: t4(literal4),
+  regexp: t3(literal3),
   /**
   An escape [literal](#highlight.tags.literal), for example a
   backslash escape in a string.
   */
-  escape: t4(literal4),
+  escape: t3(literal3),
   /**
   A color [literal](#highlight.tags.literal).
   */
-  color: t4(literal4),
+  color: t3(literal3),
   /**
   A URL [literal](#highlight.tags.literal).
   */
-  url: t4(literal4),
+  url: t3(literal3),
   /**
   A language keyword.
   */
-  keyword: keyword4,
+  keyword: keyword3,
   /**
   The [keyword](#highlight.tags.keyword) for the self or this
   object.
   */
-  self: t4(keyword4),
+  self: t3(keyword3),
   /**
   The [keyword](#highlight.tags.keyword) for null.
   */
-  null: t4(keyword4),
+  null: t3(keyword3),
   /**
   A [keyword](#highlight.tags.keyword) denoting some atomic value.
   */
-  atom: t4(keyword4),
+  atom: t3(keyword3),
   /**
   A [keyword](#highlight.tags.keyword) that represents a unit.
   */
-  unit: t4(keyword4),
+  unit: t3(keyword3),
   /**
   A modifier [keyword](#highlight.tags.keyword).
   */
-  modifier: t4(keyword4),
+  modifier: t3(keyword3),
   /**
   A [keyword](#highlight.tags.keyword) that acts as an operator.
   */
-  operatorKeyword: t4(keyword4),
+  operatorKeyword: t3(keyword3),
   /**
   A control-flow related [keyword](#highlight.tags.keyword).
   */
-  controlKeyword: t4(keyword4),
+  controlKeyword: t3(keyword3),
   /**
   A [keyword](#highlight.tags.keyword) that defines something.
   */
-  definitionKeyword: t4(keyword4),
+  definitionKeyword: t3(keyword3),
   /**
   A [keyword](#highlight.tags.keyword) related to defining or
   interfacing with modules.
   */
-  moduleKeyword: t4(keyword4),
+  moduleKeyword: t3(keyword3),
   /**
   An operator.
   */
-  operator: operator4,
+  operator: operator3,
   /**
   An [operator](#highlight.tags.operator) that dereferences something.
   */
-  derefOperator: t4(operator4),
+  derefOperator: t3(operator3),
   /**
   Arithmetic-related [operator](#highlight.tags.operator).
   */
-  arithmeticOperator: t4(operator4),
+  arithmeticOperator: t3(operator3),
   /**
   Logical [operator](#highlight.tags.operator).
   */
-  logicOperator: t4(operator4),
+  logicOperator: t3(operator3),
   /**
   Bit [operator](#highlight.tags.operator).
   */
-  bitwiseOperator: t4(operator4),
+  bitwiseOperator: t3(operator3),
   /**
   Comparison [operator](#highlight.tags.operator).
   */
-  compareOperator: t4(operator4),
+  compareOperator: t3(operator3),
   /**
   [Operator](#highlight.tags.operator) that updates its operand.
   */
-  updateOperator: t4(operator4),
+  updateOperator: t3(operator3),
   /**
   [Operator](#highlight.tags.operator) that defines something.
   */
-  definitionOperator: t4(operator4),
+  definitionOperator: t3(operator3),
   /**
   Type-related [operator](#highlight.tags.operator).
   */
-  typeOperator: t4(operator4),
+  typeOperator: t3(operator3),
   /**
   Control-flow [operator](#highlight.tags.operator).
   */
-  controlOperator: t4(operator4),
+  controlOperator: t3(operator3),
   /**
   Program or markup punctuation.
   */
-  punctuation: punctuation4,
+  punctuation: punctuation3,
   /**
   [Punctuation](#highlight.tags.punctuation) that separates
   things.
   */
-  separator: t4(punctuation4),
+  separator: t3(punctuation3),
   /**
   Bracket-style [punctuation](#highlight.tags.punctuation).
   */
-  bracket: bracket4,
+  bracket: bracket3,
   /**
   Angle [brackets](#highlight.tags.bracket) (usually `<` and `>`
   tokens).
   */
-  angleBracket: t4(bracket4),
+  angleBracket: t3(bracket3),
   /**
   Square [brackets](#highlight.tags.bracket) (usually `[` and `]`
   tokens).
   */
-  squareBracket: t4(bracket4),
+  squareBracket: t3(bracket3),
   /**
   Parentheses (usually `(` and `)` tokens). Subtag of
   [bracket](#highlight.tags.bracket).
   */
-  paren: t4(bracket4),
+  paren: t3(bracket3),
   /**
   Braces (usually `{` and `}` tokens). Subtag of
   [bracket](#highlight.tags.bracket).
   */
-  brace: t4(bracket4),
+  brace: t3(bracket3),
   /**
   Content, for example plain text in XML or markup documents.
   */
-  content: content4,
+  content: content3,
   /**
   [Content](#highlight.tags.content) that represents a heading.
   */
-  heading: heading4,
+  heading: heading3,
   /**
   A level 1 [heading](#highlight.tags.heading).
   */
-  heading1: t4(heading4),
+  heading1: t3(heading3),
   /**
   A level 2 [heading](#highlight.tags.heading).
   */
-  heading2: t4(heading4),
+  heading2: t3(heading3),
   /**
   A level 3 [heading](#highlight.tags.heading).
   */
-  heading3: t4(heading4),
+  heading3: t3(heading3),
   /**
   A level 4 [heading](#highlight.tags.heading).
   */
-  heading4: t4(heading4),
+  heading4: t3(heading3),
   /**
   A level 5 [heading](#highlight.tags.heading).
   */
-  heading5: t4(heading4),
+  heading5: t3(heading3),
   /**
   A level 6 [heading](#highlight.tags.heading).
   */
-  heading6: t4(heading4),
+  heading6: t3(heading3),
   /**
   A prose [content](#highlight.tags.content) separator (such as a horizontal rule).
   */
-  contentSeparator: t4(content4),
+  contentSeparator: t3(content3),
   /**
   [Content](#highlight.tags.content) that represents a list.
   */
-  list: t4(content4),
+  list: t3(content3),
   /**
   [Content](#highlight.tags.content) that represents a quote.
   */
-  quote: t4(content4),
+  quote: t3(content3),
   /**
   [Content](#highlight.tags.content) that is emphasized.
   */
-  emphasis: t4(content4),
+  emphasis: t3(content3),
   /**
   [Content](#highlight.tags.content) that is styled strong.
   */
-  strong: t4(content4),
+  strong: t3(content3),
   /**
   [Content](#highlight.tags.content) that is part of a link.
   */
-  link: t4(content4),
+  link: t3(content3),
   /**
   [Content](#highlight.tags.content) that is styled as code or
   monospace.
   */
-  monospace: t4(content4),
+  monospace: t3(content3),
   /**
   [Content](#highlight.tags.content) that has a strike-through
   style.
   */
-  strikethrough: t4(content4),
+  strikethrough: t3(content3),
   /**
   Inserted text in a change-tracking format.
   */
-  inserted: t4(),
+  inserted: t3(),
   /**
   Deleted text.
   */
-  deleted: t4(),
+  deleted: t3(),
   /**
   Changed text.
   */
-  changed: t4(),
+  changed: t3(),
   /**
   An invalid or unsyntactic element.
   */
-  invalid: t4(),
+  invalid: t3(),
   /**
   Metadata or meta-instruction.
   */
-  meta: meta4,
+  meta: meta3,
   /**
   [Metadata](#highlight.tags.meta) that applies to the entire
   document.
   */
-  documentMeta: t4(meta4),
+  documentMeta: t3(meta3),
   /**
   [Metadata](#highlight.tags.meta) that annotates or adds
   attributes to a given syntactic element.
   */
-  annotation: t4(meta4),
+  annotation: t3(meta3),
   /**
   Processing instruction or preprocessor directive. Subtag of
   [meta](#highlight.tags.meta).
   */
-  processingInstruction: t4(meta4),
+  processingInstruction: t3(meta3),
   /**
   [Modifier](#highlight.Tag^defineModifier) that indicates that a
   given element is being defined. Expected to be used with the
   various [name](#highlight.tags.name) tags.
   */
-  definition: Tag4.defineModifier("definition"),
+  definition: Tag3.defineModifier("definition"),
   /**
   [Modifier](#highlight.Tag^defineModifier) that indicates that
   something is constant. Mostly expected to be used with
   [variable names](#highlight.tags.variableName).
   */
-  constant: Tag4.defineModifier("constant"),
+  constant: Tag3.defineModifier("constant"),
   /**
   [Modifier](#highlight.Tag^defineModifier) used to indicate that
   a [variable](#highlight.tags.variableName) or [property
   name](#highlight.tags.propertyName) is being called or defined
   as a function.
   */
-  function: Tag4.defineModifier("function"),
+  function: Tag3.defineModifier("function"),
   /**
   [Modifier](#highlight.Tag^defineModifier) that can be applied to
   [names](#highlight.tags.name) to indicate that they belong to
   the language's standard environment.
   */
-  standard: Tag4.defineModifier("standard"),
+  standard: Tag3.defineModifier("standard"),
   /**
   [Modifier](#highlight.Tag^defineModifier) that indicates a given
   [names](#highlight.tags.name) is local to some scope.
   */
-  local: Tag4.defineModifier("local"),
+  local: Tag3.defineModifier("local"),
   /**
   A generic variant [modifier](#highlight.Tag^defineModifier) that
   can be used to tag language-specific alternative variants of
@@ -34571,44 +28157,44 @@ var tags4 = {
   [variable name](#highlight.tags.variableName) tags, since those
   come up a lot.
   */
-  special: Tag4.defineModifier("special")
+  special: Tag3.defineModifier("special")
 };
-for (let name11 in tags4) {
-  let val = tags4[name11];
-  if (val instanceof Tag4)
-    val.name = name11;
+for (let name7 in tags3) {
+  let val = tags3[name7];
+  if (val instanceof Tag3)
+    val.name = name7;
 }
-var classHighlighter4 = tagHighlighter4([
-  { tag: tags4.link, class: "tok-link" },
-  { tag: tags4.heading, class: "tok-heading" },
-  { tag: tags4.emphasis, class: "tok-emphasis" },
-  { tag: tags4.strong, class: "tok-strong" },
-  { tag: tags4.keyword, class: "tok-keyword" },
-  { tag: tags4.atom, class: "tok-atom" },
-  { tag: tags4.bool, class: "tok-bool" },
-  { tag: tags4.url, class: "tok-url" },
-  { tag: tags4.labelName, class: "tok-labelName" },
-  { tag: tags4.inserted, class: "tok-inserted" },
-  { tag: tags4.deleted, class: "tok-deleted" },
-  { tag: tags4.literal, class: "tok-literal" },
-  { tag: tags4.string, class: "tok-string" },
-  { tag: tags4.number, class: "tok-number" },
-  { tag: [tags4.regexp, tags4.escape, tags4.special(tags4.string)], class: "tok-string2" },
-  { tag: tags4.variableName, class: "tok-variableName" },
-  { tag: tags4.local(tags4.variableName), class: "tok-variableName tok-local" },
-  { tag: tags4.definition(tags4.variableName), class: "tok-variableName tok-definition" },
-  { tag: tags4.special(tags4.variableName), class: "tok-variableName2" },
-  { tag: tags4.definition(tags4.propertyName), class: "tok-propertyName tok-definition" },
-  { tag: tags4.typeName, class: "tok-typeName" },
-  { tag: tags4.namespace, class: "tok-namespace" },
-  { tag: tags4.className, class: "tok-className" },
-  { tag: tags4.macroName, class: "tok-macroName" },
-  { tag: tags4.propertyName, class: "tok-propertyName" },
-  { tag: tags4.operator, class: "tok-operator" },
-  { tag: tags4.comment, class: "tok-comment" },
-  { tag: tags4.meta, class: "tok-meta" },
-  { tag: tags4.invalid, class: "tok-invalid" },
-  { tag: tags4.punctuation, class: "tok-punctuation" }
+var classHighlighter3 = tagHighlighter3([
+  { tag: tags3.link, class: "tok-link" },
+  { tag: tags3.heading, class: "tok-heading" },
+  { tag: tags3.emphasis, class: "tok-emphasis" },
+  { tag: tags3.strong, class: "tok-strong" },
+  { tag: tags3.keyword, class: "tok-keyword" },
+  { tag: tags3.atom, class: "tok-atom" },
+  { tag: tags3.bool, class: "tok-bool" },
+  { tag: tags3.url, class: "tok-url" },
+  { tag: tags3.labelName, class: "tok-labelName" },
+  { tag: tags3.inserted, class: "tok-inserted" },
+  { tag: tags3.deleted, class: "tok-deleted" },
+  { tag: tags3.literal, class: "tok-literal" },
+  { tag: tags3.string, class: "tok-string" },
+  { tag: tags3.number, class: "tok-number" },
+  { tag: [tags3.regexp, tags3.escape, tags3.special(tags3.string)], class: "tok-string2" },
+  { tag: tags3.variableName, class: "tok-variableName" },
+  { tag: tags3.local(tags3.variableName), class: "tok-variableName tok-local" },
+  { tag: tags3.definition(tags3.variableName), class: "tok-variableName tok-definition" },
+  { tag: tags3.special(tags3.variableName), class: "tok-variableName2" },
+  { tag: tags3.definition(tags3.propertyName), class: "tok-propertyName tok-definition" },
+  { tag: tags3.typeName, class: "tok-typeName" },
+  { tag: tags3.namespace, class: "tok-namespace" },
+  { tag: tags3.className, class: "tok-className" },
+  { tag: tags3.macroName, class: "tok-macroName" },
+  { tag: tags3.propertyName, class: "tok-propertyName" },
+  { tag: tags3.operator, class: "tok-operator" },
+  { tag: tags3.comment, class: "tok-comment" },
+  { tag: tags3.meta, class: "tok-meta" },
+  { tag: tags3.invalid, class: "tok-invalid" },
+  { tag: tags3.punctuation, class: "tok-punctuation" }
 ]);
 
 // node_modules/@lezer/html/dist/index.js
@@ -34732,15 +28318,15 @@ var cachedPos = 0;
 function tagNameAfter(input, offset) {
   let pos = input.pos + offset;
   if (cachedPos == pos && cachedInput == input) return cachedName;
-  let next = input.peek(offset), name11 = "";
+  let next = input.peek(offset), name7 = "";
   for (; ; ) {
     if (!nameChar(next)) break;
-    name11 += String.fromCharCode(next);
+    name7 += String.fromCharCode(next);
     next = input.peek(++offset);
   }
   cachedInput = input;
   cachedPos = pos;
-  return cachedName = name11 ? name11.toLowerCase() : next == question || next == bang ? void 0 : null;
+  return cachedName = name7 ? name7.toLowerCase() : next == question || next == bang ? void 0 : null;
 }
 var lessThan = 60;
 var greaterThan = 62;
@@ -34748,8 +28334,8 @@ var slash = 47;
 var question = 63;
 var bang = 33;
 var dash = 45;
-function ElementContext(name11, parent) {
-  this.name = name11;
+function ElementContext(name7, parent) {
+  this.name = name7;
   this.parent = parent;
 }
 var startTagTerms = [StartTag, StartSelfClosingTag, StartScriptTag, StartStyleTag, StartTextareaTag];
@@ -34775,22 +28361,22 @@ var tagStart = new ExternalTokenizer((input, stack) => {
   input.advance();
   let close = input.next == slash;
   if (close) input.advance();
-  let name11 = tagNameAfter(input, 0);
-  if (name11 === void 0) return;
-  if (!name11) return input.acceptToken(close ? IncompleteCloseTag : IncompleteTag);
+  let name7 = tagNameAfter(input, 0);
+  if (name7 === void 0) return;
+  if (!name7) return input.acceptToken(close ? IncompleteCloseTag : IncompleteTag);
   let parent = stack.context ? stack.context.name : null;
   if (close) {
-    if (name11 == parent) return input.acceptToken(StartCloseTag);
+    if (name7 == parent) return input.acceptToken(StartCloseTag);
     if (parent && implicitlyClosed[parent]) return input.acceptToken(missingCloseTag, -2);
     if (stack.dialectEnabled(Dialect_noMatch)) return input.acceptToken(NoMatchStartCloseTag);
-    for (let cx = stack.context; cx; cx = cx.parent) if (cx.name == name11) return;
+    for (let cx = stack.context; cx; cx = cx.parent) if (cx.name == name7) return;
     input.acceptToken(MismatchedStartCloseTag);
   } else {
-    if (name11 == "script") return input.acceptToken(StartScriptTag);
-    if (name11 == "style") return input.acceptToken(StartStyleTag);
-    if (name11 == "textarea") return input.acceptToken(StartTextareaTag);
-    if (selfClosers.hasOwnProperty(name11)) return input.acceptToken(StartSelfClosingTag);
-    if (parent && closeOnOpen[parent] && closeOnOpen[parent][name11]) input.acceptToken(missingCloseTag, -1);
+    if (name7 == "script") return input.acceptToken(StartScriptTag);
+    if (name7 == "style") return input.acceptToken(StartStyleTag);
+    if (name7 == "textarea") return input.acceptToken(StartTextareaTag);
+    if (selfClosers.hasOwnProperty(name7)) return input.acceptToken(StartSelfClosingTag);
+    if (parent && closeOnOpen[parent] && closeOnOpen[parent][name7]) input.acceptToken(missingCloseTag, -1);
     else input.acceptToken(StartTag);
   }
 }, { contextual: true });
@@ -34854,18 +28440,18 @@ function contentTokenizer(tag, textToken, endToken) {
 var scriptTokens = contentTokenizer("script", scriptText, StartCloseScriptTag);
 var styleTokens = contentTokenizer("style", styleText, StartCloseStyleTag);
 var textareaTokens = contentTokenizer("textarea", textareaText, StartCloseTextareaTag);
-var htmlHighlighting = styleTags4({
-  "Text RawText IncompleteTag IncompleteCloseTag": tags4.content,
-  "StartTag StartCloseTag SelfClosingEndTag EndTag": tags4.angleBracket,
-  TagName: tags4.tagName,
-  "MismatchedCloseTag/TagName": [tags4.tagName, tags4.invalid],
-  AttributeName: tags4.attributeName,
-  "AttributeValue UnquotedAttributeValue": tags4.attributeValue,
-  Is: tags4.definitionOperator,
-  "EntityReference CharacterReference": tags4.character,
-  Comment: tags4.blockComment,
-  ProcessingInst: tags4.processingInstruction,
-  DoctypeDecl: tags4.documentMeta
+var htmlHighlighting = styleTags3({
+  "Text RawText IncompleteTag IncompleteCloseTag": tags3.content,
+  "StartTag StartCloseTag SelfClosingEndTag EndTag": tags3.angleBracket,
+  TagName: tags3.tagName,
+  "MismatchedCloseTag/TagName": [tags3.tagName, tags3.invalid],
+  AttributeName: tags3.attributeName,
+  "AttributeValue UnquotedAttributeValue": tags3.attributeValue,
+  Is: tags3.definitionOperator,
+  "EntityReference CharacterReference": tags3.character,
+  Comment: tags3.blockComment,
+  ProcessingInst: tags3.processingInstruction,
+  DoctypeDecl: tags3.documentMeta
 });
 var parser2 = LRParser.deserialize({
   version: 14,
@@ -34893,8 +28479,8 @@ var parser2 = LRParser.deserialize({
 function getAttrs2(openTag, input) {
   let attrs = /* @__PURE__ */ Object.create(null);
   for (let att of openTag.getChildren(Attribute)) {
-    let name11 = att.getChild(AttributeName), value = att.getChild(AttributeValue) || att.getChild(UnquotedAttributeValue);
-    if (name11) attrs[input.read(name11.from, name11.to)] = !value ? "" : value.type.id == AttributeValue ? input.read(value.from + 1, value.to - 1) : input.read(value.from, value.to);
+    let name7 = att.getChild(AttributeName), value = att.getChild(AttributeValue) || att.getChild(UnquotedAttributeValue);
+    if (name7) attrs[input.read(name7.from, name7.to)] = !value ? "" : value.type.id == AttributeValue ? input.read(value.from + 1, value.to - 1) : input.read(value.from, value.to);
   }
   return attrs;
 }
@@ -34902,23 +28488,23 @@ function findTagName(openTag, input) {
   let tagNameNode = openTag.getChild(TagName);
   return tagNameNode ? input.read(tagNameNode.from, tagNameNode.to) : " ";
 }
-function maybeNest(node, input, tags12) {
+function maybeNest(node, input, tags8) {
   let attrs;
-  for (let tag of tags12) {
+  for (let tag of tags8) {
     if (!tag.attrs || tag.attrs(attrs || (attrs = getAttrs2(node.node.parent.firstChild, input))))
       return { parser: tag.parser, bracketed: true };
   }
   return null;
 }
-function configureNesting(tags12 = [], attributes = []) {
+function configureNesting(tags8 = [], attributes = []) {
   let script = [], style = [], textarea = [], other = [];
-  for (let tag of tags12) {
+  for (let tag of tags8) {
     let array = tag.tag == "script" ? script : tag.tag == "style" ? style : tag.tag == "textarea" ? textarea : other;
     array.push(tag);
   }
   let attrs = attributes.length ? /* @__PURE__ */ Object.create(null) : null;
   for (let attr of attributes) (attrs[attr.name] || (attrs[attr.name] = [])).push(attr);
-  return parseMixed2((node, input) => {
+  return parseMixed((node, input) => {
     let id3 = node.type.id;
     if (id3 == ScriptText) return maybeNest(node, input, script);
     if (id3 == StyleText) return maybeNest(node, input, style);
@@ -34954,1551 +28540,6 @@ function configureNesting(tags12 = [], attributes = []) {
     return null;
   });
 }
-
-// node_modules/@lezer/css/node_modules/@lezer/common/dist/index.js
-var DefaultBufferLength5 = 1024;
-var nextPropID5 = 0;
-var Range6 = class {
-  constructor(from, to) {
-    this.from = from;
-    this.to = to;
-  }
-};
-var NodeProp5 = class {
-  /**
-  Create a new node prop type.
-  */
-  constructor(config2 = {}) {
-    this.id = nextPropID5++;
-    this.perNode = !!config2.perNode;
-    this.deserialize = config2.deserialize || (() => {
-      throw new Error("This node type doesn't define a deserialize function");
-    });
-    this.combine = config2.combine || null;
-  }
-  /**
-  This is meant to be used with
-  [`NodeSet.extend`](#common.NodeSet.extend) or
-  [`LRParser.configure`](#lr.ParserConfig.props) to compute
-  prop values for each node type in the set. Takes a [match
-  object](#common.NodeType^match) or function that returns undefined
-  if the node type doesn't get this prop, and the prop's value if
-  it does.
-  */
-  add(match) {
-    if (this.perNode)
-      throw new RangeError("Can't add per-node props to node types");
-    if (typeof match != "function")
-      match = NodeType5.match(match);
-    return (type) => {
-      let result = match(type);
-      return result === void 0 ? null : [this, result];
-    };
-  }
-};
-NodeProp5.closedBy = new NodeProp5({ deserialize: (str) => str.split(" ") });
-NodeProp5.openedBy = new NodeProp5({ deserialize: (str) => str.split(" ") });
-NodeProp5.group = new NodeProp5({ deserialize: (str) => str.split(" ") });
-NodeProp5.isolate = new NodeProp5({ deserialize: (value) => {
-  if (value && value != "rtl" && value != "ltr" && value != "auto")
-    throw new RangeError("Invalid value for isolate: " + value);
-  return value || "auto";
-} });
-NodeProp5.contextHash = new NodeProp5({ perNode: true });
-NodeProp5.lookAhead = new NodeProp5({ perNode: true });
-NodeProp5.mounted = new NodeProp5({ perNode: true });
-var MountedTree5 = class {
-  constructor(tree, overlay, parser5, bracketed = false) {
-    this.tree = tree;
-    this.overlay = overlay;
-    this.parser = parser5;
-    this.bracketed = bracketed;
-  }
-  /**
-  @internal
-  */
-  static get(tree) {
-    return tree && tree.props && tree.props[NodeProp5.mounted.id];
-  }
-};
-var noProps5 = /* @__PURE__ */ Object.create(null);
-var NodeType5 = class _NodeType {
-  /**
-  @internal
-  */
-  constructor(name11, props, id3, flags = 0) {
-    this.name = name11;
-    this.props = props;
-    this.id = id3;
-    this.flags = flags;
-  }
-  /**
-  Define a node type.
-  */
-  static define(spec) {
-    let props = spec.props && spec.props.length ? /* @__PURE__ */ Object.create(null) : noProps5;
-    let flags = (spec.top ? 1 : 0) | (spec.skipped ? 2 : 0) | (spec.error ? 4 : 0) | (spec.name == null ? 8 : 0);
-    let type = new _NodeType(spec.name || "", props, spec.id, flags);
-    if (spec.props)
-      for (let src of spec.props) {
-        if (!Array.isArray(src))
-          src = src(type);
-        if (src) {
-          if (src[0].perNode)
-            throw new RangeError("Can't store a per-node prop on a node type");
-          props[src[0].id] = src[1];
-        }
-      }
-    return type;
-  }
-  /**
-  Retrieves a node prop for this type. Will return `undefined` if
-  the prop isn't present on this node.
-  */
-  prop(prop) {
-    return this.props[prop.id];
-  }
-  /**
-  True when this is the top node of a grammar.
-  */
-  get isTop() {
-    return (this.flags & 1) > 0;
-  }
-  /**
-  True when this node is produced by a skip rule.
-  */
-  get isSkipped() {
-    return (this.flags & 2) > 0;
-  }
-  /**
-  Indicates whether this is an error node.
-  */
-  get isError() {
-    return (this.flags & 4) > 0;
-  }
-  /**
-  When true, this node type doesn't correspond to a user-declared
-  named node, for example because it is used to cache repetition.
-  */
-  get isAnonymous() {
-    return (this.flags & 8) > 0;
-  }
-  /**
-  Returns true when this node's name or one of its
-  [groups](#common.NodeProp^group) matches the given string.
-  */
-  is(name11) {
-    if (typeof name11 == "string") {
-      if (this.name == name11)
-        return true;
-      let group = this.prop(NodeProp5.group);
-      return group ? group.indexOf(name11) > -1 : false;
-    }
-    return this.id == name11;
-  }
-  /**
-  Create a function from node types to arbitrary values by
-  specifying an object whose property names are node or
-  [group](#common.NodeProp^group) names. Often useful with
-  [`NodeProp.add`](#common.NodeProp.add). You can put multiple
-  names, separated by spaces, in a single property name to map
-  multiple node names to a single value.
-  */
-  static match(map) {
-    let direct = /* @__PURE__ */ Object.create(null);
-    for (let prop in map)
-      for (let name11 of prop.split(" "))
-        direct[name11] = map[prop];
-    return (node) => {
-      for (let groups = node.prop(NodeProp5.group), i = -1; i < (groups ? groups.length : 0); i++) {
-        let found = direct[i < 0 ? node.name : groups[i]];
-        if (found)
-          return found;
-      }
-    };
-  }
-};
-NodeType5.none = new NodeType5(
-  "",
-  /* @__PURE__ */ Object.create(null),
-  0,
-  8
-  /* NodeFlag.Anonymous */
-);
-var NodeSet5 = class _NodeSet {
-  /**
-  Create a set with the given types. The `id` property of each
-  type should correspond to its position within the array.
-  */
-  constructor(types2) {
-    this.types = types2;
-    for (let i = 0; i < types2.length; i++)
-      if (types2[i].id != i)
-        throw new RangeError("Node type ids should correspond to array positions when creating a node set");
-  }
-  /**
-  Create a copy of this set with some node properties added. The
-  arguments to this method can be created with
-  [`NodeProp.add`](#common.NodeProp.add).
-  */
-  extend(...props) {
-    let newTypes = [];
-    for (let type of this.types) {
-      let newProps = null;
-      for (let source of props) {
-        let add2 = source(type);
-        if (add2) {
-          if (!newProps)
-            newProps = Object.assign({}, type.props);
-          let value = add2[1], prop = add2[0];
-          if (prop.combine && prop.id in newProps)
-            value = prop.combine(newProps[prop.id], value);
-          newProps[prop.id] = value;
-        }
-      }
-      newTypes.push(newProps ? new NodeType5(type.name, newProps, type.id, type.flags) : type);
-    }
-    return new _NodeSet(newTypes);
-  }
-};
-var CachedNode5 = /* @__PURE__ */ new WeakMap();
-var CachedInnerNode5 = /* @__PURE__ */ new WeakMap();
-var IterMode5;
-(function(IterMode11) {
-  IterMode11[IterMode11["ExcludeBuffers"] = 1] = "ExcludeBuffers";
-  IterMode11[IterMode11["IncludeAnonymous"] = 2] = "IncludeAnonymous";
-  IterMode11[IterMode11["IgnoreMounts"] = 4] = "IgnoreMounts";
-  IterMode11[IterMode11["IgnoreOverlays"] = 8] = "IgnoreOverlays";
-  IterMode11[IterMode11["EnterBracketed"] = 16] = "EnterBracketed";
-})(IterMode5 || (IterMode5 = {}));
-var Tree5 = class _Tree {
-  /**
-  Construct a new tree. See also [`Tree.build`](#common.Tree^build).
-  */
-  constructor(type, children, positions, length, props) {
-    this.type = type;
-    this.children = children;
-    this.positions = positions;
-    this.length = length;
-    this.props = null;
-    if (props && props.length) {
-      this.props = /* @__PURE__ */ Object.create(null);
-      for (let [prop, value] of props)
-        this.props[typeof prop == "number" ? prop : prop.id] = value;
-    }
-  }
-  /**
-  @internal
-  */
-  toString() {
-    let mounted = MountedTree5.get(this);
-    if (mounted && !mounted.overlay)
-      return mounted.tree.toString();
-    let children = "";
-    for (let ch of this.children) {
-      let str = ch.toString();
-      if (str) {
-        if (children)
-          children += ",";
-        children += str;
-      }
-    }
-    return !this.type.name ? children : (/\W/.test(this.type.name) && !this.type.isError ? JSON.stringify(this.type.name) : this.type.name) + (children.length ? "(" + children + ")" : "");
-  }
-  /**
-  Get a [tree cursor](#common.TreeCursor) positioned at the top of
-  the tree. Mode can be used to [control](#common.IterMode) which
-  nodes the cursor visits.
-  */
-  cursor(mode = 0) {
-    return new TreeCursor5(this.topNode, mode);
-  }
-  /**
-  Get a [tree cursor](#common.TreeCursor) pointing into this tree
-  at the given position and side (see
-  [`moveTo`](#common.TreeCursor.moveTo).
-  */
-  cursorAt(pos, side = 0, mode = 0) {
-    let scope = CachedNode5.get(this) || this.topNode;
-    let cursor2 = new TreeCursor5(scope);
-    cursor2.moveTo(pos, side);
-    CachedNode5.set(this, cursor2._tree);
-    return cursor2;
-  }
-  /**
-  Get a [syntax node](#common.SyntaxNode) object for the top of the
-  tree.
-  */
-  get topNode() {
-    return new TreeNode5(this, 0, 0, null);
-  }
-  /**
-  Get the [syntax node](#common.SyntaxNode) at the given position.
-  If `side` is -1, this will move into nodes that end at the
-  position. If 1, it'll move into nodes that start at the
-  position. With 0, it'll only enter nodes that cover the position
-  from both sides.
-  
-  Note that this will not enter
-  [overlays](#common.MountedTree.overlay), and you often want
-  [`resolveInner`](#common.Tree.resolveInner) instead.
-  */
-  resolve(pos, side = 0) {
-    let node = resolveNode5(CachedNode5.get(this) || this.topNode, pos, side, false);
-    CachedNode5.set(this, node);
-    return node;
-  }
-  /**
-  Like [`resolve`](#common.Tree.resolve), but will enter
-  [overlaid](#common.MountedTree.overlay) nodes, producing a syntax node
-  pointing into the innermost overlaid tree at the given position
-  (with parent links going through all parent structure, including
-  the host trees).
-  */
-  resolveInner(pos, side = 0) {
-    let node = resolveNode5(CachedInnerNode5.get(this) || this.topNode, pos, side, true);
-    CachedInnerNode5.set(this, node);
-    return node;
-  }
-  /**
-  In some situations, it can be useful to iterate through all
-  nodes around a position, including those in overlays that don't
-  directly cover the position. This method gives you an iterator
-  that will produce all nodes, from small to big, around the given
-  position.
-  */
-  resolveStack(pos, side = 0) {
-    return stackIterator5(this, pos, side);
-  }
-  /**
-  Iterate over the tree and its children, calling `enter` for any
-  node that touches the `from`/`to` region (if given) before
-  running over such a node's children, and `leave` (if given) when
-  leaving the node. When `enter` returns `false`, that node will
-  not have its children iterated over (or `leave` called).
-  */
-  iterate(spec) {
-    let { enter, leave, from = 0, to = this.length } = spec;
-    let mode = spec.mode || 0, anon = (mode & IterMode5.IncludeAnonymous) > 0;
-    for (let c = this.cursor(mode | IterMode5.IncludeAnonymous); ; ) {
-      let entered = false;
-      if (c.from <= to && c.to >= from && (!anon && c.type.isAnonymous || enter(c) !== false)) {
-        if (c.firstChild())
-          continue;
-        entered = true;
-      }
-      for (; ; ) {
-        if (entered && leave && (anon || !c.type.isAnonymous))
-          leave(c);
-        if (c.nextSibling())
-          break;
-        if (!c.parent())
-          return;
-        entered = true;
-      }
-    }
-  }
-  /**
-  Get the value of the given [node prop](#common.NodeProp) for this
-  node. Works with both per-node and per-type props.
-  */
-  prop(prop) {
-    return !prop.perNode ? this.type.prop(prop) : this.props ? this.props[prop.id] : void 0;
-  }
-  /**
-  Returns the node's [per-node props](#common.NodeProp.perNode) in a
-  format that can be passed to the [`Tree`](#common.Tree)
-  constructor.
-  */
-  get propValues() {
-    let result = [];
-    if (this.props)
-      for (let id3 in this.props)
-        result.push([+id3, this.props[id3]]);
-    return result;
-  }
-  /**
-  Balance the direct children of this tree, producing a copy of
-  which may have children grouped into subtrees with type
-  [`NodeType.none`](#common.NodeType^none).
-  */
-  balance(config2 = {}) {
-    return this.children.length <= 8 ? this : balanceRange5(NodeType5.none, this.children, this.positions, 0, this.children.length, 0, this.length, (children, positions, length) => new _Tree(this.type, children, positions, length, this.propValues), config2.makeTree || ((children, positions, length) => new _Tree(NodeType5.none, children, positions, length)));
-  }
-  /**
-  Build a tree from a postfix-ordered buffer of node information,
-  or a cursor over such a buffer.
-  */
-  static build(data2) {
-    return buildTree5(data2);
-  }
-};
-Tree5.empty = new Tree5(NodeType5.none, [], [], 0);
-var FlatBufferCursor5 = class _FlatBufferCursor {
-  constructor(buffer, index) {
-    this.buffer = buffer;
-    this.index = index;
-  }
-  get id() {
-    return this.buffer[this.index - 4];
-  }
-  get start() {
-    return this.buffer[this.index - 3];
-  }
-  get end() {
-    return this.buffer[this.index - 2];
-  }
-  get size() {
-    return this.buffer[this.index - 1];
-  }
-  get pos() {
-    return this.index;
-  }
-  next() {
-    this.index -= 4;
-  }
-  fork() {
-    return new _FlatBufferCursor(this.buffer, this.index);
-  }
-};
-var TreeBuffer5 = class _TreeBuffer {
-  /**
-  Create a tree buffer.
-  */
-  constructor(buffer, length, set) {
-    this.buffer = buffer;
-    this.length = length;
-    this.set = set;
-  }
-  /**
-  @internal
-  */
-  get type() {
-    return NodeType5.none;
-  }
-  /**
-  @internal
-  */
-  toString() {
-    let result = [];
-    for (let index = 0; index < this.buffer.length; ) {
-      result.push(this.childString(index));
-      index = this.buffer[index + 3];
-    }
-    return result.join(",");
-  }
-  /**
-  @internal
-  */
-  childString(index) {
-    let id3 = this.buffer[index], endIndex = this.buffer[index + 3];
-    let type = this.set.types[id3], result = type.name;
-    if (/\W/.test(result) && !type.isError)
-      result = JSON.stringify(result);
-    index += 4;
-    if (endIndex == index)
-      return result;
-    let children = [];
-    while (index < endIndex) {
-      children.push(this.childString(index));
-      index = this.buffer[index + 3];
-    }
-    return result + "(" + children.join(",") + ")";
-  }
-  /**
-  @internal
-  */
-  findChild(startIndex, endIndex, dir, pos, side) {
-    let { buffer } = this, pick = -1;
-    for (let i = startIndex; i != endIndex; i = buffer[i + 3]) {
-      if (checkSide5(side, pos, buffer[i + 1], buffer[i + 2])) {
-        pick = i;
-        if (dir > 0)
-          break;
-      }
-    }
-    return pick;
-  }
-  /**
-  @internal
-  */
-  slice(startI, endI, from) {
-    let b = this.buffer;
-    let copy = new Uint16Array(endI - startI), len = 0;
-    for (let i = startI, j = 0; i < endI; ) {
-      copy[j++] = b[i++];
-      copy[j++] = b[i++] - from;
-      let to = copy[j++] = b[i++] - from;
-      copy[j++] = b[i++] - startI;
-      len = Math.max(len, to);
-    }
-    return new _TreeBuffer(copy, len, this.set);
-  }
-};
-function checkSide5(side, pos, from, to) {
-  switch (side) {
-    case -2:
-      return from < pos;
-    case -1:
-      return to >= pos && from < pos;
-    case 0:
-      return from < pos && to > pos;
-    case 1:
-      return from <= pos && to > pos;
-    case 2:
-      return to > pos;
-    case 4:
-      return true;
-  }
-}
-function resolveNode5(node, pos, side, overlays) {
-  var _a7;
-  while (node.from == node.to || (side < 1 ? node.from >= pos : node.from > pos) || (side > -1 ? node.to <= pos : node.to < pos)) {
-    let parent = !overlays && node instanceof TreeNode5 && node.index < 0 ? null : node.parent;
-    if (!parent)
-      return node;
-    node = parent;
-  }
-  let mode = overlays ? 0 : IterMode5.IgnoreOverlays;
-  if (overlays)
-    for (let scan = node, parent = scan.parent; parent; scan = parent, parent = scan.parent) {
-      if (scan instanceof TreeNode5 && scan.index < 0 && ((_a7 = parent.enter(pos, side, mode)) === null || _a7 === void 0 ? void 0 : _a7.from) != scan.from)
-        node = parent;
-    }
-  for (; ; ) {
-    let inner = node.enter(pos, side, mode);
-    if (!inner)
-      return node;
-    node = inner;
-  }
-}
-var BaseNode5 = class {
-  cursor(mode = 0) {
-    return new TreeCursor5(this, mode);
-  }
-  getChild(type, before = null, after = null) {
-    let r = getChildren5(this, type, before, after);
-    return r.length ? r[0] : null;
-  }
-  getChildren(type, before = null, after = null) {
-    return getChildren5(this, type, before, after);
-  }
-  resolve(pos, side = 0) {
-    return resolveNode5(this, pos, side, false);
-  }
-  resolveInner(pos, side = 0) {
-    return resolveNode5(this, pos, side, true);
-  }
-  matchContext(context) {
-    return matchNodeContext5(this.parent, context);
-  }
-  enterUnfinishedNodesBefore(pos) {
-    let scan = this.childBefore(pos), node = this;
-    while (scan) {
-      let last = scan.lastChild;
-      if (!last || last.to != scan.to)
-        break;
-      if (last.type.isError && last.from == last.to) {
-        node = scan;
-        scan = last.prevSibling;
-      } else {
-        scan = last;
-      }
-    }
-    return node;
-  }
-  get node() {
-    return this;
-  }
-  get next() {
-    return this.parent;
-  }
-};
-var TreeNode5 = class _TreeNode extends BaseNode5 {
-  constructor(_tree, from, index, _parent) {
-    super();
-    this._tree = _tree;
-    this.from = from;
-    this.index = index;
-    this._parent = _parent;
-  }
-  get type() {
-    return this._tree.type;
-  }
-  get name() {
-    return this._tree.type.name;
-  }
-  get to() {
-    return this.from + this._tree.length;
-  }
-  nextChild(i, dir, pos, side, mode = 0) {
-    for (let parent = this; ; ) {
-      for (let { children, positions } = parent._tree, e = dir > 0 ? children.length : -1; i != e; i += dir) {
-        let next = children[i], start = positions[i] + parent.from, mounted;
-        if (!(mode & IterMode5.EnterBracketed && next instanceof Tree5 && (mounted = MountedTree5.get(next)) && !mounted.overlay && mounted.bracketed && pos >= start && pos <= start + next.length) && !checkSide5(side, pos, start, start + next.length))
-          continue;
-        if (next instanceof TreeBuffer5) {
-          if (mode & IterMode5.ExcludeBuffers)
-            continue;
-          let index = next.findChild(0, next.buffer.length, dir, pos - start, side);
-          if (index > -1)
-            return new BufferNode5(new BufferContext5(parent, next, i, start), null, index);
-        } else if (mode & IterMode5.IncludeAnonymous || (!next.type.isAnonymous || hasChild5(next))) {
-          let mounted2;
-          if (!(mode & IterMode5.IgnoreMounts) && (mounted2 = MountedTree5.get(next)) && !mounted2.overlay)
-            return new _TreeNode(mounted2.tree, start, i, parent);
-          let inner = new _TreeNode(next, start, i, parent);
-          return mode & IterMode5.IncludeAnonymous || !inner.type.isAnonymous ? inner : inner.nextChild(dir < 0 ? next.children.length - 1 : 0, dir, pos, side, mode);
-        }
-      }
-      if (mode & IterMode5.IncludeAnonymous || !parent.type.isAnonymous)
-        return null;
-      if (parent.index >= 0)
-        i = parent.index + dir;
-      else
-        i = dir < 0 ? -1 : parent._parent._tree.children.length;
-      parent = parent._parent;
-      if (!parent)
-        return null;
-    }
-  }
-  get firstChild() {
-    return this.nextChild(
-      0,
-      1,
-      0,
-      4
-      /* Side.DontCare */
-    );
-  }
-  get lastChild() {
-    return this.nextChild(
-      this._tree.children.length - 1,
-      -1,
-      0,
-      4
-      /* Side.DontCare */
-    );
-  }
-  childAfter(pos) {
-    return this.nextChild(
-      0,
-      1,
-      pos,
-      2
-      /* Side.After */
-    );
-  }
-  childBefore(pos) {
-    return this.nextChild(
-      this._tree.children.length - 1,
-      -1,
-      pos,
-      -2
-      /* Side.Before */
-    );
-  }
-  prop(prop) {
-    return this._tree.prop(prop);
-  }
-  enter(pos, side, mode = 0) {
-    let mounted;
-    if (!(mode & IterMode5.IgnoreOverlays) && (mounted = MountedTree5.get(this._tree)) && mounted.overlay) {
-      let rPos = pos - this.from, enterBracketed = mode & IterMode5.EnterBracketed && mounted.bracketed;
-      for (let { from, to } of mounted.overlay) {
-        if ((side > 0 || enterBracketed ? from <= rPos : from < rPos) && (side < 0 || enterBracketed ? to >= rPos : to > rPos))
-          return new _TreeNode(mounted.tree, mounted.overlay[0].from + this.from, -1, this);
-      }
-    }
-    return this.nextChild(0, 1, pos, side, mode);
-  }
-  nextSignificantParent() {
-    let val = this;
-    while (val.type.isAnonymous && val._parent)
-      val = val._parent;
-    return val;
-  }
-  get parent() {
-    return this._parent ? this._parent.nextSignificantParent() : null;
-  }
-  get nextSibling() {
-    return this._parent && this.index >= 0 ? this._parent.nextChild(
-      this.index + 1,
-      1,
-      0,
-      4
-      /* Side.DontCare */
-    ) : null;
-  }
-  get prevSibling() {
-    return this._parent && this.index >= 0 ? this._parent.nextChild(
-      this.index - 1,
-      -1,
-      0,
-      4
-      /* Side.DontCare */
-    ) : null;
-  }
-  get tree() {
-    return this._tree;
-  }
-  toTree() {
-    return this._tree;
-  }
-  /**
-  @internal
-  */
-  toString() {
-    return this._tree.toString();
-  }
-};
-function getChildren5(node, type, before, after) {
-  let cur2 = node.cursor(), result = [];
-  if (!cur2.firstChild())
-    return result;
-  if (before != null)
-    for (let found = false; !found; ) {
-      found = cur2.type.is(before);
-      if (!cur2.nextSibling())
-        return result;
-    }
-  for (; ; ) {
-    if (after != null && cur2.type.is(after))
-      return result;
-    if (cur2.type.is(type))
-      result.push(cur2.node);
-    if (!cur2.nextSibling())
-      return after == null ? result : [];
-  }
-}
-function matchNodeContext5(node, context, i = context.length - 1) {
-  for (let p = node; i >= 0; p = p.parent) {
-    if (!p)
-      return false;
-    if (!p.type.isAnonymous) {
-      if (context[i] && context[i] != p.name)
-        return false;
-      i--;
-    }
-  }
-  return true;
-}
-var BufferContext5 = class {
-  constructor(parent, buffer, index, start) {
-    this.parent = parent;
-    this.buffer = buffer;
-    this.index = index;
-    this.start = start;
-  }
-};
-var BufferNode5 = class _BufferNode extends BaseNode5 {
-  get name() {
-    return this.type.name;
-  }
-  get from() {
-    return this.context.start + this.context.buffer.buffer[this.index + 1];
-  }
-  get to() {
-    return this.context.start + this.context.buffer.buffer[this.index + 2];
-  }
-  constructor(context, _parent, index) {
-    super();
-    this.context = context;
-    this._parent = _parent;
-    this.index = index;
-    this.type = context.buffer.set.types[context.buffer.buffer[index]];
-  }
-  child(dir, pos, side) {
-    let { buffer } = this.context;
-    let index = buffer.findChild(this.index + 4, buffer.buffer[this.index + 3], dir, pos - this.context.start, side);
-    return index < 0 ? null : new _BufferNode(this.context, this, index);
-  }
-  get firstChild() {
-    return this.child(
-      1,
-      0,
-      4
-      /* Side.DontCare */
-    );
-  }
-  get lastChild() {
-    return this.child(
-      -1,
-      0,
-      4
-      /* Side.DontCare */
-    );
-  }
-  childAfter(pos) {
-    return this.child(
-      1,
-      pos,
-      2
-      /* Side.After */
-    );
-  }
-  childBefore(pos) {
-    return this.child(
-      -1,
-      pos,
-      -2
-      /* Side.Before */
-    );
-  }
-  prop(prop) {
-    return this.type.prop(prop);
-  }
-  enter(pos, side, mode = 0) {
-    if (mode & IterMode5.ExcludeBuffers)
-      return null;
-    let { buffer } = this.context;
-    let index = buffer.findChild(this.index + 4, buffer.buffer[this.index + 3], side > 0 ? 1 : -1, pos - this.context.start, side);
-    return index < 0 ? null : new _BufferNode(this.context, this, index);
-  }
-  get parent() {
-    return this._parent || this.context.parent.nextSignificantParent();
-  }
-  externalSibling(dir) {
-    return this._parent ? null : this.context.parent.nextChild(
-      this.context.index + dir,
-      dir,
-      0,
-      4
-      /* Side.DontCare */
-    );
-  }
-  get nextSibling() {
-    let { buffer } = this.context;
-    let after = buffer.buffer[this.index + 3];
-    if (after < (this._parent ? buffer.buffer[this._parent.index + 3] : buffer.buffer.length))
-      return new _BufferNode(this.context, this._parent, after);
-    return this.externalSibling(1);
-  }
-  get prevSibling() {
-    let { buffer } = this.context;
-    let parentStart = this._parent ? this._parent.index + 4 : 0;
-    if (this.index == parentStart)
-      return this.externalSibling(-1);
-    return new _BufferNode(this.context, this._parent, buffer.findChild(
-      parentStart,
-      this.index,
-      -1,
-      0,
-      4
-      /* Side.DontCare */
-    ));
-  }
-  get tree() {
-    return null;
-  }
-  toTree() {
-    let children = [], positions = [];
-    let { buffer } = this.context;
-    let startI = this.index + 4, endI = buffer.buffer[this.index + 3];
-    if (endI > startI) {
-      let from = buffer.buffer[this.index + 1];
-      children.push(buffer.slice(startI, endI, from));
-      positions.push(0);
-    }
-    return new Tree5(this.type, children, positions, this.to - this.from);
-  }
-  /**
-  @internal
-  */
-  toString() {
-    return this.context.buffer.childString(this.index);
-  }
-};
-function iterStack5(heads) {
-  if (!heads.length)
-    return null;
-  let pick = 0, picked = heads[0];
-  for (let i = 1; i < heads.length; i++) {
-    let node = heads[i];
-    if (node.from > picked.from || node.to < picked.to) {
-      picked = node;
-      pick = i;
-    }
-  }
-  let next = picked instanceof TreeNode5 && picked.index < 0 ? null : picked.parent;
-  let newHeads = heads.slice();
-  if (next)
-    newHeads[pick] = next;
-  else
-    newHeads.splice(pick, 1);
-  return new StackIterator5(newHeads, picked);
-}
-var StackIterator5 = class {
-  constructor(heads, node) {
-    this.heads = heads;
-    this.node = node;
-  }
-  get next() {
-    return iterStack5(this.heads);
-  }
-};
-function stackIterator5(tree, pos, side) {
-  let inner = tree.resolveInner(pos, side), layers = null;
-  for (let scan = inner instanceof TreeNode5 ? inner : inner.context.parent; scan; scan = scan.parent) {
-    if (scan.index < 0) {
-      let parent = scan.parent;
-      (layers || (layers = [inner])).push(parent.resolve(pos, side));
-      scan = parent;
-    } else {
-      let mount = MountedTree5.get(scan.tree);
-      if (mount && mount.overlay && mount.overlay[0].from <= pos && mount.overlay[mount.overlay.length - 1].to >= pos) {
-        let root = new TreeNode5(mount.tree, mount.overlay[0].from + scan.from, -1, scan);
-        (layers || (layers = [inner])).push(resolveNode5(root, pos, side, false));
-      }
-    }
-  }
-  return layers ? iterStack5(layers) : inner;
-}
-var TreeCursor5 = class {
-  /**
-  Shorthand for `.type.name`.
-  */
-  get name() {
-    return this.type.name;
-  }
-  /**
-  @internal
-  */
-  constructor(node, mode = 0) {
-    this.buffer = null;
-    this.stack = [];
-    this.index = 0;
-    this.bufferNode = null;
-    this.mode = mode & ~IterMode5.EnterBracketed;
-    if (node instanceof TreeNode5) {
-      this.yieldNode(node);
-    } else {
-      this._tree = node.context.parent;
-      this.buffer = node.context;
-      for (let n = node._parent; n; n = n._parent)
-        this.stack.unshift(n.index);
-      this.bufferNode = node;
-      this.yieldBuf(node.index);
-    }
-  }
-  yieldNode(node) {
-    if (!node)
-      return false;
-    this._tree = node;
-    this.type = node.type;
-    this.from = node.from;
-    this.to = node.to;
-    return true;
-  }
-  yieldBuf(index, type) {
-    this.index = index;
-    let { start, buffer } = this.buffer;
-    this.type = type || buffer.set.types[buffer.buffer[index]];
-    this.from = start + buffer.buffer[index + 1];
-    this.to = start + buffer.buffer[index + 2];
-    return true;
-  }
-  /**
-  @internal
-  */
-  yield(node) {
-    if (!node)
-      return false;
-    if (node instanceof TreeNode5) {
-      this.buffer = null;
-      return this.yieldNode(node);
-    }
-    this.buffer = node.context;
-    return this.yieldBuf(node.index, node.type);
-  }
-  /**
-  @internal
-  */
-  toString() {
-    return this.buffer ? this.buffer.buffer.childString(this.index) : this._tree.toString();
-  }
-  /**
-  @internal
-  */
-  enterChild(dir, pos, side) {
-    if (!this.buffer)
-      return this.yield(this._tree.nextChild(dir < 0 ? this._tree._tree.children.length - 1 : 0, dir, pos, side, this.mode));
-    let { buffer } = this.buffer;
-    let index = buffer.findChild(this.index + 4, buffer.buffer[this.index + 3], dir, pos - this.buffer.start, side);
-    if (index < 0)
-      return false;
-    this.stack.push(this.index);
-    return this.yieldBuf(index);
-  }
-  /**
-  Move the cursor to this node's first child. When this returns
-  false, the node has no child, and the cursor has not been moved.
-  */
-  firstChild() {
-    return this.enterChild(
-      1,
-      0,
-      4
-      /* Side.DontCare */
-    );
-  }
-  /**
-  Move the cursor to this node's last child.
-  */
-  lastChild() {
-    return this.enterChild(
-      -1,
-      0,
-      4
-      /* Side.DontCare */
-    );
-  }
-  /**
-  Move the cursor to the first child that ends after `pos`.
-  */
-  childAfter(pos) {
-    return this.enterChild(
-      1,
-      pos,
-      2
-      /* Side.After */
-    );
-  }
-  /**
-  Move to the last child that starts before `pos`.
-  */
-  childBefore(pos) {
-    return this.enterChild(
-      -1,
-      pos,
-      -2
-      /* Side.Before */
-    );
-  }
-  /**
-  Move the cursor to the child around `pos`. If side is -1 the
-  child may end at that position, when 1 it may start there. This
-  will also enter [overlaid](#common.MountedTree.overlay)
-  [mounted](#common.NodeProp^mounted) trees unless `overlays` is
-  set to false.
-  */
-  enter(pos, side, mode = this.mode) {
-    if (!this.buffer)
-      return this.yield(this._tree.enter(pos, side, mode));
-    return mode & IterMode5.ExcludeBuffers ? false : this.enterChild(1, pos, side);
-  }
-  /**
-  Move to the node's parent node, if this isn't the top node.
-  */
-  parent() {
-    if (!this.buffer)
-      return this.yieldNode(this.mode & IterMode5.IncludeAnonymous ? this._tree._parent : this._tree.parent);
-    if (this.stack.length)
-      return this.yieldBuf(this.stack.pop());
-    let parent = this.mode & IterMode5.IncludeAnonymous ? this.buffer.parent : this.buffer.parent.nextSignificantParent();
-    this.buffer = null;
-    return this.yieldNode(parent);
-  }
-  /**
-  @internal
-  */
-  sibling(dir) {
-    if (!this.buffer)
-      return !this._tree._parent ? false : this.yield(this._tree.index < 0 ? null : this._tree._parent.nextChild(this._tree.index + dir, dir, 0, 4, this.mode));
-    let { buffer } = this.buffer, d = this.stack.length - 1;
-    if (dir < 0) {
-      let parentStart = d < 0 ? 0 : this.stack[d] + 4;
-      if (this.index != parentStart)
-        return this.yieldBuf(buffer.findChild(
-          parentStart,
-          this.index,
-          -1,
-          0,
-          4
-          /* Side.DontCare */
-        ));
-    } else {
-      let after = buffer.buffer[this.index + 3];
-      if (after < (d < 0 ? buffer.buffer.length : buffer.buffer[this.stack[d] + 3]))
-        return this.yieldBuf(after);
-    }
-    return d < 0 ? this.yield(this.buffer.parent.nextChild(this.buffer.index + dir, dir, 0, 4, this.mode)) : false;
-  }
-  /**
-  Move to this node's next sibling, if any.
-  */
-  nextSibling() {
-    return this.sibling(1);
-  }
-  /**
-  Move to this node's previous sibling, if any.
-  */
-  prevSibling() {
-    return this.sibling(-1);
-  }
-  atLastNode(dir) {
-    let index, parent, { buffer } = this;
-    if (buffer) {
-      if (dir > 0) {
-        if (this.index < buffer.buffer.buffer.length)
-          return false;
-      } else {
-        for (let i = 0; i < this.index; i++)
-          if (buffer.buffer.buffer[i + 3] < this.index)
-            return false;
-      }
-      ({ index, parent } = buffer);
-    } else {
-      ({ index, _parent: parent } = this._tree);
-    }
-    for (; parent; { index, _parent: parent } = parent) {
-      if (index > -1)
-        for (let i = index + dir, e = dir < 0 ? -1 : parent._tree.children.length; i != e; i += dir) {
-          let child = parent._tree.children[i];
-          if (this.mode & IterMode5.IncludeAnonymous || child instanceof TreeBuffer5 || !child.type.isAnonymous || hasChild5(child))
-            return false;
-        }
-    }
-    return true;
-  }
-  move(dir, enter) {
-    if (enter && this.enterChild(
-      dir,
-      0,
-      4
-      /* Side.DontCare */
-    ))
-      return true;
-    for (; ; ) {
-      if (this.sibling(dir))
-        return true;
-      if (this.atLastNode(dir) || !this.parent())
-        return false;
-    }
-  }
-  /**
-  Move to the next node in a
-  [pre-order](https://en.wikipedia.org/wiki/Tree_traversal#Pre-order,_NLR)
-  traversal, going from a node to its first child or, if the
-  current node is empty or `enter` is false, its next sibling or
-  the next sibling of the first parent node that has one.
-  */
-  next(enter = true) {
-    return this.move(1, enter);
-  }
-  /**
-  Move to the next node in a last-to-first pre-order traversal. A
-  node is followed by its last child or, if it has none, its
-  previous sibling or the previous sibling of the first parent
-  node that has one.
-  */
-  prev(enter = true) {
-    return this.move(-1, enter);
-  }
-  /**
-  Move the cursor to the innermost node that covers `pos`. If
-  `side` is -1, it will enter nodes that end at `pos`. If it is 1,
-  it will enter nodes that start at `pos`.
-  */
-  moveTo(pos, side = 0) {
-    while (this.from == this.to || (side < 1 ? this.from >= pos : this.from > pos) || (side > -1 ? this.to <= pos : this.to < pos))
-      if (!this.parent())
-        break;
-    while (this.enterChild(1, pos, side)) {
-    }
-    return this;
-  }
-  /**
-  Get a [syntax node](#common.SyntaxNode) at the cursor's current
-  position.
-  */
-  get node() {
-    if (!this.buffer)
-      return this._tree;
-    let cache2 = this.bufferNode, result = null, depth = 0;
-    if (cache2 && cache2.context == this.buffer) {
-      scan: for (let index = this.index, d = this.stack.length; d >= 0; ) {
-        for (let c = cache2; c; c = c._parent)
-          if (c.index == index) {
-            if (index == this.index)
-              return c;
-            result = c;
-            depth = d + 1;
-            break scan;
-          }
-        index = this.stack[--d];
-      }
-    }
-    for (let i = depth; i < this.stack.length; i++)
-      result = new BufferNode5(this.buffer, result, this.stack[i]);
-    return this.bufferNode = new BufferNode5(this.buffer, result, this.index);
-  }
-  /**
-  Get the [tree](#common.Tree) that represents the current node, if
-  any. Will return null when the node is in a [tree
-  buffer](#common.TreeBuffer).
-  */
-  get tree() {
-    return this.buffer ? null : this._tree._tree;
-  }
-  /**
-  Iterate over the current node and all its descendants, calling
-  `enter` when entering a node and `leave`, if given, when leaving
-  one. When `enter` returns `false`, any children of that node are
-  skipped, and `leave` isn't called for it.
-  */
-  iterate(enter, leave) {
-    for (let depth = 0; ; ) {
-      let mustLeave = false;
-      if (this.type.isAnonymous || enter(this) !== false) {
-        if (this.firstChild()) {
-          depth++;
-          continue;
-        }
-        if (!this.type.isAnonymous)
-          mustLeave = true;
-      }
-      for (; ; ) {
-        if (mustLeave && leave)
-          leave(this);
-        mustLeave = this.type.isAnonymous;
-        if (!depth)
-          return;
-        if (this.nextSibling())
-          break;
-        this.parent();
-        depth--;
-        mustLeave = true;
-      }
-    }
-  }
-  /**
-  Test whether the current node matches a given context—a sequence
-  of direct parent node names. Empty strings in the context array
-  are treated as wildcards.
-  */
-  matchContext(context) {
-    if (!this.buffer)
-      return matchNodeContext5(this.node.parent, context);
-    let { buffer } = this.buffer, { types: types2 } = buffer.set;
-    for (let i = context.length - 1, d = this.stack.length - 1; i >= 0; d--) {
-      if (d < 0)
-        return matchNodeContext5(this._tree, context, i);
-      let type = types2[buffer.buffer[this.stack[d]]];
-      if (!type.isAnonymous) {
-        if (context[i] && context[i] != type.name)
-          return false;
-        i--;
-      }
-    }
-    return true;
-  }
-};
-function hasChild5(tree) {
-  return tree.children.some((ch) => ch instanceof TreeBuffer5 || !ch.type.isAnonymous || hasChild5(ch));
-}
-function buildTree5(data2) {
-  var _a7;
-  let { buffer, nodeSet, maxBufferLength = DefaultBufferLength5, reused = [], minRepeatType = nodeSet.types.length } = data2;
-  let cursor2 = Array.isArray(buffer) ? new FlatBufferCursor5(buffer, buffer.length) : buffer;
-  let types2 = nodeSet.types;
-  let contextHash = 0, lookAhead = 0;
-  function takeNode(parentStart, minPos, children2, positions2, inRepeat, depth) {
-    let { id: id3, start, end, size } = cursor2;
-    let lookAheadAtStart = lookAhead, contextAtStart = contextHash;
-    if (size < 0) {
-      cursor2.next();
-      if (size == -1) {
-        let node2 = reused[id3];
-        children2.push(node2);
-        positions2.push(start - parentStart);
-        return;
-      } else if (size == -3) {
-        contextHash = id3;
-        return;
-      } else if (size == -4) {
-        lookAhead = id3;
-        return;
-      } else {
-        throw new RangeError(`Unrecognized record size: ${size}`);
-      }
-    }
-    let type = types2[id3], node, buffer2;
-    let startPos = start - parentStart;
-    if (end - start <= maxBufferLength && (buffer2 = findBufferSize(cursor2.pos - minPos, inRepeat))) {
-      let data3 = new Uint16Array(buffer2.size - buffer2.skip);
-      let endPos = cursor2.pos - buffer2.size, index = data3.length;
-      while (cursor2.pos > endPos)
-        index = copyToBuffer(buffer2.start, data3, index);
-      node = new TreeBuffer5(data3, end - buffer2.start, nodeSet);
-      startPos = buffer2.start - parentStart;
-    } else {
-      let endPos = cursor2.pos - size;
-      cursor2.next();
-      let localChildren = [], localPositions = [];
-      let localInRepeat = id3 >= minRepeatType ? id3 : -1;
-      let lastGroup = 0, lastEnd = end;
-      while (cursor2.pos > endPos) {
-        if (localInRepeat >= 0 && cursor2.id == localInRepeat && cursor2.size >= 0) {
-          if (cursor2.end <= lastEnd - maxBufferLength) {
-            makeRepeatLeaf(localChildren, localPositions, start, lastGroup, cursor2.end, lastEnd, localInRepeat, lookAheadAtStart, contextAtStart);
-            lastGroup = localChildren.length;
-            lastEnd = cursor2.end;
-          }
-          cursor2.next();
-        } else if (depth > 2500) {
-          takeFlatNode(start, endPos, localChildren, localPositions);
-        } else {
-          takeNode(start, endPos, localChildren, localPositions, localInRepeat, depth + 1);
-        }
-      }
-      if (localInRepeat >= 0 && lastGroup > 0 && lastGroup < localChildren.length)
-        makeRepeatLeaf(localChildren, localPositions, start, lastGroup, start, lastEnd, localInRepeat, lookAheadAtStart, contextAtStart);
-      localChildren.reverse();
-      localPositions.reverse();
-      if (localInRepeat > -1 && lastGroup > 0) {
-        let make = makeBalanced(type, contextAtStart);
-        node = balanceRange5(type, localChildren, localPositions, 0, localChildren.length, 0, end - start, make, make);
-      } else {
-        node = makeTree(type, localChildren, localPositions, end - start, lookAheadAtStart - end, contextAtStart);
-      }
-    }
-    children2.push(node);
-    positions2.push(startPos);
-  }
-  function takeFlatNode(parentStart, minPos, children2, positions2) {
-    let nodes = [];
-    let nodeCount = 0, stopAt = -1;
-    while (cursor2.pos > minPos) {
-      let { id: id3, start, end, size } = cursor2;
-      if (size > 4) {
-        cursor2.next();
-      } else if (stopAt > -1 && start < stopAt) {
-        break;
-      } else {
-        if (stopAt < 0)
-          stopAt = end - maxBufferLength;
-        nodes.push(id3, start, end);
-        nodeCount++;
-        cursor2.next();
-      }
-    }
-    if (nodeCount) {
-      let buffer2 = new Uint16Array(nodeCount * 4);
-      let start = nodes[nodes.length - 2];
-      for (let i = nodes.length - 3, j = 0; i >= 0; i -= 3) {
-        buffer2[j++] = nodes[i];
-        buffer2[j++] = nodes[i + 1] - start;
-        buffer2[j++] = nodes[i + 2] - start;
-        buffer2[j++] = j;
-      }
-      children2.push(new TreeBuffer5(buffer2, nodes[2] - start, nodeSet));
-      positions2.push(start - parentStart);
-    }
-  }
-  function makeBalanced(type, contextHash2) {
-    return (children2, positions2, length2) => {
-      let lookAhead2 = 0, lastI = children2.length - 1, last, lookAheadProp;
-      if (lastI >= 0 && (last = children2[lastI]) instanceof Tree5) {
-        if (!lastI && last.type == type && last.length == length2)
-          return last;
-        if (lookAheadProp = last.prop(NodeProp5.lookAhead))
-          lookAhead2 = positions2[lastI] + last.length + lookAheadProp;
-      }
-      return makeTree(type, children2, positions2, length2, lookAhead2, contextHash2);
-    };
-  }
-  function makeRepeatLeaf(children2, positions2, base2, i, from, to, type, lookAhead2, contextHash2) {
-    let localChildren = [], localPositions = [];
-    while (children2.length > i) {
-      localChildren.push(children2.pop());
-      localPositions.push(positions2.pop() + base2 - from);
-    }
-    children2.push(makeTree(nodeSet.types[type], localChildren, localPositions, to - from, lookAhead2 - to, contextHash2));
-    positions2.push(from - base2);
-  }
-  function makeTree(type, children2, positions2, length2, lookAhead2, contextHash2, props) {
-    if (contextHash2) {
-      let pair4 = [NodeProp5.contextHash, contextHash2];
-      props = props ? [pair4].concat(props) : [pair4];
-    }
-    if (lookAhead2 > 25) {
-      let pair4 = [NodeProp5.lookAhead, lookAhead2];
-      props = props ? [pair4].concat(props) : [pair4];
-    }
-    return new Tree5(type, children2, positions2, length2, props);
-  }
-  function findBufferSize(maxSize, inRepeat) {
-    let fork = cursor2.fork();
-    let size = 0, start = 0, skip = 0, minStart = fork.end - maxBufferLength;
-    let result = { size: 0, start: 0, skip: 0 };
-    scan: for (let minPos = fork.pos - maxSize; fork.pos > minPos; ) {
-      let nodeSize11 = fork.size;
-      if (fork.id == inRepeat && nodeSize11 >= 0) {
-        result.size = size;
-        result.start = start;
-        result.skip = skip;
-        skip += 4;
-        size += 4;
-        fork.next();
-        continue;
-      }
-      let startPos = fork.pos - nodeSize11;
-      if (nodeSize11 < 0 || startPos < minPos || fork.start < minStart)
-        break;
-      let localSkipped = fork.id >= minRepeatType ? 4 : 0;
-      let nodeStart2 = fork.start;
-      fork.next();
-      while (fork.pos > startPos) {
-        if (fork.size < 0) {
-          if (fork.size == -3 || fork.size == -4)
-            localSkipped += 4;
-          else
-            break scan;
-        } else if (fork.id >= minRepeatType) {
-          localSkipped += 4;
-        }
-        fork.next();
-      }
-      start = nodeStart2;
-      size += nodeSize11;
-      skip += localSkipped;
-    }
-    if (inRepeat < 0 || size == maxSize) {
-      result.size = size;
-      result.start = start;
-      result.skip = skip;
-    }
-    return result.size > 4 ? result : void 0;
-  }
-  function copyToBuffer(bufferStart, buffer2, index) {
-    let { id: id3, start, end, size } = cursor2;
-    cursor2.next();
-    if (size >= 0 && id3 < minRepeatType) {
-      let startIndex = index;
-      if (size > 4) {
-        let endPos = cursor2.pos - (size - 4);
-        while (cursor2.pos > endPos)
-          index = copyToBuffer(bufferStart, buffer2, index);
-      }
-      buffer2[--index] = startIndex;
-      buffer2[--index] = end - bufferStart;
-      buffer2[--index] = start - bufferStart;
-      buffer2[--index] = id3;
-    } else if (size == -3) {
-      contextHash = id3;
-    } else if (size == -4) {
-      lookAhead = id3;
-    }
-    return index;
-  }
-  let children = [], positions = [];
-  while (cursor2.pos > 0)
-    takeNode(data2.start || 0, data2.bufferStart || 0, children, positions, -1, 0);
-  let length = (_a7 = data2.length) !== null && _a7 !== void 0 ? _a7 : children.length ? positions[0] + children[0].length : 0;
-  return new Tree5(types2[data2.topID], children.reverse(), positions.reverse(), length);
-}
-var nodeSizeCache5 = /* @__PURE__ */ new WeakMap();
-function nodeSize5(balanceType, node) {
-  if (!balanceType.isAnonymous || node instanceof TreeBuffer5 || node.type != balanceType)
-    return 1;
-  let size = nodeSizeCache5.get(node);
-  if (size == null) {
-    size = 1;
-    for (let child of node.children) {
-      if (child.type != balanceType || !(child instanceof Tree5)) {
-        size = 1;
-        break;
-      }
-      size += nodeSize5(balanceType, child);
-    }
-    nodeSizeCache5.set(node, size);
-  }
-  return size;
-}
-function balanceRange5(balanceType, children, positions, from, to, start, length, mkTop, mkTree) {
-  let total = 0;
-  for (let i = from; i < to; i++)
-    total += nodeSize5(balanceType, children[i]);
-  let maxChild = Math.ceil(
-    total * 1.5 / 8
-    /* Balance.BranchFactor */
-  );
-  let localChildren = [], localPositions = [];
-  function divide(children2, positions2, from2, to2, offset) {
-    for (let i = from2; i < to2; ) {
-      let groupFrom = i, groupStart = positions2[i], groupSize = nodeSize5(balanceType, children2[i]);
-      i++;
-      for (; i < to2; i++) {
-        let nextSize = nodeSize5(balanceType, children2[i]);
-        if (groupSize + nextSize >= maxChild)
-          break;
-        groupSize += nextSize;
-      }
-      if (i == groupFrom + 1) {
-        if (groupSize > maxChild) {
-          let only = children2[groupFrom];
-          divide(only.children, only.positions, 0, only.children.length, positions2[groupFrom] + offset);
-          continue;
-        }
-        localChildren.push(children2[groupFrom]);
-      } else {
-        let length2 = positions2[i - 1] + children2[i - 1].length - groupStart;
-        localChildren.push(balanceRange5(balanceType, children2, positions2, groupFrom, i, groupStart, length2, null, mkTree));
-      }
-      localPositions.push(groupStart + offset - start);
-    }
-  }
-  divide(children, positions, from, to, 0);
-  return (mkTop || mkTree)(localChildren, localPositions, length);
-}
-var Parser5 = class {
-  /**
-  Start a parse, returning a [partial parse](#common.PartialParse)
-  object. [`fragments`](#common.TreeFragment) can be passed in to
-  make the parse incremental.
-  
-  By default, the entire input is parsed. You can pass `ranges`,
-  which should be a sorted array of non-empty, non-overlapping
-  ranges, to parse only those ranges. The tree returned in that
-  case will start at `ranges[0].from`.
-  */
-  startParse(input, fragments, ranges) {
-    if (typeof input == "string")
-      input = new StringInput5(input);
-    ranges = !ranges ? [new Range6(0, input.length)] : ranges.length ? ranges.map((r) => new Range6(r.from, r.to)) : [new Range6(0, 0)];
-    return this.createParse(input, fragments || [], ranges);
-  }
-  /**
-  Run a full parse, returning the resulting tree.
-  */
-  parse(input, fragments, ranges) {
-    let parse = this.startParse(input, fragments, ranges);
-    for (; ; ) {
-      let done = parse.advance();
-      if (done)
-        return done;
-    }
-  }
-};
-var StringInput5 = class {
-  constructor(string11) {
-    this.string = string11;
-  }
-  get length() {
-    return this.string.length;
-  }
-  chunk(from) {
-    return this.string.slice(from);
-  }
-  get lineChunks() {
-    return false;
-  }
-  read(from, to) {
-    return this.string.slice(from, to);
-  }
-};
-var stoppedInner5 = new NodeProp5({ perNode: true });
 
 // node_modules/@lezer/css/node_modules/@lezer/lr/dist/index.js
 var Stack2 = class _Stack {
@@ -36555,7 +28596,7 @@ var Stack2 = class _Stack {
   @internal
   */
   reduce(action) {
-    var _a7;
+    var _a2;
     let depth = action >> 19, type = action & 65535;
     let { parser: parser5 } = this.p;
     let lookaheadRecord = this.reducePos < this.pos - 25 && this.setLookAhead(this.pos);
@@ -36576,7 +28617,7 @@ var Stack2 = class _Stack {
     if (type < parser5.minRepeatTerm && start == this.reducePos && this.reducePos < this.pos)
       this.reducePos = this.pos;
     let size = this.reducePos - start;
-    if (size >= 2e3 && !((_a7 = this.p.parser.nodeSet.types[type]) === null || _a7 === void 0 ? void 0 : _a7.isAnonymous)) {
+    if (size >= 2e3 && !((_a2 = this.p.parser.nodeSet.types[type]) === null || _a2 === void 0 ? void 0 : _a2.isAnonymous)) {
       if (start == this.p.lastBigReductionStart) {
         this.p.bigReductionCount++;
         this.p.lastBigReductionSize = size;
@@ -37407,7 +29448,7 @@ function overrides2(token, prev, tableData, tableOffset) {
 var verbose2 = typeof process != "undefined" && process.env && /\bparse\b/.test(process.env.LOG);
 var stackIDs2 = null;
 function cutAt2(tree, pos, side) {
-  let cursor2 = tree.cursor(IterMode5.IncludeAnonymous);
+  let cursor2 = tree.cursor(IterMode.IncludeAnonymous);
   cursor2.moveTo(pos);
   for (; ; ) {
     if (!(side < 0 ? cursor2.childBefore(pos) : cursor2.childAfter(pos)))
@@ -37429,7 +29470,7 @@ function cutAt2(tree, pos, side) {
       }
   }
 }
-var FragmentCursor5 = class {
+var FragmentCursor4 = class {
   constructor(fragments, nodeSet) {
     this.fragments = fragments;
     this.nodeSet = nodeSet;
@@ -37487,13 +29528,13 @@ var FragmentCursor5 = class {
         this.nextStart = start;
         return null;
       }
-      if (next instanceof Tree5) {
+      if (next instanceof Tree) {
         if (start == pos) {
           if (start < this.safeFrom)
             return null;
           let end = start + next.length;
           if (end <= this.safeTo) {
-            let lookAhead = next.prop(NodeProp5.lookAhead);
+            let lookAhead = next.prop(NodeProp.lookAhead);
             if (!lookAhead || end + lookAhead < this.fragment.to)
               return next;
           }
@@ -37649,7 +29690,7 @@ var Parse2 = class {
     this.topTerm = parser5.top[1];
     let { from } = ranges[0];
     this.stacks = [Stack2.start(this, parser5.top[0], from)];
-    this.fragments = fragments.length && this.stream.end - from > parser5.bufferLength * 4 ? new FragmentCursor5(fragments, parser5.nodeSet) : null;
+    this.fragments = fragments.length && this.stream.end - from > parser5.bufferLength * 4 ? new FragmentCursor4(fragments, parser5.nodeSet) : null;
   }
   get parsedPos() {
     return this.minStackPos;
@@ -37770,16 +29811,16 @@ var Parse2 = class {
       let strictCx = stack.curContext && stack.curContext.tracker.strict, cxHash = strictCx ? stack.curContext.hash : 0;
       for (let cached = this.fragments.nodeAt(start); cached; ) {
         let match = this.parser.nodeSet.types[cached.type.id] == cached.type ? parser5.getGoto(stack.state, cached.type.id) : -1;
-        if (match > -1 && cached.length && (!strictCx || (cached.prop(NodeProp5.contextHash) || 0) == cxHash)) {
+        if (match > -1 && cached.length && (!strictCx || (cached.prop(NodeProp.contextHash) || 0) == cxHash)) {
           stack.useNode(cached, match);
           if (verbose2)
             console.log(base2 + this.stackID(stack) + ` (via reuse of ${parser5.getName(cached.type.id)})`);
           return true;
         }
-        if (!(cached instanceof Tree5) || cached.children.length == 0 || cached.positions[0] > 0)
+        if (!(cached instanceof Tree) || cached.children.length == 0 || cached.positions[0] > 0)
           break;
         let inner = cached.children[0];
-        if (inner instanceof Tree5 && cached.positions[0] == 0)
+        if (inner instanceof Tree && cached.positions[0] == 0)
           cached = inner;
         else
           break;
@@ -37887,7 +29928,7 @@ var Parse2 = class {
   // Convert the stack's buffer to a syntax tree.
   stackToTree(stack) {
     stack.close();
-    return Tree5.build({
+    return Tree.build({
       buffer: StackBufferCursor2.create(stack),
       nodeSet: this.parser.nodeSet,
       topID: this.topTerm,
@@ -37926,7 +29967,7 @@ var Dialect2 = class {
     return !this.disabled || this.disabled[term] == 0;
   }
 };
-var LRParser2 = class _LRParser extends Parser5 {
+var LRParser2 = class _LRParser extends Parser {
   /**
   @internal
   */
@@ -37950,7 +29991,7 @@ var LRParser2 = class _LRParser extends Parser5 {
       for (let propSpec of spec.nodeProps) {
         let prop = propSpec[0];
         if (typeof prop == "string")
-          prop = NodeProp5[prop];
+          prop = NodeProp[prop];
         for (let i = 1; i < propSpec.length; ) {
           let next = propSpec[i++];
           if (next >= 0) {
@@ -37963,8 +30004,8 @@ var LRParser2 = class _LRParser extends Parser5 {
           }
         }
       }
-    this.nodeSet = new NodeSet5(nodeNames.map((name11, i) => NodeType5.define({
-      name: i >= this.minRepeatTerm ? void 0 : name11,
+    this.nodeSet = new NodeSet(nodeNames.map((name7, i) => NodeType.define({
+      name: i >= this.minRepeatTerm ? void 0 : name7,
       id: i,
       props: nodeProps[i],
       top: topTerms.indexOf(i) > -1,
@@ -37974,7 +30015,7 @@ var LRParser2 = class _LRParser extends Parser5 {
     if (spec.propSources)
       this.nodeSet = this.nodeSet.extend(...spec.propSources);
     this.strict = false;
-    this.bufferLength = DefaultBufferLength5;
+    this.bufferLength = DefaultBufferLength;
     let tokenArray = decodeArray2(spec.tokenData);
     this.context = spec.context;
     this.specializerSpecs = spec.specialized || [];
@@ -38134,9 +30175,9 @@ var LRParser2 = class _LRParser extends Parser5 {
       copy.top = info;
     }
     if (config2.tokenizers)
-      copy.tokenizers = this.tokenizers.map((t11) => {
-        let found = config2.tokenizers.find((r) => r.from == t11);
-        return found ? found.to : t11;
+      copy.tokenizers = this.tokenizers.map((t7) => {
+        let found = config2.tokenizers.find((r) => r.from == t7);
+        return found ? found.to : t7;
       });
     if (config2.specializers) {
       copy.specializers = this.specializers.slice();
@@ -38249,36 +30290,36 @@ function getSpecializer2(spec) {
 }
 
 // node_modules/@lezer/css/node_modules/@lezer/highlight/dist/index.js
-var nextTagID5 = 0;
-var Tag5 = class _Tag {
+var nextTagID4 = 0;
+var Tag4 = class _Tag {
   /**
   @internal
   */
-  constructor(name11, set, base2, modified) {
-    this.name = name11;
+  constructor(name7, set, base2, modified) {
+    this.name = name7;
     this.set = set;
     this.base = base2;
     this.modified = modified;
-    this.id = nextTagID5++;
+    this.id = nextTagID4++;
   }
   toString() {
-    let { name: name11 } = this;
+    let { name: name7 } = this;
     for (let mod of this.modified)
       if (mod.name)
-        name11 = `${mod.name}(${name11})`;
-    return name11;
+        name7 = `${mod.name}(${name7})`;
+    return name7;
   }
   static define(nameOrParent, parent) {
-    let name11 = typeof nameOrParent == "string" ? nameOrParent : "?";
+    let name7 = typeof nameOrParent == "string" ? nameOrParent : "?";
     if (nameOrParent instanceof _Tag)
       parent = nameOrParent;
     if (parent === null || parent === void 0 ? void 0 : parent.base)
       throw new Error("Can not derive from a modified tag");
-    let tag = new _Tag(name11, [], null, []);
+    let tag = new _Tag(name7, [], null, []);
     tag.set.push(tag);
     if (parent)
-      for (let t11 of parent.set)
-        tag.set.push(t11);
+      for (let t7 of parent.set)
+        tag.set.push(t7);
     return tag;
   }
   /**
@@ -38293,32 +30334,32 @@ var Tag5 = class _Tag {
   example `m1(m2(m3(t1)))` is a subtype of `m1(m2(t1))`,
   `m1(m3(t1)`, and so on.
   */
-  static defineModifier(name11) {
-    let mod = new Modifier5(name11);
+  static defineModifier(name7) {
+    let mod = new Modifier4(name7);
     return (tag) => {
       if (tag.modified.indexOf(mod) > -1)
         return tag;
-      return Modifier5.get(tag.base || tag, tag.modified.concat(mod).sort((a, b) => a.id - b.id));
+      return Modifier4.get(tag.base || tag, tag.modified.concat(mod).sort((a, b) => a.id - b.id));
     };
   }
 };
-var nextModifierID5 = 0;
-var Modifier5 = class _Modifier {
-  constructor(name11) {
-    this.name = name11;
+var nextModifierID4 = 0;
+var Modifier4 = class _Modifier {
+  constructor(name7) {
+    this.name = name7;
     this.instances = [];
-    this.id = nextModifierID5++;
+    this.id = nextModifierID4++;
   }
   static get(base2, mods) {
     if (!mods.length)
       return base2;
-    let exists = mods[0].instances.find((t11) => t11.base == base2 && sameArray6(mods, t11.modified));
+    let exists = mods[0].instances.find((t7) => t7.base == base2 && sameArray5(mods, t7.modified));
     if (exists)
       return exists;
-    let set = [], tag = new Tag5(base2.name, set, base2, mods);
+    let set = [], tag = new Tag4(base2.name, set, base2, mods);
     for (let m of mods)
       m.instances.push(tag);
-    let configs = powerSet5(mods);
+    let configs = powerSet4(mods);
     for (let parent of base2.set)
       if (!parent.modified.length)
         for (let config2 of configs)
@@ -38326,10 +30367,10 @@ var Modifier5 = class _Modifier {
     return tag;
   }
 };
-function sameArray6(a, b) {
+function sameArray5(a, b) {
   return a.length == b.length && a.every((x, i) => x == b[i]);
 }
-function powerSet5(array) {
+function powerSet4(array) {
   let sets = [[]];
   for (let i = 0; i < array.length; i++) {
     for (let j = 0, e = sets.length; j < e; j++) {
@@ -38338,12 +30379,12 @@ function powerSet5(array) {
   }
   return sets.sort((a, b) => b.length - a.length);
 }
-function styleTags5(spec) {
+function styleTags4(spec) {
   let byName = /* @__PURE__ */ Object.create(null);
   for (let prop in spec) {
-    let tags12 = spec[prop];
-    if (!Array.isArray(tags12))
-      tags12 = [tags12];
+    let tags8 = spec[prop];
+    if (!Array.isArray(tags8))
+      tags8 = [tags8];
     for (let part of prop.split(" "))
       if (part) {
         let pieces = [], mode = 2, rest = part;
@@ -38371,13 +30412,13 @@ function styleTags5(spec) {
         let last = pieces.length - 1, inner = pieces[last];
         if (!inner)
           throw new RangeError("Invalid path: " + part);
-        let rule = new Rule5(tags12, mode, last > 0 ? pieces.slice(0, last) : null);
+        let rule = new Rule4(tags8, mode, last > 0 ? pieces.slice(0, last) : null);
         byName[inner] = rule.sort(byName[inner]);
       }
   }
-  return ruleNodeProp5.add(byName);
+  return ruleNodeProp4.add(byName);
 }
-var ruleNodeProp5 = new NodeProp5({
+var ruleNodeProp4 = new NodeProp({
   combine(a, b) {
     let cur2, root, take;
     while (a || b) {
@@ -38390,7 +30431,7 @@ var ruleNodeProp5 = new NodeProp5({
       }
       if (cur2 && cur2.mode == take.mode && !take.context && !cur2.context)
         continue;
-      let copy = new Rule5(take.tags, take.mode, take.context);
+      let copy = new Rule4(take.tags, take.mode, take.context);
       if (cur2)
         cur2.next = copy;
       else
@@ -38400,9 +30441,9 @@ var ruleNodeProp5 = new NodeProp5({
     return root;
   }
 });
-var Rule5 = class {
-  constructor(tags12, mode, context, next) {
-    this.tags = tags12;
+var Rule4 = class {
+  constructor(tags8, mode, context, next) {
+    this.tags = tags8;
     this.mode = mode;
     this.context = context;
     this.next = next;
@@ -38425,10 +30466,10 @@ var Rule5 = class {
     return this.context ? this.context.length : 0;
   }
 };
-Rule5.empty = new Rule5([], 2, null);
-function tagHighlighter5(tags12, options) {
+Rule4.empty = new Rule4([], 2, null);
+function tagHighlighter4(tags8, options) {
   let map = /* @__PURE__ */ Object.create(null);
-  for (let style of tags12) {
+  for (let style of tags8) {
     if (!Array.isArray(style.tag))
       map[style.tag.id] = style.class;
     else
@@ -38437,9 +30478,9 @@ function tagHighlighter5(tags12, options) {
   }
   let { scope, all = null } = options || {};
   return {
-    style: (tags13) => {
+    style: (tags9) => {
       let cls = all;
-      for (let tag of tags13) {
+      for (let tag of tags9) {
         for (let sub of tag.set) {
           let tagClass = map[sub.id];
           if (tagClass) {
@@ -38453,377 +30494,377 @@ function tagHighlighter5(tags12, options) {
     scope
   };
 }
-var t5 = Tag5.define;
-var comment5 = t5();
-var name5 = t5();
-var typeName5 = t5(name5);
-var propertyName5 = t5(name5);
-var literal5 = t5();
-var string5 = t5(literal5);
-var number5 = t5(literal5);
-var content5 = t5();
-var heading5 = t5(content5);
-var keyword5 = t5();
-var operator5 = t5();
-var punctuation5 = t5();
-var bracket5 = t5(punctuation5);
-var meta5 = t5();
-var tags5 = {
+var t4 = Tag4.define;
+var comment4 = t4();
+var name4 = t4();
+var typeName4 = t4(name4);
+var propertyName4 = t4(name4);
+var literal4 = t4();
+var string4 = t4(literal4);
+var number4 = t4(literal4);
+var content4 = t4();
+var heading4 = t4(content4);
+var keyword4 = t4();
+var operator4 = t4();
+var punctuation4 = t4();
+var bracket4 = t4(punctuation4);
+var meta4 = t4();
+var tags4 = {
   /**
   A comment.
   */
-  comment: comment5,
+  comment: comment4,
   /**
   A line [comment](#highlight.tags.comment).
   */
-  lineComment: t5(comment5),
+  lineComment: t4(comment4),
   /**
   A block [comment](#highlight.tags.comment).
   */
-  blockComment: t5(comment5),
+  blockComment: t4(comment4),
   /**
   A documentation [comment](#highlight.tags.comment).
   */
-  docComment: t5(comment5),
+  docComment: t4(comment4),
   /**
   Any kind of identifier.
   */
-  name: name5,
+  name: name4,
   /**
   The [name](#highlight.tags.name) of a variable.
   */
-  variableName: t5(name5),
+  variableName: t4(name4),
   /**
   A type [name](#highlight.tags.name).
   */
-  typeName: typeName5,
+  typeName: typeName4,
   /**
   A tag name (subtag of [`typeName`](#highlight.tags.typeName)).
   */
-  tagName: t5(typeName5),
+  tagName: t4(typeName4),
   /**
   A property or field [name](#highlight.tags.name).
   */
-  propertyName: propertyName5,
+  propertyName: propertyName4,
   /**
   An attribute name (subtag of [`propertyName`](#highlight.tags.propertyName)).
   */
-  attributeName: t5(propertyName5),
+  attributeName: t4(propertyName4),
   /**
   The [name](#highlight.tags.name) of a class.
   */
-  className: t5(name5),
+  className: t4(name4),
   /**
   A label [name](#highlight.tags.name).
   */
-  labelName: t5(name5),
+  labelName: t4(name4),
   /**
   A namespace [name](#highlight.tags.name).
   */
-  namespace: t5(name5),
+  namespace: t4(name4),
   /**
   The [name](#highlight.tags.name) of a macro.
   */
-  macroName: t5(name5),
+  macroName: t4(name4),
   /**
   A literal value.
   */
-  literal: literal5,
+  literal: literal4,
   /**
   A string [literal](#highlight.tags.literal).
   */
-  string: string5,
+  string: string4,
   /**
   A documentation [string](#highlight.tags.string).
   */
-  docString: t5(string5),
+  docString: t4(string4),
   /**
   A character literal (subtag of [string](#highlight.tags.string)).
   */
-  character: t5(string5),
+  character: t4(string4),
   /**
   An attribute value (subtag of [string](#highlight.tags.string)).
   */
-  attributeValue: t5(string5),
+  attributeValue: t4(string4),
   /**
   A number [literal](#highlight.tags.literal).
   */
-  number: number5,
+  number: number4,
   /**
   An integer [number](#highlight.tags.number) literal.
   */
-  integer: t5(number5),
+  integer: t4(number4),
   /**
   A floating-point [number](#highlight.tags.number) literal.
   */
-  float: t5(number5),
+  float: t4(number4),
   /**
   A boolean [literal](#highlight.tags.literal).
   */
-  bool: t5(literal5),
+  bool: t4(literal4),
   /**
   Regular expression [literal](#highlight.tags.literal).
   */
-  regexp: t5(literal5),
+  regexp: t4(literal4),
   /**
   An escape [literal](#highlight.tags.literal), for example a
   backslash escape in a string.
   */
-  escape: t5(literal5),
+  escape: t4(literal4),
   /**
   A color [literal](#highlight.tags.literal).
   */
-  color: t5(literal5),
+  color: t4(literal4),
   /**
   A URL [literal](#highlight.tags.literal).
   */
-  url: t5(literal5),
+  url: t4(literal4),
   /**
   A language keyword.
   */
-  keyword: keyword5,
+  keyword: keyword4,
   /**
   The [keyword](#highlight.tags.keyword) for the self or this
   object.
   */
-  self: t5(keyword5),
+  self: t4(keyword4),
   /**
   The [keyword](#highlight.tags.keyword) for null.
   */
-  null: t5(keyword5),
+  null: t4(keyword4),
   /**
   A [keyword](#highlight.tags.keyword) denoting some atomic value.
   */
-  atom: t5(keyword5),
+  atom: t4(keyword4),
   /**
   A [keyword](#highlight.tags.keyword) that represents a unit.
   */
-  unit: t5(keyword5),
+  unit: t4(keyword4),
   /**
   A modifier [keyword](#highlight.tags.keyword).
   */
-  modifier: t5(keyword5),
+  modifier: t4(keyword4),
   /**
   A [keyword](#highlight.tags.keyword) that acts as an operator.
   */
-  operatorKeyword: t5(keyword5),
+  operatorKeyword: t4(keyword4),
   /**
   A control-flow related [keyword](#highlight.tags.keyword).
   */
-  controlKeyword: t5(keyword5),
+  controlKeyword: t4(keyword4),
   /**
   A [keyword](#highlight.tags.keyword) that defines something.
   */
-  definitionKeyword: t5(keyword5),
+  definitionKeyword: t4(keyword4),
   /**
   A [keyword](#highlight.tags.keyword) related to defining or
   interfacing with modules.
   */
-  moduleKeyword: t5(keyword5),
+  moduleKeyword: t4(keyword4),
   /**
   An operator.
   */
-  operator: operator5,
+  operator: operator4,
   /**
   An [operator](#highlight.tags.operator) that dereferences something.
   */
-  derefOperator: t5(operator5),
+  derefOperator: t4(operator4),
   /**
   Arithmetic-related [operator](#highlight.tags.operator).
   */
-  arithmeticOperator: t5(operator5),
+  arithmeticOperator: t4(operator4),
   /**
   Logical [operator](#highlight.tags.operator).
   */
-  logicOperator: t5(operator5),
+  logicOperator: t4(operator4),
   /**
   Bit [operator](#highlight.tags.operator).
   */
-  bitwiseOperator: t5(operator5),
+  bitwiseOperator: t4(operator4),
   /**
   Comparison [operator](#highlight.tags.operator).
   */
-  compareOperator: t5(operator5),
+  compareOperator: t4(operator4),
   /**
   [Operator](#highlight.tags.operator) that updates its operand.
   */
-  updateOperator: t5(operator5),
+  updateOperator: t4(operator4),
   /**
   [Operator](#highlight.tags.operator) that defines something.
   */
-  definitionOperator: t5(operator5),
+  definitionOperator: t4(operator4),
   /**
   Type-related [operator](#highlight.tags.operator).
   */
-  typeOperator: t5(operator5),
+  typeOperator: t4(operator4),
   /**
   Control-flow [operator](#highlight.tags.operator).
   */
-  controlOperator: t5(operator5),
+  controlOperator: t4(operator4),
   /**
   Program or markup punctuation.
   */
-  punctuation: punctuation5,
+  punctuation: punctuation4,
   /**
   [Punctuation](#highlight.tags.punctuation) that separates
   things.
   */
-  separator: t5(punctuation5),
+  separator: t4(punctuation4),
   /**
   Bracket-style [punctuation](#highlight.tags.punctuation).
   */
-  bracket: bracket5,
+  bracket: bracket4,
   /**
   Angle [brackets](#highlight.tags.bracket) (usually `<` and `>`
   tokens).
   */
-  angleBracket: t5(bracket5),
+  angleBracket: t4(bracket4),
   /**
   Square [brackets](#highlight.tags.bracket) (usually `[` and `]`
   tokens).
   */
-  squareBracket: t5(bracket5),
+  squareBracket: t4(bracket4),
   /**
   Parentheses (usually `(` and `)` tokens). Subtag of
   [bracket](#highlight.tags.bracket).
   */
-  paren: t5(bracket5),
+  paren: t4(bracket4),
   /**
   Braces (usually `{` and `}` tokens). Subtag of
   [bracket](#highlight.tags.bracket).
   */
-  brace: t5(bracket5),
+  brace: t4(bracket4),
   /**
   Content, for example plain text in XML or markup documents.
   */
-  content: content5,
+  content: content4,
   /**
   [Content](#highlight.tags.content) that represents a heading.
   */
-  heading: heading5,
+  heading: heading4,
   /**
   A level 1 [heading](#highlight.tags.heading).
   */
-  heading1: t5(heading5),
+  heading1: t4(heading4),
   /**
   A level 2 [heading](#highlight.tags.heading).
   */
-  heading2: t5(heading5),
+  heading2: t4(heading4),
   /**
   A level 3 [heading](#highlight.tags.heading).
   */
-  heading3: t5(heading5),
+  heading3: t4(heading4),
   /**
   A level 4 [heading](#highlight.tags.heading).
   */
-  heading4: t5(heading5),
+  heading4: t4(heading4),
   /**
   A level 5 [heading](#highlight.tags.heading).
   */
-  heading5: t5(heading5),
+  heading5: t4(heading4),
   /**
   A level 6 [heading](#highlight.tags.heading).
   */
-  heading6: t5(heading5),
+  heading6: t4(heading4),
   /**
   A prose [content](#highlight.tags.content) separator (such as a horizontal rule).
   */
-  contentSeparator: t5(content5),
+  contentSeparator: t4(content4),
   /**
   [Content](#highlight.tags.content) that represents a list.
   */
-  list: t5(content5),
+  list: t4(content4),
   /**
   [Content](#highlight.tags.content) that represents a quote.
   */
-  quote: t5(content5),
+  quote: t4(content4),
   /**
   [Content](#highlight.tags.content) that is emphasized.
   */
-  emphasis: t5(content5),
+  emphasis: t4(content4),
   /**
   [Content](#highlight.tags.content) that is styled strong.
   */
-  strong: t5(content5),
+  strong: t4(content4),
   /**
   [Content](#highlight.tags.content) that is part of a link.
   */
-  link: t5(content5),
+  link: t4(content4),
   /**
   [Content](#highlight.tags.content) that is styled as code or
   monospace.
   */
-  monospace: t5(content5),
+  monospace: t4(content4),
   /**
   [Content](#highlight.tags.content) that has a strike-through
   style.
   */
-  strikethrough: t5(content5),
+  strikethrough: t4(content4),
   /**
   Inserted text in a change-tracking format.
   */
-  inserted: t5(),
+  inserted: t4(),
   /**
   Deleted text.
   */
-  deleted: t5(),
+  deleted: t4(),
   /**
   Changed text.
   */
-  changed: t5(),
+  changed: t4(),
   /**
   An invalid or unsyntactic element.
   */
-  invalid: t5(),
+  invalid: t4(),
   /**
   Metadata or meta-instruction.
   */
-  meta: meta5,
+  meta: meta4,
   /**
   [Metadata](#highlight.tags.meta) that applies to the entire
   document.
   */
-  documentMeta: t5(meta5),
+  documentMeta: t4(meta4),
   /**
   [Metadata](#highlight.tags.meta) that annotates or adds
   attributes to a given syntactic element.
   */
-  annotation: t5(meta5),
+  annotation: t4(meta4),
   /**
   Processing instruction or preprocessor directive. Subtag of
   [meta](#highlight.tags.meta).
   */
-  processingInstruction: t5(meta5),
+  processingInstruction: t4(meta4),
   /**
   [Modifier](#highlight.Tag^defineModifier) that indicates that a
   given element is being defined. Expected to be used with the
   various [name](#highlight.tags.name) tags.
   */
-  definition: Tag5.defineModifier("definition"),
+  definition: Tag4.defineModifier("definition"),
   /**
   [Modifier](#highlight.Tag^defineModifier) that indicates that
   something is constant. Mostly expected to be used with
   [variable names](#highlight.tags.variableName).
   */
-  constant: Tag5.defineModifier("constant"),
+  constant: Tag4.defineModifier("constant"),
   /**
   [Modifier](#highlight.Tag^defineModifier) used to indicate that
   a [variable](#highlight.tags.variableName) or [property
   name](#highlight.tags.propertyName) is being called or defined
   as a function.
   */
-  function: Tag5.defineModifier("function"),
+  function: Tag4.defineModifier("function"),
   /**
   [Modifier](#highlight.Tag^defineModifier) that can be applied to
   [names](#highlight.tags.name) to indicate that they belong to
   the language's standard environment.
   */
-  standard: Tag5.defineModifier("standard"),
+  standard: Tag4.defineModifier("standard"),
   /**
   [Modifier](#highlight.Tag^defineModifier) that indicates a given
   [names](#highlight.tags.name) is local to some scope.
   */
-  local: Tag5.defineModifier("local"),
+  local: Tag4.defineModifier("local"),
   /**
   A generic variant [modifier](#highlight.Tag^defineModifier) that
   can be used to tag language-specific alternative variants of
@@ -38832,44 +30873,44 @@ var tags5 = {
   [variable name](#highlight.tags.variableName) tags, since those
   come up a lot.
   */
-  special: Tag5.defineModifier("special")
+  special: Tag4.defineModifier("special")
 };
-for (let name11 in tags5) {
-  let val = tags5[name11];
-  if (val instanceof Tag5)
-    val.name = name11;
+for (let name7 in tags4) {
+  let val = tags4[name7];
+  if (val instanceof Tag4)
+    val.name = name7;
 }
-var classHighlighter5 = tagHighlighter5([
-  { tag: tags5.link, class: "tok-link" },
-  { tag: tags5.heading, class: "tok-heading" },
-  { tag: tags5.emphasis, class: "tok-emphasis" },
-  { tag: tags5.strong, class: "tok-strong" },
-  { tag: tags5.keyword, class: "tok-keyword" },
-  { tag: tags5.atom, class: "tok-atom" },
-  { tag: tags5.bool, class: "tok-bool" },
-  { tag: tags5.url, class: "tok-url" },
-  { tag: tags5.labelName, class: "tok-labelName" },
-  { tag: tags5.inserted, class: "tok-inserted" },
-  { tag: tags5.deleted, class: "tok-deleted" },
-  { tag: tags5.literal, class: "tok-literal" },
-  { tag: tags5.string, class: "tok-string" },
-  { tag: tags5.number, class: "tok-number" },
-  { tag: [tags5.regexp, tags5.escape, tags5.special(tags5.string)], class: "tok-string2" },
-  { tag: tags5.variableName, class: "tok-variableName" },
-  { tag: tags5.local(tags5.variableName), class: "tok-variableName tok-local" },
-  { tag: tags5.definition(tags5.variableName), class: "tok-variableName tok-definition" },
-  { tag: tags5.special(tags5.variableName), class: "tok-variableName2" },
-  { tag: tags5.definition(tags5.propertyName), class: "tok-propertyName tok-definition" },
-  { tag: tags5.typeName, class: "tok-typeName" },
-  { tag: tags5.namespace, class: "tok-namespace" },
-  { tag: tags5.className, class: "tok-className" },
-  { tag: tags5.macroName, class: "tok-macroName" },
-  { tag: tags5.propertyName, class: "tok-propertyName" },
-  { tag: tags5.operator, class: "tok-operator" },
-  { tag: tags5.comment, class: "tok-comment" },
-  { tag: tags5.meta, class: "tok-meta" },
-  { tag: tags5.invalid, class: "tok-invalid" },
-  { tag: tags5.punctuation, class: "tok-punctuation" }
+var classHighlighter4 = tagHighlighter4([
+  { tag: tags4.link, class: "tok-link" },
+  { tag: tags4.heading, class: "tok-heading" },
+  { tag: tags4.emphasis, class: "tok-emphasis" },
+  { tag: tags4.strong, class: "tok-strong" },
+  { tag: tags4.keyword, class: "tok-keyword" },
+  { tag: tags4.atom, class: "tok-atom" },
+  { tag: tags4.bool, class: "tok-bool" },
+  { tag: tags4.url, class: "tok-url" },
+  { tag: tags4.labelName, class: "tok-labelName" },
+  { tag: tags4.inserted, class: "tok-inserted" },
+  { tag: tags4.deleted, class: "tok-deleted" },
+  { tag: tags4.literal, class: "tok-literal" },
+  { tag: tags4.string, class: "tok-string" },
+  { tag: tags4.number, class: "tok-number" },
+  { tag: [tags4.regexp, tags4.escape, tags4.special(tags4.string)], class: "tok-string2" },
+  { tag: tags4.variableName, class: "tok-variableName" },
+  { tag: tags4.local(tags4.variableName), class: "tok-variableName tok-local" },
+  { tag: tags4.definition(tags4.variableName), class: "tok-variableName tok-definition" },
+  { tag: tags4.special(tags4.variableName), class: "tok-variableName2" },
+  { tag: tags4.definition(tags4.propertyName), class: "tok-propertyName tok-definition" },
+  { tag: tags4.typeName, class: "tok-typeName" },
+  { tag: tags4.namespace, class: "tok-namespace" },
+  { tag: tags4.className, class: "tok-className" },
+  { tag: tags4.macroName, class: "tok-macroName" },
+  { tag: tags4.propertyName, class: "tok-propertyName" },
+  { tag: tags4.operator, class: "tok-operator" },
+  { tag: tags4.comment, class: "tok-comment" },
+  { tag: tags4.meta, class: "tok-meta" },
+  { tag: tags4.invalid, class: "tok-invalid" },
+  { tag: tags4.punctuation, class: "tok-punctuation" }
 ]);
 
 // node_modules/@lezer/css/dist/index.js
@@ -38985,39 +31026,39 @@ var unitToken = new ExternalTokenizer2((input) => {
     }
   }
 });
-var cssHighlighting = styleTags5({
-  "AtKeyword import charset namespace keyframes media supports font-feature-values": tags5.definitionKeyword,
-  "from to selector scope MatchFlag": tags5.keyword,
-  NamespaceName: tags5.namespace,
-  KeyframeName: tags5.labelName,
-  KeyframeRangeName: tags5.operatorKeyword,
-  TagName: tags5.tagName,
-  ClassName: tags5.className,
-  PseudoClassName: tags5.constant(tags5.className),
-  IdName: tags5.labelName,
-  "FeatureName PropertyName": tags5.propertyName,
-  AttributeName: tags5.attributeName,
-  NumberLiteral: tags5.number,
-  KeywordQuery: tags5.keyword,
-  UnaryQueryOp: tags5.operatorKeyword,
-  "CallTag ValueName FontName": tags5.atom,
-  VariableName: tags5.variableName,
-  Callee: tags5.operatorKeyword,
-  Unit: tags5.unit,
-  "UniversalSelector NestingSelector": tags5.definitionOperator,
-  "MatchOp CompareOp": tags5.compareOperator,
-  "ChildOp SiblingOp, LogicOp": tags5.logicOperator,
-  BinOp: tags5.arithmeticOperator,
-  Important: tags5.modifier,
-  Comment: tags5.blockComment,
-  ColorLiteral: tags5.color,
-  "ParenthesizedContent StringLiteral": tags5.string,
-  ":": tags5.punctuation,
-  "PseudoOp #": tags5.derefOperator,
-  "; , |": tags5.separator,
-  "( )": tags5.paren,
-  "[ ]": tags5.squareBracket,
-  "{ }": tags5.brace
+var cssHighlighting = styleTags4({
+  "AtKeyword import charset namespace keyframes media supports font-feature-values": tags4.definitionKeyword,
+  "from to selector scope MatchFlag": tags4.keyword,
+  NamespaceName: tags4.namespace,
+  KeyframeName: tags4.labelName,
+  KeyframeRangeName: tags4.operatorKeyword,
+  TagName: tags4.tagName,
+  ClassName: tags4.className,
+  PseudoClassName: tags4.constant(tags4.className),
+  IdName: tags4.labelName,
+  "FeatureName PropertyName": tags4.propertyName,
+  AttributeName: tags4.attributeName,
+  NumberLiteral: tags4.number,
+  KeywordQuery: tags4.keyword,
+  UnaryQueryOp: tags4.operatorKeyword,
+  "CallTag ValueName FontName": tags4.atom,
+  VariableName: tags4.variableName,
+  Callee: tags4.operatorKeyword,
+  Unit: tags4.unit,
+  "UniversalSelector NestingSelector": tags4.definitionOperator,
+  "MatchOp CompareOp": tags4.compareOperator,
+  "ChildOp SiblingOp, LogicOp": tags4.logicOperator,
+  BinOp: tags4.arithmeticOperator,
+  Important: tags4.modifier,
+  Comment: tags4.blockComment,
+  ColorLiteral: tags4.color,
+  "ParenthesizedContent StringLiteral": tags4.string,
+  ":": tags4.punctuation,
+  "PseudoOp #": tags4.derefOperator,
+  "; , |": tags4.separator,
+  "( )": tags4.paren,
+  "[ ]": tags4.squareBracket,
+  "{ }": tags4.brace
 });
 var spec_callee = { __proto__: null, lang: 44, "nth-child": 44, "nth-last-child": 44, "nth-of-type": 44, "nth-last-of-type": 44, dir: 44, "host-context": 44, if: 90, url: 132, "url-prefix": 132, domain: 132, regexp: 132 };
 var spec_queryIdentifier = { __proto__: null, or: 104, and: 104, not: 112, only: 112, layer: 186 };
@@ -39047,2997 +31088,6 @@ var parser3 = LRParser2.deserialize({
   tokenPrec: 2256
 });
 
-// node_modules/@codemirror/lang-css/node_modules/@lezer/common/dist/index.js
-var DefaultBufferLength6 = 1024;
-var nextPropID6 = 0;
-var Range7 = class {
-  constructor(from, to) {
-    this.from = from;
-    this.to = to;
-  }
-};
-var NodeProp6 = class {
-  /**
-  Create a new node prop type.
-  */
-  constructor(config2 = {}) {
-    this.id = nextPropID6++;
-    this.perNode = !!config2.perNode;
-    this.deserialize = config2.deserialize || (() => {
-      throw new Error("This node type doesn't define a deserialize function");
-    });
-    this.combine = config2.combine || null;
-  }
-  /**
-  This is meant to be used with
-  [`NodeSet.extend`](#common.NodeSet.extend) or
-  [`LRParser.configure`](#lr.ParserConfig.props) to compute
-  prop values for each node type in the set. Takes a [match
-  object](#common.NodeType^match) or function that returns undefined
-  if the node type doesn't get this prop, and the prop's value if
-  it does.
-  */
-  add(match) {
-    if (this.perNode)
-      throw new RangeError("Can't add per-node props to node types");
-    if (typeof match != "function")
-      match = NodeType6.match(match);
-    return (type) => {
-      let result = match(type);
-      return result === void 0 ? null : [this, result];
-    };
-  }
-};
-NodeProp6.closedBy = new NodeProp6({ deserialize: (str) => str.split(" ") });
-NodeProp6.openedBy = new NodeProp6({ deserialize: (str) => str.split(" ") });
-NodeProp6.group = new NodeProp6({ deserialize: (str) => str.split(" ") });
-NodeProp6.isolate = new NodeProp6({ deserialize: (value) => {
-  if (value && value != "rtl" && value != "ltr" && value != "auto")
-    throw new RangeError("Invalid value for isolate: " + value);
-  return value || "auto";
-} });
-NodeProp6.contextHash = new NodeProp6({ perNode: true });
-NodeProp6.lookAhead = new NodeProp6({ perNode: true });
-NodeProp6.mounted = new NodeProp6({ perNode: true });
-var MountedTree6 = class {
-  constructor(tree, overlay, parser5, bracketed = false) {
-    this.tree = tree;
-    this.overlay = overlay;
-    this.parser = parser5;
-    this.bracketed = bracketed;
-  }
-  /**
-  @internal
-  */
-  static get(tree) {
-    return tree && tree.props && tree.props[NodeProp6.mounted.id];
-  }
-};
-var noProps6 = /* @__PURE__ */ Object.create(null);
-var NodeType6 = class _NodeType {
-  /**
-  @internal
-  */
-  constructor(name11, props, id3, flags = 0) {
-    this.name = name11;
-    this.props = props;
-    this.id = id3;
-    this.flags = flags;
-  }
-  /**
-  Define a node type.
-  */
-  static define(spec) {
-    let props = spec.props && spec.props.length ? /* @__PURE__ */ Object.create(null) : noProps6;
-    let flags = (spec.top ? 1 : 0) | (spec.skipped ? 2 : 0) | (spec.error ? 4 : 0) | (spec.name == null ? 8 : 0);
-    let type = new _NodeType(spec.name || "", props, spec.id, flags);
-    if (spec.props)
-      for (let src of spec.props) {
-        if (!Array.isArray(src))
-          src = src(type);
-        if (src) {
-          if (src[0].perNode)
-            throw new RangeError("Can't store a per-node prop on a node type");
-          props[src[0].id] = src[1];
-        }
-      }
-    return type;
-  }
-  /**
-  Retrieves a node prop for this type. Will return `undefined` if
-  the prop isn't present on this node.
-  */
-  prop(prop) {
-    return this.props[prop.id];
-  }
-  /**
-  True when this is the top node of a grammar.
-  */
-  get isTop() {
-    return (this.flags & 1) > 0;
-  }
-  /**
-  True when this node is produced by a skip rule.
-  */
-  get isSkipped() {
-    return (this.flags & 2) > 0;
-  }
-  /**
-  Indicates whether this is an error node.
-  */
-  get isError() {
-    return (this.flags & 4) > 0;
-  }
-  /**
-  When true, this node type doesn't correspond to a user-declared
-  named node, for example because it is used to cache repetition.
-  */
-  get isAnonymous() {
-    return (this.flags & 8) > 0;
-  }
-  /**
-  Returns true when this node's name or one of its
-  [groups](#common.NodeProp^group) matches the given string.
-  */
-  is(name11) {
-    if (typeof name11 == "string") {
-      if (this.name == name11)
-        return true;
-      let group = this.prop(NodeProp6.group);
-      return group ? group.indexOf(name11) > -1 : false;
-    }
-    return this.id == name11;
-  }
-  /**
-  Create a function from node types to arbitrary values by
-  specifying an object whose property names are node or
-  [group](#common.NodeProp^group) names. Often useful with
-  [`NodeProp.add`](#common.NodeProp.add). You can put multiple
-  names, separated by spaces, in a single property name to map
-  multiple node names to a single value.
-  */
-  static match(map) {
-    let direct = /* @__PURE__ */ Object.create(null);
-    for (let prop in map)
-      for (let name11 of prop.split(" "))
-        direct[name11] = map[prop];
-    return (node) => {
-      for (let groups = node.prop(NodeProp6.group), i = -1; i < (groups ? groups.length : 0); i++) {
-        let found = direct[i < 0 ? node.name : groups[i]];
-        if (found)
-          return found;
-      }
-    };
-  }
-};
-NodeType6.none = new NodeType6(
-  "",
-  /* @__PURE__ */ Object.create(null),
-  0,
-  8
-  /* NodeFlag.Anonymous */
-);
-var CachedNode6 = /* @__PURE__ */ new WeakMap();
-var CachedInnerNode6 = /* @__PURE__ */ new WeakMap();
-var IterMode6;
-(function(IterMode11) {
-  IterMode11[IterMode11["ExcludeBuffers"] = 1] = "ExcludeBuffers";
-  IterMode11[IterMode11["IncludeAnonymous"] = 2] = "IncludeAnonymous";
-  IterMode11[IterMode11["IgnoreMounts"] = 4] = "IgnoreMounts";
-  IterMode11[IterMode11["IgnoreOverlays"] = 8] = "IgnoreOverlays";
-  IterMode11[IterMode11["EnterBracketed"] = 16] = "EnterBracketed";
-})(IterMode6 || (IterMode6 = {}));
-var Tree6 = class _Tree {
-  /**
-  Construct a new tree. See also [`Tree.build`](#common.Tree^build).
-  */
-  constructor(type, children, positions, length, props) {
-    this.type = type;
-    this.children = children;
-    this.positions = positions;
-    this.length = length;
-    this.props = null;
-    if (props && props.length) {
-      this.props = /* @__PURE__ */ Object.create(null);
-      for (let [prop, value] of props)
-        this.props[typeof prop == "number" ? prop : prop.id] = value;
-    }
-  }
-  /**
-  @internal
-  */
-  toString() {
-    let mounted = MountedTree6.get(this);
-    if (mounted && !mounted.overlay)
-      return mounted.tree.toString();
-    let children = "";
-    for (let ch of this.children) {
-      let str = ch.toString();
-      if (str) {
-        if (children)
-          children += ",";
-        children += str;
-      }
-    }
-    return !this.type.name ? children : (/\W/.test(this.type.name) && !this.type.isError ? JSON.stringify(this.type.name) : this.type.name) + (children.length ? "(" + children + ")" : "");
-  }
-  /**
-  Get a [tree cursor](#common.TreeCursor) positioned at the top of
-  the tree. Mode can be used to [control](#common.IterMode) which
-  nodes the cursor visits.
-  */
-  cursor(mode = 0) {
-    return new TreeCursor6(this.topNode, mode);
-  }
-  /**
-  Get a [tree cursor](#common.TreeCursor) pointing into this tree
-  at the given position and side (see
-  [`moveTo`](#common.TreeCursor.moveTo).
-  */
-  cursorAt(pos, side = 0, mode = 0) {
-    let scope = CachedNode6.get(this) || this.topNode;
-    let cursor2 = new TreeCursor6(scope);
-    cursor2.moveTo(pos, side);
-    CachedNode6.set(this, cursor2._tree);
-    return cursor2;
-  }
-  /**
-  Get a [syntax node](#common.SyntaxNode) object for the top of the
-  tree.
-  */
-  get topNode() {
-    return new TreeNode6(this, 0, 0, null);
-  }
-  /**
-  Get the [syntax node](#common.SyntaxNode) at the given position.
-  If `side` is -1, this will move into nodes that end at the
-  position. If 1, it'll move into nodes that start at the
-  position. With 0, it'll only enter nodes that cover the position
-  from both sides.
-  
-  Note that this will not enter
-  [overlays](#common.MountedTree.overlay), and you often want
-  [`resolveInner`](#common.Tree.resolveInner) instead.
-  */
-  resolve(pos, side = 0) {
-    let node = resolveNode6(CachedNode6.get(this) || this.topNode, pos, side, false);
-    CachedNode6.set(this, node);
-    return node;
-  }
-  /**
-  Like [`resolve`](#common.Tree.resolve), but will enter
-  [overlaid](#common.MountedTree.overlay) nodes, producing a syntax node
-  pointing into the innermost overlaid tree at the given position
-  (with parent links going through all parent structure, including
-  the host trees).
-  */
-  resolveInner(pos, side = 0) {
-    let node = resolveNode6(CachedInnerNode6.get(this) || this.topNode, pos, side, true);
-    CachedInnerNode6.set(this, node);
-    return node;
-  }
-  /**
-  In some situations, it can be useful to iterate through all
-  nodes around a position, including those in overlays that don't
-  directly cover the position. This method gives you an iterator
-  that will produce all nodes, from small to big, around the given
-  position.
-  */
-  resolveStack(pos, side = 0) {
-    return stackIterator6(this, pos, side);
-  }
-  /**
-  Iterate over the tree and its children, calling `enter` for any
-  node that touches the `from`/`to` region (if given) before
-  running over such a node's children, and `leave` (if given) when
-  leaving the node. When `enter` returns `false`, that node will
-  not have its children iterated over (or `leave` called).
-  */
-  iterate(spec) {
-    let { enter, leave, from = 0, to = this.length } = spec;
-    let mode = spec.mode || 0, anon = (mode & IterMode6.IncludeAnonymous) > 0;
-    for (let c = this.cursor(mode | IterMode6.IncludeAnonymous); ; ) {
-      let entered = false;
-      if (c.from <= to && c.to >= from && (!anon && c.type.isAnonymous || enter(c) !== false)) {
-        if (c.firstChild())
-          continue;
-        entered = true;
-      }
-      for (; ; ) {
-        if (entered && leave && (anon || !c.type.isAnonymous))
-          leave(c);
-        if (c.nextSibling())
-          break;
-        if (!c.parent())
-          return;
-        entered = true;
-      }
-    }
-  }
-  /**
-  Get the value of the given [node prop](#common.NodeProp) for this
-  node. Works with both per-node and per-type props.
-  */
-  prop(prop) {
-    return !prop.perNode ? this.type.prop(prop) : this.props ? this.props[prop.id] : void 0;
-  }
-  /**
-  Returns the node's [per-node props](#common.NodeProp.perNode) in a
-  format that can be passed to the [`Tree`](#common.Tree)
-  constructor.
-  */
-  get propValues() {
-    let result = [];
-    if (this.props)
-      for (let id3 in this.props)
-        result.push([+id3, this.props[id3]]);
-    return result;
-  }
-  /**
-  Balance the direct children of this tree, producing a copy of
-  which may have children grouped into subtrees with type
-  [`NodeType.none`](#common.NodeType^none).
-  */
-  balance(config2 = {}) {
-    return this.children.length <= 8 ? this : balanceRange6(NodeType6.none, this.children, this.positions, 0, this.children.length, 0, this.length, (children, positions, length) => new _Tree(this.type, children, positions, length, this.propValues), config2.makeTree || ((children, positions, length) => new _Tree(NodeType6.none, children, positions, length)));
-  }
-  /**
-  Build a tree from a postfix-ordered buffer of node information,
-  or a cursor over such a buffer.
-  */
-  static build(data2) {
-    return buildTree6(data2);
-  }
-};
-Tree6.empty = new Tree6(NodeType6.none, [], [], 0);
-var FlatBufferCursor6 = class _FlatBufferCursor {
-  constructor(buffer, index) {
-    this.buffer = buffer;
-    this.index = index;
-  }
-  get id() {
-    return this.buffer[this.index - 4];
-  }
-  get start() {
-    return this.buffer[this.index - 3];
-  }
-  get end() {
-    return this.buffer[this.index - 2];
-  }
-  get size() {
-    return this.buffer[this.index - 1];
-  }
-  get pos() {
-    return this.index;
-  }
-  next() {
-    this.index -= 4;
-  }
-  fork() {
-    return new _FlatBufferCursor(this.buffer, this.index);
-  }
-};
-var TreeBuffer6 = class _TreeBuffer {
-  /**
-  Create a tree buffer.
-  */
-  constructor(buffer, length, set) {
-    this.buffer = buffer;
-    this.length = length;
-    this.set = set;
-  }
-  /**
-  @internal
-  */
-  get type() {
-    return NodeType6.none;
-  }
-  /**
-  @internal
-  */
-  toString() {
-    let result = [];
-    for (let index = 0; index < this.buffer.length; ) {
-      result.push(this.childString(index));
-      index = this.buffer[index + 3];
-    }
-    return result.join(",");
-  }
-  /**
-  @internal
-  */
-  childString(index) {
-    let id3 = this.buffer[index], endIndex = this.buffer[index + 3];
-    let type = this.set.types[id3], result = type.name;
-    if (/\W/.test(result) && !type.isError)
-      result = JSON.stringify(result);
-    index += 4;
-    if (endIndex == index)
-      return result;
-    let children = [];
-    while (index < endIndex) {
-      children.push(this.childString(index));
-      index = this.buffer[index + 3];
-    }
-    return result + "(" + children.join(",") + ")";
-  }
-  /**
-  @internal
-  */
-  findChild(startIndex, endIndex, dir, pos, side) {
-    let { buffer } = this, pick = -1;
-    for (let i = startIndex; i != endIndex; i = buffer[i + 3]) {
-      if (checkSide6(side, pos, buffer[i + 1], buffer[i + 2])) {
-        pick = i;
-        if (dir > 0)
-          break;
-      }
-    }
-    return pick;
-  }
-  /**
-  @internal
-  */
-  slice(startI, endI, from) {
-    let b = this.buffer;
-    let copy = new Uint16Array(endI - startI), len = 0;
-    for (let i = startI, j = 0; i < endI; ) {
-      copy[j++] = b[i++];
-      copy[j++] = b[i++] - from;
-      let to = copy[j++] = b[i++] - from;
-      copy[j++] = b[i++] - startI;
-      len = Math.max(len, to);
-    }
-    return new _TreeBuffer(copy, len, this.set);
-  }
-};
-function checkSide6(side, pos, from, to) {
-  switch (side) {
-    case -2:
-      return from < pos;
-    case -1:
-      return to >= pos && from < pos;
-    case 0:
-      return from < pos && to > pos;
-    case 1:
-      return from <= pos && to > pos;
-    case 2:
-      return to > pos;
-    case 4:
-      return true;
-  }
-}
-function resolveNode6(node, pos, side, overlays) {
-  var _a7;
-  while (node.from == node.to || (side < 1 ? node.from >= pos : node.from > pos) || (side > -1 ? node.to <= pos : node.to < pos)) {
-    let parent = !overlays && node instanceof TreeNode6 && node.index < 0 ? null : node.parent;
-    if (!parent)
-      return node;
-    node = parent;
-  }
-  let mode = overlays ? 0 : IterMode6.IgnoreOverlays;
-  if (overlays)
-    for (let scan = node, parent = scan.parent; parent; scan = parent, parent = scan.parent) {
-      if (scan instanceof TreeNode6 && scan.index < 0 && ((_a7 = parent.enter(pos, side, mode)) === null || _a7 === void 0 ? void 0 : _a7.from) != scan.from)
-        node = parent;
-    }
-  for (; ; ) {
-    let inner = node.enter(pos, side, mode);
-    if (!inner)
-      return node;
-    node = inner;
-  }
-}
-var BaseNode6 = class {
-  cursor(mode = 0) {
-    return new TreeCursor6(this, mode);
-  }
-  getChild(type, before = null, after = null) {
-    let r = getChildren6(this, type, before, after);
-    return r.length ? r[0] : null;
-  }
-  getChildren(type, before = null, after = null) {
-    return getChildren6(this, type, before, after);
-  }
-  resolve(pos, side = 0) {
-    return resolveNode6(this, pos, side, false);
-  }
-  resolveInner(pos, side = 0) {
-    return resolveNode6(this, pos, side, true);
-  }
-  matchContext(context) {
-    return matchNodeContext6(this.parent, context);
-  }
-  enterUnfinishedNodesBefore(pos) {
-    let scan = this.childBefore(pos), node = this;
-    while (scan) {
-      let last = scan.lastChild;
-      if (!last || last.to != scan.to)
-        break;
-      if (last.type.isError && last.from == last.to) {
-        node = scan;
-        scan = last.prevSibling;
-      } else {
-        scan = last;
-      }
-    }
-    return node;
-  }
-  get node() {
-    return this;
-  }
-  get next() {
-    return this.parent;
-  }
-};
-var TreeNode6 = class _TreeNode extends BaseNode6 {
-  constructor(_tree, from, index, _parent) {
-    super();
-    this._tree = _tree;
-    this.from = from;
-    this.index = index;
-    this._parent = _parent;
-  }
-  get type() {
-    return this._tree.type;
-  }
-  get name() {
-    return this._tree.type.name;
-  }
-  get to() {
-    return this.from + this._tree.length;
-  }
-  nextChild(i, dir, pos, side, mode = 0) {
-    for (let parent = this; ; ) {
-      for (let { children, positions } = parent._tree, e = dir > 0 ? children.length : -1; i != e; i += dir) {
-        let next = children[i], start = positions[i] + parent.from, mounted;
-        if (!(mode & IterMode6.EnterBracketed && next instanceof Tree6 && (mounted = MountedTree6.get(next)) && !mounted.overlay && mounted.bracketed && pos >= start && pos <= start + next.length) && !checkSide6(side, pos, start, start + next.length))
-          continue;
-        if (next instanceof TreeBuffer6) {
-          if (mode & IterMode6.ExcludeBuffers)
-            continue;
-          let index = next.findChild(0, next.buffer.length, dir, pos - start, side);
-          if (index > -1)
-            return new BufferNode6(new BufferContext6(parent, next, i, start), null, index);
-        } else if (mode & IterMode6.IncludeAnonymous || (!next.type.isAnonymous || hasChild6(next))) {
-          let mounted2;
-          if (!(mode & IterMode6.IgnoreMounts) && (mounted2 = MountedTree6.get(next)) && !mounted2.overlay)
-            return new _TreeNode(mounted2.tree, start, i, parent);
-          let inner = new _TreeNode(next, start, i, parent);
-          return mode & IterMode6.IncludeAnonymous || !inner.type.isAnonymous ? inner : inner.nextChild(dir < 0 ? next.children.length - 1 : 0, dir, pos, side, mode);
-        }
-      }
-      if (mode & IterMode6.IncludeAnonymous || !parent.type.isAnonymous)
-        return null;
-      if (parent.index >= 0)
-        i = parent.index + dir;
-      else
-        i = dir < 0 ? -1 : parent._parent._tree.children.length;
-      parent = parent._parent;
-      if (!parent)
-        return null;
-    }
-  }
-  get firstChild() {
-    return this.nextChild(
-      0,
-      1,
-      0,
-      4
-      /* Side.DontCare */
-    );
-  }
-  get lastChild() {
-    return this.nextChild(
-      this._tree.children.length - 1,
-      -1,
-      0,
-      4
-      /* Side.DontCare */
-    );
-  }
-  childAfter(pos) {
-    return this.nextChild(
-      0,
-      1,
-      pos,
-      2
-      /* Side.After */
-    );
-  }
-  childBefore(pos) {
-    return this.nextChild(
-      this._tree.children.length - 1,
-      -1,
-      pos,
-      -2
-      /* Side.Before */
-    );
-  }
-  prop(prop) {
-    return this._tree.prop(prop);
-  }
-  enter(pos, side, mode = 0) {
-    let mounted;
-    if (!(mode & IterMode6.IgnoreOverlays) && (mounted = MountedTree6.get(this._tree)) && mounted.overlay) {
-      let rPos = pos - this.from, enterBracketed = mode & IterMode6.EnterBracketed && mounted.bracketed;
-      for (let { from, to } of mounted.overlay) {
-        if ((side > 0 || enterBracketed ? from <= rPos : from < rPos) && (side < 0 || enterBracketed ? to >= rPos : to > rPos))
-          return new _TreeNode(mounted.tree, mounted.overlay[0].from + this.from, -1, this);
-      }
-    }
-    return this.nextChild(0, 1, pos, side, mode);
-  }
-  nextSignificantParent() {
-    let val = this;
-    while (val.type.isAnonymous && val._parent)
-      val = val._parent;
-    return val;
-  }
-  get parent() {
-    return this._parent ? this._parent.nextSignificantParent() : null;
-  }
-  get nextSibling() {
-    return this._parent && this.index >= 0 ? this._parent.nextChild(
-      this.index + 1,
-      1,
-      0,
-      4
-      /* Side.DontCare */
-    ) : null;
-  }
-  get prevSibling() {
-    return this._parent && this.index >= 0 ? this._parent.nextChild(
-      this.index - 1,
-      -1,
-      0,
-      4
-      /* Side.DontCare */
-    ) : null;
-  }
-  get tree() {
-    return this._tree;
-  }
-  toTree() {
-    return this._tree;
-  }
-  /**
-  @internal
-  */
-  toString() {
-    return this._tree.toString();
-  }
-};
-function getChildren6(node, type, before, after) {
-  let cur2 = node.cursor(), result = [];
-  if (!cur2.firstChild())
-    return result;
-  if (before != null)
-    for (let found = false; !found; ) {
-      found = cur2.type.is(before);
-      if (!cur2.nextSibling())
-        return result;
-    }
-  for (; ; ) {
-    if (after != null && cur2.type.is(after))
-      return result;
-    if (cur2.type.is(type))
-      result.push(cur2.node);
-    if (!cur2.nextSibling())
-      return after == null ? result : [];
-  }
-}
-function matchNodeContext6(node, context, i = context.length - 1) {
-  for (let p = node; i >= 0; p = p.parent) {
-    if (!p)
-      return false;
-    if (!p.type.isAnonymous) {
-      if (context[i] && context[i] != p.name)
-        return false;
-      i--;
-    }
-  }
-  return true;
-}
-var BufferContext6 = class {
-  constructor(parent, buffer, index, start) {
-    this.parent = parent;
-    this.buffer = buffer;
-    this.index = index;
-    this.start = start;
-  }
-};
-var BufferNode6 = class _BufferNode extends BaseNode6 {
-  get name() {
-    return this.type.name;
-  }
-  get from() {
-    return this.context.start + this.context.buffer.buffer[this.index + 1];
-  }
-  get to() {
-    return this.context.start + this.context.buffer.buffer[this.index + 2];
-  }
-  constructor(context, _parent, index) {
-    super();
-    this.context = context;
-    this._parent = _parent;
-    this.index = index;
-    this.type = context.buffer.set.types[context.buffer.buffer[index]];
-  }
-  child(dir, pos, side) {
-    let { buffer } = this.context;
-    let index = buffer.findChild(this.index + 4, buffer.buffer[this.index + 3], dir, pos - this.context.start, side);
-    return index < 0 ? null : new _BufferNode(this.context, this, index);
-  }
-  get firstChild() {
-    return this.child(
-      1,
-      0,
-      4
-      /* Side.DontCare */
-    );
-  }
-  get lastChild() {
-    return this.child(
-      -1,
-      0,
-      4
-      /* Side.DontCare */
-    );
-  }
-  childAfter(pos) {
-    return this.child(
-      1,
-      pos,
-      2
-      /* Side.After */
-    );
-  }
-  childBefore(pos) {
-    return this.child(
-      -1,
-      pos,
-      -2
-      /* Side.Before */
-    );
-  }
-  prop(prop) {
-    return this.type.prop(prop);
-  }
-  enter(pos, side, mode = 0) {
-    if (mode & IterMode6.ExcludeBuffers)
-      return null;
-    let { buffer } = this.context;
-    let index = buffer.findChild(this.index + 4, buffer.buffer[this.index + 3], side > 0 ? 1 : -1, pos - this.context.start, side);
-    return index < 0 ? null : new _BufferNode(this.context, this, index);
-  }
-  get parent() {
-    return this._parent || this.context.parent.nextSignificantParent();
-  }
-  externalSibling(dir) {
-    return this._parent ? null : this.context.parent.nextChild(
-      this.context.index + dir,
-      dir,
-      0,
-      4
-      /* Side.DontCare */
-    );
-  }
-  get nextSibling() {
-    let { buffer } = this.context;
-    let after = buffer.buffer[this.index + 3];
-    if (after < (this._parent ? buffer.buffer[this._parent.index + 3] : buffer.buffer.length))
-      return new _BufferNode(this.context, this._parent, after);
-    return this.externalSibling(1);
-  }
-  get prevSibling() {
-    let { buffer } = this.context;
-    let parentStart = this._parent ? this._parent.index + 4 : 0;
-    if (this.index == parentStart)
-      return this.externalSibling(-1);
-    return new _BufferNode(this.context, this._parent, buffer.findChild(
-      parentStart,
-      this.index,
-      -1,
-      0,
-      4
-      /* Side.DontCare */
-    ));
-  }
-  get tree() {
-    return null;
-  }
-  toTree() {
-    let children = [], positions = [];
-    let { buffer } = this.context;
-    let startI = this.index + 4, endI = buffer.buffer[this.index + 3];
-    if (endI > startI) {
-      let from = buffer.buffer[this.index + 1];
-      children.push(buffer.slice(startI, endI, from));
-      positions.push(0);
-    }
-    return new Tree6(this.type, children, positions, this.to - this.from);
-  }
-  /**
-  @internal
-  */
-  toString() {
-    return this.context.buffer.childString(this.index);
-  }
-};
-function iterStack6(heads) {
-  if (!heads.length)
-    return null;
-  let pick = 0, picked = heads[0];
-  for (let i = 1; i < heads.length; i++) {
-    let node = heads[i];
-    if (node.from > picked.from || node.to < picked.to) {
-      picked = node;
-      pick = i;
-    }
-  }
-  let next = picked instanceof TreeNode6 && picked.index < 0 ? null : picked.parent;
-  let newHeads = heads.slice();
-  if (next)
-    newHeads[pick] = next;
-  else
-    newHeads.splice(pick, 1);
-  return new StackIterator6(newHeads, picked);
-}
-var StackIterator6 = class {
-  constructor(heads, node) {
-    this.heads = heads;
-    this.node = node;
-  }
-  get next() {
-    return iterStack6(this.heads);
-  }
-};
-function stackIterator6(tree, pos, side) {
-  let inner = tree.resolveInner(pos, side), layers = null;
-  for (let scan = inner instanceof TreeNode6 ? inner : inner.context.parent; scan; scan = scan.parent) {
-    if (scan.index < 0) {
-      let parent = scan.parent;
-      (layers || (layers = [inner])).push(parent.resolve(pos, side));
-      scan = parent;
-    } else {
-      let mount = MountedTree6.get(scan.tree);
-      if (mount && mount.overlay && mount.overlay[0].from <= pos && mount.overlay[mount.overlay.length - 1].to >= pos) {
-        let root = new TreeNode6(mount.tree, mount.overlay[0].from + scan.from, -1, scan);
-        (layers || (layers = [inner])).push(resolveNode6(root, pos, side, false));
-      }
-    }
-  }
-  return layers ? iterStack6(layers) : inner;
-}
-var TreeCursor6 = class {
-  /**
-  Shorthand for `.type.name`.
-  */
-  get name() {
-    return this.type.name;
-  }
-  /**
-  @internal
-  */
-  constructor(node, mode = 0) {
-    this.buffer = null;
-    this.stack = [];
-    this.index = 0;
-    this.bufferNode = null;
-    this.mode = mode & ~IterMode6.EnterBracketed;
-    if (node instanceof TreeNode6) {
-      this.yieldNode(node);
-    } else {
-      this._tree = node.context.parent;
-      this.buffer = node.context;
-      for (let n = node._parent; n; n = n._parent)
-        this.stack.unshift(n.index);
-      this.bufferNode = node;
-      this.yieldBuf(node.index);
-    }
-  }
-  yieldNode(node) {
-    if (!node)
-      return false;
-    this._tree = node;
-    this.type = node.type;
-    this.from = node.from;
-    this.to = node.to;
-    return true;
-  }
-  yieldBuf(index, type) {
-    this.index = index;
-    let { start, buffer } = this.buffer;
-    this.type = type || buffer.set.types[buffer.buffer[index]];
-    this.from = start + buffer.buffer[index + 1];
-    this.to = start + buffer.buffer[index + 2];
-    return true;
-  }
-  /**
-  @internal
-  */
-  yield(node) {
-    if (!node)
-      return false;
-    if (node instanceof TreeNode6) {
-      this.buffer = null;
-      return this.yieldNode(node);
-    }
-    this.buffer = node.context;
-    return this.yieldBuf(node.index, node.type);
-  }
-  /**
-  @internal
-  */
-  toString() {
-    return this.buffer ? this.buffer.buffer.childString(this.index) : this._tree.toString();
-  }
-  /**
-  @internal
-  */
-  enterChild(dir, pos, side) {
-    if (!this.buffer)
-      return this.yield(this._tree.nextChild(dir < 0 ? this._tree._tree.children.length - 1 : 0, dir, pos, side, this.mode));
-    let { buffer } = this.buffer;
-    let index = buffer.findChild(this.index + 4, buffer.buffer[this.index + 3], dir, pos - this.buffer.start, side);
-    if (index < 0)
-      return false;
-    this.stack.push(this.index);
-    return this.yieldBuf(index);
-  }
-  /**
-  Move the cursor to this node's first child. When this returns
-  false, the node has no child, and the cursor has not been moved.
-  */
-  firstChild() {
-    return this.enterChild(
-      1,
-      0,
-      4
-      /* Side.DontCare */
-    );
-  }
-  /**
-  Move the cursor to this node's last child.
-  */
-  lastChild() {
-    return this.enterChild(
-      -1,
-      0,
-      4
-      /* Side.DontCare */
-    );
-  }
-  /**
-  Move the cursor to the first child that ends after `pos`.
-  */
-  childAfter(pos) {
-    return this.enterChild(
-      1,
-      pos,
-      2
-      /* Side.After */
-    );
-  }
-  /**
-  Move to the last child that starts before `pos`.
-  */
-  childBefore(pos) {
-    return this.enterChild(
-      -1,
-      pos,
-      -2
-      /* Side.Before */
-    );
-  }
-  /**
-  Move the cursor to the child around `pos`. If side is -1 the
-  child may end at that position, when 1 it may start there. This
-  will also enter [overlaid](#common.MountedTree.overlay)
-  [mounted](#common.NodeProp^mounted) trees unless `overlays` is
-  set to false.
-  */
-  enter(pos, side, mode = this.mode) {
-    if (!this.buffer)
-      return this.yield(this._tree.enter(pos, side, mode));
-    return mode & IterMode6.ExcludeBuffers ? false : this.enterChild(1, pos, side);
-  }
-  /**
-  Move to the node's parent node, if this isn't the top node.
-  */
-  parent() {
-    if (!this.buffer)
-      return this.yieldNode(this.mode & IterMode6.IncludeAnonymous ? this._tree._parent : this._tree.parent);
-    if (this.stack.length)
-      return this.yieldBuf(this.stack.pop());
-    let parent = this.mode & IterMode6.IncludeAnonymous ? this.buffer.parent : this.buffer.parent.nextSignificantParent();
-    this.buffer = null;
-    return this.yieldNode(parent);
-  }
-  /**
-  @internal
-  */
-  sibling(dir) {
-    if (!this.buffer)
-      return !this._tree._parent ? false : this.yield(this._tree.index < 0 ? null : this._tree._parent.nextChild(this._tree.index + dir, dir, 0, 4, this.mode));
-    let { buffer } = this.buffer, d = this.stack.length - 1;
-    if (dir < 0) {
-      let parentStart = d < 0 ? 0 : this.stack[d] + 4;
-      if (this.index != parentStart)
-        return this.yieldBuf(buffer.findChild(
-          parentStart,
-          this.index,
-          -1,
-          0,
-          4
-          /* Side.DontCare */
-        ));
-    } else {
-      let after = buffer.buffer[this.index + 3];
-      if (after < (d < 0 ? buffer.buffer.length : buffer.buffer[this.stack[d] + 3]))
-        return this.yieldBuf(after);
-    }
-    return d < 0 ? this.yield(this.buffer.parent.nextChild(this.buffer.index + dir, dir, 0, 4, this.mode)) : false;
-  }
-  /**
-  Move to this node's next sibling, if any.
-  */
-  nextSibling() {
-    return this.sibling(1);
-  }
-  /**
-  Move to this node's previous sibling, if any.
-  */
-  prevSibling() {
-    return this.sibling(-1);
-  }
-  atLastNode(dir) {
-    let index, parent, { buffer } = this;
-    if (buffer) {
-      if (dir > 0) {
-        if (this.index < buffer.buffer.buffer.length)
-          return false;
-      } else {
-        for (let i = 0; i < this.index; i++)
-          if (buffer.buffer.buffer[i + 3] < this.index)
-            return false;
-      }
-      ({ index, parent } = buffer);
-    } else {
-      ({ index, _parent: parent } = this._tree);
-    }
-    for (; parent; { index, _parent: parent } = parent) {
-      if (index > -1)
-        for (let i = index + dir, e = dir < 0 ? -1 : parent._tree.children.length; i != e; i += dir) {
-          let child = parent._tree.children[i];
-          if (this.mode & IterMode6.IncludeAnonymous || child instanceof TreeBuffer6 || !child.type.isAnonymous || hasChild6(child))
-            return false;
-        }
-    }
-    return true;
-  }
-  move(dir, enter) {
-    if (enter && this.enterChild(
-      dir,
-      0,
-      4
-      /* Side.DontCare */
-    ))
-      return true;
-    for (; ; ) {
-      if (this.sibling(dir))
-        return true;
-      if (this.atLastNode(dir) || !this.parent())
-        return false;
-    }
-  }
-  /**
-  Move to the next node in a
-  [pre-order](https://en.wikipedia.org/wiki/Tree_traversal#Pre-order,_NLR)
-  traversal, going from a node to its first child or, if the
-  current node is empty or `enter` is false, its next sibling or
-  the next sibling of the first parent node that has one.
-  */
-  next(enter = true) {
-    return this.move(1, enter);
-  }
-  /**
-  Move to the next node in a last-to-first pre-order traversal. A
-  node is followed by its last child or, if it has none, its
-  previous sibling or the previous sibling of the first parent
-  node that has one.
-  */
-  prev(enter = true) {
-    return this.move(-1, enter);
-  }
-  /**
-  Move the cursor to the innermost node that covers `pos`. If
-  `side` is -1, it will enter nodes that end at `pos`. If it is 1,
-  it will enter nodes that start at `pos`.
-  */
-  moveTo(pos, side = 0) {
-    while (this.from == this.to || (side < 1 ? this.from >= pos : this.from > pos) || (side > -1 ? this.to <= pos : this.to < pos))
-      if (!this.parent())
-        break;
-    while (this.enterChild(1, pos, side)) {
-    }
-    return this;
-  }
-  /**
-  Get a [syntax node](#common.SyntaxNode) at the cursor's current
-  position.
-  */
-  get node() {
-    if (!this.buffer)
-      return this._tree;
-    let cache2 = this.bufferNode, result = null, depth = 0;
-    if (cache2 && cache2.context == this.buffer) {
-      scan: for (let index = this.index, d = this.stack.length; d >= 0; ) {
-        for (let c = cache2; c; c = c._parent)
-          if (c.index == index) {
-            if (index == this.index)
-              return c;
-            result = c;
-            depth = d + 1;
-            break scan;
-          }
-        index = this.stack[--d];
-      }
-    }
-    for (let i = depth; i < this.stack.length; i++)
-      result = new BufferNode6(this.buffer, result, this.stack[i]);
-    return this.bufferNode = new BufferNode6(this.buffer, result, this.index);
-  }
-  /**
-  Get the [tree](#common.Tree) that represents the current node, if
-  any. Will return null when the node is in a [tree
-  buffer](#common.TreeBuffer).
-  */
-  get tree() {
-    return this.buffer ? null : this._tree._tree;
-  }
-  /**
-  Iterate over the current node and all its descendants, calling
-  `enter` when entering a node and `leave`, if given, when leaving
-  one. When `enter` returns `false`, any children of that node are
-  skipped, and `leave` isn't called for it.
-  */
-  iterate(enter, leave) {
-    for (let depth = 0; ; ) {
-      let mustLeave = false;
-      if (this.type.isAnonymous || enter(this) !== false) {
-        if (this.firstChild()) {
-          depth++;
-          continue;
-        }
-        if (!this.type.isAnonymous)
-          mustLeave = true;
-      }
-      for (; ; ) {
-        if (mustLeave && leave)
-          leave(this);
-        mustLeave = this.type.isAnonymous;
-        if (!depth)
-          return;
-        if (this.nextSibling())
-          break;
-        this.parent();
-        depth--;
-        mustLeave = true;
-      }
-    }
-  }
-  /**
-  Test whether the current node matches a given context—a sequence
-  of direct parent node names. Empty strings in the context array
-  are treated as wildcards.
-  */
-  matchContext(context) {
-    if (!this.buffer)
-      return matchNodeContext6(this.node.parent, context);
-    let { buffer } = this.buffer, { types: types2 } = buffer.set;
-    for (let i = context.length - 1, d = this.stack.length - 1; i >= 0; d--) {
-      if (d < 0)
-        return matchNodeContext6(this._tree, context, i);
-      let type = types2[buffer.buffer[this.stack[d]]];
-      if (!type.isAnonymous) {
-        if (context[i] && context[i] != type.name)
-          return false;
-        i--;
-      }
-    }
-    return true;
-  }
-};
-function hasChild6(tree) {
-  return tree.children.some((ch) => ch instanceof TreeBuffer6 || !ch.type.isAnonymous || hasChild6(ch));
-}
-function buildTree6(data2) {
-  var _a7;
-  let { buffer, nodeSet, maxBufferLength = DefaultBufferLength6, reused = [], minRepeatType = nodeSet.types.length } = data2;
-  let cursor2 = Array.isArray(buffer) ? new FlatBufferCursor6(buffer, buffer.length) : buffer;
-  let types2 = nodeSet.types;
-  let contextHash = 0, lookAhead = 0;
-  function takeNode(parentStart, minPos, children2, positions2, inRepeat, depth) {
-    let { id: id3, start, end, size } = cursor2;
-    let lookAheadAtStart = lookAhead, contextAtStart = contextHash;
-    if (size < 0) {
-      cursor2.next();
-      if (size == -1) {
-        let node2 = reused[id3];
-        children2.push(node2);
-        positions2.push(start - parentStart);
-        return;
-      } else if (size == -3) {
-        contextHash = id3;
-        return;
-      } else if (size == -4) {
-        lookAhead = id3;
-        return;
-      } else {
-        throw new RangeError(`Unrecognized record size: ${size}`);
-      }
-    }
-    let type = types2[id3], node, buffer2;
-    let startPos = start - parentStart;
-    if (end - start <= maxBufferLength && (buffer2 = findBufferSize(cursor2.pos - minPos, inRepeat))) {
-      let data3 = new Uint16Array(buffer2.size - buffer2.skip);
-      let endPos = cursor2.pos - buffer2.size, index = data3.length;
-      while (cursor2.pos > endPos)
-        index = copyToBuffer(buffer2.start, data3, index);
-      node = new TreeBuffer6(data3, end - buffer2.start, nodeSet);
-      startPos = buffer2.start - parentStart;
-    } else {
-      let endPos = cursor2.pos - size;
-      cursor2.next();
-      let localChildren = [], localPositions = [];
-      let localInRepeat = id3 >= minRepeatType ? id3 : -1;
-      let lastGroup = 0, lastEnd = end;
-      while (cursor2.pos > endPos) {
-        if (localInRepeat >= 0 && cursor2.id == localInRepeat && cursor2.size >= 0) {
-          if (cursor2.end <= lastEnd - maxBufferLength) {
-            makeRepeatLeaf(localChildren, localPositions, start, lastGroup, cursor2.end, lastEnd, localInRepeat, lookAheadAtStart, contextAtStart);
-            lastGroup = localChildren.length;
-            lastEnd = cursor2.end;
-          }
-          cursor2.next();
-        } else if (depth > 2500) {
-          takeFlatNode(start, endPos, localChildren, localPositions);
-        } else {
-          takeNode(start, endPos, localChildren, localPositions, localInRepeat, depth + 1);
-        }
-      }
-      if (localInRepeat >= 0 && lastGroup > 0 && lastGroup < localChildren.length)
-        makeRepeatLeaf(localChildren, localPositions, start, lastGroup, start, lastEnd, localInRepeat, lookAheadAtStart, contextAtStart);
-      localChildren.reverse();
-      localPositions.reverse();
-      if (localInRepeat > -1 && lastGroup > 0) {
-        let make = makeBalanced(type, contextAtStart);
-        node = balanceRange6(type, localChildren, localPositions, 0, localChildren.length, 0, end - start, make, make);
-      } else {
-        node = makeTree(type, localChildren, localPositions, end - start, lookAheadAtStart - end, contextAtStart);
-      }
-    }
-    children2.push(node);
-    positions2.push(startPos);
-  }
-  function takeFlatNode(parentStart, minPos, children2, positions2) {
-    let nodes = [];
-    let nodeCount = 0, stopAt = -1;
-    while (cursor2.pos > minPos) {
-      let { id: id3, start, end, size } = cursor2;
-      if (size > 4) {
-        cursor2.next();
-      } else if (stopAt > -1 && start < stopAt) {
-        break;
-      } else {
-        if (stopAt < 0)
-          stopAt = end - maxBufferLength;
-        nodes.push(id3, start, end);
-        nodeCount++;
-        cursor2.next();
-      }
-    }
-    if (nodeCount) {
-      let buffer2 = new Uint16Array(nodeCount * 4);
-      let start = nodes[nodes.length - 2];
-      for (let i = nodes.length - 3, j = 0; i >= 0; i -= 3) {
-        buffer2[j++] = nodes[i];
-        buffer2[j++] = nodes[i + 1] - start;
-        buffer2[j++] = nodes[i + 2] - start;
-        buffer2[j++] = j;
-      }
-      children2.push(new TreeBuffer6(buffer2, nodes[2] - start, nodeSet));
-      positions2.push(start - parentStart);
-    }
-  }
-  function makeBalanced(type, contextHash2) {
-    return (children2, positions2, length2) => {
-      let lookAhead2 = 0, lastI = children2.length - 1, last, lookAheadProp;
-      if (lastI >= 0 && (last = children2[lastI]) instanceof Tree6) {
-        if (!lastI && last.type == type && last.length == length2)
-          return last;
-        if (lookAheadProp = last.prop(NodeProp6.lookAhead))
-          lookAhead2 = positions2[lastI] + last.length + lookAheadProp;
-      }
-      return makeTree(type, children2, positions2, length2, lookAhead2, contextHash2);
-    };
-  }
-  function makeRepeatLeaf(children2, positions2, base2, i, from, to, type, lookAhead2, contextHash2) {
-    let localChildren = [], localPositions = [];
-    while (children2.length > i) {
-      localChildren.push(children2.pop());
-      localPositions.push(positions2.pop() + base2 - from);
-    }
-    children2.push(makeTree(nodeSet.types[type], localChildren, localPositions, to - from, lookAhead2 - to, contextHash2));
-    positions2.push(from - base2);
-  }
-  function makeTree(type, children2, positions2, length2, lookAhead2, contextHash2, props) {
-    if (contextHash2) {
-      let pair4 = [NodeProp6.contextHash, contextHash2];
-      props = props ? [pair4].concat(props) : [pair4];
-    }
-    if (lookAhead2 > 25) {
-      let pair4 = [NodeProp6.lookAhead, lookAhead2];
-      props = props ? [pair4].concat(props) : [pair4];
-    }
-    return new Tree6(type, children2, positions2, length2, props);
-  }
-  function findBufferSize(maxSize, inRepeat) {
-    let fork = cursor2.fork();
-    let size = 0, start = 0, skip = 0, minStart = fork.end - maxBufferLength;
-    let result = { size: 0, start: 0, skip: 0 };
-    scan: for (let minPos = fork.pos - maxSize; fork.pos > minPos; ) {
-      let nodeSize11 = fork.size;
-      if (fork.id == inRepeat && nodeSize11 >= 0) {
-        result.size = size;
-        result.start = start;
-        result.skip = skip;
-        skip += 4;
-        size += 4;
-        fork.next();
-        continue;
-      }
-      let startPos = fork.pos - nodeSize11;
-      if (nodeSize11 < 0 || startPos < minPos || fork.start < minStart)
-        break;
-      let localSkipped = fork.id >= minRepeatType ? 4 : 0;
-      let nodeStart2 = fork.start;
-      fork.next();
-      while (fork.pos > startPos) {
-        if (fork.size < 0) {
-          if (fork.size == -3 || fork.size == -4)
-            localSkipped += 4;
-          else
-            break scan;
-        } else if (fork.id >= minRepeatType) {
-          localSkipped += 4;
-        }
-        fork.next();
-      }
-      start = nodeStart2;
-      size += nodeSize11;
-      skip += localSkipped;
-    }
-    if (inRepeat < 0 || size == maxSize) {
-      result.size = size;
-      result.start = start;
-      result.skip = skip;
-    }
-    return result.size > 4 ? result : void 0;
-  }
-  function copyToBuffer(bufferStart, buffer2, index) {
-    let { id: id3, start, end, size } = cursor2;
-    cursor2.next();
-    if (size >= 0 && id3 < minRepeatType) {
-      let startIndex = index;
-      if (size > 4) {
-        let endPos = cursor2.pos - (size - 4);
-        while (cursor2.pos > endPos)
-          index = copyToBuffer(bufferStart, buffer2, index);
-      }
-      buffer2[--index] = startIndex;
-      buffer2[--index] = end - bufferStart;
-      buffer2[--index] = start - bufferStart;
-      buffer2[--index] = id3;
-    } else if (size == -3) {
-      contextHash = id3;
-    } else if (size == -4) {
-      lookAhead = id3;
-    }
-    return index;
-  }
-  let children = [], positions = [];
-  while (cursor2.pos > 0)
-    takeNode(data2.start || 0, data2.bufferStart || 0, children, positions, -1, 0);
-  let length = (_a7 = data2.length) !== null && _a7 !== void 0 ? _a7 : children.length ? positions[0] + children[0].length : 0;
-  return new Tree6(types2[data2.topID], children.reverse(), positions.reverse(), length);
-}
-var nodeSizeCache6 = /* @__PURE__ */ new WeakMap();
-function nodeSize6(balanceType, node) {
-  if (!balanceType.isAnonymous || node instanceof TreeBuffer6 || node.type != balanceType)
-    return 1;
-  let size = nodeSizeCache6.get(node);
-  if (size == null) {
-    size = 1;
-    for (let child of node.children) {
-      if (child.type != balanceType || !(child instanceof Tree6)) {
-        size = 1;
-        break;
-      }
-      size += nodeSize6(balanceType, child);
-    }
-    nodeSizeCache6.set(node, size);
-  }
-  return size;
-}
-function balanceRange6(balanceType, children, positions, from, to, start, length, mkTop, mkTree) {
-  let total = 0;
-  for (let i = from; i < to; i++)
-    total += nodeSize6(balanceType, children[i]);
-  let maxChild = Math.ceil(
-    total * 1.5 / 8
-    /* Balance.BranchFactor */
-  );
-  let localChildren = [], localPositions = [];
-  function divide(children2, positions2, from2, to2, offset) {
-    for (let i = from2; i < to2; ) {
-      let groupFrom = i, groupStart = positions2[i], groupSize = nodeSize6(balanceType, children2[i]);
-      i++;
-      for (; i < to2; i++) {
-        let nextSize = nodeSize6(balanceType, children2[i]);
-        if (groupSize + nextSize >= maxChild)
-          break;
-        groupSize += nextSize;
-      }
-      if (i == groupFrom + 1) {
-        if (groupSize > maxChild) {
-          let only = children2[groupFrom];
-          divide(only.children, only.positions, 0, only.children.length, positions2[groupFrom] + offset);
-          continue;
-        }
-        localChildren.push(children2[groupFrom]);
-      } else {
-        let length2 = positions2[i - 1] + children2[i - 1].length - groupStart;
-        localChildren.push(balanceRange6(balanceType, children2, positions2, groupFrom, i, groupStart, length2, null, mkTree));
-      }
-      localPositions.push(groupStart + offset - start);
-    }
-  }
-  divide(children, positions, from, to, 0);
-  return (mkTop || mkTree)(localChildren, localPositions, length);
-}
-var NodeWeakMap = class {
-  constructor() {
-    this.map = /* @__PURE__ */ new WeakMap();
-  }
-  setBuffer(buffer, index, value) {
-    let inner = this.map.get(buffer);
-    if (!inner)
-      this.map.set(buffer, inner = /* @__PURE__ */ new Map());
-    inner.set(index, value);
-  }
-  getBuffer(buffer, index) {
-    let inner = this.map.get(buffer);
-    return inner && inner.get(index);
-  }
-  /**
-  Set the value for this syntax node.
-  */
-  set(node, value) {
-    if (node instanceof BufferNode6)
-      this.setBuffer(node.context.buffer, node.index, value);
-    else if (node instanceof TreeNode6)
-      this.map.set(node.tree, value);
-  }
-  /**
-  Retrieve value for this syntax node, if it exists in the map.
-  */
-  get(node) {
-    return node instanceof BufferNode6 ? this.getBuffer(node.context.buffer, node.index) : node instanceof TreeNode6 ? this.map.get(node.tree) : void 0;
-  }
-  /**
-  Set the value for the node that a cursor currently points to.
-  */
-  cursorSet(cursor2, value) {
-    if (cursor2.buffer)
-      this.setBuffer(cursor2.buffer.buffer, cursor2.index, value);
-    else
-      this.map.set(cursor2.tree, value);
-  }
-  /**
-  Retrieve the value for the node that a cursor currently points
-  to.
-  */
-  cursorGet(cursor2) {
-    return cursor2.buffer ? this.getBuffer(cursor2.buffer.buffer, cursor2.index) : this.map.get(cursor2.tree);
-  }
-};
-var TreeFragment5 = class _TreeFragment {
-  /**
-  Construct a tree fragment. You'll usually want to use
-  [`addTree`](#common.TreeFragment^addTree) and
-  [`applyChanges`](#common.TreeFragment^applyChanges) instead of
-  calling this directly.
-  */
-  constructor(from, to, tree, offset, openStart = false, openEnd = false) {
-    this.from = from;
-    this.to = to;
-    this.tree = tree;
-    this.offset = offset;
-    this.open = (openStart ? 1 : 0) | (openEnd ? 2 : 0);
-  }
-  /**
-  Whether the start of the fragment represents the start of a
-  parse, or the end of a change. (In the second case, it may not
-  be safe to reuse some nodes at the start, depending on the
-  parsing algorithm.)
-  */
-  get openStart() {
-    return (this.open & 1) > 0;
-  }
-  /**
-  Whether the end of the fragment represents the end of a
-  full-document parse, or the start of a change.
-  */
-  get openEnd() {
-    return (this.open & 2) > 0;
-  }
-  /**
-  Create a set of fragments from a freshly parsed tree, or update
-  an existing set of fragments by replacing the ones that overlap
-  with a tree with content from the new tree. When `partial` is
-  true, the parse is treated as incomplete, and the resulting
-  fragment has [`openEnd`](#common.TreeFragment.openEnd) set to
-  true.
-  */
-  static addTree(tree, fragments = [], partial = false) {
-    let result = [new _TreeFragment(0, tree.length, tree, 0, false, partial)];
-    for (let f of fragments)
-      if (f.to > tree.length)
-        result.push(f);
-    return result;
-  }
-  /**
-  Apply a set of edits to an array of fragments, removing or
-  splitting fragments as necessary to remove edited ranges, and
-  adjusting offsets for fragments that moved.
-  */
-  static applyChanges(fragments, changes, minGap = 128) {
-    if (!changes.length)
-      return fragments;
-    let result = [];
-    let fI = 1, nextF = fragments.length ? fragments[0] : null;
-    for (let cI = 0, pos = 0, off = 0; ; cI++) {
-      let nextC = cI < changes.length ? changes[cI] : null;
-      let nextPos = nextC ? nextC.fromA : 1e9;
-      if (nextPos - pos >= minGap)
-        while (nextF && nextF.from < nextPos) {
-          let cut = nextF;
-          if (pos >= cut.from || nextPos <= cut.to || off) {
-            let fFrom = Math.max(cut.from, pos) - off, fTo = Math.min(cut.to, nextPos) - off;
-            cut = fFrom >= fTo ? null : new _TreeFragment(fFrom, fTo, cut.tree, cut.offset + off, cI > 0, !!nextC);
-          }
-          if (cut)
-            result.push(cut);
-          if (nextF.to > nextPos)
-            break;
-          nextF = fI < fragments.length ? fragments[fI++] : null;
-        }
-      if (!nextC)
-        break;
-      pos = nextC.toA;
-      off = nextC.toA - nextC.toB;
-    }
-    return result;
-  }
-};
-var Parser6 = class {
-  /**
-  Start a parse, returning a [partial parse](#common.PartialParse)
-  object. [`fragments`](#common.TreeFragment) can be passed in to
-  make the parse incremental.
-  
-  By default, the entire input is parsed. You can pass `ranges`,
-  which should be a sorted array of non-empty, non-overlapping
-  ranges, to parse only those ranges. The tree returned in that
-  case will start at `ranges[0].from`.
-  */
-  startParse(input, fragments, ranges) {
-    if (typeof input == "string")
-      input = new StringInput6(input);
-    ranges = !ranges ? [new Range7(0, input.length)] : ranges.length ? ranges.map((r) => new Range7(r.from, r.to)) : [new Range7(0, 0)];
-    return this.createParse(input, fragments || [], ranges);
-  }
-  /**
-  Run a full parse, returning the resulting tree.
-  */
-  parse(input, fragments, ranges) {
-    let parse = this.startParse(input, fragments, ranges);
-    for (; ; ) {
-      let done = parse.advance();
-      if (done)
-        return done;
-    }
-  }
-};
-var StringInput6 = class {
-  constructor(string11) {
-    this.string = string11;
-  }
-  get length() {
-    return this.string.length;
-  }
-  chunk(from) {
-    return this.string.slice(from);
-  }
-  get lineChunks() {
-    return false;
-  }
-  read(from, to) {
-    return this.string.slice(from, to);
-  }
-};
-var stoppedInner6 = new NodeProp6({ perNode: true });
-
-// node_modules/@codemirror/lang-css/node_modules/@lezer/highlight/dist/index.js
-var nextTagID6 = 0;
-var Tag6 = class _Tag {
-  /**
-  @internal
-  */
-  constructor(name11, set, base2, modified) {
-    this.name = name11;
-    this.set = set;
-    this.base = base2;
-    this.modified = modified;
-    this.id = nextTagID6++;
-  }
-  toString() {
-    let { name: name11 } = this;
-    for (let mod of this.modified)
-      if (mod.name)
-        name11 = `${mod.name}(${name11})`;
-    return name11;
-  }
-  static define(nameOrParent, parent) {
-    let name11 = typeof nameOrParent == "string" ? nameOrParent : "?";
-    if (nameOrParent instanceof _Tag)
-      parent = nameOrParent;
-    if (parent === null || parent === void 0 ? void 0 : parent.base)
-      throw new Error("Can not derive from a modified tag");
-    let tag = new _Tag(name11, [], null, []);
-    tag.set.push(tag);
-    if (parent)
-      for (let t11 of parent.set)
-        tag.set.push(t11);
-    return tag;
-  }
-  /**
-  Define a tag _modifier_, which is a function that, given a tag,
-  will return a tag that is a subtag of the original. Applying the
-  same modifier to a twice tag will return the same value (`m1(t1)
-  == m1(t1)`) and applying multiple modifiers will, regardless or
-  order, produce the same tag (`m1(m2(t1)) == m2(m1(t1))`).
-  
-  When multiple modifiers are applied to a given base tag, each
-  smaller set of modifiers is registered as a parent, so that for
-  example `m1(m2(m3(t1)))` is a subtype of `m1(m2(t1))`,
-  `m1(m3(t1)`, and so on.
-  */
-  static defineModifier(name11) {
-    let mod = new Modifier6(name11);
-    return (tag) => {
-      if (tag.modified.indexOf(mod) > -1)
-        return tag;
-      return Modifier6.get(tag.base || tag, tag.modified.concat(mod).sort((a, b) => a.id - b.id));
-    };
-  }
-};
-var nextModifierID6 = 0;
-var Modifier6 = class _Modifier {
-  constructor(name11) {
-    this.name = name11;
-    this.instances = [];
-    this.id = nextModifierID6++;
-  }
-  static get(base2, mods) {
-    if (!mods.length)
-      return base2;
-    let exists = mods[0].instances.find((t11) => t11.base == base2 && sameArray7(mods, t11.modified));
-    if (exists)
-      return exists;
-    let set = [], tag = new Tag6(base2.name, set, base2, mods);
-    for (let m of mods)
-      m.instances.push(tag);
-    let configs = powerSet6(mods);
-    for (let parent of base2.set)
-      if (!parent.modified.length)
-        for (let config2 of configs)
-          set.push(_Modifier.get(parent, config2));
-    return tag;
-  }
-};
-function sameArray7(a, b) {
-  return a.length == b.length && a.every((x, i) => x == b[i]);
-}
-function powerSet6(array) {
-  let sets = [[]];
-  for (let i = 0; i < array.length; i++) {
-    for (let j = 0, e = sets.length; j < e; j++) {
-      sets.push(sets[j].concat(array[i]));
-    }
-  }
-  return sets.sort((a, b) => b.length - a.length);
-}
-function styleTags6(spec) {
-  let byName = /* @__PURE__ */ Object.create(null);
-  for (let prop in spec) {
-    let tags12 = spec[prop];
-    if (!Array.isArray(tags12))
-      tags12 = [tags12];
-    for (let part of prop.split(" "))
-      if (part) {
-        let pieces = [], mode = 2, rest = part;
-        for (let pos = 0; ; ) {
-          if (rest == "..." && pos > 0 && pos + 3 == part.length) {
-            mode = 1;
-            break;
-          }
-          let m = /^"(?:[^"\\]|\\.)*?"|[^\/!]+/.exec(rest);
-          if (!m)
-            throw new RangeError("Invalid path: " + part);
-          pieces.push(m[0] == "*" ? "" : m[0][0] == '"' ? JSON.parse(m[0]) : m[0]);
-          pos += m[0].length;
-          if (pos == part.length)
-            break;
-          let next = part[pos++];
-          if (pos == part.length && next == "!") {
-            mode = 0;
-            break;
-          }
-          if (next != "/")
-            throw new RangeError("Invalid path: " + part);
-          rest = part.slice(pos);
-        }
-        let last = pieces.length - 1, inner = pieces[last];
-        if (!inner)
-          throw new RangeError("Invalid path: " + part);
-        let rule = new Rule6(tags12, mode, last > 0 ? pieces.slice(0, last) : null);
-        byName[inner] = rule.sort(byName[inner]);
-      }
-  }
-  return ruleNodeProp6.add(byName);
-}
-var ruleNodeProp6 = new NodeProp6({
-  combine(a, b) {
-    let cur2, root, take;
-    while (a || b) {
-      if (!a || b && a.depth >= b.depth) {
-        take = b;
-        b = b.next;
-      } else {
-        take = a;
-        a = a.next;
-      }
-      if (cur2 && cur2.mode == take.mode && !take.context && !cur2.context)
-        continue;
-      let copy = new Rule6(take.tags, take.mode, take.context);
-      if (cur2)
-        cur2.next = copy;
-      else
-        root = copy;
-      cur2 = copy;
-    }
-    return root;
-  }
-});
-var Rule6 = class {
-  constructor(tags12, mode, context, next) {
-    this.tags = tags12;
-    this.mode = mode;
-    this.context = context;
-    this.next = next;
-  }
-  get opaque() {
-    return this.mode == 0;
-  }
-  get inherit() {
-    return this.mode == 1;
-  }
-  sort(other) {
-    if (!other || other.depth < this.depth) {
-      this.next = other;
-      return this;
-    }
-    other.next = this.sort(other.next);
-    return other;
-  }
-  get depth() {
-    return this.context ? this.context.length : 0;
-  }
-};
-Rule6.empty = new Rule6([], 2, null);
-function tagHighlighter6(tags12, options) {
-  let map = /* @__PURE__ */ Object.create(null);
-  for (let style of tags12) {
-    if (!Array.isArray(style.tag))
-      map[style.tag.id] = style.class;
-    else
-      for (let tag of style.tag)
-        map[tag.id] = style.class;
-  }
-  let { scope, all = null } = options || {};
-  return {
-    style: (tags13) => {
-      let cls = all;
-      for (let tag of tags13) {
-        for (let sub of tag.set) {
-          let tagClass = map[sub.id];
-          if (tagClass) {
-            cls = cls ? cls + " " + tagClass : tagClass;
-            break;
-          }
-        }
-      }
-      return cls;
-    },
-    scope
-  };
-}
-var t6 = Tag6.define;
-var comment6 = t6();
-var name6 = t6();
-var typeName6 = t6(name6);
-var propertyName6 = t6(name6);
-var literal6 = t6();
-var string6 = t6(literal6);
-var number6 = t6(literal6);
-var content6 = t6();
-var heading6 = t6(content6);
-var keyword6 = t6();
-var operator6 = t6();
-var punctuation6 = t6();
-var bracket6 = t6(punctuation6);
-var meta6 = t6();
-var tags6 = {
-  /**
-  A comment.
-  */
-  comment: comment6,
-  /**
-  A line [comment](#highlight.tags.comment).
-  */
-  lineComment: t6(comment6),
-  /**
-  A block [comment](#highlight.tags.comment).
-  */
-  blockComment: t6(comment6),
-  /**
-  A documentation [comment](#highlight.tags.comment).
-  */
-  docComment: t6(comment6),
-  /**
-  Any kind of identifier.
-  */
-  name: name6,
-  /**
-  The [name](#highlight.tags.name) of a variable.
-  */
-  variableName: t6(name6),
-  /**
-  A type [name](#highlight.tags.name).
-  */
-  typeName: typeName6,
-  /**
-  A tag name (subtag of [`typeName`](#highlight.tags.typeName)).
-  */
-  tagName: t6(typeName6),
-  /**
-  A property or field [name](#highlight.tags.name).
-  */
-  propertyName: propertyName6,
-  /**
-  An attribute name (subtag of [`propertyName`](#highlight.tags.propertyName)).
-  */
-  attributeName: t6(propertyName6),
-  /**
-  The [name](#highlight.tags.name) of a class.
-  */
-  className: t6(name6),
-  /**
-  A label [name](#highlight.tags.name).
-  */
-  labelName: t6(name6),
-  /**
-  A namespace [name](#highlight.tags.name).
-  */
-  namespace: t6(name6),
-  /**
-  The [name](#highlight.tags.name) of a macro.
-  */
-  macroName: t6(name6),
-  /**
-  A literal value.
-  */
-  literal: literal6,
-  /**
-  A string [literal](#highlight.tags.literal).
-  */
-  string: string6,
-  /**
-  A documentation [string](#highlight.tags.string).
-  */
-  docString: t6(string6),
-  /**
-  A character literal (subtag of [string](#highlight.tags.string)).
-  */
-  character: t6(string6),
-  /**
-  An attribute value (subtag of [string](#highlight.tags.string)).
-  */
-  attributeValue: t6(string6),
-  /**
-  A number [literal](#highlight.tags.literal).
-  */
-  number: number6,
-  /**
-  An integer [number](#highlight.tags.number) literal.
-  */
-  integer: t6(number6),
-  /**
-  A floating-point [number](#highlight.tags.number) literal.
-  */
-  float: t6(number6),
-  /**
-  A boolean [literal](#highlight.tags.literal).
-  */
-  bool: t6(literal6),
-  /**
-  Regular expression [literal](#highlight.tags.literal).
-  */
-  regexp: t6(literal6),
-  /**
-  An escape [literal](#highlight.tags.literal), for example a
-  backslash escape in a string.
-  */
-  escape: t6(literal6),
-  /**
-  A color [literal](#highlight.tags.literal).
-  */
-  color: t6(literal6),
-  /**
-  A URL [literal](#highlight.tags.literal).
-  */
-  url: t6(literal6),
-  /**
-  A language keyword.
-  */
-  keyword: keyword6,
-  /**
-  The [keyword](#highlight.tags.keyword) for the self or this
-  object.
-  */
-  self: t6(keyword6),
-  /**
-  The [keyword](#highlight.tags.keyword) for null.
-  */
-  null: t6(keyword6),
-  /**
-  A [keyword](#highlight.tags.keyword) denoting some atomic value.
-  */
-  atom: t6(keyword6),
-  /**
-  A [keyword](#highlight.tags.keyword) that represents a unit.
-  */
-  unit: t6(keyword6),
-  /**
-  A modifier [keyword](#highlight.tags.keyword).
-  */
-  modifier: t6(keyword6),
-  /**
-  A [keyword](#highlight.tags.keyword) that acts as an operator.
-  */
-  operatorKeyword: t6(keyword6),
-  /**
-  A control-flow related [keyword](#highlight.tags.keyword).
-  */
-  controlKeyword: t6(keyword6),
-  /**
-  A [keyword](#highlight.tags.keyword) that defines something.
-  */
-  definitionKeyword: t6(keyword6),
-  /**
-  A [keyword](#highlight.tags.keyword) related to defining or
-  interfacing with modules.
-  */
-  moduleKeyword: t6(keyword6),
-  /**
-  An operator.
-  */
-  operator: operator6,
-  /**
-  An [operator](#highlight.tags.operator) that dereferences something.
-  */
-  derefOperator: t6(operator6),
-  /**
-  Arithmetic-related [operator](#highlight.tags.operator).
-  */
-  arithmeticOperator: t6(operator6),
-  /**
-  Logical [operator](#highlight.tags.operator).
-  */
-  logicOperator: t6(operator6),
-  /**
-  Bit [operator](#highlight.tags.operator).
-  */
-  bitwiseOperator: t6(operator6),
-  /**
-  Comparison [operator](#highlight.tags.operator).
-  */
-  compareOperator: t6(operator6),
-  /**
-  [Operator](#highlight.tags.operator) that updates its operand.
-  */
-  updateOperator: t6(operator6),
-  /**
-  [Operator](#highlight.tags.operator) that defines something.
-  */
-  definitionOperator: t6(operator6),
-  /**
-  Type-related [operator](#highlight.tags.operator).
-  */
-  typeOperator: t6(operator6),
-  /**
-  Control-flow [operator](#highlight.tags.operator).
-  */
-  controlOperator: t6(operator6),
-  /**
-  Program or markup punctuation.
-  */
-  punctuation: punctuation6,
-  /**
-  [Punctuation](#highlight.tags.punctuation) that separates
-  things.
-  */
-  separator: t6(punctuation6),
-  /**
-  Bracket-style [punctuation](#highlight.tags.punctuation).
-  */
-  bracket: bracket6,
-  /**
-  Angle [brackets](#highlight.tags.bracket) (usually `<` and `>`
-  tokens).
-  */
-  angleBracket: t6(bracket6),
-  /**
-  Square [brackets](#highlight.tags.bracket) (usually `[` and `]`
-  tokens).
-  */
-  squareBracket: t6(bracket6),
-  /**
-  Parentheses (usually `(` and `)` tokens). Subtag of
-  [bracket](#highlight.tags.bracket).
-  */
-  paren: t6(bracket6),
-  /**
-  Braces (usually `{` and `}` tokens). Subtag of
-  [bracket](#highlight.tags.bracket).
-  */
-  brace: t6(bracket6),
-  /**
-  Content, for example plain text in XML or markup documents.
-  */
-  content: content6,
-  /**
-  [Content](#highlight.tags.content) that represents a heading.
-  */
-  heading: heading6,
-  /**
-  A level 1 [heading](#highlight.tags.heading).
-  */
-  heading1: t6(heading6),
-  /**
-  A level 2 [heading](#highlight.tags.heading).
-  */
-  heading2: t6(heading6),
-  /**
-  A level 3 [heading](#highlight.tags.heading).
-  */
-  heading3: t6(heading6),
-  /**
-  A level 4 [heading](#highlight.tags.heading).
-  */
-  heading4: t6(heading6),
-  /**
-  A level 5 [heading](#highlight.tags.heading).
-  */
-  heading5: t6(heading6),
-  /**
-  A level 6 [heading](#highlight.tags.heading).
-  */
-  heading6: t6(heading6),
-  /**
-  A prose [content](#highlight.tags.content) separator (such as a horizontal rule).
-  */
-  contentSeparator: t6(content6),
-  /**
-  [Content](#highlight.tags.content) that represents a list.
-  */
-  list: t6(content6),
-  /**
-  [Content](#highlight.tags.content) that represents a quote.
-  */
-  quote: t6(content6),
-  /**
-  [Content](#highlight.tags.content) that is emphasized.
-  */
-  emphasis: t6(content6),
-  /**
-  [Content](#highlight.tags.content) that is styled strong.
-  */
-  strong: t6(content6),
-  /**
-  [Content](#highlight.tags.content) that is part of a link.
-  */
-  link: t6(content6),
-  /**
-  [Content](#highlight.tags.content) that is styled as code or
-  monospace.
-  */
-  monospace: t6(content6),
-  /**
-  [Content](#highlight.tags.content) that has a strike-through
-  style.
-  */
-  strikethrough: t6(content6),
-  /**
-  Inserted text in a change-tracking format.
-  */
-  inserted: t6(),
-  /**
-  Deleted text.
-  */
-  deleted: t6(),
-  /**
-  Changed text.
-  */
-  changed: t6(),
-  /**
-  An invalid or unsyntactic element.
-  */
-  invalid: t6(),
-  /**
-  Metadata or meta-instruction.
-  */
-  meta: meta6,
-  /**
-  [Metadata](#highlight.tags.meta) that applies to the entire
-  document.
-  */
-  documentMeta: t6(meta6),
-  /**
-  [Metadata](#highlight.tags.meta) that annotates or adds
-  attributes to a given syntactic element.
-  */
-  annotation: t6(meta6),
-  /**
-  Processing instruction or preprocessor directive. Subtag of
-  [meta](#highlight.tags.meta).
-  */
-  processingInstruction: t6(meta6),
-  /**
-  [Modifier](#highlight.Tag^defineModifier) that indicates that a
-  given element is being defined. Expected to be used with the
-  various [name](#highlight.tags.name) tags.
-  */
-  definition: Tag6.defineModifier("definition"),
-  /**
-  [Modifier](#highlight.Tag^defineModifier) that indicates that
-  something is constant. Mostly expected to be used with
-  [variable names](#highlight.tags.variableName).
-  */
-  constant: Tag6.defineModifier("constant"),
-  /**
-  [Modifier](#highlight.Tag^defineModifier) used to indicate that
-  a [variable](#highlight.tags.variableName) or [property
-  name](#highlight.tags.propertyName) is being called or defined
-  as a function.
-  */
-  function: Tag6.defineModifier("function"),
-  /**
-  [Modifier](#highlight.Tag^defineModifier) that can be applied to
-  [names](#highlight.tags.name) to indicate that they belong to
-  the language's standard environment.
-  */
-  standard: Tag6.defineModifier("standard"),
-  /**
-  [Modifier](#highlight.Tag^defineModifier) that indicates a given
-  [names](#highlight.tags.name) is local to some scope.
-  */
-  local: Tag6.defineModifier("local"),
-  /**
-  A generic variant [modifier](#highlight.Tag^defineModifier) that
-  can be used to tag language-specific alternative variants of
-  some common tag. It is recommended for themes to define special
-  forms of at least the [string](#highlight.tags.string) and
-  [variable name](#highlight.tags.variableName) tags, since those
-  come up a lot.
-  */
-  special: Tag6.defineModifier("special")
-};
-for (let name11 in tags6) {
-  let val = tags6[name11];
-  if (val instanceof Tag6)
-    val.name = name11;
-}
-var classHighlighter6 = tagHighlighter6([
-  { tag: tags6.link, class: "tok-link" },
-  { tag: tags6.heading, class: "tok-heading" },
-  { tag: tags6.emphasis, class: "tok-emphasis" },
-  { tag: tags6.strong, class: "tok-strong" },
-  { tag: tags6.keyword, class: "tok-keyword" },
-  { tag: tags6.atom, class: "tok-atom" },
-  { tag: tags6.bool, class: "tok-bool" },
-  { tag: tags6.url, class: "tok-url" },
-  { tag: tags6.labelName, class: "tok-labelName" },
-  { tag: tags6.inserted, class: "tok-inserted" },
-  { tag: tags6.deleted, class: "tok-deleted" },
-  { tag: tags6.literal, class: "tok-literal" },
-  { tag: tags6.string, class: "tok-string" },
-  { tag: tags6.number, class: "tok-number" },
-  { tag: [tags6.regexp, tags6.escape, tags6.special(tags6.string)], class: "tok-string2" },
-  { tag: tags6.variableName, class: "tok-variableName" },
-  { tag: tags6.local(tags6.variableName), class: "tok-variableName tok-local" },
-  { tag: tags6.definition(tags6.variableName), class: "tok-variableName tok-definition" },
-  { tag: tags6.special(tags6.variableName), class: "tok-variableName2" },
-  { tag: tags6.definition(tags6.propertyName), class: "tok-propertyName tok-definition" },
-  { tag: tags6.typeName, class: "tok-typeName" },
-  { tag: tags6.namespace, class: "tok-namespace" },
-  { tag: tags6.className, class: "tok-className" },
-  { tag: tags6.macroName, class: "tok-macroName" },
-  { tag: tags6.propertyName, class: "tok-propertyName" },
-  { tag: tags6.operator, class: "tok-operator" },
-  { tag: tags6.comment, class: "tok-comment" },
-  { tag: tags6.meta, class: "tok-meta" },
-  { tag: tags6.invalid, class: "tok-invalid" },
-  { tag: tags6.punctuation, class: "tok-punctuation" }
-]);
-
-// node_modules/@codemirror/lang-css/node_modules/@codemirror/language/dist/index.js
-var _a3;
-var languageDataProp3 = /* @__PURE__ */ new NodeProp6();
-function defineLanguageFacet2(baseData) {
-  return Facet.define({
-    combine: baseData ? (values2) => values2.concat(baseData) : void 0
-  });
-}
-var sublanguageProp3 = /* @__PURE__ */ new NodeProp6();
-var Language3 = class {
-  /**
-  Construct a language object. If you need to invoke this
-  directly, first define a data facet with
-  [`defineLanguageFacet`](https://codemirror.net/6/docs/ref/#language.defineLanguageFacet), and then
-  configure your parser to [attach](https://codemirror.net/6/docs/ref/#language.languageDataProp) it
-  to the language's outer syntax node.
-  */
-  constructor(data2, parser5, extraExtensions = [], name11 = "") {
-    this.data = data2;
-    this.name = name11;
-    if (!EditorState.prototype.hasOwnProperty("tree"))
-      Object.defineProperty(EditorState.prototype, "tree", { get() {
-        return syntaxTree3(this);
-      } });
-    this.parser = parser5;
-    this.extension = [
-      language3.of(this),
-      EditorState.languageData.of((state, pos, side) => {
-        let top2 = topNodeAt3(state, pos, side), data3 = top2.type.prop(languageDataProp3);
-        if (!data3)
-          return [];
-        let base2 = state.facet(data3), sub = top2.type.prop(sublanguageProp3);
-        if (sub) {
-          let innerNode = top2.resolve(pos - top2.from, side);
-          for (let sublang of sub)
-            if (sublang.test(innerNode, state)) {
-              let data4 = state.facet(sublang.facet);
-              return sublang.type == "replace" ? data4 : data4.concat(base2);
-            }
-        }
-        return base2;
-      })
-    ].concat(extraExtensions);
-  }
-  /**
-  Query whether this language is active at the given position.
-  */
-  isActiveAt(state, pos, side = -1) {
-    return topNodeAt3(state, pos, side).type.prop(languageDataProp3) == this.data;
-  }
-  /**
-  Find the document regions that were parsed using this language.
-  The returned regions will _include_ any nested languages rooted
-  in this language, when those exist.
-  */
-  findRegions(state) {
-    let lang = state.facet(language3);
-    if ((lang === null || lang === void 0 ? void 0 : lang.data) == this.data)
-      return [{ from: 0, to: state.doc.length }];
-    if (!lang || !lang.allowsNesting)
-      return [];
-    let result = [];
-    let explore = (tree, from) => {
-      if (tree.prop(languageDataProp3) == this.data) {
-        result.push({ from, to: from + tree.length });
-        return;
-      }
-      let mount = tree.prop(NodeProp6.mounted);
-      if (mount) {
-        if (mount.tree.prop(languageDataProp3) == this.data) {
-          if (mount.overlay)
-            for (let r of mount.overlay)
-              result.push({ from: r.from + from, to: r.to + from });
-          else
-            result.push({ from, to: from + tree.length });
-          return;
-        } else if (mount.overlay) {
-          let size = result.length;
-          explore(mount.tree, mount.overlay[0].from + from);
-          if (result.length > size)
-            return;
-        }
-      }
-      for (let i = 0; i < tree.children.length; i++) {
-        let ch = tree.children[i];
-        if (ch instanceof Tree6)
-          explore(ch, tree.positions[i] + from);
-      }
-    };
-    explore(syntaxTree3(state), 0);
-    return result;
-  }
-  /**
-  Indicates whether this language allows nested languages. The
-  default implementation returns true.
-  */
-  get allowsNesting() {
-    return true;
-  }
-};
-Language3.setState = /* @__PURE__ */ StateEffect.define();
-function topNodeAt3(state, pos, side) {
-  let topLang = state.facet(language3), tree = syntaxTree3(state).topNode;
-  if (!topLang || topLang.allowsNesting) {
-    for (let node = tree; node; node = node.enter(pos, side, IterMode6.ExcludeBuffers | IterMode6.EnterBracketed))
-      if (node.type.isTop)
-        tree = node;
-  }
-  return tree;
-}
-var LRLanguage = class _LRLanguage extends Language3 {
-  constructor(data2, parser5, name11) {
-    super(data2, parser5, [], name11);
-    this.parser = parser5;
-  }
-  /**
-  Define a language from a parser.
-  */
-  static define(spec) {
-    let data2 = defineLanguageFacet2(spec.languageData);
-    return new _LRLanguage(data2, spec.parser.configure({
-      props: [languageDataProp3.add((type) => type.isTop ? data2 : void 0)]
-    }), spec.name);
-  }
-  /**
-  Create a new instance of this language with a reconfigured
-  version of its parser and optionally a new name.
-  */
-  configure(options, name11) {
-    return new _LRLanguage(this.data, this.parser.configure(options), name11 || this.name);
-  }
-  get allowsNesting() {
-    return this.parser.hasWrappers();
-  }
-};
-function syntaxTree3(state) {
-  let field = state.field(Language3.state, false);
-  return field ? field.tree : Tree6.empty;
-}
-var DocInput3 = class {
-  /**
-  Create an input object for the given document.
-  */
-  constructor(doc2) {
-    this.doc = doc2;
-    this.cursorPos = 0;
-    this.string = "";
-    this.cursor = doc2.iter();
-  }
-  get length() {
-    return this.doc.length;
-  }
-  syncTo(pos) {
-    this.string = this.cursor.next(pos - this.cursorPos).value;
-    this.cursorPos = pos + this.string.length;
-    return this.cursorPos - this.string.length;
-  }
-  chunk(pos) {
-    this.syncTo(pos);
-    return this.string;
-  }
-  get lineChunks() {
-    return true;
-  }
-  read(from, to) {
-    let stringStart = this.cursorPos - this.string.length;
-    if (from < stringStart || to >= this.cursorPos)
-      return this.doc.sliceString(from, to);
-    else
-      return this.string.slice(from - stringStart, to - stringStart);
-  }
-};
-var currentContext3 = null;
-var ParseContext3 = class _ParseContext {
-  constructor(parser5, state, fragments = [], tree, treeLen, viewport, skipped, scheduleOn) {
-    this.parser = parser5;
-    this.state = state;
-    this.fragments = fragments;
-    this.tree = tree;
-    this.treeLen = treeLen;
-    this.viewport = viewport;
-    this.skipped = skipped;
-    this.scheduleOn = scheduleOn;
-    this.parse = null;
-    this.tempSkipped = [];
-  }
-  /**
-  @internal
-  */
-  static create(parser5, state, viewport) {
-    return new _ParseContext(parser5, state, [], Tree6.empty, 0, viewport, [], null);
-  }
-  startParse() {
-    return this.parser.startParse(new DocInput3(this.state.doc), this.fragments);
-  }
-  /**
-  @internal
-  */
-  work(until, upto) {
-    if (upto != null && upto >= this.state.doc.length)
-      upto = void 0;
-    if (this.tree != Tree6.empty && this.isDone(upto !== null && upto !== void 0 ? upto : this.state.doc.length)) {
-      this.takeTree();
-      return true;
-    }
-    return this.withContext(() => {
-      var _a7;
-      if (typeof until == "number") {
-        let endTime = Date.now() + until;
-        until = () => Date.now() > endTime;
-      }
-      if (!this.parse)
-        this.parse = this.startParse();
-      if (upto != null && (this.parse.stoppedAt == null || this.parse.stoppedAt > upto) && upto < this.state.doc.length)
-        this.parse.stopAt(upto);
-      for (; ; ) {
-        let done = this.parse.advance();
-        if (done) {
-          this.fragments = this.withoutTempSkipped(TreeFragment5.addTree(done, this.fragments, this.parse.stoppedAt != null));
-          this.treeLen = (_a7 = this.parse.stoppedAt) !== null && _a7 !== void 0 ? _a7 : this.state.doc.length;
-          this.tree = done;
-          this.parse = null;
-          if (this.treeLen < (upto !== null && upto !== void 0 ? upto : this.state.doc.length))
-            this.parse = this.startParse();
-          else
-            return true;
-        }
-        if (until())
-          return false;
-      }
-    });
-  }
-  /**
-  @internal
-  */
-  takeTree() {
-    let pos, tree;
-    if (this.parse && (pos = this.parse.parsedPos) >= this.treeLen) {
-      if (this.parse.stoppedAt == null || this.parse.stoppedAt > pos)
-        this.parse.stopAt(pos);
-      this.withContext(() => {
-        while (!(tree = this.parse.advance())) {
-        }
-      });
-      this.treeLen = pos;
-      this.tree = tree;
-      this.fragments = this.withoutTempSkipped(TreeFragment5.addTree(this.tree, this.fragments, true));
-      this.parse = null;
-    }
-  }
-  withContext(f) {
-    let prev = currentContext3;
-    currentContext3 = this;
-    try {
-      return f();
-    } finally {
-      currentContext3 = prev;
-    }
-  }
-  withoutTempSkipped(fragments) {
-    for (let r; r = this.tempSkipped.pop(); )
-      fragments = cutFragments3(fragments, r.from, r.to);
-    return fragments;
-  }
-  /**
-  @internal
-  */
-  changes(changes, newState) {
-    let { fragments, tree, treeLen, viewport, skipped } = this;
-    this.takeTree();
-    if (!changes.empty) {
-      let ranges = [];
-      changes.iterChangedRanges((fromA, toA, fromB, toB) => ranges.push({ fromA, toA, fromB, toB }));
-      fragments = TreeFragment5.applyChanges(fragments, ranges);
-      tree = Tree6.empty;
-      treeLen = 0;
-      viewport = { from: changes.mapPos(viewport.from, -1), to: changes.mapPos(viewport.to, 1) };
-      if (this.skipped.length) {
-        skipped = [];
-        for (let r of this.skipped) {
-          let from = changes.mapPos(r.from, 1), to = changes.mapPos(r.to, -1);
-          if (from < to)
-            skipped.push({ from, to });
-        }
-      }
-    }
-    return new _ParseContext(this.parser, newState, fragments, tree, treeLen, viewport, skipped, this.scheduleOn);
-  }
-  /**
-  @internal
-  */
-  updateViewport(viewport) {
-    if (this.viewport.from == viewport.from && this.viewport.to == viewport.to)
-      return false;
-    this.viewport = viewport;
-    let startLen = this.skipped.length;
-    for (let i = 0; i < this.skipped.length; i++) {
-      let { from, to } = this.skipped[i];
-      if (from < viewport.to && to > viewport.from) {
-        this.fragments = cutFragments3(this.fragments, from, to);
-        this.skipped.splice(i--, 1);
-      }
-    }
-    if (this.skipped.length >= startLen)
-      return false;
-    this.reset();
-    return true;
-  }
-  /**
-  @internal
-  */
-  reset() {
-    if (this.parse) {
-      this.takeTree();
-      this.parse = null;
-    }
-  }
-  /**
-  Notify the parse scheduler that the given region was skipped
-  because it wasn't in view, and the parse should be restarted
-  when it comes into view.
-  */
-  skipUntilInView(from, to) {
-    this.skipped.push({ from, to });
-  }
-  /**
-  Returns a parser intended to be used as placeholder when
-  asynchronously loading a nested parser. It'll skip its input and
-  mark it as not-really-parsed, so that the next update will parse
-  it again.
-  
-  When `until` is given, a reparse will be scheduled when that
-  promise resolves.
-  */
-  static getSkippingParser(until) {
-    return new class extends Parser6 {
-      createParse(input, fragments, ranges) {
-        let from = ranges[0].from, to = ranges[ranges.length - 1].to;
-        let parser5 = {
-          parsedPos: from,
-          advance() {
-            let cx = currentContext3;
-            if (cx) {
-              for (let r of ranges)
-                cx.tempSkipped.push(r);
-              if (until)
-                cx.scheduleOn = cx.scheduleOn ? Promise.all([cx.scheduleOn, until]) : until;
-            }
-            this.parsedPos = to;
-            return new Tree6(NodeType6.none, [], [], to - from);
-          },
-          stoppedAt: null,
-          stopAt() {
-          }
-        };
-        return parser5;
-      }
-    }();
-  }
-  /**
-  @internal
-  */
-  isDone(upto) {
-    upto = Math.min(upto, this.state.doc.length);
-    let frags = this.fragments;
-    return this.treeLen >= upto && frags.length && frags[0].from == 0 && frags[0].to >= upto;
-  }
-  /**
-  Get the context for the current parse, or `null` if no editor
-  parse is in progress.
-  */
-  static get() {
-    return currentContext3;
-  }
-};
-function cutFragments3(fragments, from, to) {
-  return TreeFragment5.applyChanges(fragments, [{ fromA: from, toA: to, fromB: from, toB: to }]);
-}
-var LanguageState3 = class _LanguageState {
-  constructor(context) {
-    this.context = context;
-    this.tree = context.tree;
-  }
-  apply(tr) {
-    if (!tr.docChanged && this.tree == this.context.tree)
-      return this;
-    let newCx = this.context.changes(tr.changes, tr.state);
-    let upto = this.context.treeLen == tr.startState.doc.length ? void 0 : Math.max(tr.changes.mapPos(this.context.treeLen), newCx.viewport.to);
-    if (!newCx.work(20, upto))
-      newCx.takeTree();
-    return new _LanguageState(newCx);
-  }
-  static init(state) {
-    let vpTo = Math.min(3e3, state.doc.length);
-    let parseState = ParseContext3.create(state.facet(language3).parser, state, { from: 0, to: vpTo });
-    if (!parseState.work(20, vpTo))
-      parseState.takeTree();
-    return new _LanguageState(parseState);
-  }
-};
-Language3.state = /* @__PURE__ */ StateField.define({
-  create: LanguageState3.init,
-  update(value, tr) {
-    for (let e of tr.effects)
-      if (e.is(Language3.setState))
-        return e.value;
-    if (tr.startState.facet(language3) != tr.state.facet(language3))
-      return LanguageState3.init(tr.state);
-    return value.apply(tr);
-  }
-});
-var requestIdle3 = (callback) => {
-  let timeout = setTimeout(
-    () => callback(),
-    500
-    /* Work.MaxPause */
-  );
-  return () => clearTimeout(timeout);
-};
-if (typeof requestIdleCallback != "undefined")
-  requestIdle3 = (callback) => {
-    let idle = -1, timeout = setTimeout(
-      () => {
-        idle = requestIdleCallback(callback, {
-          timeout: 500 - 100
-          /* Work.MinPause */
-        });
-      },
-      100
-      /* Work.MinPause */
-    );
-    return () => idle < 0 ? clearTimeout(timeout) : cancelIdleCallback(idle);
-  };
-var isInputPending3 = typeof navigator != "undefined" && ((_a3 = navigator.scheduling) === null || _a3 === void 0 ? void 0 : _a3.isInputPending) ? () => navigator.scheduling.isInputPending() : null;
-var parseWorker3 = /* @__PURE__ */ ViewPlugin.fromClass(class ParseWorker3 {
-  constructor(view) {
-    this.view = view;
-    this.working = null;
-    this.workScheduled = 0;
-    this.chunkEnd = -1;
-    this.chunkBudget = -1;
-    this.work = this.work.bind(this);
-    this.scheduleWork();
-  }
-  update(update) {
-    let cx = this.view.state.field(Language3.state).context;
-    if (cx.updateViewport(update.view.viewport) || this.view.viewport.to > cx.treeLen)
-      this.scheduleWork();
-    if (update.docChanged || update.selectionSet) {
-      if (this.view.hasFocus)
-        this.chunkBudget += 50;
-      this.scheduleWork();
-    }
-    this.checkAsyncSchedule(cx);
-  }
-  scheduleWork() {
-    if (this.working)
-      return;
-    let { state } = this.view, field = state.field(Language3.state);
-    if (field.tree != field.context.tree || !field.context.isDone(state.doc.length))
-      this.working = requestIdle3(this.work);
-  }
-  work(deadline) {
-    this.working = null;
-    let now = Date.now();
-    if (this.chunkEnd < now && (this.chunkEnd < 0 || this.view.hasFocus)) {
-      this.chunkEnd = now + 3e4;
-      this.chunkBudget = 3e3;
-    }
-    if (this.chunkBudget <= 0)
-      return;
-    let { state, viewport: { to: vpTo } } = this.view, field = state.field(Language3.state);
-    if (field.tree == field.context.tree && field.context.isDone(
-      vpTo + 1e5
-      /* Work.MaxParseAhead */
-    ))
-      return;
-    let endTime = Date.now() + Math.min(this.chunkBudget, 100, deadline && !isInputPending3 ? Math.max(25, deadline.timeRemaining() - 5) : 1e9);
-    let viewportFirst = field.context.treeLen < vpTo && state.doc.length > vpTo + 1e3;
-    let done = field.context.work(() => {
-      return isInputPending3 && isInputPending3() || Date.now() > endTime;
-    }, vpTo + (viewportFirst ? 0 : 1e5));
-    this.chunkBudget -= Date.now() - now;
-    if (done || this.chunkBudget <= 0) {
-      field.context.takeTree();
-      this.view.dispatch({ effects: Language3.setState.of(new LanguageState3(field.context)) });
-    }
-    if (this.chunkBudget > 0 && !(done && !viewportFirst))
-      this.scheduleWork();
-    this.checkAsyncSchedule(field.context);
-  }
-  checkAsyncSchedule(cx) {
-    if (cx.scheduleOn) {
-      this.workScheduled++;
-      cx.scheduleOn.then(() => this.scheduleWork()).catch((err) => logException(this.view.state, err)).then(() => this.workScheduled--);
-      cx.scheduleOn = null;
-    }
-  }
-  destroy() {
-    if (this.working)
-      this.working();
-  }
-  isWorking() {
-    return !!(this.working || this.workScheduled > 0);
-  }
-}, {
-  eventHandlers: { focus() {
-    this.scheduleWork();
-  } }
-});
-var language3 = /* @__PURE__ */ Facet.define({
-  combine(languages) {
-    return languages.length ? languages[0] : null;
-  },
-  enables: (language7) => [
-    Language3.state,
-    parseWorker3,
-    EditorView.contentAttributes.compute([language7], (state) => {
-      let lang = state.facet(language7);
-      return lang && lang.name ? { "data-language": lang.name } : {};
-    })
-  ]
-});
-var LanguageSupport2 = class {
-  /**
-  Create a language support object.
-  */
-  constructor(language7, support = []) {
-    this.language = language7;
-    this.support = support;
-    this.extension = [language7, support];
-  }
-};
-var indentNodeProp3 = /* @__PURE__ */ new NodeProp6();
-function continuedIndent({ except, units = 1 } = {}) {
-  return (context) => {
-    let matchExcept = except && except.test(context.textAfter);
-    return context.baseIndent + (matchExcept ? 0 : units * context.unit);
-  };
-}
-var foldNodeProp3 = /* @__PURE__ */ new NodeProp6();
-function foldInside(node) {
-  let first = node.firstChild, last = node.lastChild;
-  return first && first.to < last.from ? { from: first.to, to: last.type.isError ? node.to : last.from } : null;
-}
-var HighlightStyle3 = class _HighlightStyle {
-  constructor(specs, options) {
-    this.specs = specs;
-    let modSpec;
-    function def(spec) {
-      let cls = StyleModule.newName();
-      (modSpec || (modSpec = /* @__PURE__ */ Object.create(null)))["." + cls] = spec;
-      return cls;
-    }
-    const all = typeof options.all == "string" ? options.all : options.all ? def(options.all) : void 0;
-    const scopeOpt = options.scope;
-    this.scope = scopeOpt instanceof Language3 ? (type) => type.prop(languageDataProp3) == scopeOpt.data : scopeOpt ? (type) => type == scopeOpt : void 0;
-    this.style = tagHighlighter6(specs.map((style) => ({
-      tag: style.tag,
-      class: style.class || def(Object.assign({}, style, { tag: null }))
-    })), {
-      all
-    }).style;
-    this.module = modSpec ? new StyleModule(modSpec) : null;
-    this.themeType = options.themeType;
-  }
-  /**
-  Create a highlighter style that associates the given styles to
-  the given tags. The specs must be objects that hold a style tag
-  or array of tags in their `tag` property, and either a single
-  `class` property providing a static CSS class (for highlighter
-  that rely on external styling), or a
-  [`style-mod`](https://github.com/marijnh/style-mod#documentation)-style
-  set of CSS properties (which define the styling for those tags).
-  
-  The CSS rules created for a highlighter will be emitted in the
-  order of the spec's properties. That means that for elements that
-  have multiple tags associated with them, styles defined further
-  down in the list will have a higher CSS precedence than styles
-  defined earlier.
-  */
-  static define(specs, options) {
-    return new _HighlightStyle(specs, options || {});
-  }
-};
-var defaultHighlightStyle3 = /* @__PURE__ */ HighlightStyle3.define([
-  {
-    tag: tags6.meta,
-    color: "#404740"
-  },
-  {
-    tag: tags6.link,
-    textDecoration: "underline"
-  },
-  {
-    tag: tags6.heading,
-    textDecoration: "underline",
-    fontWeight: "bold"
-  },
-  {
-    tag: tags6.emphasis,
-    fontStyle: "italic"
-  },
-  {
-    tag: tags6.strong,
-    fontWeight: "bold"
-  },
-  {
-    tag: tags6.strikethrough,
-    textDecoration: "line-through"
-  },
-  {
-    tag: tags6.keyword,
-    color: "#708"
-  },
-  {
-    tag: [tags6.atom, tags6.bool, tags6.url, tags6.contentSeparator, tags6.labelName],
-    color: "#219"
-  },
-  {
-    tag: [tags6.literal, tags6.inserted],
-    color: "#164"
-  },
-  {
-    tag: [tags6.string, tags6.deleted],
-    color: "#a11"
-  },
-  {
-    tag: [tags6.regexp, tags6.escape, /* @__PURE__ */ tags6.special(tags6.string)],
-    color: "#e40"
-  },
-  {
-    tag: /* @__PURE__ */ tags6.definition(tags6.variableName),
-    color: "#00f"
-  },
-  {
-    tag: /* @__PURE__ */ tags6.local(tags6.variableName),
-    color: "#30a"
-  },
-  {
-    tag: [tags6.typeName, tags6.namespace],
-    color: "#085"
-  },
-  {
-    tag: tags6.className,
-    color: "#167"
-  },
-  {
-    tag: [/* @__PURE__ */ tags6.special(tags6.variableName), tags6.macroName],
-    color: "#256"
-  },
-  {
-    tag: /* @__PURE__ */ tags6.definition(tags6.propertyName),
-    color: "#00c"
-  },
-  {
-    tag: tags6.comment,
-    color: "#940"
-  },
-  {
-    tag: tags6.invalid,
-    color: "#f00"
-  }
-]);
-var noTokens3 = /* @__PURE__ */ Object.create(null);
-var typeArray3 = [NodeType6.none];
-var warned3 = [];
-var byTag3 = /* @__PURE__ */ Object.create(null);
-var defaultTable3 = /* @__PURE__ */ Object.create(null);
-for (let [legacyName, name11] of [
-  ["variable", "variableName"],
-  ["variable-2", "variableName.special"],
-  ["string-2", "string.special"],
-  ["def", "variableName.definition"],
-  ["tag", "tagName"],
-  ["attribute", "attributeName"],
-  ["type", "typeName"],
-  ["builtin", "variableName.standard"],
-  ["qualifier", "modifier"],
-  ["error", "invalid"],
-  ["header", "heading"],
-  ["property", "propertyName"]
-])
-  defaultTable3[legacyName] = /* @__PURE__ */ createTokenType3(noTokens3, name11);
-function warnForPart3(part, msg) {
-  if (warned3.indexOf(part) > -1)
-    return;
-  warned3.push(part);
-  console.warn(msg);
-}
-function createTokenType3(extra, tagStr) {
-  let tags$1 = [];
-  for (let name12 of tagStr.split(" ")) {
-    let found = [];
-    for (let part of name12.split(".")) {
-      let value = extra[part] || tags6[part];
-      if (!value) {
-        warnForPart3(part, `Unknown highlighting tag ${part}`);
-      } else if (typeof value == "function") {
-        if (!found.length)
-          warnForPart3(part, `Modifier ${part} used at start of tag`);
-        else
-          found = found.map(value);
-      } else {
-        if (found.length)
-          warnForPart3(part, `Tag ${part} used as modifier`);
-        else
-          found = Array.isArray(value) ? value : [value];
-      }
-    }
-    for (let tag of found)
-      tags$1.push(tag);
-  }
-  if (!tags$1.length)
-    return 0;
-  let name11 = tagStr.replace(/ /g, "_"), key = name11 + " " + tags$1.map((t11) => t11.id);
-  let known = byTag3[key];
-  if (known)
-    return known.id;
-  let type = byTag3[key] = NodeType6.define({
-    id: typeArray3.length,
-    name: name11,
-    props: [styleTags6({ [name11]: tags$1 })]
-  });
-  typeArray3.push(type);
-  return type.id;
-}
-var marks3 = {
-  rtl: /* @__PURE__ */ Decoration.mark({ class: "cm-iso", inclusive: true, attributes: { dir: "rtl" }, bidiIsolate: Direction.RTL }),
-  ltr: /* @__PURE__ */ Decoration.mark({ class: "cm-iso", inclusive: true, attributes: { dir: "ltr" }, bidiIsolate: Direction.LTR }),
-  auto: /* @__PURE__ */ Decoration.mark({ class: "cm-iso", inclusive: true, attributes: { dir: "auto" }, bidiIsolate: null })
-};
-
 // node_modules/@codemirror/lang-css/dist/index.js
 var _properties = null;
 function properties() {
@@ -42054,7 +31104,7 @@ function properties() {
           }
         }
       }
-    _properties = names.sort().map((name11) => ({ type: "property", label: name11, apply: name11 + ": " }));
+    _properties = names.sort().map((name7) => ({ type: "property", label: name7, apply: name7 + ": " }));
   }
   return _properties || [];
 }
@@ -42122,7 +31172,7 @@ var pseudoClasses = /* @__PURE__ */ [
   "valid",
   "visited",
   "where"
-].map((name11) => ({ type: "class", label: name11 }));
+].map((name7) => ({ type: "class", label: name7 }));
 var values = /* @__PURE__ */ [
   "above",
   "absolute",
@@ -42543,7 +31593,7 @@ var values = /* @__PURE__ */ [
   "xor",
   "xx-large",
   "xx-small"
-].map((name11) => ({ type: "keyword", label: name11 })).concat(/* @__PURE__ */ [
+].map((name7) => ({ type: "keyword", label: name7 })).concat(/* @__PURE__ */ [
   "aliceblue",
   "antiquewhite",
   "aqua",
@@ -42686,8 +31736,8 @@ var values = /* @__PURE__ */ [
   "whitesmoke",
   "yellow",
   "yellowgreen"
-].map((name11) => ({ type: "constant", label: name11 })));
-var tags7 = /* @__PURE__ */ [
+].map((name7) => ({ type: "constant", label: name7 })));
+var tags5 = /* @__PURE__ */ [
   "a",
   "abbr",
   "address",
@@ -42766,7 +31816,7 @@ var tags7 = /* @__PURE__ */ [
   "tr",
   "u",
   "ul"
-].map((name11) => ({ type: "type", label: name11 }));
+].map((name7) => ({ type: "type", label: name7 }));
 var atRules = /* @__PURE__ */ [
   "@charset",
   "@color-profile",
@@ -42791,12 +31841,12 @@ var atRules = /* @__PURE__ */ [
 var identifier2 = /^(\w[\w-]*|-\w[\w-]*|)$/;
 var variable = /^-(-[\w-]*)?$/;
 function isVarArg(node, doc2) {
-  var _a7;
+  var _a2;
   if (node.name == "(" || node.type.isError)
     node = node.parent || node;
   if (node.name != "ArgList")
     return false;
-  let callee2 = (_a7 = node.parent) === null || _a7 === void 0 ? void 0 : _a7.firstChild;
+  let callee2 = (_a2 = node.parent) === null || _a2 === void 0 ? void 0 : _a2.firstChild;
   if ((callee2 === null || callee2 === void 0 ? void 0 : callee2.name) != "Callee")
     return false;
   return doc2.sliceString(callee2.from, callee2.to) == "var";
@@ -42816,7 +31866,7 @@ function variableNames(doc2, node, isVariable) {
     let known = VariablesByNode.get(node);
     if (known)
       return known;
-    let result = [], seen = /* @__PURE__ */ new Set(), cursor2 = node.cursor(IterMode6.IncludeAnonymous);
+    let result = [], seen = /* @__PURE__ */ new Set(), cursor2 = node.cursor(IterMode.IncludeAnonymous);
     if (cursor2.firstChild())
       do {
         for (let option of variableNames(doc2, cursor2.node, isVariable))
@@ -42830,12 +31880,12 @@ function variableNames(doc2, node, isVariable) {
   } else {
     let result = [], seen = /* @__PURE__ */ new Set();
     node.cursor().iterate((node2) => {
-      var _a7;
-      if (isVariable(node2) && node2.matchContext(declSelector) && ((_a7 = node2.node.nextSibling) === null || _a7 === void 0 ? void 0 : _a7.name) == ":") {
-        let name11 = doc2.sliceString(node2.from, node2.to);
-        if (!seen.has(name11)) {
-          seen.add(name11);
-          result.push({ label: name11, type: "variable" });
+      var _a2;
+      if (isVariable(node2) && node2.matchContext(declSelector) && ((_a2 = node2.node.nextSibling) === null || _a2 === void 0 ? void 0 : _a2.name) == ":") {
+        let name7 = doc2.sliceString(node2.from, node2.to);
+        if (!seen.has(name7)) {
+          seen.add(name7);
+          result.push({ label: name7, type: "variable" });
         }
       }
     });
@@ -42843,7 +31893,7 @@ function variableNames(doc2, node, isVariable) {
   }
 }
 var defineCSSCompletionSource = (isVariable) => (context) => {
-  let { state, pos } = context, node = syntaxTree3(state).resolveInner(pos, -1);
+  let { state, pos } = context, node = syntaxTree(state).resolveInner(pos, -1);
   let isDash = node.type.isError && node.from == node.to - 1 && state.doc.sliceString(node.from, node.to) == "-";
   if (node.name == "PropertyName" || (isDash || node.name == "TagName") && /^(Block|Styles)$/.test(node.resolve(node.to).name))
     return { from: node.from, options: properties(), validFor: identifier2 };
@@ -42861,7 +31911,7 @@ var defineCSSCompletionSource = (isVariable) => (context) => {
     for (let { parent } = node; parent; parent = parent.parent)
       if (parent.name == "Block")
         return { from: node.from, options: properties(), validFor: identifier2 };
-    return { from: node.from, options: tags7, validFor: identifier2 };
+    return { from: node.from, options: tags5, validFor: identifier2 };
   }
   if (node.name == "AtKeyword")
     return { from: node.from, options: atRules, validFor: identifier2 };
@@ -42881,10 +31931,10 @@ var cssLanguage = /* @__PURE__ */ LRLanguage.define({
   name: "css",
   parser: /* @__PURE__ */ parser3.configure({
     props: [
-      /* @__PURE__ */ indentNodeProp3.add({
+      /* @__PURE__ */ indentNodeProp.add({
         Declaration: /* @__PURE__ */ continuedIndent()
       }),
-      /* @__PURE__ */ foldNodeProp3.add({
+      /* @__PURE__ */ foldNodeProp.add({
         "Block KeyframeList": foldInside
       })
     ]
@@ -42896,1553 +31946,8 @@ var cssLanguage = /* @__PURE__ */ LRLanguage.define({
   }
 });
 function css() {
-  return new LanguageSupport2(cssLanguage, cssLanguage.data.of({ autocomplete: cssCompletionSource }));
+  return new LanguageSupport(cssLanguage, cssLanguage.data.of({ autocomplete: cssCompletionSource }));
 }
-
-// node_modules/@lezer/javascript/node_modules/@lezer/common/dist/index.js
-var DefaultBufferLength7 = 1024;
-var nextPropID7 = 0;
-var Range8 = class {
-  constructor(from, to) {
-    this.from = from;
-    this.to = to;
-  }
-};
-var NodeProp7 = class {
-  /**
-  Create a new node prop type.
-  */
-  constructor(config2 = {}) {
-    this.id = nextPropID7++;
-    this.perNode = !!config2.perNode;
-    this.deserialize = config2.deserialize || (() => {
-      throw new Error("This node type doesn't define a deserialize function");
-    });
-    this.combine = config2.combine || null;
-  }
-  /**
-  This is meant to be used with
-  [`NodeSet.extend`](#common.NodeSet.extend) or
-  [`LRParser.configure`](#lr.ParserConfig.props) to compute
-  prop values for each node type in the set. Takes a [match
-  object](#common.NodeType^match) or function that returns undefined
-  if the node type doesn't get this prop, and the prop's value if
-  it does.
-  */
-  add(match) {
-    if (this.perNode)
-      throw new RangeError("Can't add per-node props to node types");
-    if (typeof match != "function")
-      match = NodeType7.match(match);
-    return (type) => {
-      let result = match(type);
-      return result === void 0 ? null : [this, result];
-    };
-  }
-};
-NodeProp7.closedBy = new NodeProp7({ deserialize: (str) => str.split(" ") });
-NodeProp7.openedBy = new NodeProp7({ deserialize: (str) => str.split(" ") });
-NodeProp7.group = new NodeProp7({ deserialize: (str) => str.split(" ") });
-NodeProp7.isolate = new NodeProp7({ deserialize: (value) => {
-  if (value && value != "rtl" && value != "ltr" && value != "auto")
-    throw new RangeError("Invalid value for isolate: " + value);
-  return value || "auto";
-} });
-NodeProp7.contextHash = new NodeProp7({ perNode: true });
-NodeProp7.lookAhead = new NodeProp7({ perNode: true });
-NodeProp7.mounted = new NodeProp7({ perNode: true });
-var MountedTree7 = class {
-  constructor(tree, overlay, parser5, bracketed = false) {
-    this.tree = tree;
-    this.overlay = overlay;
-    this.parser = parser5;
-    this.bracketed = bracketed;
-  }
-  /**
-  @internal
-  */
-  static get(tree) {
-    return tree && tree.props && tree.props[NodeProp7.mounted.id];
-  }
-};
-var noProps7 = /* @__PURE__ */ Object.create(null);
-var NodeType7 = class _NodeType {
-  /**
-  @internal
-  */
-  constructor(name11, props, id3, flags = 0) {
-    this.name = name11;
-    this.props = props;
-    this.id = id3;
-    this.flags = flags;
-  }
-  /**
-  Define a node type.
-  */
-  static define(spec) {
-    let props = spec.props && spec.props.length ? /* @__PURE__ */ Object.create(null) : noProps7;
-    let flags = (spec.top ? 1 : 0) | (spec.skipped ? 2 : 0) | (spec.error ? 4 : 0) | (spec.name == null ? 8 : 0);
-    let type = new _NodeType(spec.name || "", props, spec.id, flags);
-    if (spec.props)
-      for (let src of spec.props) {
-        if (!Array.isArray(src))
-          src = src(type);
-        if (src) {
-          if (src[0].perNode)
-            throw new RangeError("Can't store a per-node prop on a node type");
-          props[src[0].id] = src[1];
-        }
-      }
-    return type;
-  }
-  /**
-  Retrieves a node prop for this type. Will return `undefined` if
-  the prop isn't present on this node.
-  */
-  prop(prop) {
-    return this.props[prop.id];
-  }
-  /**
-  True when this is the top node of a grammar.
-  */
-  get isTop() {
-    return (this.flags & 1) > 0;
-  }
-  /**
-  True when this node is produced by a skip rule.
-  */
-  get isSkipped() {
-    return (this.flags & 2) > 0;
-  }
-  /**
-  Indicates whether this is an error node.
-  */
-  get isError() {
-    return (this.flags & 4) > 0;
-  }
-  /**
-  When true, this node type doesn't correspond to a user-declared
-  named node, for example because it is used to cache repetition.
-  */
-  get isAnonymous() {
-    return (this.flags & 8) > 0;
-  }
-  /**
-  Returns true when this node's name or one of its
-  [groups](#common.NodeProp^group) matches the given string.
-  */
-  is(name11) {
-    if (typeof name11 == "string") {
-      if (this.name == name11)
-        return true;
-      let group = this.prop(NodeProp7.group);
-      return group ? group.indexOf(name11) > -1 : false;
-    }
-    return this.id == name11;
-  }
-  /**
-  Create a function from node types to arbitrary values by
-  specifying an object whose property names are node or
-  [group](#common.NodeProp^group) names. Often useful with
-  [`NodeProp.add`](#common.NodeProp.add). You can put multiple
-  names, separated by spaces, in a single property name to map
-  multiple node names to a single value.
-  */
-  static match(map) {
-    let direct = /* @__PURE__ */ Object.create(null);
-    for (let prop in map)
-      for (let name11 of prop.split(" "))
-        direct[name11] = map[prop];
-    return (node) => {
-      for (let groups = node.prop(NodeProp7.group), i = -1; i < (groups ? groups.length : 0); i++) {
-        let found = direct[i < 0 ? node.name : groups[i]];
-        if (found)
-          return found;
-      }
-    };
-  }
-};
-NodeType7.none = new NodeType7(
-  "",
-  /* @__PURE__ */ Object.create(null),
-  0,
-  8
-  /* NodeFlag.Anonymous */
-);
-var NodeSet7 = class _NodeSet {
-  /**
-  Create a set with the given types. The `id` property of each
-  type should correspond to its position within the array.
-  */
-  constructor(types2) {
-    this.types = types2;
-    for (let i = 0; i < types2.length; i++)
-      if (types2[i].id != i)
-        throw new RangeError("Node type ids should correspond to array positions when creating a node set");
-  }
-  /**
-  Create a copy of this set with some node properties added. The
-  arguments to this method can be created with
-  [`NodeProp.add`](#common.NodeProp.add).
-  */
-  extend(...props) {
-    let newTypes = [];
-    for (let type of this.types) {
-      let newProps = null;
-      for (let source of props) {
-        let add2 = source(type);
-        if (add2) {
-          if (!newProps)
-            newProps = Object.assign({}, type.props);
-          let value = add2[1], prop = add2[0];
-          if (prop.combine && prop.id in newProps)
-            value = prop.combine(newProps[prop.id], value);
-          newProps[prop.id] = value;
-        }
-      }
-      newTypes.push(newProps ? new NodeType7(type.name, newProps, type.id, type.flags) : type);
-    }
-    return new _NodeSet(newTypes);
-  }
-};
-var CachedNode7 = /* @__PURE__ */ new WeakMap();
-var CachedInnerNode7 = /* @__PURE__ */ new WeakMap();
-var IterMode7;
-(function(IterMode11) {
-  IterMode11[IterMode11["ExcludeBuffers"] = 1] = "ExcludeBuffers";
-  IterMode11[IterMode11["IncludeAnonymous"] = 2] = "IncludeAnonymous";
-  IterMode11[IterMode11["IgnoreMounts"] = 4] = "IgnoreMounts";
-  IterMode11[IterMode11["IgnoreOverlays"] = 8] = "IgnoreOverlays";
-  IterMode11[IterMode11["EnterBracketed"] = 16] = "EnterBracketed";
-})(IterMode7 || (IterMode7 = {}));
-var Tree7 = class _Tree {
-  /**
-  Construct a new tree. See also [`Tree.build`](#common.Tree^build).
-  */
-  constructor(type, children, positions, length, props) {
-    this.type = type;
-    this.children = children;
-    this.positions = positions;
-    this.length = length;
-    this.props = null;
-    if (props && props.length) {
-      this.props = /* @__PURE__ */ Object.create(null);
-      for (let [prop, value] of props)
-        this.props[typeof prop == "number" ? prop : prop.id] = value;
-    }
-  }
-  /**
-  @internal
-  */
-  toString() {
-    let mounted = MountedTree7.get(this);
-    if (mounted && !mounted.overlay)
-      return mounted.tree.toString();
-    let children = "";
-    for (let ch of this.children) {
-      let str = ch.toString();
-      if (str) {
-        if (children)
-          children += ",";
-        children += str;
-      }
-    }
-    return !this.type.name ? children : (/\W/.test(this.type.name) && !this.type.isError ? JSON.stringify(this.type.name) : this.type.name) + (children.length ? "(" + children + ")" : "");
-  }
-  /**
-  Get a [tree cursor](#common.TreeCursor) positioned at the top of
-  the tree. Mode can be used to [control](#common.IterMode) which
-  nodes the cursor visits.
-  */
-  cursor(mode = 0) {
-    return new TreeCursor7(this.topNode, mode);
-  }
-  /**
-  Get a [tree cursor](#common.TreeCursor) pointing into this tree
-  at the given position and side (see
-  [`moveTo`](#common.TreeCursor.moveTo).
-  */
-  cursorAt(pos, side = 0, mode = 0) {
-    let scope = CachedNode7.get(this) || this.topNode;
-    let cursor2 = new TreeCursor7(scope);
-    cursor2.moveTo(pos, side);
-    CachedNode7.set(this, cursor2._tree);
-    return cursor2;
-  }
-  /**
-  Get a [syntax node](#common.SyntaxNode) object for the top of the
-  tree.
-  */
-  get topNode() {
-    return new TreeNode7(this, 0, 0, null);
-  }
-  /**
-  Get the [syntax node](#common.SyntaxNode) at the given position.
-  If `side` is -1, this will move into nodes that end at the
-  position. If 1, it'll move into nodes that start at the
-  position. With 0, it'll only enter nodes that cover the position
-  from both sides.
-  
-  Note that this will not enter
-  [overlays](#common.MountedTree.overlay), and you often want
-  [`resolveInner`](#common.Tree.resolveInner) instead.
-  */
-  resolve(pos, side = 0) {
-    let node = resolveNode7(CachedNode7.get(this) || this.topNode, pos, side, false);
-    CachedNode7.set(this, node);
-    return node;
-  }
-  /**
-  Like [`resolve`](#common.Tree.resolve), but will enter
-  [overlaid](#common.MountedTree.overlay) nodes, producing a syntax node
-  pointing into the innermost overlaid tree at the given position
-  (with parent links going through all parent structure, including
-  the host trees).
-  */
-  resolveInner(pos, side = 0) {
-    let node = resolveNode7(CachedInnerNode7.get(this) || this.topNode, pos, side, true);
-    CachedInnerNode7.set(this, node);
-    return node;
-  }
-  /**
-  In some situations, it can be useful to iterate through all
-  nodes around a position, including those in overlays that don't
-  directly cover the position. This method gives you an iterator
-  that will produce all nodes, from small to big, around the given
-  position.
-  */
-  resolveStack(pos, side = 0) {
-    return stackIterator7(this, pos, side);
-  }
-  /**
-  Iterate over the tree and its children, calling `enter` for any
-  node that touches the `from`/`to` region (if given) before
-  running over such a node's children, and `leave` (if given) when
-  leaving the node. When `enter` returns `false`, that node will
-  not have its children iterated over (or `leave` called).
-  */
-  iterate(spec) {
-    let { enter, leave, from = 0, to = this.length } = spec;
-    let mode = spec.mode || 0, anon = (mode & IterMode7.IncludeAnonymous) > 0;
-    for (let c = this.cursor(mode | IterMode7.IncludeAnonymous); ; ) {
-      let entered = false;
-      if (c.from <= to && c.to >= from && (!anon && c.type.isAnonymous || enter(c) !== false)) {
-        if (c.firstChild())
-          continue;
-        entered = true;
-      }
-      for (; ; ) {
-        if (entered && leave && (anon || !c.type.isAnonymous))
-          leave(c);
-        if (c.nextSibling())
-          break;
-        if (!c.parent())
-          return;
-        entered = true;
-      }
-    }
-  }
-  /**
-  Get the value of the given [node prop](#common.NodeProp) for this
-  node. Works with both per-node and per-type props.
-  */
-  prop(prop) {
-    return !prop.perNode ? this.type.prop(prop) : this.props ? this.props[prop.id] : void 0;
-  }
-  /**
-  Returns the node's [per-node props](#common.NodeProp.perNode) in a
-  format that can be passed to the [`Tree`](#common.Tree)
-  constructor.
-  */
-  get propValues() {
-    let result = [];
-    if (this.props)
-      for (let id3 in this.props)
-        result.push([+id3, this.props[id3]]);
-    return result;
-  }
-  /**
-  Balance the direct children of this tree, producing a copy of
-  which may have children grouped into subtrees with type
-  [`NodeType.none`](#common.NodeType^none).
-  */
-  balance(config2 = {}) {
-    return this.children.length <= 8 ? this : balanceRange7(NodeType7.none, this.children, this.positions, 0, this.children.length, 0, this.length, (children, positions, length) => new _Tree(this.type, children, positions, length, this.propValues), config2.makeTree || ((children, positions, length) => new _Tree(NodeType7.none, children, positions, length)));
-  }
-  /**
-  Build a tree from a postfix-ordered buffer of node information,
-  or a cursor over such a buffer.
-  */
-  static build(data2) {
-    return buildTree7(data2);
-  }
-};
-Tree7.empty = new Tree7(NodeType7.none, [], [], 0);
-var FlatBufferCursor7 = class _FlatBufferCursor {
-  constructor(buffer, index) {
-    this.buffer = buffer;
-    this.index = index;
-  }
-  get id() {
-    return this.buffer[this.index - 4];
-  }
-  get start() {
-    return this.buffer[this.index - 3];
-  }
-  get end() {
-    return this.buffer[this.index - 2];
-  }
-  get size() {
-    return this.buffer[this.index - 1];
-  }
-  get pos() {
-    return this.index;
-  }
-  next() {
-    this.index -= 4;
-  }
-  fork() {
-    return new _FlatBufferCursor(this.buffer, this.index);
-  }
-};
-var TreeBuffer7 = class _TreeBuffer {
-  /**
-  Create a tree buffer.
-  */
-  constructor(buffer, length, set) {
-    this.buffer = buffer;
-    this.length = length;
-    this.set = set;
-  }
-  /**
-  @internal
-  */
-  get type() {
-    return NodeType7.none;
-  }
-  /**
-  @internal
-  */
-  toString() {
-    let result = [];
-    for (let index = 0; index < this.buffer.length; ) {
-      result.push(this.childString(index));
-      index = this.buffer[index + 3];
-    }
-    return result.join(",");
-  }
-  /**
-  @internal
-  */
-  childString(index) {
-    let id3 = this.buffer[index], endIndex = this.buffer[index + 3];
-    let type = this.set.types[id3], result = type.name;
-    if (/\W/.test(result) && !type.isError)
-      result = JSON.stringify(result);
-    index += 4;
-    if (endIndex == index)
-      return result;
-    let children = [];
-    while (index < endIndex) {
-      children.push(this.childString(index));
-      index = this.buffer[index + 3];
-    }
-    return result + "(" + children.join(",") + ")";
-  }
-  /**
-  @internal
-  */
-  findChild(startIndex, endIndex, dir, pos, side) {
-    let { buffer } = this, pick = -1;
-    for (let i = startIndex; i != endIndex; i = buffer[i + 3]) {
-      if (checkSide7(side, pos, buffer[i + 1], buffer[i + 2])) {
-        pick = i;
-        if (dir > 0)
-          break;
-      }
-    }
-    return pick;
-  }
-  /**
-  @internal
-  */
-  slice(startI, endI, from) {
-    let b = this.buffer;
-    let copy = new Uint16Array(endI - startI), len = 0;
-    for (let i = startI, j = 0; i < endI; ) {
-      copy[j++] = b[i++];
-      copy[j++] = b[i++] - from;
-      let to = copy[j++] = b[i++] - from;
-      copy[j++] = b[i++] - startI;
-      len = Math.max(len, to);
-    }
-    return new _TreeBuffer(copy, len, this.set);
-  }
-};
-function checkSide7(side, pos, from, to) {
-  switch (side) {
-    case -2:
-      return from < pos;
-    case -1:
-      return to >= pos && from < pos;
-    case 0:
-      return from < pos && to > pos;
-    case 1:
-      return from <= pos && to > pos;
-    case 2:
-      return to > pos;
-    case 4:
-      return true;
-  }
-}
-function resolveNode7(node, pos, side, overlays) {
-  var _a7;
-  while (node.from == node.to || (side < 1 ? node.from >= pos : node.from > pos) || (side > -1 ? node.to <= pos : node.to < pos)) {
-    let parent = !overlays && node instanceof TreeNode7 && node.index < 0 ? null : node.parent;
-    if (!parent)
-      return node;
-    node = parent;
-  }
-  let mode = overlays ? 0 : IterMode7.IgnoreOverlays;
-  if (overlays)
-    for (let scan = node, parent = scan.parent; parent; scan = parent, parent = scan.parent) {
-      if (scan instanceof TreeNode7 && scan.index < 0 && ((_a7 = parent.enter(pos, side, mode)) === null || _a7 === void 0 ? void 0 : _a7.from) != scan.from)
-        node = parent;
-    }
-  for (; ; ) {
-    let inner = node.enter(pos, side, mode);
-    if (!inner)
-      return node;
-    node = inner;
-  }
-}
-var BaseNode7 = class {
-  cursor(mode = 0) {
-    return new TreeCursor7(this, mode);
-  }
-  getChild(type, before = null, after = null) {
-    let r = getChildren7(this, type, before, after);
-    return r.length ? r[0] : null;
-  }
-  getChildren(type, before = null, after = null) {
-    return getChildren7(this, type, before, after);
-  }
-  resolve(pos, side = 0) {
-    return resolveNode7(this, pos, side, false);
-  }
-  resolveInner(pos, side = 0) {
-    return resolveNode7(this, pos, side, true);
-  }
-  matchContext(context) {
-    return matchNodeContext7(this.parent, context);
-  }
-  enterUnfinishedNodesBefore(pos) {
-    let scan = this.childBefore(pos), node = this;
-    while (scan) {
-      let last = scan.lastChild;
-      if (!last || last.to != scan.to)
-        break;
-      if (last.type.isError && last.from == last.to) {
-        node = scan;
-        scan = last.prevSibling;
-      } else {
-        scan = last;
-      }
-    }
-    return node;
-  }
-  get node() {
-    return this;
-  }
-  get next() {
-    return this.parent;
-  }
-};
-var TreeNode7 = class _TreeNode extends BaseNode7 {
-  constructor(_tree, from, index, _parent) {
-    super();
-    this._tree = _tree;
-    this.from = from;
-    this.index = index;
-    this._parent = _parent;
-  }
-  get type() {
-    return this._tree.type;
-  }
-  get name() {
-    return this._tree.type.name;
-  }
-  get to() {
-    return this.from + this._tree.length;
-  }
-  nextChild(i, dir, pos, side, mode = 0) {
-    for (let parent = this; ; ) {
-      for (let { children, positions } = parent._tree, e = dir > 0 ? children.length : -1; i != e; i += dir) {
-        let next = children[i], start = positions[i] + parent.from, mounted;
-        if (!(mode & IterMode7.EnterBracketed && next instanceof Tree7 && (mounted = MountedTree7.get(next)) && !mounted.overlay && mounted.bracketed && pos >= start && pos <= start + next.length) && !checkSide7(side, pos, start, start + next.length))
-          continue;
-        if (next instanceof TreeBuffer7) {
-          if (mode & IterMode7.ExcludeBuffers)
-            continue;
-          let index = next.findChild(0, next.buffer.length, dir, pos - start, side);
-          if (index > -1)
-            return new BufferNode7(new BufferContext7(parent, next, i, start), null, index);
-        } else if (mode & IterMode7.IncludeAnonymous || (!next.type.isAnonymous || hasChild7(next))) {
-          let mounted2;
-          if (!(mode & IterMode7.IgnoreMounts) && (mounted2 = MountedTree7.get(next)) && !mounted2.overlay)
-            return new _TreeNode(mounted2.tree, start, i, parent);
-          let inner = new _TreeNode(next, start, i, parent);
-          return mode & IterMode7.IncludeAnonymous || !inner.type.isAnonymous ? inner : inner.nextChild(dir < 0 ? next.children.length - 1 : 0, dir, pos, side, mode);
-        }
-      }
-      if (mode & IterMode7.IncludeAnonymous || !parent.type.isAnonymous)
-        return null;
-      if (parent.index >= 0)
-        i = parent.index + dir;
-      else
-        i = dir < 0 ? -1 : parent._parent._tree.children.length;
-      parent = parent._parent;
-      if (!parent)
-        return null;
-    }
-  }
-  get firstChild() {
-    return this.nextChild(
-      0,
-      1,
-      0,
-      4
-      /* Side.DontCare */
-    );
-  }
-  get lastChild() {
-    return this.nextChild(
-      this._tree.children.length - 1,
-      -1,
-      0,
-      4
-      /* Side.DontCare */
-    );
-  }
-  childAfter(pos) {
-    return this.nextChild(
-      0,
-      1,
-      pos,
-      2
-      /* Side.After */
-    );
-  }
-  childBefore(pos) {
-    return this.nextChild(
-      this._tree.children.length - 1,
-      -1,
-      pos,
-      -2
-      /* Side.Before */
-    );
-  }
-  prop(prop) {
-    return this._tree.prop(prop);
-  }
-  enter(pos, side, mode = 0) {
-    let mounted;
-    if (!(mode & IterMode7.IgnoreOverlays) && (mounted = MountedTree7.get(this._tree)) && mounted.overlay) {
-      let rPos = pos - this.from, enterBracketed = mode & IterMode7.EnterBracketed && mounted.bracketed;
-      for (let { from, to } of mounted.overlay) {
-        if ((side > 0 || enterBracketed ? from <= rPos : from < rPos) && (side < 0 || enterBracketed ? to >= rPos : to > rPos))
-          return new _TreeNode(mounted.tree, mounted.overlay[0].from + this.from, -1, this);
-      }
-    }
-    return this.nextChild(0, 1, pos, side, mode);
-  }
-  nextSignificantParent() {
-    let val = this;
-    while (val.type.isAnonymous && val._parent)
-      val = val._parent;
-    return val;
-  }
-  get parent() {
-    return this._parent ? this._parent.nextSignificantParent() : null;
-  }
-  get nextSibling() {
-    return this._parent && this.index >= 0 ? this._parent.nextChild(
-      this.index + 1,
-      1,
-      0,
-      4
-      /* Side.DontCare */
-    ) : null;
-  }
-  get prevSibling() {
-    return this._parent && this.index >= 0 ? this._parent.nextChild(
-      this.index - 1,
-      -1,
-      0,
-      4
-      /* Side.DontCare */
-    ) : null;
-  }
-  get tree() {
-    return this._tree;
-  }
-  toTree() {
-    return this._tree;
-  }
-  /**
-  @internal
-  */
-  toString() {
-    return this._tree.toString();
-  }
-};
-function getChildren7(node, type, before, after) {
-  let cur2 = node.cursor(), result = [];
-  if (!cur2.firstChild())
-    return result;
-  if (before != null)
-    for (let found = false; !found; ) {
-      found = cur2.type.is(before);
-      if (!cur2.nextSibling())
-        return result;
-    }
-  for (; ; ) {
-    if (after != null && cur2.type.is(after))
-      return result;
-    if (cur2.type.is(type))
-      result.push(cur2.node);
-    if (!cur2.nextSibling())
-      return after == null ? result : [];
-  }
-}
-function matchNodeContext7(node, context, i = context.length - 1) {
-  for (let p = node; i >= 0; p = p.parent) {
-    if (!p)
-      return false;
-    if (!p.type.isAnonymous) {
-      if (context[i] && context[i] != p.name)
-        return false;
-      i--;
-    }
-  }
-  return true;
-}
-var BufferContext7 = class {
-  constructor(parent, buffer, index, start) {
-    this.parent = parent;
-    this.buffer = buffer;
-    this.index = index;
-    this.start = start;
-  }
-};
-var BufferNode7 = class _BufferNode extends BaseNode7 {
-  get name() {
-    return this.type.name;
-  }
-  get from() {
-    return this.context.start + this.context.buffer.buffer[this.index + 1];
-  }
-  get to() {
-    return this.context.start + this.context.buffer.buffer[this.index + 2];
-  }
-  constructor(context, _parent, index) {
-    super();
-    this.context = context;
-    this._parent = _parent;
-    this.index = index;
-    this.type = context.buffer.set.types[context.buffer.buffer[index]];
-  }
-  child(dir, pos, side) {
-    let { buffer } = this.context;
-    let index = buffer.findChild(this.index + 4, buffer.buffer[this.index + 3], dir, pos - this.context.start, side);
-    return index < 0 ? null : new _BufferNode(this.context, this, index);
-  }
-  get firstChild() {
-    return this.child(
-      1,
-      0,
-      4
-      /* Side.DontCare */
-    );
-  }
-  get lastChild() {
-    return this.child(
-      -1,
-      0,
-      4
-      /* Side.DontCare */
-    );
-  }
-  childAfter(pos) {
-    return this.child(
-      1,
-      pos,
-      2
-      /* Side.After */
-    );
-  }
-  childBefore(pos) {
-    return this.child(
-      -1,
-      pos,
-      -2
-      /* Side.Before */
-    );
-  }
-  prop(prop) {
-    return this.type.prop(prop);
-  }
-  enter(pos, side, mode = 0) {
-    if (mode & IterMode7.ExcludeBuffers)
-      return null;
-    let { buffer } = this.context;
-    let index = buffer.findChild(this.index + 4, buffer.buffer[this.index + 3], side > 0 ? 1 : -1, pos - this.context.start, side);
-    return index < 0 ? null : new _BufferNode(this.context, this, index);
-  }
-  get parent() {
-    return this._parent || this.context.parent.nextSignificantParent();
-  }
-  externalSibling(dir) {
-    return this._parent ? null : this.context.parent.nextChild(
-      this.context.index + dir,
-      dir,
-      0,
-      4
-      /* Side.DontCare */
-    );
-  }
-  get nextSibling() {
-    let { buffer } = this.context;
-    let after = buffer.buffer[this.index + 3];
-    if (after < (this._parent ? buffer.buffer[this._parent.index + 3] : buffer.buffer.length))
-      return new _BufferNode(this.context, this._parent, after);
-    return this.externalSibling(1);
-  }
-  get prevSibling() {
-    let { buffer } = this.context;
-    let parentStart = this._parent ? this._parent.index + 4 : 0;
-    if (this.index == parentStart)
-      return this.externalSibling(-1);
-    return new _BufferNode(this.context, this._parent, buffer.findChild(
-      parentStart,
-      this.index,
-      -1,
-      0,
-      4
-      /* Side.DontCare */
-    ));
-  }
-  get tree() {
-    return null;
-  }
-  toTree() {
-    let children = [], positions = [];
-    let { buffer } = this.context;
-    let startI = this.index + 4, endI = buffer.buffer[this.index + 3];
-    if (endI > startI) {
-      let from = buffer.buffer[this.index + 1];
-      children.push(buffer.slice(startI, endI, from));
-      positions.push(0);
-    }
-    return new Tree7(this.type, children, positions, this.to - this.from);
-  }
-  /**
-  @internal
-  */
-  toString() {
-    return this.context.buffer.childString(this.index);
-  }
-};
-function iterStack7(heads) {
-  if (!heads.length)
-    return null;
-  let pick = 0, picked = heads[0];
-  for (let i = 1; i < heads.length; i++) {
-    let node = heads[i];
-    if (node.from > picked.from || node.to < picked.to) {
-      picked = node;
-      pick = i;
-    }
-  }
-  let next = picked instanceof TreeNode7 && picked.index < 0 ? null : picked.parent;
-  let newHeads = heads.slice();
-  if (next)
-    newHeads[pick] = next;
-  else
-    newHeads.splice(pick, 1);
-  return new StackIterator7(newHeads, picked);
-}
-var StackIterator7 = class {
-  constructor(heads, node) {
-    this.heads = heads;
-    this.node = node;
-  }
-  get next() {
-    return iterStack7(this.heads);
-  }
-};
-function stackIterator7(tree, pos, side) {
-  let inner = tree.resolveInner(pos, side), layers = null;
-  for (let scan = inner instanceof TreeNode7 ? inner : inner.context.parent; scan; scan = scan.parent) {
-    if (scan.index < 0) {
-      let parent = scan.parent;
-      (layers || (layers = [inner])).push(parent.resolve(pos, side));
-      scan = parent;
-    } else {
-      let mount = MountedTree7.get(scan.tree);
-      if (mount && mount.overlay && mount.overlay[0].from <= pos && mount.overlay[mount.overlay.length - 1].to >= pos) {
-        let root = new TreeNode7(mount.tree, mount.overlay[0].from + scan.from, -1, scan);
-        (layers || (layers = [inner])).push(resolveNode7(root, pos, side, false));
-      }
-    }
-  }
-  return layers ? iterStack7(layers) : inner;
-}
-var TreeCursor7 = class {
-  /**
-  Shorthand for `.type.name`.
-  */
-  get name() {
-    return this.type.name;
-  }
-  /**
-  @internal
-  */
-  constructor(node, mode = 0) {
-    this.buffer = null;
-    this.stack = [];
-    this.index = 0;
-    this.bufferNode = null;
-    this.mode = mode & ~IterMode7.EnterBracketed;
-    if (node instanceof TreeNode7) {
-      this.yieldNode(node);
-    } else {
-      this._tree = node.context.parent;
-      this.buffer = node.context;
-      for (let n = node._parent; n; n = n._parent)
-        this.stack.unshift(n.index);
-      this.bufferNode = node;
-      this.yieldBuf(node.index);
-    }
-  }
-  yieldNode(node) {
-    if (!node)
-      return false;
-    this._tree = node;
-    this.type = node.type;
-    this.from = node.from;
-    this.to = node.to;
-    return true;
-  }
-  yieldBuf(index, type) {
-    this.index = index;
-    let { start, buffer } = this.buffer;
-    this.type = type || buffer.set.types[buffer.buffer[index]];
-    this.from = start + buffer.buffer[index + 1];
-    this.to = start + buffer.buffer[index + 2];
-    return true;
-  }
-  /**
-  @internal
-  */
-  yield(node) {
-    if (!node)
-      return false;
-    if (node instanceof TreeNode7) {
-      this.buffer = null;
-      return this.yieldNode(node);
-    }
-    this.buffer = node.context;
-    return this.yieldBuf(node.index, node.type);
-  }
-  /**
-  @internal
-  */
-  toString() {
-    return this.buffer ? this.buffer.buffer.childString(this.index) : this._tree.toString();
-  }
-  /**
-  @internal
-  */
-  enterChild(dir, pos, side) {
-    if (!this.buffer)
-      return this.yield(this._tree.nextChild(dir < 0 ? this._tree._tree.children.length - 1 : 0, dir, pos, side, this.mode));
-    let { buffer } = this.buffer;
-    let index = buffer.findChild(this.index + 4, buffer.buffer[this.index + 3], dir, pos - this.buffer.start, side);
-    if (index < 0)
-      return false;
-    this.stack.push(this.index);
-    return this.yieldBuf(index);
-  }
-  /**
-  Move the cursor to this node's first child. When this returns
-  false, the node has no child, and the cursor has not been moved.
-  */
-  firstChild() {
-    return this.enterChild(
-      1,
-      0,
-      4
-      /* Side.DontCare */
-    );
-  }
-  /**
-  Move the cursor to this node's last child.
-  */
-  lastChild() {
-    return this.enterChild(
-      -1,
-      0,
-      4
-      /* Side.DontCare */
-    );
-  }
-  /**
-  Move the cursor to the first child that ends after `pos`.
-  */
-  childAfter(pos) {
-    return this.enterChild(
-      1,
-      pos,
-      2
-      /* Side.After */
-    );
-  }
-  /**
-  Move to the last child that starts before `pos`.
-  */
-  childBefore(pos) {
-    return this.enterChild(
-      -1,
-      pos,
-      -2
-      /* Side.Before */
-    );
-  }
-  /**
-  Move the cursor to the child around `pos`. If side is -1 the
-  child may end at that position, when 1 it may start there. This
-  will also enter [overlaid](#common.MountedTree.overlay)
-  [mounted](#common.NodeProp^mounted) trees unless `overlays` is
-  set to false.
-  */
-  enter(pos, side, mode = this.mode) {
-    if (!this.buffer)
-      return this.yield(this._tree.enter(pos, side, mode));
-    return mode & IterMode7.ExcludeBuffers ? false : this.enterChild(1, pos, side);
-  }
-  /**
-  Move to the node's parent node, if this isn't the top node.
-  */
-  parent() {
-    if (!this.buffer)
-      return this.yieldNode(this.mode & IterMode7.IncludeAnonymous ? this._tree._parent : this._tree.parent);
-    if (this.stack.length)
-      return this.yieldBuf(this.stack.pop());
-    let parent = this.mode & IterMode7.IncludeAnonymous ? this.buffer.parent : this.buffer.parent.nextSignificantParent();
-    this.buffer = null;
-    return this.yieldNode(parent);
-  }
-  /**
-  @internal
-  */
-  sibling(dir) {
-    if (!this.buffer)
-      return !this._tree._parent ? false : this.yield(this._tree.index < 0 ? null : this._tree._parent.nextChild(this._tree.index + dir, dir, 0, 4, this.mode));
-    let { buffer } = this.buffer, d = this.stack.length - 1;
-    if (dir < 0) {
-      let parentStart = d < 0 ? 0 : this.stack[d] + 4;
-      if (this.index != parentStart)
-        return this.yieldBuf(buffer.findChild(
-          parentStart,
-          this.index,
-          -1,
-          0,
-          4
-          /* Side.DontCare */
-        ));
-    } else {
-      let after = buffer.buffer[this.index + 3];
-      if (after < (d < 0 ? buffer.buffer.length : buffer.buffer[this.stack[d] + 3]))
-        return this.yieldBuf(after);
-    }
-    return d < 0 ? this.yield(this.buffer.parent.nextChild(this.buffer.index + dir, dir, 0, 4, this.mode)) : false;
-  }
-  /**
-  Move to this node's next sibling, if any.
-  */
-  nextSibling() {
-    return this.sibling(1);
-  }
-  /**
-  Move to this node's previous sibling, if any.
-  */
-  prevSibling() {
-    return this.sibling(-1);
-  }
-  atLastNode(dir) {
-    let index, parent, { buffer } = this;
-    if (buffer) {
-      if (dir > 0) {
-        if (this.index < buffer.buffer.buffer.length)
-          return false;
-      } else {
-        for (let i = 0; i < this.index; i++)
-          if (buffer.buffer.buffer[i + 3] < this.index)
-            return false;
-      }
-      ({ index, parent } = buffer);
-    } else {
-      ({ index, _parent: parent } = this._tree);
-    }
-    for (; parent; { index, _parent: parent } = parent) {
-      if (index > -1)
-        for (let i = index + dir, e = dir < 0 ? -1 : parent._tree.children.length; i != e; i += dir) {
-          let child = parent._tree.children[i];
-          if (this.mode & IterMode7.IncludeAnonymous || child instanceof TreeBuffer7 || !child.type.isAnonymous || hasChild7(child))
-            return false;
-        }
-    }
-    return true;
-  }
-  move(dir, enter) {
-    if (enter && this.enterChild(
-      dir,
-      0,
-      4
-      /* Side.DontCare */
-    ))
-      return true;
-    for (; ; ) {
-      if (this.sibling(dir))
-        return true;
-      if (this.atLastNode(dir) || !this.parent())
-        return false;
-    }
-  }
-  /**
-  Move to the next node in a
-  [pre-order](https://en.wikipedia.org/wiki/Tree_traversal#Pre-order,_NLR)
-  traversal, going from a node to its first child or, if the
-  current node is empty or `enter` is false, its next sibling or
-  the next sibling of the first parent node that has one.
-  */
-  next(enter = true) {
-    return this.move(1, enter);
-  }
-  /**
-  Move to the next node in a last-to-first pre-order traversal. A
-  node is followed by its last child or, if it has none, its
-  previous sibling or the previous sibling of the first parent
-  node that has one.
-  */
-  prev(enter = true) {
-    return this.move(-1, enter);
-  }
-  /**
-  Move the cursor to the innermost node that covers `pos`. If
-  `side` is -1, it will enter nodes that end at `pos`. If it is 1,
-  it will enter nodes that start at `pos`.
-  */
-  moveTo(pos, side = 0) {
-    while (this.from == this.to || (side < 1 ? this.from >= pos : this.from > pos) || (side > -1 ? this.to <= pos : this.to < pos))
-      if (!this.parent())
-        break;
-    while (this.enterChild(1, pos, side)) {
-    }
-    return this;
-  }
-  /**
-  Get a [syntax node](#common.SyntaxNode) at the cursor's current
-  position.
-  */
-  get node() {
-    if (!this.buffer)
-      return this._tree;
-    let cache2 = this.bufferNode, result = null, depth = 0;
-    if (cache2 && cache2.context == this.buffer) {
-      scan: for (let index = this.index, d = this.stack.length; d >= 0; ) {
-        for (let c = cache2; c; c = c._parent)
-          if (c.index == index) {
-            if (index == this.index)
-              return c;
-            result = c;
-            depth = d + 1;
-            break scan;
-          }
-        index = this.stack[--d];
-      }
-    }
-    for (let i = depth; i < this.stack.length; i++)
-      result = new BufferNode7(this.buffer, result, this.stack[i]);
-    return this.bufferNode = new BufferNode7(this.buffer, result, this.index);
-  }
-  /**
-  Get the [tree](#common.Tree) that represents the current node, if
-  any. Will return null when the node is in a [tree
-  buffer](#common.TreeBuffer).
-  */
-  get tree() {
-    return this.buffer ? null : this._tree._tree;
-  }
-  /**
-  Iterate over the current node and all its descendants, calling
-  `enter` when entering a node and `leave`, if given, when leaving
-  one. When `enter` returns `false`, any children of that node are
-  skipped, and `leave` isn't called for it.
-  */
-  iterate(enter, leave) {
-    for (let depth = 0; ; ) {
-      let mustLeave = false;
-      if (this.type.isAnonymous || enter(this) !== false) {
-        if (this.firstChild()) {
-          depth++;
-          continue;
-        }
-        if (!this.type.isAnonymous)
-          mustLeave = true;
-      }
-      for (; ; ) {
-        if (mustLeave && leave)
-          leave(this);
-        mustLeave = this.type.isAnonymous;
-        if (!depth)
-          return;
-        if (this.nextSibling())
-          break;
-        this.parent();
-        depth--;
-        mustLeave = true;
-      }
-    }
-  }
-  /**
-  Test whether the current node matches a given context—a sequence
-  of direct parent node names. Empty strings in the context array
-  are treated as wildcards.
-  */
-  matchContext(context) {
-    if (!this.buffer)
-      return matchNodeContext7(this.node.parent, context);
-    let { buffer } = this.buffer, { types: types2 } = buffer.set;
-    for (let i = context.length - 1, d = this.stack.length - 1; i >= 0; d--) {
-      if (d < 0)
-        return matchNodeContext7(this._tree, context, i);
-      let type = types2[buffer.buffer[this.stack[d]]];
-      if (!type.isAnonymous) {
-        if (context[i] && context[i] != type.name)
-          return false;
-        i--;
-      }
-    }
-    return true;
-  }
-};
-function hasChild7(tree) {
-  return tree.children.some((ch) => ch instanceof TreeBuffer7 || !ch.type.isAnonymous || hasChild7(ch));
-}
-function buildTree7(data2) {
-  var _a7;
-  let { buffer, nodeSet, maxBufferLength = DefaultBufferLength7, reused = [], minRepeatType = nodeSet.types.length } = data2;
-  let cursor2 = Array.isArray(buffer) ? new FlatBufferCursor7(buffer, buffer.length) : buffer;
-  let types2 = nodeSet.types;
-  let contextHash = 0, lookAhead = 0;
-  function takeNode(parentStart, minPos, children2, positions2, inRepeat, depth) {
-    let { id: id3, start, end, size } = cursor2;
-    let lookAheadAtStart = lookAhead, contextAtStart = contextHash;
-    if (size < 0) {
-      cursor2.next();
-      if (size == -1) {
-        let node2 = reused[id3];
-        children2.push(node2);
-        positions2.push(start - parentStart);
-        return;
-      } else if (size == -3) {
-        contextHash = id3;
-        return;
-      } else if (size == -4) {
-        lookAhead = id3;
-        return;
-      } else {
-        throw new RangeError(`Unrecognized record size: ${size}`);
-      }
-    }
-    let type = types2[id3], node, buffer2;
-    let startPos = start - parentStart;
-    if (end - start <= maxBufferLength && (buffer2 = findBufferSize(cursor2.pos - minPos, inRepeat))) {
-      let data3 = new Uint16Array(buffer2.size - buffer2.skip);
-      let endPos = cursor2.pos - buffer2.size, index = data3.length;
-      while (cursor2.pos > endPos)
-        index = copyToBuffer(buffer2.start, data3, index);
-      node = new TreeBuffer7(data3, end - buffer2.start, nodeSet);
-      startPos = buffer2.start - parentStart;
-    } else {
-      let endPos = cursor2.pos - size;
-      cursor2.next();
-      let localChildren = [], localPositions = [];
-      let localInRepeat = id3 >= minRepeatType ? id3 : -1;
-      let lastGroup = 0, lastEnd = end;
-      while (cursor2.pos > endPos) {
-        if (localInRepeat >= 0 && cursor2.id == localInRepeat && cursor2.size >= 0) {
-          if (cursor2.end <= lastEnd - maxBufferLength) {
-            makeRepeatLeaf(localChildren, localPositions, start, lastGroup, cursor2.end, lastEnd, localInRepeat, lookAheadAtStart, contextAtStart);
-            lastGroup = localChildren.length;
-            lastEnd = cursor2.end;
-          }
-          cursor2.next();
-        } else if (depth > 2500) {
-          takeFlatNode(start, endPos, localChildren, localPositions);
-        } else {
-          takeNode(start, endPos, localChildren, localPositions, localInRepeat, depth + 1);
-        }
-      }
-      if (localInRepeat >= 0 && lastGroup > 0 && lastGroup < localChildren.length)
-        makeRepeatLeaf(localChildren, localPositions, start, lastGroup, start, lastEnd, localInRepeat, lookAheadAtStart, contextAtStart);
-      localChildren.reverse();
-      localPositions.reverse();
-      if (localInRepeat > -1 && lastGroup > 0) {
-        let make = makeBalanced(type, contextAtStart);
-        node = balanceRange7(type, localChildren, localPositions, 0, localChildren.length, 0, end - start, make, make);
-      } else {
-        node = makeTree(type, localChildren, localPositions, end - start, lookAheadAtStart - end, contextAtStart);
-      }
-    }
-    children2.push(node);
-    positions2.push(startPos);
-  }
-  function takeFlatNode(parentStart, minPos, children2, positions2) {
-    let nodes = [];
-    let nodeCount = 0, stopAt = -1;
-    while (cursor2.pos > minPos) {
-      let { id: id3, start, end, size } = cursor2;
-      if (size > 4) {
-        cursor2.next();
-      } else if (stopAt > -1 && start < stopAt) {
-        break;
-      } else {
-        if (stopAt < 0)
-          stopAt = end - maxBufferLength;
-        nodes.push(id3, start, end);
-        nodeCount++;
-        cursor2.next();
-      }
-    }
-    if (nodeCount) {
-      let buffer2 = new Uint16Array(nodeCount * 4);
-      let start = nodes[nodes.length - 2];
-      for (let i = nodes.length - 3, j = 0; i >= 0; i -= 3) {
-        buffer2[j++] = nodes[i];
-        buffer2[j++] = nodes[i + 1] - start;
-        buffer2[j++] = nodes[i + 2] - start;
-        buffer2[j++] = j;
-      }
-      children2.push(new TreeBuffer7(buffer2, nodes[2] - start, nodeSet));
-      positions2.push(start - parentStart);
-    }
-  }
-  function makeBalanced(type, contextHash2) {
-    return (children2, positions2, length2) => {
-      let lookAhead2 = 0, lastI = children2.length - 1, last, lookAheadProp;
-      if (lastI >= 0 && (last = children2[lastI]) instanceof Tree7) {
-        if (!lastI && last.type == type && last.length == length2)
-          return last;
-        if (lookAheadProp = last.prop(NodeProp7.lookAhead))
-          lookAhead2 = positions2[lastI] + last.length + lookAheadProp;
-      }
-      return makeTree(type, children2, positions2, length2, lookAhead2, contextHash2);
-    };
-  }
-  function makeRepeatLeaf(children2, positions2, base2, i, from, to, type, lookAhead2, contextHash2) {
-    let localChildren = [], localPositions = [];
-    while (children2.length > i) {
-      localChildren.push(children2.pop());
-      localPositions.push(positions2.pop() + base2 - from);
-    }
-    children2.push(makeTree(nodeSet.types[type], localChildren, localPositions, to - from, lookAhead2 - to, contextHash2));
-    positions2.push(from - base2);
-  }
-  function makeTree(type, children2, positions2, length2, lookAhead2, contextHash2, props) {
-    if (contextHash2) {
-      let pair4 = [NodeProp7.contextHash, contextHash2];
-      props = props ? [pair4].concat(props) : [pair4];
-    }
-    if (lookAhead2 > 25) {
-      let pair4 = [NodeProp7.lookAhead, lookAhead2];
-      props = props ? [pair4].concat(props) : [pair4];
-    }
-    return new Tree7(type, children2, positions2, length2, props);
-  }
-  function findBufferSize(maxSize, inRepeat) {
-    let fork = cursor2.fork();
-    let size = 0, start = 0, skip = 0, minStart = fork.end - maxBufferLength;
-    let result = { size: 0, start: 0, skip: 0 };
-    scan: for (let minPos = fork.pos - maxSize; fork.pos > minPos; ) {
-      let nodeSize11 = fork.size;
-      if (fork.id == inRepeat && nodeSize11 >= 0) {
-        result.size = size;
-        result.start = start;
-        result.skip = skip;
-        skip += 4;
-        size += 4;
-        fork.next();
-        continue;
-      }
-      let startPos = fork.pos - nodeSize11;
-      if (nodeSize11 < 0 || startPos < minPos || fork.start < minStart)
-        break;
-      let localSkipped = fork.id >= minRepeatType ? 4 : 0;
-      let nodeStart2 = fork.start;
-      fork.next();
-      while (fork.pos > startPos) {
-        if (fork.size < 0) {
-          if (fork.size == -3 || fork.size == -4)
-            localSkipped += 4;
-          else
-            break scan;
-        } else if (fork.id >= minRepeatType) {
-          localSkipped += 4;
-        }
-        fork.next();
-      }
-      start = nodeStart2;
-      size += nodeSize11;
-      skip += localSkipped;
-    }
-    if (inRepeat < 0 || size == maxSize) {
-      result.size = size;
-      result.start = start;
-      result.skip = skip;
-    }
-    return result.size > 4 ? result : void 0;
-  }
-  function copyToBuffer(bufferStart, buffer2, index) {
-    let { id: id3, start, end, size } = cursor2;
-    cursor2.next();
-    if (size >= 0 && id3 < minRepeatType) {
-      let startIndex = index;
-      if (size > 4) {
-        let endPos = cursor2.pos - (size - 4);
-        while (cursor2.pos > endPos)
-          index = copyToBuffer(bufferStart, buffer2, index);
-      }
-      buffer2[--index] = startIndex;
-      buffer2[--index] = end - bufferStart;
-      buffer2[--index] = start - bufferStart;
-      buffer2[--index] = id3;
-    } else if (size == -3) {
-      contextHash = id3;
-    } else if (size == -4) {
-      lookAhead = id3;
-    }
-    return index;
-  }
-  let children = [], positions = [];
-  while (cursor2.pos > 0)
-    takeNode(data2.start || 0, data2.bufferStart || 0, children, positions, -1, 0);
-  let length = (_a7 = data2.length) !== null && _a7 !== void 0 ? _a7 : children.length ? positions[0] + children[0].length : 0;
-  return new Tree7(types2[data2.topID], children.reverse(), positions.reverse(), length);
-}
-var nodeSizeCache7 = /* @__PURE__ */ new WeakMap();
-function nodeSize7(balanceType, node) {
-  if (!balanceType.isAnonymous || node instanceof TreeBuffer7 || node.type != balanceType)
-    return 1;
-  let size = nodeSizeCache7.get(node);
-  if (size == null) {
-    size = 1;
-    for (let child of node.children) {
-      if (child.type != balanceType || !(child instanceof Tree7)) {
-        size = 1;
-        break;
-      }
-      size += nodeSize7(balanceType, child);
-    }
-    nodeSizeCache7.set(node, size);
-  }
-  return size;
-}
-function balanceRange7(balanceType, children, positions, from, to, start, length, mkTop, mkTree) {
-  let total = 0;
-  for (let i = from; i < to; i++)
-    total += nodeSize7(balanceType, children[i]);
-  let maxChild = Math.ceil(
-    total * 1.5 / 8
-    /* Balance.BranchFactor */
-  );
-  let localChildren = [], localPositions = [];
-  function divide(children2, positions2, from2, to2, offset) {
-    for (let i = from2; i < to2; ) {
-      let groupFrom = i, groupStart = positions2[i], groupSize = nodeSize7(balanceType, children2[i]);
-      i++;
-      for (; i < to2; i++) {
-        let nextSize = nodeSize7(balanceType, children2[i]);
-        if (groupSize + nextSize >= maxChild)
-          break;
-        groupSize += nextSize;
-      }
-      if (i == groupFrom + 1) {
-        if (groupSize > maxChild) {
-          let only = children2[groupFrom];
-          divide(only.children, only.positions, 0, only.children.length, positions2[groupFrom] + offset);
-          continue;
-        }
-        localChildren.push(children2[groupFrom]);
-      } else {
-        let length2 = positions2[i - 1] + children2[i - 1].length - groupStart;
-        localChildren.push(balanceRange7(balanceType, children2, positions2, groupFrom, i, groupStart, length2, null, mkTree));
-      }
-      localPositions.push(groupStart + offset - start);
-    }
-  }
-  divide(children, positions, from, to, 0);
-  return (mkTop || mkTree)(localChildren, localPositions, length);
-}
-var Parser7 = class {
-  /**
-  Start a parse, returning a [partial parse](#common.PartialParse)
-  object. [`fragments`](#common.TreeFragment) can be passed in to
-  make the parse incremental.
-  
-  By default, the entire input is parsed. You can pass `ranges`,
-  which should be a sorted array of non-empty, non-overlapping
-  ranges, to parse only those ranges. The tree returned in that
-  case will start at `ranges[0].from`.
-  */
-  startParse(input, fragments, ranges) {
-    if (typeof input == "string")
-      input = new StringInput7(input);
-    ranges = !ranges ? [new Range8(0, input.length)] : ranges.length ? ranges.map((r) => new Range8(r.from, r.to)) : [new Range8(0, 0)];
-    return this.createParse(input, fragments || [], ranges);
-  }
-  /**
-  Run a full parse, returning the resulting tree.
-  */
-  parse(input, fragments, ranges) {
-    let parse = this.startParse(input, fragments, ranges);
-    for (; ; ) {
-      let done = parse.advance();
-      if (done)
-        return done;
-    }
-  }
-};
-var StringInput7 = class {
-  constructor(string11) {
-    this.string = string11;
-  }
-  get length() {
-    return this.string.length;
-  }
-  chunk(from) {
-    return this.string.slice(from);
-  }
-  get lineChunks() {
-    return false;
-  }
-  read(from, to) {
-    return this.string.slice(from, to);
-  }
-};
-var stoppedInner7 = new NodeProp7({ perNode: true });
 
 // node_modules/@lezer/javascript/node_modules/@lezer/lr/dist/index.js
 var Stack3 = class _Stack {
@@ -44499,7 +32004,7 @@ var Stack3 = class _Stack {
   @internal
   */
   reduce(action) {
-    var _a7;
+    var _a2;
     let depth = action >> 19, type = action & 65535;
     let { parser: parser5 } = this.p;
     let lookaheadRecord = this.reducePos < this.pos - 25 && this.setLookAhead(this.pos);
@@ -44520,7 +32025,7 @@ var Stack3 = class _Stack {
     if (type < parser5.minRepeatTerm && start == this.reducePos && this.reducePos < this.pos)
       this.reducePos = this.pos;
     let size = this.reducePos - start;
-    if (size >= 2e3 && !((_a7 = this.p.parser.nodeSet.types[type]) === null || _a7 === void 0 ? void 0 : _a7.isAnonymous)) {
+    if (size >= 2e3 && !((_a2 = this.p.parser.nodeSet.types[type]) === null || _a2 === void 0 ? void 0 : _a2.isAnonymous)) {
       if (start == this.p.lastBigReductionStart) {
         this.p.bigReductionCount++;
         this.p.lastBigReductionSize = size;
@@ -45351,7 +32856,7 @@ function overrides3(token, prev, tableData, tableOffset) {
 var verbose3 = typeof process != "undefined" && process.env && /\bparse\b/.test(process.env.LOG);
 var stackIDs3 = null;
 function cutAt3(tree, pos, side) {
-  let cursor2 = tree.cursor(IterMode7.IncludeAnonymous);
+  let cursor2 = tree.cursor(IterMode.IncludeAnonymous);
   cursor2.moveTo(pos);
   for (; ; ) {
     if (!(side < 0 ? cursor2.childBefore(pos) : cursor2.childAfter(pos)))
@@ -45373,7 +32878,7 @@ function cutAt3(tree, pos, side) {
       }
   }
 }
-var FragmentCursor6 = class {
+var FragmentCursor5 = class {
   constructor(fragments, nodeSet) {
     this.fragments = fragments;
     this.nodeSet = nodeSet;
@@ -45431,13 +32936,13 @@ var FragmentCursor6 = class {
         this.nextStart = start;
         return null;
       }
-      if (next instanceof Tree7) {
+      if (next instanceof Tree) {
         if (start == pos) {
           if (start < this.safeFrom)
             return null;
           let end = start + next.length;
           if (end <= this.safeTo) {
-            let lookAhead = next.prop(NodeProp7.lookAhead);
+            let lookAhead = next.prop(NodeProp.lookAhead);
             if (!lookAhead || end + lookAhead < this.fragment.to)
               return next;
           }
@@ -45593,7 +33098,7 @@ var Parse3 = class {
     this.topTerm = parser5.top[1];
     let { from } = ranges[0];
     this.stacks = [Stack3.start(this, parser5.top[0], from)];
-    this.fragments = fragments.length && this.stream.end - from > parser5.bufferLength * 4 ? new FragmentCursor6(fragments, parser5.nodeSet) : null;
+    this.fragments = fragments.length && this.stream.end - from > parser5.bufferLength * 4 ? new FragmentCursor5(fragments, parser5.nodeSet) : null;
   }
   get parsedPos() {
     return this.minStackPos;
@@ -45714,16 +33219,16 @@ var Parse3 = class {
       let strictCx = stack.curContext && stack.curContext.tracker.strict, cxHash = strictCx ? stack.curContext.hash : 0;
       for (let cached = this.fragments.nodeAt(start); cached; ) {
         let match = this.parser.nodeSet.types[cached.type.id] == cached.type ? parser5.getGoto(stack.state, cached.type.id) : -1;
-        if (match > -1 && cached.length && (!strictCx || (cached.prop(NodeProp7.contextHash) || 0) == cxHash)) {
+        if (match > -1 && cached.length && (!strictCx || (cached.prop(NodeProp.contextHash) || 0) == cxHash)) {
           stack.useNode(cached, match);
           if (verbose3)
             console.log(base2 + this.stackID(stack) + ` (via reuse of ${parser5.getName(cached.type.id)})`);
           return true;
         }
-        if (!(cached instanceof Tree7) || cached.children.length == 0 || cached.positions[0] > 0)
+        if (!(cached instanceof Tree) || cached.children.length == 0 || cached.positions[0] > 0)
           break;
         let inner = cached.children[0];
-        if (inner instanceof Tree7 && cached.positions[0] == 0)
+        if (inner instanceof Tree && cached.positions[0] == 0)
           cached = inner;
         else
           break;
@@ -45831,7 +33336,7 @@ var Parse3 = class {
   // Convert the stack's buffer to a syntax tree.
   stackToTree(stack) {
     stack.close();
-    return Tree7.build({
+    return Tree.build({
       buffer: StackBufferCursor3.create(stack),
       nodeSet: this.parser.nodeSet,
       topID: this.topTerm,
@@ -45884,7 +33389,7 @@ var ContextTracker2 = class {
     this.strict = spec.strict !== false;
   }
 };
-var LRParser3 = class _LRParser extends Parser7 {
+var LRParser3 = class _LRParser extends Parser {
   /**
   @internal
   */
@@ -45908,7 +33413,7 @@ var LRParser3 = class _LRParser extends Parser7 {
       for (let propSpec of spec.nodeProps) {
         let prop = propSpec[0];
         if (typeof prop == "string")
-          prop = NodeProp7[prop];
+          prop = NodeProp[prop];
         for (let i = 1; i < propSpec.length; ) {
           let next = propSpec[i++];
           if (next >= 0) {
@@ -45921,8 +33426,8 @@ var LRParser3 = class _LRParser extends Parser7 {
           }
         }
       }
-    this.nodeSet = new NodeSet7(nodeNames.map((name11, i) => NodeType7.define({
-      name: i >= this.minRepeatTerm ? void 0 : name11,
+    this.nodeSet = new NodeSet(nodeNames.map((name7, i) => NodeType.define({
+      name: i >= this.minRepeatTerm ? void 0 : name7,
       id: i,
       props: nodeProps[i],
       top: topTerms.indexOf(i) > -1,
@@ -45932,7 +33437,7 @@ var LRParser3 = class _LRParser extends Parser7 {
     if (spec.propSources)
       this.nodeSet = this.nodeSet.extend(...spec.propSources);
     this.strict = false;
-    this.bufferLength = DefaultBufferLength7;
+    this.bufferLength = DefaultBufferLength;
     let tokenArray = decodeArray3(spec.tokenData);
     this.context = spec.context;
     this.specializerSpecs = spec.specialized || [];
@@ -46092,9 +33597,9 @@ var LRParser3 = class _LRParser extends Parser7 {
       copy.top = info;
     }
     if (config2.tokenizers)
-      copy.tokenizers = this.tokenizers.map((t11) => {
-        let found = config2.tokenizers.find((r) => r.from == t11);
-        return found ? found.to : t11;
+      copy.tokenizers = this.tokenizers.map((t7) => {
+        let found = config2.tokenizers.find((r) => r.from == t7);
+        return found ? found.to : t7;
       });
     if (config2.specializers) {
       copy.specializers = this.specializers.slice();
@@ -46207,36 +33712,36 @@ function getSpecializer3(spec) {
 }
 
 // node_modules/@lezer/javascript/node_modules/@lezer/highlight/dist/index.js
-var nextTagID7 = 0;
-var Tag7 = class _Tag {
+var nextTagID5 = 0;
+var Tag5 = class _Tag {
   /**
   @internal
   */
-  constructor(name11, set, base2, modified) {
-    this.name = name11;
+  constructor(name7, set, base2, modified) {
+    this.name = name7;
     this.set = set;
     this.base = base2;
     this.modified = modified;
-    this.id = nextTagID7++;
+    this.id = nextTagID5++;
   }
   toString() {
-    let { name: name11 } = this;
+    let { name: name7 } = this;
     for (let mod of this.modified)
       if (mod.name)
-        name11 = `${mod.name}(${name11})`;
-    return name11;
+        name7 = `${mod.name}(${name7})`;
+    return name7;
   }
   static define(nameOrParent, parent) {
-    let name11 = typeof nameOrParent == "string" ? nameOrParent : "?";
+    let name7 = typeof nameOrParent == "string" ? nameOrParent : "?";
     if (nameOrParent instanceof _Tag)
       parent = nameOrParent;
     if (parent === null || parent === void 0 ? void 0 : parent.base)
       throw new Error("Can not derive from a modified tag");
-    let tag = new _Tag(name11, [], null, []);
+    let tag = new _Tag(name7, [], null, []);
     tag.set.push(tag);
     if (parent)
-      for (let t11 of parent.set)
-        tag.set.push(t11);
+      for (let t7 of parent.set)
+        tag.set.push(t7);
     return tag;
   }
   /**
@@ -46251,32 +33756,32 @@ var Tag7 = class _Tag {
   example `m1(m2(m3(t1)))` is a subtype of `m1(m2(t1))`,
   `m1(m3(t1)`, and so on.
   */
-  static defineModifier(name11) {
-    let mod = new Modifier7(name11);
+  static defineModifier(name7) {
+    let mod = new Modifier5(name7);
     return (tag) => {
       if (tag.modified.indexOf(mod) > -1)
         return tag;
-      return Modifier7.get(tag.base || tag, tag.modified.concat(mod).sort((a, b) => a.id - b.id));
+      return Modifier5.get(tag.base || tag, tag.modified.concat(mod).sort((a, b) => a.id - b.id));
     };
   }
 };
-var nextModifierID7 = 0;
-var Modifier7 = class _Modifier {
-  constructor(name11) {
-    this.name = name11;
+var nextModifierID5 = 0;
+var Modifier5 = class _Modifier {
+  constructor(name7) {
+    this.name = name7;
     this.instances = [];
-    this.id = nextModifierID7++;
+    this.id = nextModifierID5++;
   }
   static get(base2, mods) {
     if (!mods.length)
       return base2;
-    let exists = mods[0].instances.find((t11) => t11.base == base2 && sameArray8(mods, t11.modified));
+    let exists = mods[0].instances.find((t7) => t7.base == base2 && sameArray6(mods, t7.modified));
     if (exists)
       return exists;
-    let set = [], tag = new Tag7(base2.name, set, base2, mods);
+    let set = [], tag = new Tag5(base2.name, set, base2, mods);
     for (let m of mods)
       m.instances.push(tag);
-    let configs = powerSet7(mods);
+    let configs = powerSet5(mods);
     for (let parent of base2.set)
       if (!parent.modified.length)
         for (let config2 of configs)
@@ -46284,10 +33789,10 @@ var Modifier7 = class _Modifier {
     return tag;
   }
 };
-function sameArray8(a, b) {
+function sameArray6(a, b) {
   return a.length == b.length && a.every((x, i) => x == b[i]);
 }
-function powerSet7(array) {
+function powerSet5(array) {
   let sets = [[]];
   for (let i = 0; i < array.length; i++) {
     for (let j = 0, e = sets.length; j < e; j++) {
@@ -46296,12 +33801,12 @@ function powerSet7(array) {
   }
   return sets.sort((a, b) => b.length - a.length);
 }
-function styleTags7(spec) {
+function styleTags5(spec) {
   let byName = /* @__PURE__ */ Object.create(null);
   for (let prop in spec) {
-    let tags12 = spec[prop];
-    if (!Array.isArray(tags12))
-      tags12 = [tags12];
+    let tags8 = spec[prop];
+    if (!Array.isArray(tags8))
+      tags8 = [tags8];
     for (let part of prop.split(" "))
       if (part) {
         let pieces = [], mode = 2, rest = part;
@@ -46329,13 +33834,13 @@ function styleTags7(spec) {
         let last = pieces.length - 1, inner = pieces[last];
         if (!inner)
           throw new RangeError("Invalid path: " + part);
-        let rule = new Rule7(tags12, mode, last > 0 ? pieces.slice(0, last) : null);
+        let rule = new Rule5(tags8, mode, last > 0 ? pieces.slice(0, last) : null);
         byName[inner] = rule.sort(byName[inner]);
       }
   }
-  return ruleNodeProp7.add(byName);
+  return ruleNodeProp5.add(byName);
 }
-var ruleNodeProp7 = new NodeProp7({
+var ruleNodeProp5 = new NodeProp({
   combine(a, b) {
     let cur2, root, take;
     while (a || b) {
@@ -46348,7 +33853,7 @@ var ruleNodeProp7 = new NodeProp7({
       }
       if (cur2 && cur2.mode == take.mode && !take.context && !cur2.context)
         continue;
-      let copy = new Rule7(take.tags, take.mode, take.context);
+      let copy = new Rule5(take.tags, take.mode, take.context);
       if (cur2)
         cur2.next = copy;
       else
@@ -46358,9 +33863,9 @@ var ruleNodeProp7 = new NodeProp7({
     return root;
   }
 });
-var Rule7 = class {
-  constructor(tags12, mode, context, next) {
-    this.tags = tags12;
+var Rule5 = class {
+  constructor(tags8, mode, context, next) {
+    this.tags = tags8;
     this.mode = mode;
     this.context = context;
     this.next = next;
@@ -46383,10 +33888,10 @@ var Rule7 = class {
     return this.context ? this.context.length : 0;
   }
 };
-Rule7.empty = new Rule7([], 2, null);
-function tagHighlighter7(tags12, options) {
+Rule5.empty = new Rule5([], 2, null);
+function tagHighlighter5(tags8, options) {
   let map = /* @__PURE__ */ Object.create(null);
-  for (let style of tags12) {
+  for (let style of tags8) {
     if (!Array.isArray(style.tag))
       map[style.tag.id] = style.class;
     else
@@ -46395,9 +33900,9 @@ function tagHighlighter7(tags12, options) {
   }
   let { scope, all = null } = options || {};
   return {
-    style: (tags13) => {
+    style: (tags9) => {
       let cls = all;
-      for (let tag of tags13) {
+      for (let tag of tags9) {
         for (let sub of tag.set) {
           let tagClass = map[sub.id];
           if (tagClass) {
@@ -46411,377 +33916,377 @@ function tagHighlighter7(tags12, options) {
     scope
   };
 }
-var t7 = Tag7.define;
-var comment7 = t7();
-var name7 = t7();
-var typeName7 = t7(name7);
-var propertyName7 = t7(name7);
-var literal7 = t7();
-var string7 = t7(literal7);
-var number7 = t7(literal7);
-var content7 = t7();
-var heading7 = t7(content7);
-var keyword7 = t7();
-var operator7 = t7();
-var punctuation7 = t7();
-var bracket7 = t7(punctuation7);
-var meta7 = t7();
-var tags8 = {
+var t5 = Tag5.define;
+var comment5 = t5();
+var name5 = t5();
+var typeName5 = t5(name5);
+var propertyName5 = t5(name5);
+var literal5 = t5();
+var string5 = t5(literal5);
+var number5 = t5(literal5);
+var content5 = t5();
+var heading5 = t5(content5);
+var keyword5 = t5();
+var operator5 = t5();
+var punctuation5 = t5();
+var bracket5 = t5(punctuation5);
+var meta5 = t5();
+var tags6 = {
   /**
   A comment.
   */
-  comment: comment7,
+  comment: comment5,
   /**
   A line [comment](#highlight.tags.comment).
   */
-  lineComment: t7(comment7),
+  lineComment: t5(comment5),
   /**
   A block [comment](#highlight.tags.comment).
   */
-  blockComment: t7(comment7),
+  blockComment: t5(comment5),
   /**
   A documentation [comment](#highlight.tags.comment).
   */
-  docComment: t7(comment7),
+  docComment: t5(comment5),
   /**
   Any kind of identifier.
   */
-  name: name7,
+  name: name5,
   /**
   The [name](#highlight.tags.name) of a variable.
   */
-  variableName: t7(name7),
+  variableName: t5(name5),
   /**
   A type [name](#highlight.tags.name).
   */
-  typeName: typeName7,
+  typeName: typeName5,
   /**
   A tag name (subtag of [`typeName`](#highlight.tags.typeName)).
   */
-  tagName: t7(typeName7),
+  tagName: t5(typeName5),
   /**
   A property or field [name](#highlight.tags.name).
   */
-  propertyName: propertyName7,
+  propertyName: propertyName5,
   /**
   An attribute name (subtag of [`propertyName`](#highlight.tags.propertyName)).
   */
-  attributeName: t7(propertyName7),
+  attributeName: t5(propertyName5),
   /**
   The [name](#highlight.tags.name) of a class.
   */
-  className: t7(name7),
+  className: t5(name5),
   /**
   A label [name](#highlight.tags.name).
   */
-  labelName: t7(name7),
+  labelName: t5(name5),
   /**
   A namespace [name](#highlight.tags.name).
   */
-  namespace: t7(name7),
+  namespace: t5(name5),
   /**
   The [name](#highlight.tags.name) of a macro.
   */
-  macroName: t7(name7),
+  macroName: t5(name5),
   /**
   A literal value.
   */
-  literal: literal7,
+  literal: literal5,
   /**
   A string [literal](#highlight.tags.literal).
   */
-  string: string7,
+  string: string5,
   /**
   A documentation [string](#highlight.tags.string).
   */
-  docString: t7(string7),
+  docString: t5(string5),
   /**
   A character literal (subtag of [string](#highlight.tags.string)).
   */
-  character: t7(string7),
+  character: t5(string5),
   /**
   An attribute value (subtag of [string](#highlight.tags.string)).
   */
-  attributeValue: t7(string7),
+  attributeValue: t5(string5),
   /**
   A number [literal](#highlight.tags.literal).
   */
-  number: number7,
+  number: number5,
   /**
   An integer [number](#highlight.tags.number) literal.
   */
-  integer: t7(number7),
+  integer: t5(number5),
   /**
   A floating-point [number](#highlight.tags.number) literal.
   */
-  float: t7(number7),
+  float: t5(number5),
   /**
   A boolean [literal](#highlight.tags.literal).
   */
-  bool: t7(literal7),
+  bool: t5(literal5),
   /**
   Regular expression [literal](#highlight.tags.literal).
   */
-  regexp: t7(literal7),
+  regexp: t5(literal5),
   /**
   An escape [literal](#highlight.tags.literal), for example a
   backslash escape in a string.
   */
-  escape: t7(literal7),
+  escape: t5(literal5),
   /**
   A color [literal](#highlight.tags.literal).
   */
-  color: t7(literal7),
+  color: t5(literal5),
   /**
   A URL [literal](#highlight.tags.literal).
   */
-  url: t7(literal7),
+  url: t5(literal5),
   /**
   A language keyword.
   */
-  keyword: keyword7,
+  keyword: keyword5,
   /**
   The [keyword](#highlight.tags.keyword) for the self or this
   object.
   */
-  self: t7(keyword7),
+  self: t5(keyword5),
   /**
   The [keyword](#highlight.tags.keyword) for null.
   */
-  null: t7(keyword7),
+  null: t5(keyword5),
   /**
   A [keyword](#highlight.tags.keyword) denoting some atomic value.
   */
-  atom: t7(keyword7),
+  atom: t5(keyword5),
   /**
   A [keyword](#highlight.tags.keyword) that represents a unit.
   */
-  unit: t7(keyword7),
+  unit: t5(keyword5),
   /**
   A modifier [keyword](#highlight.tags.keyword).
   */
-  modifier: t7(keyword7),
+  modifier: t5(keyword5),
   /**
   A [keyword](#highlight.tags.keyword) that acts as an operator.
   */
-  operatorKeyword: t7(keyword7),
+  operatorKeyword: t5(keyword5),
   /**
   A control-flow related [keyword](#highlight.tags.keyword).
   */
-  controlKeyword: t7(keyword7),
+  controlKeyword: t5(keyword5),
   /**
   A [keyword](#highlight.tags.keyword) that defines something.
   */
-  definitionKeyword: t7(keyword7),
+  definitionKeyword: t5(keyword5),
   /**
   A [keyword](#highlight.tags.keyword) related to defining or
   interfacing with modules.
   */
-  moduleKeyword: t7(keyword7),
+  moduleKeyword: t5(keyword5),
   /**
   An operator.
   */
-  operator: operator7,
+  operator: operator5,
   /**
   An [operator](#highlight.tags.operator) that dereferences something.
   */
-  derefOperator: t7(operator7),
+  derefOperator: t5(operator5),
   /**
   Arithmetic-related [operator](#highlight.tags.operator).
   */
-  arithmeticOperator: t7(operator7),
+  arithmeticOperator: t5(operator5),
   /**
   Logical [operator](#highlight.tags.operator).
   */
-  logicOperator: t7(operator7),
+  logicOperator: t5(operator5),
   /**
   Bit [operator](#highlight.tags.operator).
   */
-  bitwiseOperator: t7(operator7),
+  bitwiseOperator: t5(operator5),
   /**
   Comparison [operator](#highlight.tags.operator).
   */
-  compareOperator: t7(operator7),
+  compareOperator: t5(operator5),
   /**
   [Operator](#highlight.tags.operator) that updates its operand.
   */
-  updateOperator: t7(operator7),
+  updateOperator: t5(operator5),
   /**
   [Operator](#highlight.tags.operator) that defines something.
   */
-  definitionOperator: t7(operator7),
+  definitionOperator: t5(operator5),
   /**
   Type-related [operator](#highlight.tags.operator).
   */
-  typeOperator: t7(operator7),
+  typeOperator: t5(operator5),
   /**
   Control-flow [operator](#highlight.tags.operator).
   */
-  controlOperator: t7(operator7),
+  controlOperator: t5(operator5),
   /**
   Program or markup punctuation.
   */
-  punctuation: punctuation7,
+  punctuation: punctuation5,
   /**
   [Punctuation](#highlight.tags.punctuation) that separates
   things.
   */
-  separator: t7(punctuation7),
+  separator: t5(punctuation5),
   /**
   Bracket-style [punctuation](#highlight.tags.punctuation).
   */
-  bracket: bracket7,
+  bracket: bracket5,
   /**
   Angle [brackets](#highlight.tags.bracket) (usually `<` and `>`
   tokens).
   */
-  angleBracket: t7(bracket7),
+  angleBracket: t5(bracket5),
   /**
   Square [brackets](#highlight.tags.bracket) (usually `[` and `]`
   tokens).
   */
-  squareBracket: t7(bracket7),
+  squareBracket: t5(bracket5),
   /**
   Parentheses (usually `(` and `)` tokens). Subtag of
   [bracket](#highlight.tags.bracket).
   */
-  paren: t7(bracket7),
+  paren: t5(bracket5),
   /**
   Braces (usually `{` and `}` tokens). Subtag of
   [bracket](#highlight.tags.bracket).
   */
-  brace: t7(bracket7),
+  brace: t5(bracket5),
   /**
   Content, for example plain text in XML or markup documents.
   */
-  content: content7,
+  content: content5,
   /**
   [Content](#highlight.tags.content) that represents a heading.
   */
-  heading: heading7,
+  heading: heading5,
   /**
   A level 1 [heading](#highlight.tags.heading).
   */
-  heading1: t7(heading7),
+  heading1: t5(heading5),
   /**
   A level 2 [heading](#highlight.tags.heading).
   */
-  heading2: t7(heading7),
+  heading2: t5(heading5),
   /**
   A level 3 [heading](#highlight.tags.heading).
   */
-  heading3: t7(heading7),
+  heading3: t5(heading5),
   /**
   A level 4 [heading](#highlight.tags.heading).
   */
-  heading4: t7(heading7),
+  heading4: t5(heading5),
   /**
   A level 5 [heading](#highlight.tags.heading).
   */
-  heading5: t7(heading7),
+  heading5: t5(heading5),
   /**
   A level 6 [heading](#highlight.tags.heading).
   */
-  heading6: t7(heading7),
+  heading6: t5(heading5),
   /**
   A prose [content](#highlight.tags.content) separator (such as a horizontal rule).
   */
-  contentSeparator: t7(content7),
+  contentSeparator: t5(content5),
   /**
   [Content](#highlight.tags.content) that represents a list.
   */
-  list: t7(content7),
+  list: t5(content5),
   /**
   [Content](#highlight.tags.content) that represents a quote.
   */
-  quote: t7(content7),
+  quote: t5(content5),
   /**
   [Content](#highlight.tags.content) that is emphasized.
   */
-  emphasis: t7(content7),
+  emphasis: t5(content5),
   /**
   [Content](#highlight.tags.content) that is styled strong.
   */
-  strong: t7(content7),
+  strong: t5(content5),
   /**
   [Content](#highlight.tags.content) that is part of a link.
   */
-  link: t7(content7),
+  link: t5(content5),
   /**
   [Content](#highlight.tags.content) that is styled as code or
   monospace.
   */
-  monospace: t7(content7),
+  monospace: t5(content5),
   /**
   [Content](#highlight.tags.content) that has a strike-through
   style.
   */
-  strikethrough: t7(content7),
+  strikethrough: t5(content5),
   /**
   Inserted text in a change-tracking format.
   */
-  inserted: t7(),
+  inserted: t5(),
   /**
   Deleted text.
   */
-  deleted: t7(),
+  deleted: t5(),
   /**
   Changed text.
   */
-  changed: t7(),
+  changed: t5(),
   /**
   An invalid or unsyntactic element.
   */
-  invalid: t7(),
+  invalid: t5(),
   /**
   Metadata or meta-instruction.
   */
-  meta: meta7,
+  meta: meta5,
   /**
   [Metadata](#highlight.tags.meta) that applies to the entire
   document.
   */
-  documentMeta: t7(meta7),
+  documentMeta: t5(meta5),
   /**
   [Metadata](#highlight.tags.meta) that annotates or adds
   attributes to a given syntactic element.
   */
-  annotation: t7(meta7),
+  annotation: t5(meta5),
   /**
   Processing instruction or preprocessor directive. Subtag of
   [meta](#highlight.tags.meta).
   */
-  processingInstruction: t7(meta7),
+  processingInstruction: t5(meta5),
   /**
   [Modifier](#highlight.Tag^defineModifier) that indicates that a
   given element is being defined. Expected to be used with the
   various [name](#highlight.tags.name) tags.
   */
-  definition: Tag7.defineModifier("definition"),
+  definition: Tag5.defineModifier("definition"),
   /**
   [Modifier](#highlight.Tag^defineModifier) that indicates that
   something is constant. Mostly expected to be used with
   [variable names](#highlight.tags.variableName).
   */
-  constant: Tag7.defineModifier("constant"),
+  constant: Tag5.defineModifier("constant"),
   /**
   [Modifier](#highlight.Tag^defineModifier) used to indicate that
   a [variable](#highlight.tags.variableName) or [property
   name](#highlight.tags.propertyName) is being called or defined
   as a function.
   */
-  function: Tag7.defineModifier("function"),
+  function: Tag5.defineModifier("function"),
   /**
   [Modifier](#highlight.Tag^defineModifier) that can be applied to
   [names](#highlight.tags.name) to indicate that they belong to
   the language's standard environment.
   */
-  standard: Tag7.defineModifier("standard"),
+  standard: Tag5.defineModifier("standard"),
   /**
   [Modifier](#highlight.Tag^defineModifier) that indicates a given
   [names](#highlight.tags.name) is local to some scope.
   */
-  local: Tag7.defineModifier("local"),
+  local: Tag5.defineModifier("local"),
   /**
   A generic variant [modifier](#highlight.Tag^defineModifier) that
   can be used to tag language-specific alternative variants of
@@ -46790,44 +34295,44 @@ var tags8 = {
   [variable name](#highlight.tags.variableName) tags, since those
   come up a lot.
   */
-  special: Tag7.defineModifier("special")
+  special: Tag5.defineModifier("special")
 };
-for (let name11 in tags8) {
-  let val = tags8[name11];
-  if (val instanceof Tag7)
-    val.name = name11;
+for (let name7 in tags6) {
+  let val = tags6[name7];
+  if (val instanceof Tag5)
+    val.name = name7;
 }
-var classHighlighter7 = tagHighlighter7([
-  { tag: tags8.link, class: "tok-link" },
-  { tag: tags8.heading, class: "tok-heading" },
-  { tag: tags8.emphasis, class: "tok-emphasis" },
-  { tag: tags8.strong, class: "tok-strong" },
-  { tag: tags8.keyword, class: "tok-keyword" },
-  { tag: tags8.atom, class: "tok-atom" },
-  { tag: tags8.bool, class: "tok-bool" },
-  { tag: tags8.url, class: "tok-url" },
-  { tag: tags8.labelName, class: "tok-labelName" },
-  { tag: tags8.inserted, class: "tok-inserted" },
-  { tag: tags8.deleted, class: "tok-deleted" },
-  { tag: tags8.literal, class: "tok-literal" },
-  { tag: tags8.string, class: "tok-string" },
-  { tag: tags8.number, class: "tok-number" },
-  { tag: [tags8.regexp, tags8.escape, tags8.special(tags8.string)], class: "tok-string2" },
-  { tag: tags8.variableName, class: "tok-variableName" },
-  { tag: tags8.local(tags8.variableName), class: "tok-variableName tok-local" },
-  { tag: tags8.definition(tags8.variableName), class: "tok-variableName tok-definition" },
-  { tag: tags8.special(tags8.variableName), class: "tok-variableName2" },
-  { tag: tags8.definition(tags8.propertyName), class: "tok-propertyName tok-definition" },
-  { tag: tags8.typeName, class: "tok-typeName" },
-  { tag: tags8.namespace, class: "tok-namespace" },
-  { tag: tags8.className, class: "tok-className" },
-  { tag: tags8.macroName, class: "tok-macroName" },
-  { tag: tags8.propertyName, class: "tok-propertyName" },
-  { tag: tags8.operator, class: "tok-operator" },
-  { tag: tags8.comment, class: "tok-comment" },
-  { tag: tags8.meta, class: "tok-meta" },
-  { tag: tags8.invalid, class: "tok-invalid" },
-  { tag: tags8.punctuation, class: "tok-punctuation" }
+var classHighlighter5 = tagHighlighter5([
+  { tag: tags6.link, class: "tok-link" },
+  { tag: tags6.heading, class: "tok-heading" },
+  { tag: tags6.emphasis, class: "tok-emphasis" },
+  { tag: tags6.strong, class: "tok-strong" },
+  { tag: tags6.keyword, class: "tok-keyword" },
+  { tag: tags6.atom, class: "tok-atom" },
+  { tag: tags6.bool, class: "tok-bool" },
+  { tag: tags6.url, class: "tok-url" },
+  { tag: tags6.labelName, class: "tok-labelName" },
+  { tag: tags6.inserted, class: "tok-inserted" },
+  { tag: tags6.deleted, class: "tok-deleted" },
+  { tag: tags6.literal, class: "tok-literal" },
+  { tag: tags6.string, class: "tok-string" },
+  { tag: tags6.number, class: "tok-number" },
+  { tag: [tags6.regexp, tags6.escape, tags6.special(tags6.string)], class: "tok-string2" },
+  { tag: tags6.variableName, class: "tok-variableName" },
+  { tag: tags6.local(tags6.variableName), class: "tok-variableName tok-local" },
+  { tag: tags6.definition(tags6.variableName), class: "tok-variableName tok-definition" },
+  { tag: tags6.special(tags6.variableName), class: "tok-variableName2" },
+  { tag: tags6.definition(tags6.propertyName), class: "tok-propertyName tok-definition" },
+  { tag: tags6.typeName, class: "tok-typeName" },
+  { tag: tags6.namespace, class: "tok-namespace" },
+  { tag: tags6.className, class: "tok-className" },
+  { tag: tags6.macroName, class: "tok-macroName" },
+  { tag: tags6.propertyName, class: "tok-propertyName" },
+  { tag: tags6.operator, class: "tok-operator" },
+  { tag: tags6.comment, class: "tok-comment" },
+  { tag: tags6.meta, class: "tok-meta" },
+  { tag: tags6.invalid, class: "tok-invalid" },
+  { tag: tags6.punctuation, class: "tok-punctuation" }
 ]);
 
 // node_modules/@lezer/javascript/dist/index.js
@@ -46955,63 +34460,63 @@ var jsx = new ExternalTokenizer3((input, stack) => {
   }
   input.acceptToken(JSXStartTag, -back);
 });
-var jsHighlight = styleTags7({
-  "get set async static": tags8.modifier,
-  "for while do if else switch try catch finally return throw break continue default case defer": tags8.controlKeyword,
-  "in of await yield void typeof delete instanceof as satisfies": tags8.operatorKeyword,
-  "let var const using function class extends": tags8.definitionKeyword,
-  "import export from": tags8.moduleKeyword,
-  "with debugger new": tags8.keyword,
-  TemplateString: tags8.special(tags8.string),
-  super: tags8.atom,
-  BooleanLiteral: tags8.bool,
-  this: tags8.self,
-  null: tags8.null,
-  Star: tags8.modifier,
-  VariableName: tags8.variableName,
-  "CallExpression/VariableName TaggedTemplateExpression/VariableName": tags8.function(tags8.variableName),
-  VariableDefinition: tags8.definition(tags8.variableName),
-  Label: tags8.labelName,
-  PropertyName: tags8.propertyName,
-  PrivatePropertyName: tags8.special(tags8.propertyName),
-  "CallExpression/MemberExpression/PropertyName": tags8.function(tags8.propertyName),
-  "FunctionDeclaration/VariableDefinition": tags8.function(tags8.definition(tags8.variableName)),
-  "ClassDeclaration/VariableDefinition": tags8.definition(tags8.className),
-  "NewExpression/VariableName": tags8.className,
-  PropertyDefinition: tags8.definition(tags8.propertyName),
-  PrivatePropertyDefinition: tags8.definition(tags8.special(tags8.propertyName)),
-  UpdateOp: tags8.updateOperator,
-  "LineComment Hashbang": tags8.lineComment,
-  BlockComment: tags8.blockComment,
-  Number: tags8.number,
-  String: tags8.string,
-  Escape: tags8.escape,
-  ArithOp: tags8.arithmeticOperator,
-  LogicOp: tags8.logicOperator,
-  BitOp: tags8.bitwiseOperator,
-  CompareOp: tags8.compareOperator,
-  RegExp: tags8.regexp,
-  Equals: tags8.definitionOperator,
-  Arrow: tags8.function(tags8.punctuation),
-  ": Spread": tags8.punctuation,
-  "( )": tags8.paren,
-  "[ ]": tags8.squareBracket,
-  "{ }": tags8.brace,
-  "InterpolationStart InterpolationEnd": tags8.special(tags8.brace),
-  ".": tags8.derefOperator,
-  ", ;": tags8.separator,
-  "@": tags8.meta,
-  TypeName: tags8.typeName,
-  TypeDefinition: tags8.definition(tags8.typeName),
-  "type enum interface implements namespace module declare": tags8.definitionKeyword,
-  "abstract global Privacy readonly override": tags8.modifier,
-  "is keyof unique infer asserts": tags8.operatorKeyword,
-  JSXAttributeValue: tags8.attributeValue,
-  JSXText: tags8.content,
-  "JSXStartTag JSXStartCloseTag JSXSelfCloseEndTag JSXEndTag": tags8.angleBracket,
-  "JSXIdentifier JSXNameSpacedName": tags8.tagName,
-  "JSXAttribute/JSXIdentifier JSXAttribute/JSXNameSpacedName": tags8.attributeName,
-  "JSXBuiltin/JSXIdentifier": tags8.standard(tags8.tagName)
+var jsHighlight = styleTags5({
+  "get set async static": tags6.modifier,
+  "for while do if else switch try catch finally return throw break continue default case defer": tags6.controlKeyword,
+  "in of await yield void typeof delete instanceof as satisfies": tags6.operatorKeyword,
+  "let var const using function class extends": tags6.definitionKeyword,
+  "import export from": tags6.moduleKeyword,
+  "with debugger new": tags6.keyword,
+  TemplateString: tags6.special(tags6.string),
+  super: tags6.atom,
+  BooleanLiteral: tags6.bool,
+  this: tags6.self,
+  null: tags6.null,
+  Star: tags6.modifier,
+  VariableName: tags6.variableName,
+  "CallExpression/VariableName TaggedTemplateExpression/VariableName": tags6.function(tags6.variableName),
+  VariableDefinition: tags6.definition(tags6.variableName),
+  Label: tags6.labelName,
+  PropertyName: tags6.propertyName,
+  PrivatePropertyName: tags6.special(tags6.propertyName),
+  "CallExpression/MemberExpression/PropertyName": tags6.function(tags6.propertyName),
+  "FunctionDeclaration/VariableDefinition": tags6.function(tags6.definition(tags6.variableName)),
+  "ClassDeclaration/VariableDefinition": tags6.definition(tags6.className),
+  "NewExpression/VariableName": tags6.className,
+  PropertyDefinition: tags6.definition(tags6.propertyName),
+  PrivatePropertyDefinition: tags6.definition(tags6.special(tags6.propertyName)),
+  UpdateOp: tags6.updateOperator,
+  "LineComment Hashbang": tags6.lineComment,
+  BlockComment: tags6.blockComment,
+  Number: tags6.number,
+  String: tags6.string,
+  Escape: tags6.escape,
+  ArithOp: tags6.arithmeticOperator,
+  LogicOp: tags6.logicOperator,
+  BitOp: tags6.bitwiseOperator,
+  CompareOp: tags6.compareOperator,
+  RegExp: tags6.regexp,
+  Equals: tags6.definitionOperator,
+  Arrow: tags6.function(tags6.punctuation),
+  ": Spread": tags6.punctuation,
+  "( )": tags6.paren,
+  "[ ]": tags6.squareBracket,
+  "{ }": tags6.brace,
+  "InterpolationStart InterpolationEnd": tags6.special(tags6.brace),
+  ".": tags6.derefOperator,
+  ", ;": tags6.separator,
+  "@": tags6.meta,
+  TypeName: tags6.typeName,
+  TypeDefinition: tags6.definition(tags6.typeName),
+  "type enum interface implements namespace module declare": tags6.definitionKeyword,
+  "abstract global Privacy readonly override": tags6.modifier,
+  "is keyof unique infer asserts": tags6.operatorKeyword,
+  JSXAttributeValue: tags6.attributeValue,
+  JSXText: tags6.content,
+  "JSXStartTag JSXStartCloseTag JSXSelfCloseEndTag JSXEndTag": tags6.angleBracket,
+  "JSXIdentifier JSXNameSpacedName": tags6.tagName,
+  "JSXAttribute/JSXIdentifier JSXAttribute/JSXNameSpacedName": tags6.attributeName,
+  "JSXBuiltin/JSXIdentifier": tags6.standard(tags6.tagName)
 });
 var spec_identifier2 = { __proto__: null, export: 20, as: 25, from: 33, default: 36, async: 41, function: 42, in: 52, out: 55, const: 56, extends: 60, this: 64, true: 72, false: 72, null: 84, void: 88, typeof: 92, super: 108, new: 142, delete: 154, yield: 163, await: 167, class: 172, public: 235, private: 235, protected: 235, readonly: 237, instanceof: 256, satisfies: 259, import: 292, keyof: 349, unique: 353, infer: 359, asserts: 395, is: 397, abstract: 417, implements: 419, type: 421, let: 424, var: 426, using: 429, interface: 435, enum: 439, namespace: 445, module: 447, declare: 451, global: 455, defer: 471, for: 476, of: 485, while: 488, with: 492, do: 496, if: 500, else: 502, switch: 506, case: 512, try: 518, catch: 522, finally: 526, return: 530, throw: 534, break: 538, continue: 542, debugger: 546 };
 var spec_word = { __proto__: null, async: 129, get: 131, set: 133, declare: 195, public: 197, private: 197, protected: 197, static: 199, abstract: 201, override: 203, readonly: 209, accessor: 211, new: 401 };
@@ -47042,3040 +34547,6 @@ var parser4 = LRParser3.deserialize({
   tokenPrec: 15201
 });
 
-// node_modules/@codemirror/lang-javascript/node_modules/@lezer/common/dist/index.js
-var DefaultBufferLength8 = 1024;
-var nextPropID8 = 0;
-var Range9 = class {
-  constructor(from, to) {
-    this.from = from;
-    this.to = to;
-  }
-};
-var NodeProp8 = class {
-  /**
-  Create a new node prop type.
-  */
-  constructor(config2 = {}) {
-    this.id = nextPropID8++;
-    this.perNode = !!config2.perNode;
-    this.deserialize = config2.deserialize || (() => {
-      throw new Error("This node type doesn't define a deserialize function");
-    });
-    this.combine = config2.combine || null;
-  }
-  /**
-  This is meant to be used with
-  [`NodeSet.extend`](#common.NodeSet.extend) or
-  [`LRParser.configure`](#lr.ParserConfig.props) to compute
-  prop values for each node type in the set. Takes a [match
-  object](#common.NodeType^match) or function that returns undefined
-  if the node type doesn't get this prop, and the prop's value if
-  it does.
-  */
-  add(match) {
-    if (this.perNode)
-      throw new RangeError("Can't add per-node props to node types");
-    if (typeof match != "function")
-      match = NodeType8.match(match);
-    return (type) => {
-      let result = match(type);
-      return result === void 0 ? null : [this, result];
-    };
-  }
-};
-NodeProp8.closedBy = new NodeProp8({ deserialize: (str) => str.split(" ") });
-NodeProp8.openedBy = new NodeProp8({ deserialize: (str) => str.split(" ") });
-NodeProp8.group = new NodeProp8({ deserialize: (str) => str.split(" ") });
-NodeProp8.isolate = new NodeProp8({ deserialize: (value) => {
-  if (value && value != "rtl" && value != "ltr" && value != "auto")
-    throw new RangeError("Invalid value for isolate: " + value);
-  return value || "auto";
-} });
-NodeProp8.contextHash = new NodeProp8({ perNode: true });
-NodeProp8.lookAhead = new NodeProp8({ perNode: true });
-NodeProp8.mounted = new NodeProp8({ perNode: true });
-var MountedTree8 = class {
-  constructor(tree, overlay, parser5, bracketed = false) {
-    this.tree = tree;
-    this.overlay = overlay;
-    this.parser = parser5;
-    this.bracketed = bracketed;
-  }
-  /**
-  @internal
-  */
-  static get(tree) {
-    return tree && tree.props && tree.props[NodeProp8.mounted.id];
-  }
-};
-var noProps8 = /* @__PURE__ */ Object.create(null);
-var NodeType8 = class _NodeType {
-  /**
-  @internal
-  */
-  constructor(name11, props, id3, flags = 0) {
-    this.name = name11;
-    this.props = props;
-    this.id = id3;
-    this.flags = flags;
-  }
-  /**
-  Define a node type.
-  */
-  static define(spec) {
-    let props = spec.props && spec.props.length ? /* @__PURE__ */ Object.create(null) : noProps8;
-    let flags = (spec.top ? 1 : 0) | (spec.skipped ? 2 : 0) | (spec.error ? 4 : 0) | (spec.name == null ? 8 : 0);
-    let type = new _NodeType(spec.name || "", props, spec.id, flags);
-    if (spec.props)
-      for (let src of spec.props) {
-        if (!Array.isArray(src))
-          src = src(type);
-        if (src) {
-          if (src[0].perNode)
-            throw new RangeError("Can't store a per-node prop on a node type");
-          props[src[0].id] = src[1];
-        }
-      }
-    return type;
-  }
-  /**
-  Retrieves a node prop for this type. Will return `undefined` if
-  the prop isn't present on this node.
-  */
-  prop(prop) {
-    return this.props[prop.id];
-  }
-  /**
-  True when this is the top node of a grammar.
-  */
-  get isTop() {
-    return (this.flags & 1) > 0;
-  }
-  /**
-  True when this node is produced by a skip rule.
-  */
-  get isSkipped() {
-    return (this.flags & 2) > 0;
-  }
-  /**
-  Indicates whether this is an error node.
-  */
-  get isError() {
-    return (this.flags & 4) > 0;
-  }
-  /**
-  When true, this node type doesn't correspond to a user-declared
-  named node, for example because it is used to cache repetition.
-  */
-  get isAnonymous() {
-    return (this.flags & 8) > 0;
-  }
-  /**
-  Returns true when this node's name or one of its
-  [groups](#common.NodeProp^group) matches the given string.
-  */
-  is(name11) {
-    if (typeof name11 == "string") {
-      if (this.name == name11)
-        return true;
-      let group = this.prop(NodeProp8.group);
-      return group ? group.indexOf(name11) > -1 : false;
-    }
-    return this.id == name11;
-  }
-  /**
-  Create a function from node types to arbitrary values by
-  specifying an object whose property names are node or
-  [group](#common.NodeProp^group) names. Often useful with
-  [`NodeProp.add`](#common.NodeProp.add). You can put multiple
-  names, separated by spaces, in a single property name to map
-  multiple node names to a single value.
-  */
-  static match(map) {
-    let direct = /* @__PURE__ */ Object.create(null);
-    for (let prop in map)
-      for (let name11 of prop.split(" "))
-        direct[name11] = map[prop];
-    return (node) => {
-      for (let groups = node.prop(NodeProp8.group), i = -1; i < (groups ? groups.length : 0); i++) {
-        let found = direct[i < 0 ? node.name : groups[i]];
-        if (found)
-          return found;
-      }
-    };
-  }
-};
-NodeType8.none = new NodeType8(
-  "",
-  /* @__PURE__ */ Object.create(null),
-  0,
-  8
-  /* NodeFlag.Anonymous */
-);
-var CachedNode8 = /* @__PURE__ */ new WeakMap();
-var CachedInnerNode8 = /* @__PURE__ */ new WeakMap();
-var IterMode8;
-(function(IterMode11) {
-  IterMode11[IterMode11["ExcludeBuffers"] = 1] = "ExcludeBuffers";
-  IterMode11[IterMode11["IncludeAnonymous"] = 2] = "IncludeAnonymous";
-  IterMode11[IterMode11["IgnoreMounts"] = 4] = "IgnoreMounts";
-  IterMode11[IterMode11["IgnoreOverlays"] = 8] = "IgnoreOverlays";
-  IterMode11[IterMode11["EnterBracketed"] = 16] = "EnterBracketed";
-})(IterMode8 || (IterMode8 = {}));
-var Tree8 = class _Tree {
-  /**
-  Construct a new tree. See also [`Tree.build`](#common.Tree^build).
-  */
-  constructor(type, children, positions, length, props) {
-    this.type = type;
-    this.children = children;
-    this.positions = positions;
-    this.length = length;
-    this.props = null;
-    if (props && props.length) {
-      this.props = /* @__PURE__ */ Object.create(null);
-      for (let [prop, value] of props)
-        this.props[typeof prop == "number" ? prop : prop.id] = value;
-    }
-  }
-  /**
-  @internal
-  */
-  toString() {
-    let mounted = MountedTree8.get(this);
-    if (mounted && !mounted.overlay)
-      return mounted.tree.toString();
-    let children = "";
-    for (let ch of this.children) {
-      let str = ch.toString();
-      if (str) {
-        if (children)
-          children += ",";
-        children += str;
-      }
-    }
-    return !this.type.name ? children : (/\W/.test(this.type.name) && !this.type.isError ? JSON.stringify(this.type.name) : this.type.name) + (children.length ? "(" + children + ")" : "");
-  }
-  /**
-  Get a [tree cursor](#common.TreeCursor) positioned at the top of
-  the tree. Mode can be used to [control](#common.IterMode) which
-  nodes the cursor visits.
-  */
-  cursor(mode = 0) {
-    return new TreeCursor8(this.topNode, mode);
-  }
-  /**
-  Get a [tree cursor](#common.TreeCursor) pointing into this tree
-  at the given position and side (see
-  [`moveTo`](#common.TreeCursor.moveTo).
-  */
-  cursorAt(pos, side = 0, mode = 0) {
-    let scope = CachedNode8.get(this) || this.topNode;
-    let cursor2 = new TreeCursor8(scope);
-    cursor2.moveTo(pos, side);
-    CachedNode8.set(this, cursor2._tree);
-    return cursor2;
-  }
-  /**
-  Get a [syntax node](#common.SyntaxNode) object for the top of the
-  tree.
-  */
-  get topNode() {
-    return new TreeNode8(this, 0, 0, null);
-  }
-  /**
-  Get the [syntax node](#common.SyntaxNode) at the given position.
-  If `side` is -1, this will move into nodes that end at the
-  position. If 1, it'll move into nodes that start at the
-  position. With 0, it'll only enter nodes that cover the position
-  from both sides.
-  
-  Note that this will not enter
-  [overlays](#common.MountedTree.overlay), and you often want
-  [`resolveInner`](#common.Tree.resolveInner) instead.
-  */
-  resolve(pos, side = 0) {
-    let node = resolveNode8(CachedNode8.get(this) || this.topNode, pos, side, false);
-    CachedNode8.set(this, node);
-    return node;
-  }
-  /**
-  Like [`resolve`](#common.Tree.resolve), but will enter
-  [overlaid](#common.MountedTree.overlay) nodes, producing a syntax node
-  pointing into the innermost overlaid tree at the given position
-  (with parent links going through all parent structure, including
-  the host trees).
-  */
-  resolveInner(pos, side = 0) {
-    let node = resolveNode8(CachedInnerNode8.get(this) || this.topNode, pos, side, true);
-    CachedInnerNode8.set(this, node);
-    return node;
-  }
-  /**
-  In some situations, it can be useful to iterate through all
-  nodes around a position, including those in overlays that don't
-  directly cover the position. This method gives you an iterator
-  that will produce all nodes, from small to big, around the given
-  position.
-  */
-  resolveStack(pos, side = 0) {
-    return stackIterator8(this, pos, side);
-  }
-  /**
-  Iterate over the tree and its children, calling `enter` for any
-  node that touches the `from`/`to` region (if given) before
-  running over such a node's children, and `leave` (if given) when
-  leaving the node. When `enter` returns `false`, that node will
-  not have its children iterated over (or `leave` called).
-  */
-  iterate(spec) {
-    let { enter, leave, from = 0, to = this.length } = spec;
-    let mode = spec.mode || 0, anon = (mode & IterMode8.IncludeAnonymous) > 0;
-    for (let c = this.cursor(mode | IterMode8.IncludeAnonymous); ; ) {
-      let entered = false;
-      if (c.from <= to && c.to >= from && (!anon && c.type.isAnonymous || enter(c) !== false)) {
-        if (c.firstChild())
-          continue;
-        entered = true;
-      }
-      for (; ; ) {
-        if (entered && leave && (anon || !c.type.isAnonymous))
-          leave(c);
-        if (c.nextSibling())
-          break;
-        if (!c.parent())
-          return;
-        entered = true;
-      }
-    }
-  }
-  /**
-  Get the value of the given [node prop](#common.NodeProp) for this
-  node. Works with both per-node and per-type props.
-  */
-  prop(prop) {
-    return !prop.perNode ? this.type.prop(prop) : this.props ? this.props[prop.id] : void 0;
-  }
-  /**
-  Returns the node's [per-node props](#common.NodeProp.perNode) in a
-  format that can be passed to the [`Tree`](#common.Tree)
-  constructor.
-  */
-  get propValues() {
-    let result = [];
-    if (this.props)
-      for (let id3 in this.props)
-        result.push([+id3, this.props[id3]]);
-    return result;
-  }
-  /**
-  Balance the direct children of this tree, producing a copy of
-  which may have children grouped into subtrees with type
-  [`NodeType.none`](#common.NodeType^none).
-  */
-  balance(config2 = {}) {
-    return this.children.length <= 8 ? this : balanceRange8(NodeType8.none, this.children, this.positions, 0, this.children.length, 0, this.length, (children, positions, length) => new _Tree(this.type, children, positions, length, this.propValues), config2.makeTree || ((children, positions, length) => new _Tree(NodeType8.none, children, positions, length)));
-  }
-  /**
-  Build a tree from a postfix-ordered buffer of node information,
-  or a cursor over such a buffer.
-  */
-  static build(data2) {
-    return buildTree8(data2);
-  }
-};
-Tree8.empty = new Tree8(NodeType8.none, [], [], 0);
-var FlatBufferCursor8 = class _FlatBufferCursor {
-  constructor(buffer, index) {
-    this.buffer = buffer;
-    this.index = index;
-  }
-  get id() {
-    return this.buffer[this.index - 4];
-  }
-  get start() {
-    return this.buffer[this.index - 3];
-  }
-  get end() {
-    return this.buffer[this.index - 2];
-  }
-  get size() {
-    return this.buffer[this.index - 1];
-  }
-  get pos() {
-    return this.index;
-  }
-  next() {
-    this.index -= 4;
-  }
-  fork() {
-    return new _FlatBufferCursor(this.buffer, this.index);
-  }
-};
-var TreeBuffer8 = class _TreeBuffer {
-  /**
-  Create a tree buffer.
-  */
-  constructor(buffer, length, set) {
-    this.buffer = buffer;
-    this.length = length;
-    this.set = set;
-  }
-  /**
-  @internal
-  */
-  get type() {
-    return NodeType8.none;
-  }
-  /**
-  @internal
-  */
-  toString() {
-    let result = [];
-    for (let index = 0; index < this.buffer.length; ) {
-      result.push(this.childString(index));
-      index = this.buffer[index + 3];
-    }
-    return result.join(",");
-  }
-  /**
-  @internal
-  */
-  childString(index) {
-    let id3 = this.buffer[index], endIndex = this.buffer[index + 3];
-    let type = this.set.types[id3], result = type.name;
-    if (/\W/.test(result) && !type.isError)
-      result = JSON.stringify(result);
-    index += 4;
-    if (endIndex == index)
-      return result;
-    let children = [];
-    while (index < endIndex) {
-      children.push(this.childString(index));
-      index = this.buffer[index + 3];
-    }
-    return result + "(" + children.join(",") + ")";
-  }
-  /**
-  @internal
-  */
-  findChild(startIndex, endIndex, dir, pos, side) {
-    let { buffer } = this, pick = -1;
-    for (let i = startIndex; i != endIndex; i = buffer[i + 3]) {
-      if (checkSide8(side, pos, buffer[i + 1], buffer[i + 2])) {
-        pick = i;
-        if (dir > 0)
-          break;
-      }
-    }
-    return pick;
-  }
-  /**
-  @internal
-  */
-  slice(startI, endI, from) {
-    let b = this.buffer;
-    let copy = new Uint16Array(endI - startI), len = 0;
-    for (let i = startI, j = 0; i < endI; ) {
-      copy[j++] = b[i++];
-      copy[j++] = b[i++] - from;
-      let to = copy[j++] = b[i++] - from;
-      copy[j++] = b[i++] - startI;
-      len = Math.max(len, to);
-    }
-    return new _TreeBuffer(copy, len, this.set);
-  }
-};
-function checkSide8(side, pos, from, to) {
-  switch (side) {
-    case -2:
-      return from < pos;
-    case -1:
-      return to >= pos && from < pos;
-    case 0:
-      return from < pos && to > pos;
-    case 1:
-      return from <= pos && to > pos;
-    case 2:
-      return to > pos;
-    case 4:
-      return true;
-  }
-}
-function resolveNode8(node, pos, side, overlays) {
-  var _a7;
-  while (node.from == node.to || (side < 1 ? node.from >= pos : node.from > pos) || (side > -1 ? node.to <= pos : node.to < pos)) {
-    let parent = !overlays && node instanceof TreeNode8 && node.index < 0 ? null : node.parent;
-    if (!parent)
-      return node;
-    node = parent;
-  }
-  let mode = overlays ? 0 : IterMode8.IgnoreOverlays;
-  if (overlays)
-    for (let scan = node, parent = scan.parent; parent; scan = parent, parent = scan.parent) {
-      if (scan instanceof TreeNode8 && scan.index < 0 && ((_a7 = parent.enter(pos, side, mode)) === null || _a7 === void 0 ? void 0 : _a7.from) != scan.from)
-        node = parent;
-    }
-  for (; ; ) {
-    let inner = node.enter(pos, side, mode);
-    if (!inner)
-      return node;
-    node = inner;
-  }
-}
-var BaseNode8 = class {
-  cursor(mode = 0) {
-    return new TreeCursor8(this, mode);
-  }
-  getChild(type, before = null, after = null) {
-    let r = getChildren8(this, type, before, after);
-    return r.length ? r[0] : null;
-  }
-  getChildren(type, before = null, after = null) {
-    return getChildren8(this, type, before, after);
-  }
-  resolve(pos, side = 0) {
-    return resolveNode8(this, pos, side, false);
-  }
-  resolveInner(pos, side = 0) {
-    return resolveNode8(this, pos, side, true);
-  }
-  matchContext(context) {
-    return matchNodeContext8(this.parent, context);
-  }
-  enterUnfinishedNodesBefore(pos) {
-    let scan = this.childBefore(pos), node = this;
-    while (scan) {
-      let last = scan.lastChild;
-      if (!last || last.to != scan.to)
-        break;
-      if (last.type.isError && last.from == last.to) {
-        node = scan;
-        scan = last.prevSibling;
-      } else {
-        scan = last;
-      }
-    }
-    return node;
-  }
-  get node() {
-    return this;
-  }
-  get next() {
-    return this.parent;
-  }
-};
-var TreeNode8 = class _TreeNode extends BaseNode8 {
-  constructor(_tree, from, index, _parent) {
-    super();
-    this._tree = _tree;
-    this.from = from;
-    this.index = index;
-    this._parent = _parent;
-  }
-  get type() {
-    return this._tree.type;
-  }
-  get name() {
-    return this._tree.type.name;
-  }
-  get to() {
-    return this.from + this._tree.length;
-  }
-  nextChild(i, dir, pos, side, mode = 0) {
-    for (let parent = this; ; ) {
-      for (let { children, positions } = parent._tree, e = dir > 0 ? children.length : -1; i != e; i += dir) {
-        let next = children[i], start = positions[i] + parent.from, mounted;
-        if (!(mode & IterMode8.EnterBracketed && next instanceof Tree8 && (mounted = MountedTree8.get(next)) && !mounted.overlay && mounted.bracketed && pos >= start && pos <= start + next.length) && !checkSide8(side, pos, start, start + next.length))
-          continue;
-        if (next instanceof TreeBuffer8) {
-          if (mode & IterMode8.ExcludeBuffers)
-            continue;
-          let index = next.findChild(0, next.buffer.length, dir, pos - start, side);
-          if (index > -1)
-            return new BufferNode8(new BufferContext8(parent, next, i, start), null, index);
-        } else if (mode & IterMode8.IncludeAnonymous || (!next.type.isAnonymous || hasChild8(next))) {
-          let mounted2;
-          if (!(mode & IterMode8.IgnoreMounts) && (mounted2 = MountedTree8.get(next)) && !mounted2.overlay)
-            return new _TreeNode(mounted2.tree, start, i, parent);
-          let inner = new _TreeNode(next, start, i, parent);
-          return mode & IterMode8.IncludeAnonymous || !inner.type.isAnonymous ? inner : inner.nextChild(dir < 0 ? next.children.length - 1 : 0, dir, pos, side, mode);
-        }
-      }
-      if (mode & IterMode8.IncludeAnonymous || !parent.type.isAnonymous)
-        return null;
-      if (parent.index >= 0)
-        i = parent.index + dir;
-      else
-        i = dir < 0 ? -1 : parent._parent._tree.children.length;
-      parent = parent._parent;
-      if (!parent)
-        return null;
-    }
-  }
-  get firstChild() {
-    return this.nextChild(
-      0,
-      1,
-      0,
-      4
-      /* Side.DontCare */
-    );
-  }
-  get lastChild() {
-    return this.nextChild(
-      this._tree.children.length - 1,
-      -1,
-      0,
-      4
-      /* Side.DontCare */
-    );
-  }
-  childAfter(pos) {
-    return this.nextChild(
-      0,
-      1,
-      pos,
-      2
-      /* Side.After */
-    );
-  }
-  childBefore(pos) {
-    return this.nextChild(
-      this._tree.children.length - 1,
-      -1,
-      pos,
-      -2
-      /* Side.Before */
-    );
-  }
-  prop(prop) {
-    return this._tree.prop(prop);
-  }
-  enter(pos, side, mode = 0) {
-    let mounted;
-    if (!(mode & IterMode8.IgnoreOverlays) && (mounted = MountedTree8.get(this._tree)) && mounted.overlay) {
-      let rPos = pos - this.from, enterBracketed = mode & IterMode8.EnterBracketed && mounted.bracketed;
-      for (let { from, to } of mounted.overlay) {
-        if ((side > 0 || enterBracketed ? from <= rPos : from < rPos) && (side < 0 || enterBracketed ? to >= rPos : to > rPos))
-          return new _TreeNode(mounted.tree, mounted.overlay[0].from + this.from, -1, this);
-      }
-    }
-    return this.nextChild(0, 1, pos, side, mode);
-  }
-  nextSignificantParent() {
-    let val = this;
-    while (val.type.isAnonymous && val._parent)
-      val = val._parent;
-    return val;
-  }
-  get parent() {
-    return this._parent ? this._parent.nextSignificantParent() : null;
-  }
-  get nextSibling() {
-    return this._parent && this.index >= 0 ? this._parent.nextChild(
-      this.index + 1,
-      1,
-      0,
-      4
-      /* Side.DontCare */
-    ) : null;
-  }
-  get prevSibling() {
-    return this._parent && this.index >= 0 ? this._parent.nextChild(
-      this.index - 1,
-      -1,
-      0,
-      4
-      /* Side.DontCare */
-    ) : null;
-  }
-  get tree() {
-    return this._tree;
-  }
-  toTree() {
-    return this._tree;
-  }
-  /**
-  @internal
-  */
-  toString() {
-    return this._tree.toString();
-  }
-};
-function getChildren8(node, type, before, after) {
-  let cur2 = node.cursor(), result = [];
-  if (!cur2.firstChild())
-    return result;
-  if (before != null)
-    for (let found = false; !found; ) {
-      found = cur2.type.is(before);
-      if (!cur2.nextSibling())
-        return result;
-    }
-  for (; ; ) {
-    if (after != null && cur2.type.is(after))
-      return result;
-    if (cur2.type.is(type))
-      result.push(cur2.node);
-    if (!cur2.nextSibling())
-      return after == null ? result : [];
-  }
-}
-function matchNodeContext8(node, context, i = context.length - 1) {
-  for (let p = node; i >= 0; p = p.parent) {
-    if (!p)
-      return false;
-    if (!p.type.isAnonymous) {
-      if (context[i] && context[i] != p.name)
-        return false;
-      i--;
-    }
-  }
-  return true;
-}
-var BufferContext8 = class {
-  constructor(parent, buffer, index, start) {
-    this.parent = parent;
-    this.buffer = buffer;
-    this.index = index;
-    this.start = start;
-  }
-};
-var BufferNode8 = class _BufferNode extends BaseNode8 {
-  get name() {
-    return this.type.name;
-  }
-  get from() {
-    return this.context.start + this.context.buffer.buffer[this.index + 1];
-  }
-  get to() {
-    return this.context.start + this.context.buffer.buffer[this.index + 2];
-  }
-  constructor(context, _parent, index) {
-    super();
-    this.context = context;
-    this._parent = _parent;
-    this.index = index;
-    this.type = context.buffer.set.types[context.buffer.buffer[index]];
-  }
-  child(dir, pos, side) {
-    let { buffer } = this.context;
-    let index = buffer.findChild(this.index + 4, buffer.buffer[this.index + 3], dir, pos - this.context.start, side);
-    return index < 0 ? null : new _BufferNode(this.context, this, index);
-  }
-  get firstChild() {
-    return this.child(
-      1,
-      0,
-      4
-      /* Side.DontCare */
-    );
-  }
-  get lastChild() {
-    return this.child(
-      -1,
-      0,
-      4
-      /* Side.DontCare */
-    );
-  }
-  childAfter(pos) {
-    return this.child(
-      1,
-      pos,
-      2
-      /* Side.After */
-    );
-  }
-  childBefore(pos) {
-    return this.child(
-      -1,
-      pos,
-      -2
-      /* Side.Before */
-    );
-  }
-  prop(prop) {
-    return this.type.prop(prop);
-  }
-  enter(pos, side, mode = 0) {
-    if (mode & IterMode8.ExcludeBuffers)
-      return null;
-    let { buffer } = this.context;
-    let index = buffer.findChild(this.index + 4, buffer.buffer[this.index + 3], side > 0 ? 1 : -1, pos - this.context.start, side);
-    return index < 0 ? null : new _BufferNode(this.context, this, index);
-  }
-  get parent() {
-    return this._parent || this.context.parent.nextSignificantParent();
-  }
-  externalSibling(dir) {
-    return this._parent ? null : this.context.parent.nextChild(
-      this.context.index + dir,
-      dir,
-      0,
-      4
-      /* Side.DontCare */
-    );
-  }
-  get nextSibling() {
-    let { buffer } = this.context;
-    let after = buffer.buffer[this.index + 3];
-    if (after < (this._parent ? buffer.buffer[this._parent.index + 3] : buffer.buffer.length))
-      return new _BufferNode(this.context, this._parent, after);
-    return this.externalSibling(1);
-  }
-  get prevSibling() {
-    let { buffer } = this.context;
-    let parentStart = this._parent ? this._parent.index + 4 : 0;
-    if (this.index == parentStart)
-      return this.externalSibling(-1);
-    return new _BufferNode(this.context, this._parent, buffer.findChild(
-      parentStart,
-      this.index,
-      -1,
-      0,
-      4
-      /* Side.DontCare */
-    ));
-  }
-  get tree() {
-    return null;
-  }
-  toTree() {
-    let children = [], positions = [];
-    let { buffer } = this.context;
-    let startI = this.index + 4, endI = buffer.buffer[this.index + 3];
-    if (endI > startI) {
-      let from = buffer.buffer[this.index + 1];
-      children.push(buffer.slice(startI, endI, from));
-      positions.push(0);
-    }
-    return new Tree8(this.type, children, positions, this.to - this.from);
-  }
-  /**
-  @internal
-  */
-  toString() {
-    return this.context.buffer.childString(this.index);
-  }
-};
-function iterStack8(heads) {
-  if (!heads.length)
-    return null;
-  let pick = 0, picked = heads[0];
-  for (let i = 1; i < heads.length; i++) {
-    let node = heads[i];
-    if (node.from > picked.from || node.to < picked.to) {
-      picked = node;
-      pick = i;
-    }
-  }
-  let next = picked instanceof TreeNode8 && picked.index < 0 ? null : picked.parent;
-  let newHeads = heads.slice();
-  if (next)
-    newHeads[pick] = next;
-  else
-    newHeads.splice(pick, 1);
-  return new StackIterator8(newHeads, picked);
-}
-var StackIterator8 = class {
-  constructor(heads, node) {
-    this.heads = heads;
-    this.node = node;
-  }
-  get next() {
-    return iterStack8(this.heads);
-  }
-};
-function stackIterator8(tree, pos, side) {
-  let inner = tree.resolveInner(pos, side), layers = null;
-  for (let scan = inner instanceof TreeNode8 ? inner : inner.context.parent; scan; scan = scan.parent) {
-    if (scan.index < 0) {
-      let parent = scan.parent;
-      (layers || (layers = [inner])).push(parent.resolve(pos, side));
-      scan = parent;
-    } else {
-      let mount = MountedTree8.get(scan.tree);
-      if (mount && mount.overlay && mount.overlay[0].from <= pos && mount.overlay[mount.overlay.length - 1].to >= pos) {
-        let root = new TreeNode8(mount.tree, mount.overlay[0].from + scan.from, -1, scan);
-        (layers || (layers = [inner])).push(resolveNode8(root, pos, side, false));
-      }
-    }
-  }
-  return layers ? iterStack8(layers) : inner;
-}
-var TreeCursor8 = class {
-  /**
-  Shorthand for `.type.name`.
-  */
-  get name() {
-    return this.type.name;
-  }
-  /**
-  @internal
-  */
-  constructor(node, mode = 0) {
-    this.buffer = null;
-    this.stack = [];
-    this.index = 0;
-    this.bufferNode = null;
-    this.mode = mode & ~IterMode8.EnterBracketed;
-    if (node instanceof TreeNode8) {
-      this.yieldNode(node);
-    } else {
-      this._tree = node.context.parent;
-      this.buffer = node.context;
-      for (let n = node._parent; n; n = n._parent)
-        this.stack.unshift(n.index);
-      this.bufferNode = node;
-      this.yieldBuf(node.index);
-    }
-  }
-  yieldNode(node) {
-    if (!node)
-      return false;
-    this._tree = node;
-    this.type = node.type;
-    this.from = node.from;
-    this.to = node.to;
-    return true;
-  }
-  yieldBuf(index, type) {
-    this.index = index;
-    let { start, buffer } = this.buffer;
-    this.type = type || buffer.set.types[buffer.buffer[index]];
-    this.from = start + buffer.buffer[index + 1];
-    this.to = start + buffer.buffer[index + 2];
-    return true;
-  }
-  /**
-  @internal
-  */
-  yield(node) {
-    if (!node)
-      return false;
-    if (node instanceof TreeNode8) {
-      this.buffer = null;
-      return this.yieldNode(node);
-    }
-    this.buffer = node.context;
-    return this.yieldBuf(node.index, node.type);
-  }
-  /**
-  @internal
-  */
-  toString() {
-    return this.buffer ? this.buffer.buffer.childString(this.index) : this._tree.toString();
-  }
-  /**
-  @internal
-  */
-  enterChild(dir, pos, side) {
-    if (!this.buffer)
-      return this.yield(this._tree.nextChild(dir < 0 ? this._tree._tree.children.length - 1 : 0, dir, pos, side, this.mode));
-    let { buffer } = this.buffer;
-    let index = buffer.findChild(this.index + 4, buffer.buffer[this.index + 3], dir, pos - this.buffer.start, side);
-    if (index < 0)
-      return false;
-    this.stack.push(this.index);
-    return this.yieldBuf(index);
-  }
-  /**
-  Move the cursor to this node's first child. When this returns
-  false, the node has no child, and the cursor has not been moved.
-  */
-  firstChild() {
-    return this.enterChild(
-      1,
-      0,
-      4
-      /* Side.DontCare */
-    );
-  }
-  /**
-  Move the cursor to this node's last child.
-  */
-  lastChild() {
-    return this.enterChild(
-      -1,
-      0,
-      4
-      /* Side.DontCare */
-    );
-  }
-  /**
-  Move the cursor to the first child that ends after `pos`.
-  */
-  childAfter(pos) {
-    return this.enterChild(
-      1,
-      pos,
-      2
-      /* Side.After */
-    );
-  }
-  /**
-  Move to the last child that starts before `pos`.
-  */
-  childBefore(pos) {
-    return this.enterChild(
-      -1,
-      pos,
-      -2
-      /* Side.Before */
-    );
-  }
-  /**
-  Move the cursor to the child around `pos`. If side is -1 the
-  child may end at that position, when 1 it may start there. This
-  will also enter [overlaid](#common.MountedTree.overlay)
-  [mounted](#common.NodeProp^mounted) trees unless `overlays` is
-  set to false.
-  */
-  enter(pos, side, mode = this.mode) {
-    if (!this.buffer)
-      return this.yield(this._tree.enter(pos, side, mode));
-    return mode & IterMode8.ExcludeBuffers ? false : this.enterChild(1, pos, side);
-  }
-  /**
-  Move to the node's parent node, if this isn't the top node.
-  */
-  parent() {
-    if (!this.buffer)
-      return this.yieldNode(this.mode & IterMode8.IncludeAnonymous ? this._tree._parent : this._tree.parent);
-    if (this.stack.length)
-      return this.yieldBuf(this.stack.pop());
-    let parent = this.mode & IterMode8.IncludeAnonymous ? this.buffer.parent : this.buffer.parent.nextSignificantParent();
-    this.buffer = null;
-    return this.yieldNode(parent);
-  }
-  /**
-  @internal
-  */
-  sibling(dir) {
-    if (!this.buffer)
-      return !this._tree._parent ? false : this.yield(this._tree.index < 0 ? null : this._tree._parent.nextChild(this._tree.index + dir, dir, 0, 4, this.mode));
-    let { buffer } = this.buffer, d = this.stack.length - 1;
-    if (dir < 0) {
-      let parentStart = d < 0 ? 0 : this.stack[d] + 4;
-      if (this.index != parentStart)
-        return this.yieldBuf(buffer.findChild(
-          parentStart,
-          this.index,
-          -1,
-          0,
-          4
-          /* Side.DontCare */
-        ));
-    } else {
-      let after = buffer.buffer[this.index + 3];
-      if (after < (d < 0 ? buffer.buffer.length : buffer.buffer[this.stack[d] + 3]))
-        return this.yieldBuf(after);
-    }
-    return d < 0 ? this.yield(this.buffer.parent.nextChild(this.buffer.index + dir, dir, 0, 4, this.mode)) : false;
-  }
-  /**
-  Move to this node's next sibling, if any.
-  */
-  nextSibling() {
-    return this.sibling(1);
-  }
-  /**
-  Move to this node's previous sibling, if any.
-  */
-  prevSibling() {
-    return this.sibling(-1);
-  }
-  atLastNode(dir) {
-    let index, parent, { buffer } = this;
-    if (buffer) {
-      if (dir > 0) {
-        if (this.index < buffer.buffer.buffer.length)
-          return false;
-      } else {
-        for (let i = 0; i < this.index; i++)
-          if (buffer.buffer.buffer[i + 3] < this.index)
-            return false;
-      }
-      ({ index, parent } = buffer);
-    } else {
-      ({ index, _parent: parent } = this._tree);
-    }
-    for (; parent; { index, _parent: parent } = parent) {
-      if (index > -1)
-        for (let i = index + dir, e = dir < 0 ? -1 : parent._tree.children.length; i != e; i += dir) {
-          let child = parent._tree.children[i];
-          if (this.mode & IterMode8.IncludeAnonymous || child instanceof TreeBuffer8 || !child.type.isAnonymous || hasChild8(child))
-            return false;
-        }
-    }
-    return true;
-  }
-  move(dir, enter) {
-    if (enter && this.enterChild(
-      dir,
-      0,
-      4
-      /* Side.DontCare */
-    ))
-      return true;
-    for (; ; ) {
-      if (this.sibling(dir))
-        return true;
-      if (this.atLastNode(dir) || !this.parent())
-        return false;
-    }
-  }
-  /**
-  Move to the next node in a
-  [pre-order](https://en.wikipedia.org/wiki/Tree_traversal#Pre-order,_NLR)
-  traversal, going from a node to its first child or, if the
-  current node is empty or `enter` is false, its next sibling or
-  the next sibling of the first parent node that has one.
-  */
-  next(enter = true) {
-    return this.move(1, enter);
-  }
-  /**
-  Move to the next node in a last-to-first pre-order traversal. A
-  node is followed by its last child or, if it has none, its
-  previous sibling or the previous sibling of the first parent
-  node that has one.
-  */
-  prev(enter = true) {
-    return this.move(-1, enter);
-  }
-  /**
-  Move the cursor to the innermost node that covers `pos`. If
-  `side` is -1, it will enter nodes that end at `pos`. If it is 1,
-  it will enter nodes that start at `pos`.
-  */
-  moveTo(pos, side = 0) {
-    while (this.from == this.to || (side < 1 ? this.from >= pos : this.from > pos) || (side > -1 ? this.to <= pos : this.to < pos))
-      if (!this.parent())
-        break;
-    while (this.enterChild(1, pos, side)) {
-    }
-    return this;
-  }
-  /**
-  Get a [syntax node](#common.SyntaxNode) at the cursor's current
-  position.
-  */
-  get node() {
-    if (!this.buffer)
-      return this._tree;
-    let cache2 = this.bufferNode, result = null, depth = 0;
-    if (cache2 && cache2.context == this.buffer) {
-      scan: for (let index = this.index, d = this.stack.length; d >= 0; ) {
-        for (let c = cache2; c; c = c._parent)
-          if (c.index == index) {
-            if (index == this.index)
-              return c;
-            result = c;
-            depth = d + 1;
-            break scan;
-          }
-        index = this.stack[--d];
-      }
-    }
-    for (let i = depth; i < this.stack.length; i++)
-      result = new BufferNode8(this.buffer, result, this.stack[i]);
-    return this.bufferNode = new BufferNode8(this.buffer, result, this.index);
-  }
-  /**
-  Get the [tree](#common.Tree) that represents the current node, if
-  any. Will return null when the node is in a [tree
-  buffer](#common.TreeBuffer).
-  */
-  get tree() {
-    return this.buffer ? null : this._tree._tree;
-  }
-  /**
-  Iterate over the current node and all its descendants, calling
-  `enter` when entering a node and `leave`, if given, when leaving
-  one. When `enter` returns `false`, any children of that node are
-  skipped, and `leave` isn't called for it.
-  */
-  iterate(enter, leave) {
-    for (let depth = 0; ; ) {
-      let mustLeave = false;
-      if (this.type.isAnonymous || enter(this) !== false) {
-        if (this.firstChild()) {
-          depth++;
-          continue;
-        }
-        if (!this.type.isAnonymous)
-          mustLeave = true;
-      }
-      for (; ; ) {
-        if (mustLeave && leave)
-          leave(this);
-        mustLeave = this.type.isAnonymous;
-        if (!depth)
-          return;
-        if (this.nextSibling())
-          break;
-        this.parent();
-        depth--;
-        mustLeave = true;
-      }
-    }
-  }
-  /**
-  Test whether the current node matches a given context—a sequence
-  of direct parent node names. Empty strings in the context array
-  are treated as wildcards.
-  */
-  matchContext(context) {
-    if (!this.buffer)
-      return matchNodeContext8(this.node.parent, context);
-    let { buffer } = this.buffer, { types: types2 } = buffer.set;
-    for (let i = context.length - 1, d = this.stack.length - 1; i >= 0; d--) {
-      if (d < 0)
-        return matchNodeContext8(this._tree, context, i);
-      let type = types2[buffer.buffer[this.stack[d]]];
-      if (!type.isAnonymous) {
-        if (context[i] && context[i] != type.name)
-          return false;
-        i--;
-      }
-    }
-    return true;
-  }
-};
-function hasChild8(tree) {
-  return tree.children.some((ch) => ch instanceof TreeBuffer8 || !ch.type.isAnonymous || hasChild8(ch));
-}
-function buildTree8(data2) {
-  var _a7;
-  let { buffer, nodeSet, maxBufferLength = DefaultBufferLength8, reused = [], minRepeatType = nodeSet.types.length } = data2;
-  let cursor2 = Array.isArray(buffer) ? new FlatBufferCursor8(buffer, buffer.length) : buffer;
-  let types2 = nodeSet.types;
-  let contextHash = 0, lookAhead = 0;
-  function takeNode(parentStart, minPos, children2, positions2, inRepeat, depth) {
-    let { id: id3, start, end, size } = cursor2;
-    let lookAheadAtStart = lookAhead, contextAtStart = contextHash;
-    if (size < 0) {
-      cursor2.next();
-      if (size == -1) {
-        let node2 = reused[id3];
-        children2.push(node2);
-        positions2.push(start - parentStart);
-        return;
-      } else if (size == -3) {
-        contextHash = id3;
-        return;
-      } else if (size == -4) {
-        lookAhead = id3;
-        return;
-      } else {
-        throw new RangeError(`Unrecognized record size: ${size}`);
-      }
-    }
-    let type = types2[id3], node, buffer2;
-    let startPos = start - parentStart;
-    if (end - start <= maxBufferLength && (buffer2 = findBufferSize(cursor2.pos - minPos, inRepeat))) {
-      let data3 = new Uint16Array(buffer2.size - buffer2.skip);
-      let endPos = cursor2.pos - buffer2.size, index = data3.length;
-      while (cursor2.pos > endPos)
-        index = copyToBuffer(buffer2.start, data3, index);
-      node = new TreeBuffer8(data3, end - buffer2.start, nodeSet);
-      startPos = buffer2.start - parentStart;
-    } else {
-      let endPos = cursor2.pos - size;
-      cursor2.next();
-      let localChildren = [], localPositions = [];
-      let localInRepeat = id3 >= minRepeatType ? id3 : -1;
-      let lastGroup = 0, lastEnd = end;
-      while (cursor2.pos > endPos) {
-        if (localInRepeat >= 0 && cursor2.id == localInRepeat && cursor2.size >= 0) {
-          if (cursor2.end <= lastEnd - maxBufferLength) {
-            makeRepeatLeaf(localChildren, localPositions, start, lastGroup, cursor2.end, lastEnd, localInRepeat, lookAheadAtStart, contextAtStart);
-            lastGroup = localChildren.length;
-            lastEnd = cursor2.end;
-          }
-          cursor2.next();
-        } else if (depth > 2500) {
-          takeFlatNode(start, endPos, localChildren, localPositions);
-        } else {
-          takeNode(start, endPos, localChildren, localPositions, localInRepeat, depth + 1);
-        }
-      }
-      if (localInRepeat >= 0 && lastGroup > 0 && lastGroup < localChildren.length)
-        makeRepeatLeaf(localChildren, localPositions, start, lastGroup, start, lastEnd, localInRepeat, lookAheadAtStart, contextAtStart);
-      localChildren.reverse();
-      localPositions.reverse();
-      if (localInRepeat > -1 && lastGroup > 0) {
-        let make = makeBalanced(type, contextAtStart);
-        node = balanceRange8(type, localChildren, localPositions, 0, localChildren.length, 0, end - start, make, make);
-      } else {
-        node = makeTree(type, localChildren, localPositions, end - start, lookAheadAtStart - end, contextAtStart);
-      }
-    }
-    children2.push(node);
-    positions2.push(startPos);
-  }
-  function takeFlatNode(parentStart, minPos, children2, positions2) {
-    let nodes = [];
-    let nodeCount = 0, stopAt = -1;
-    while (cursor2.pos > minPos) {
-      let { id: id3, start, end, size } = cursor2;
-      if (size > 4) {
-        cursor2.next();
-      } else if (stopAt > -1 && start < stopAt) {
-        break;
-      } else {
-        if (stopAt < 0)
-          stopAt = end - maxBufferLength;
-        nodes.push(id3, start, end);
-        nodeCount++;
-        cursor2.next();
-      }
-    }
-    if (nodeCount) {
-      let buffer2 = new Uint16Array(nodeCount * 4);
-      let start = nodes[nodes.length - 2];
-      for (let i = nodes.length - 3, j = 0; i >= 0; i -= 3) {
-        buffer2[j++] = nodes[i];
-        buffer2[j++] = nodes[i + 1] - start;
-        buffer2[j++] = nodes[i + 2] - start;
-        buffer2[j++] = j;
-      }
-      children2.push(new TreeBuffer8(buffer2, nodes[2] - start, nodeSet));
-      positions2.push(start - parentStart);
-    }
-  }
-  function makeBalanced(type, contextHash2) {
-    return (children2, positions2, length2) => {
-      let lookAhead2 = 0, lastI = children2.length - 1, last, lookAheadProp;
-      if (lastI >= 0 && (last = children2[lastI]) instanceof Tree8) {
-        if (!lastI && last.type == type && last.length == length2)
-          return last;
-        if (lookAheadProp = last.prop(NodeProp8.lookAhead))
-          lookAhead2 = positions2[lastI] + last.length + lookAheadProp;
-      }
-      return makeTree(type, children2, positions2, length2, lookAhead2, contextHash2);
-    };
-  }
-  function makeRepeatLeaf(children2, positions2, base2, i, from, to, type, lookAhead2, contextHash2) {
-    let localChildren = [], localPositions = [];
-    while (children2.length > i) {
-      localChildren.push(children2.pop());
-      localPositions.push(positions2.pop() + base2 - from);
-    }
-    children2.push(makeTree(nodeSet.types[type], localChildren, localPositions, to - from, lookAhead2 - to, contextHash2));
-    positions2.push(from - base2);
-  }
-  function makeTree(type, children2, positions2, length2, lookAhead2, contextHash2, props) {
-    if (contextHash2) {
-      let pair4 = [NodeProp8.contextHash, contextHash2];
-      props = props ? [pair4].concat(props) : [pair4];
-    }
-    if (lookAhead2 > 25) {
-      let pair4 = [NodeProp8.lookAhead, lookAhead2];
-      props = props ? [pair4].concat(props) : [pair4];
-    }
-    return new Tree8(type, children2, positions2, length2, props);
-  }
-  function findBufferSize(maxSize, inRepeat) {
-    let fork = cursor2.fork();
-    let size = 0, start = 0, skip = 0, minStart = fork.end - maxBufferLength;
-    let result = { size: 0, start: 0, skip: 0 };
-    scan: for (let minPos = fork.pos - maxSize; fork.pos > minPos; ) {
-      let nodeSize11 = fork.size;
-      if (fork.id == inRepeat && nodeSize11 >= 0) {
-        result.size = size;
-        result.start = start;
-        result.skip = skip;
-        skip += 4;
-        size += 4;
-        fork.next();
-        continue;
-      }
-      let startPos = fork.pos - nodeSize11;
-      if (nodeSize11 < 0 || startPos < minPos || fork.start < minStart)
-        break;
-      let localSkipped = fork.id >= minRepeatType ? 4 : 0;
-      let nodeStart2 = fork.start;
-      fork.next();
-      while (fork.pos > startPos) {
-        if (fork.size < 0) {
-          if (fork.size == -3 || fork.size == -4)
-            localSkipped += 4;
-          else
-            break scan;
-        } else if (fork.id >= minRepeatType) {
-          localSkipped += 4;
-        }
-        fork.next();
-      }
-      start = nodeStart2;
-      size += nodeSize11;
-      skip += localSkipped;
-    }
-    if (inRepeat < 0 || size == maxSize) {
-      result.size = size;
-      result.start = start;
-      result.skip = skip;
-    }
-    return result.size > 4 ? result : void 0;
-  }
-  function copyToBuffer(bufferStart, buffer2, index) {
-    let { id: id3, start, end, size } = cursor2;
-    cursor2.next();
-    if (size >= 0 && id3 < minRepeatType) {
-      let startIndex = index;
-      if (size > 4) {
-        let endPos = cursor2.pos - (size - 4);
-        while (cursor2.pos > endPos)
-          index = copyToBuffer(bufferStart, buffer2, index);
-      }
-      buffer2[--index] = startIndex;
-      buffer2[--index] = end - bufferStart;
-      buffer2[--index] = start - bufferStart;
-      buffer2[--index] = id3;
-    } else if (size == -3) {
-      contextHash = id3;
-    } else if (size == -4) {
-      lookAhead = id3;
-    }
-    return index;
-  }
-  let children = [], positions = [];
-  while (cursor2.pos > 0)
-    takeNode(data2.start || 0, data2.bufferStart || 0, children, positions, -1, 0);
-  let length = (_a7 = data2.length) !== null && _a7 !== void 0 ? _a7 : children.length ? positions[0] + children[0].length : 0;
-  return new Tree8(types2[data2.topID], children.reverse(), positions.reverse(), length);
-}
-var nodeSizeCache8 = /* @__PURE__ */ new WeakMap();
-function nodeSize8(balanceType, node) {
-  if (!balanceType.isAnonymous || node instanceof TreeBuffer8 || node.type != balanceType)
-    return 1;
-  let size = nodeSizeCache8.get(node);
-  if (size == null) {
-    size = 1;
-    for (let child of node.children) {
-      if (child.type != balanceType || !(child instanceof Tree8)) {
-        size = 1;
-        break;
-      }
-      size += nodeSize8(balanceType, child);
-    }
-    nodeSizeCache8.set(node, size);
-  }
-  return size;
-}
-function balanceRange8(balanceType, children, positions, from, to, start, length, mkTop, mkTree) {
-  let total = 0;
-  for (let i = from; i < to; i++)
-    total += nodeSize8(balanceType, children[i]);
-  let maxChild = Math.ceil(
-    total * 1.5 / 8
-    /* Balance.BranchFactor */
-  );
-  let localChildren = [], localPositions = [];
-  function divide(children2, positions2, from2, to2, offset) {
-    for (let i = from2; i < to2; ) {
-      let groupFrom = i, groupStart = positions2[i], groupSize = nodeSize8(balanceType, children2[i]);
-      i++;
-      for (; i < to2; i++) {
-        let nextSize = nodeSize8(balanceType, children2[i]);
-        if (groupSize + nextSize >= maxChild)
-          break;
-        groupSize += nextSize;
-      }
-      if (i == groupFrom + 1) {
-        if (groupSize > maxChild) {
-          let only = children2[groupFrom];
-          divide(only.children, only.positions, 0, only.children.length, positions2[groupFrom] + offset);
-          continue;
-        }
-        localChildren.push(children2[groupFrom]);
-      } else {
-        let length2 = positions2[i - 1] + children2[i - 1].length - groupStart;
-        localChildren.push(balanceRange8(balanceType, children2, positions2, groupFrom, i, groupStart, length2, null, mkTree));
-      }
-      localPositions.push(groupStart + offset - start);
-    }
-  }
-  divide(children, positions, from, to, 0);
-  return (mkTop || mkTree)(localChildren, localPositions, length);
-}
-var NodeWeakMap2 = class {
-  constructor() {
-    this.map = /* @__PURE__ */ new WeakMap();
-  }
-  setBuffer(buffer, index, value) {
-    let inner = this.map.get(buffer);
-    if (!inner)
-      this.map.set(buffer, inner = /* @__PURE__ */ new Map());
-    inner.set(index, value);
-  }
-  getBuffer(buffer, index) {
-    let inner = this.map.get(buffer);
-    return inner && inner.get(index);
-  }
-  /**
-  Set the value for this syntax node.
-  */
-  set(node, value) {
-    if (node instanceof BufferNode8)
-      this.setBuffer(node.context.buffer, node.index, value);
-    else if (node instanceof TreeNode8)
-      this.map.set(node.tree, value);
-  }
-  /**
-  Retrieve value for this syntax node, if it exists in the map.
-  */
-  get(node) {
-    return node instanceof BufferNode8 ? this.getBuffer(node.context.buffer, node.index) : node instanceof TreeNode8 ? this.map.get(node.tree) : void 0;
-  }
-  /**
-  Set the value for the node that a cursor currently points to.
-  */
-  cursorSet(cursor2, value) {
-    if (cursor2.buffer)
-      this.setBuffer(cursor2.buffer.buffer, cursor2.index, value);
-    else
-      this.map.set(cursor2.tree, value);
-  }
-  /**
-  Retrieve the value for the node that a cursor currently points
-  to.
-  */
-  cursorGet(cursor2) {
-    return cursor2.buffer ? this.getBuffer(cursor2.buffer.buffer, cursor2.index) : this.map.get(cursor2.tree);
-  }
-};
-var TreeFragment6 = class _TreeFragment {
-  /**
-  Construct a tree fragment. You'll usually want to use
-  [`addTree`](#common.TreeFragment^addTree) and
-  [`applyChanges`](#common.TreeFragment^applyChanges) instead of
-  calling this directly.
-  */
-  constructor(from, to, tree, offset, openStart = false, openEnd = false) {
-    this.from = from;
-    this.to = to;
-    this.tree = tree;
-    this.offset = offset;
-    this.open = (openStart ? 1 : 0) | (openEnd ? 2 : 0);
-  }
-  /**
-  Whether the start of the fragment represents the start of a
-  parse, or the end of a change. (In the second case, it may not
-  be safe to reuse some nodes at the start, depending on the
-  parsing algorithm.)
-  */
-  get openStart() {
-    return (this.open & 1) > 0;
-  }
-  /**
-  Whether the end of the fragment represents the end of a
-  full-document parse, or the start of a change.
-  */
-  get openEnd() {
-    return (this.open & 2) > 0;
-  }
-  /**
-  Create a set of fragments from a freshly parsed tree, or update
-  an existing set of fragments by replacing the ones that overlap
-  with a tree with content from the new tree. When `partial` is
-  true, the parse is treated as incomplete, and the resulting
-  fragment has [`openEnd`](#common.TreeFragment.openEnd) set to
-  true.
-  */
-  static addTree(tree, fragments = [], partial = false) {
-    let result = [new _TreeFragment(0, tree.length, tree, 0, false, partial)];
-    for (let f of fragments)
-      if (f.to > tree.length)
-        result.push(f);
-    return result;
-  }
-  /**
-  Apply a set of edits to an array of fragments, removing or
-  splitting fragments as necessary to remove edited ranges, and
-  adjusting offsets for fragments that moved.
-  */
-  static applyChanges(fragments, changes, minGap = 128) {
-    if (!changes.length)
-      return fragments;
-    let result = [];
-    let fI = 1, nextF = fragments.length ? fragments[0] : null;
-    for (let cI = 0, pos = 0, off = 0; ; cI++) {
-      let nextC = cI < changes.length ? changes[cI] : null;
-      let nextPos = nextC ? nextC.fromA : 1e9;
-      if (nextPos - pos >= minGap)
-        while (nextF && nextF.from < nextPos) {
-          let cut = nextF;
-          if (pos >= cut.from || nextPos <= cut.to || off) {
-            let fFrom = Math.max(cut.from, pos) - off, fTo = Math.min(cut.to, nextPos) - off;
-            cut = fFrom >= fTo ? null : new _TreeFragment(fFrom, fTo, cut.tree, cut.offset + off, cI > 0, !!nextC);
-          }
-          if (cut)
-            result.push(cut);
-          if (nextF.to > nextPos)
-            break;
-          nextF = fI < fragments.length ? fragments[fI++] : null;
-        }
-      if (!nextC)
-        break;
-      pos = nextC.toA;
-      off = nextC.toA - nextC.toB;
-    }
-    return result;
-  }
-};
-var Parser8 = class {
-  /**
-  Start a parse, returning a [partial parse](#common.PartialParse)
-  object. [`fragments`](#common.TreeFragment) can be passed in to
-  make the parse incremental.
-  
-  By default, the entire input is parsed. You can pass `ranges`,
-  which should be a sorted array of non-empty, non-overlapping
-  ranges, to parse only those ranges. The tree returned in that
-  case will start at `ranges[0].from`.
-  */
-  startParse(input, fragments, ranges) {
-    if (typeof input == "string")
-      input = new StringInput8(input);
-    ranges = !ranges ? [new Range9(0, input.length)] : ranges.length ? ranges.map((r) => new Range9(r.from, r.to)) : [new Range9(0, 0)];
-    return this.createParse(input, fragments || [], ranges);
-  }
-  /**
-  Run a full parse, returning the resulting tree.
-  */
-  parse(input, fragments, ranges) {
-    let parse = this.startParse(input, fragments, ranges);
-    for (; ; ) {
-      let done = parse.advance();
-      if (done)
-        return done;
-    }
-  }
-};
-var StringInput8 = class {
-  constructor(string11) {
-    this.string = string11;
-  }
-  get length() {
-    return this.string.length;
-  }
-  chunk(from) {
-    return this.string.slice(from);
-  }
-  get lineChunks() {
-    return false;
-  }
-  read(from, to) {
-    return this.string.slice(from, to);
-  }
-};
-var stoppedInner8 = new NodeProp8({ perNode: true });
-
-// node_modules/@codemirror/lang-javascript/node_modules/@lezer/highlight/dist/index.js
-var nextTagID8 = 0;
-var Tag8 = class _Tag {
-  /**
-  @internal
-  */
-  constructor(name11, set, base2, modified) {
-    this.name = name11;
-    this.set = set;
-    this.base = base2;
-    this.modified = modified;
-    this.id = nextTagID8++;
-  }
-  toString() {
-    let { name: name11 } = this;
-    for (let mod of this.modified)
-      if (mod.name)
-        name11 = `${mod.name}(${name11})`;
-    return name11;
-  }
-  static define(nameOrParent, parent) {
-    let name11 = typeof nameOrParent == "string" ? nameOrParent : "?";
-    if (nameOrParent instanceof _Tag)
-      parent = nameOrParent;
-    if (parent === null || parent === void 0 ? void 0 : parent.base)
-      throw new Error("Can not derive from a modified tag");
-    let tag = new _Tag(name11, [], null, []);
-    tag.set.push(tag);
-    if (parent)
-      for (let t11 of parent.set)
-        tag.set.push(t11);
-    return tag;
-  }
-  /**
-  Define a tag _modifier_, which is a function that, given a tag,
-  will return a tag that is a subtag of the original. Applying the
-  same modifier to a twice tag will return the same value (`m1(t1)
-  == m1(t1)`) and applying multiple modifiers will, regardless or
-  order, produce the same tag (`m1(m2(t1)) == m2(m1(t1))`).
-  
-  When multiple modifiers are applied to a given base tag, each
-  smaller set of modifiers is registered as a parent, so that for
-  example `m1(m2(m3(t1)))` is a subtype of `m1(m2(t1))`,
-  `m1(m3(t1)`, and so on.
-  */
-  static defineModifier(name11) {
-    let mod = new Modifier8(name11);
-    return (tag) => {
-      if (tag.modified.indexOf(mod) > -1)
-        return tag;
-      return Modifier8.get(tag.base || tag, tag.modified.concat(mod).sort((a, b) => a.id - b.id));
-    };
-  }
-};
-var nextModifierID8 = 0;
-var Modifier8 = class _Modifier {
-  constructor(name11) {
-    this.name = name11;
-    this.instances = [];
-    this.id = nextModifierID8++;
-  }
-  static get(base2, mods) {
-    if (!mods.length)
-      return base2;
-    let exists = mods[0].instances.find((t11) => t11.base == base2 && sameArray9(mods, t11.modified));
-    if (exists)
-      return exists;
-    let set = [], tag = new Tag8(base2.name, set, base2, mods);
-    for (let m of mods)
-      m.instances.push(tag);
-    let configs = powerSet8(mods);
-    for (let parent of base2.set)
-      if (!parent.modified.length)
-        for (let config2 of configs)
-          set.push(_Modifier.get(parent, config2));
-    return tag;
-  }
-};
-function sameArray9(a, b) {
-  return a.length == b.length && a.every((x, i) => x == b[i]);
-}
-function powerSet8(array) {
-  let sets = [[]];
-  for (let i = 0; i < array.length; i++) {
-    for (let j = 0, e = sets.length; j < e; j++) {
-      sets.push(sets[j].concat(array[i]));
-    }
-  }
-  return sets.sort((a, b) => b.length - a.length);
-}
-function styleTags8(spec) {
-  let byName = /* @__PURE__ */ Object.create(null);
-  for (let prop in spec) {
-    let tags12 = spec[prop];
-    if (!Array.isArray(tags12))
-      tags12 = [tags12];
-    for (let part of prop.split(" "))
-      if (part) {
-        let pieces = [], mode = 2, rest = part;
-        for (let pos = 0; ; ) {
-          if (rest == "..." && pos > 0 && pos + 3 == part.length) {
-            mode = 1;
-            break;
-          }
-          let m = /^"(?:[^"\\]|\\.)*?"|[^\/!]+/.exec(rest);
-          if (!m)
-            throw new RangeError("Invalid path: " + part);
-          pieces.push(m[0] == "*" ? "" : m[0][0] == '"' ? JSON.parse(m[0]) : m[0]);
-          pos += m[0].length;
-          if (pos == part.length)
-            break;
-          let next = part[pos++];
-          if (pos == part.length && next == "!") {
-            mode = 0;
-            break;
-          }
-          if (next != "/")
-            throw new RangeError("Invalid path: " + part);
-          rest = part.slice(pos);
-        }
-        let last = pieces.length - 1, inner = pieces[last];
-        if (!inner)
-          throw new RangeError("Invalid path: " + part);
-        let rule = new Rule8(tags12, mode, last > 0 ? pieces.slice(0, last) : null);
-        byName[inner] = rule.sort(byName[inner]);
-      }
-  }
-  return ruleNodeProp8.add(byName);
-}
-var ruleNodeProp8 = new NodeProp8({
-  combine(a, b) {
-    let cur2, root, take;
-    while (a || b) {
-      if (!a || b && a.depth >= b.depth) {
-        take = b;
-        b = b.next;
-      } else {
-        take = a;
-        a = a.next;
-      }
-      if (cur2 && cur2.mode == take.mode && !take.context && !cur2.context)
-        continue;
-      let copy = new Rule8(take.tags, take.mode, take.context);
-      if (cur2)
-        cur2.next = copy;
-      else
-        root = copy;
-      cur2 = copy;
-    }
-    return root;
-  }
-});
-var Rule8 = class {
-  constructor(tags12, mode, context, next) {
-    this.tags = tags12;
-    this.mode = mode;
-    this.context = context;
-    this.next = next;
-  }
-  get opaque() {
-    return this.mode == 0;
-  }
-  get inherit() {
-    return this.mode == 1;
-  }
-  sort(other) {
-    if (!other || other.depth < this.depth) {
-      this.next = other;
-      return this;
-    }
-    other.next = this.sort(other.next);
-    return other;
-  }
-  get depth() {
-    return this.context ? this.context.length : 0;
-  }
-};
-Rule8.empty = new Rule8([], 2, null);
-function tagHighlighter8(tags12, options) {
-  let map = /* @__PURE__ */ Object.create(null);
-  for (let style of tags12) {
-    if (!Array.isArray(style.tag))
-      map[style.tag.id] = style.class;
-    else
-      for (let tag of style.tag)
-        map[tag.id] = style.class;
-  }
-  let { scope, all = null } = options || {};
-  return {
-    style: (tags13) => {
-      let cls = all;
-      for (let tag of tags13) {
-        for (let sub of tag.set) {
-          let tagClass = map[sub.id];
-          if (tagClass) {
-            cls = cls ? cls + " " + tagClass : tagClass;
-            break;
-          }
-        }
-      }
-      return cls;
-    },
-    scope
-  };
-}
-var t8 = Tag8.define;
-var comment8 = t8();
-var name8 = t8();
-var typeName8 = t8(name8);
-var propertyName8 = t8(name8);
-var literal8 = t8();
-var string8 = t8(literal8);
-var number8 = t8(literal8);
-var content8 = t8();
-var heading8 = t8(content8);
-var keyword8 = t8();
-var operator8 = t8();
-var punctuation8 = t8();
-var bracket8 = t8(punctuation8);
-var meta8 = t8();
-var tags9 = {
-  /**
-  A comment.
-  */
-  comment: comment8,
-  /**
-  A line [comment](#highlight.tags.comment).
-  */
-  lineComment: t8(comment8),
-  /**
-  A block [comment](#highlight.tags.comment).
-  */
-  blockComment: t8(comment8),
-  /**
-  A documentation [comment](#highlight.tags.comment).
-  */
-  docComment: t8(comment8),
-  /**
-  Any kind of identifier.
-  */
-  name: name8,
-  /**
-  The [name](#highlight.tags.name) of a variable.
-  */
-  variableName: t8(name8),
-  /**
-  A type [name](#highlight.tags.name).
-  */
-  typeName: typeName8,
-  /**
-  A tag name (subtag of [`typeName`](#highlight.tags.typeName)).
-  */
-  tagName: t8(typeName8),
-  /**
-  A property or field [name](#highlight.tags.name).
-  */
-  propertyName: propertyName8,
-  /**
-  An attribute name (subtag of [`propertyName`](#highlight.tags.propertyName)).
-  */
-  attributeName: t8(propertyName8),
-  /**
-  The [name](#highlight.tags.name) of a class.
-  */
-  className: t8(name8),
-  /**
-  A label [name](#highlight.tags.name).
-  */
-  labelName: t8(name8),
-  /**
-  A namespace [name](#highlight.tags.name).
-  */
-  namespace: t8(name8),
-  /**
-  The [name](#highlight.tags.name) of a macro.
-  */
-  macroName: t8(name8),
-  /**
-  A literal value.
-  */
-  literal: literal8,
-  /**
-  A string [literal](#highlight.tags.literal).
-  */
-  string: string8,
-  /**
-  A documentation [string](#highlight.tags.string).
-  */
-  docString: t8(string8),
-  /**
-  A character literal (subtag of [string](#highlight.tags.string)).
-  */
-  character: t8(string8),
-  /**
-  An attribute value (subtag of [string](#highlight.tags.string)).
-  */
-  attributeValue: t8(string8),
-  /**
-  A number [literal](#highlight.tags.literal).
-  */
-  number: number8,
-  /**
-  An integer [number](#highlight.tags.number) literal.
-  */
-  integer: t8(number8),
-  /**
-  A floating-point [number](#highlight.tags.number) literal.
-  */
-  float: t8(number8),
-  /**
-  A boolean [literal](#highlight.tags.literal).
-  */
-  bool: t8(literal8),
-  /**
-  Regular expression [literal](#highlight.tags.literal).
-  */
-  regexp: t8(literal8),
-  /**
-  An escape [literal](#highlight.tags.literal), for example a
-  backslash escape in a string.
-  */
-  escape: t8(literal8),
-  /**
-  A color [literal](#highlight.tags.literal).
-  */
-  color: t8(literal8),
-  /**
-  A URL [literal](#highlight.tags.literal).
-  */
-  url: t8(literal8),
-  /**
-  A language keyword.
-  */
-  keyword: keyword8,
-  /**
-  The [keyword](#highlight.tags.keyword) for the self or this
-  object.
-  */
-  self: t8(keyword8),
-  /**
-  The [keyword](#highlight.tags.keyword) for null.
-  */
-  null: t8(keyword8),
-  /**
-  A [keyword](#highlight.tags.keyword) denoting some atomic value.
-  */
-  atom: t8(keyword8),
-  /**
-  A [keyword](#highlight.tags.keyword) that represents a unit.
-  */
-  unit: t8(keyword8),
-  /**
-  A modifier [keyword](#highlight.tags.keyword).
-  */
-  modifier: t8(keyword8),
-  /**
-  A [keyword](#highlight.tags.keyword) that acts as an operator.
-  */
-  operatorKeyword: t8(keyword8),
-  /**
-  A control-flow related [keyword](#highlight.tags.keyword).
-  */
-  controlKeyword: t8(keyword8),
-  /**
-  A [keyword](#highlight.tags.keyword) that defines something.
-  */
-  definitionKeyword: t8(keyword8),
-  /**
-  A [keyword](#highlight.tags.keyword) related to defining or
-  interfacing with modules.
-  */
-  moduleKeyword: t8(keyword8),
-  /**
-  An operator.
-  */
-  operator: operator8,
-  /**
-  An [operator](#highlight.tags.operator) that dereferences something.
-  */
-  derefOperator: t8(operator8),
-  /**
-  Arithmetic-related [operator](#highlight.tags.operator).
-  */
-  arithmeticOperator: t8(operator8),
-  /**
-  Logical [operator](#highlight.tags.operator).
-  */
-  logicOperator: t8(operator8),
-  /**
-  Bit [operator](#highlight.tags.operator).
-  */
-  bitwiseOperator: t8(operator8),
-  /**
-  Comparison [operator](#highlight.tags.operator).
-  */
-  compareOperator: t8(operator8),
-  /**
-  [Operator](#highlight.tags.operator) that updates its operand.
-  */
-  updateOperator: t8(operator8),
-  /**
-  [Operator](#highlight.tags.operator) that defines something.
-  */
-  definitionOperator: t8(operator8),
-  /**
-  Type-related [operator](#highlight.tags.operator).
-  */
-  typeOperator: t8(operator8),
-  /**
-  Control-flow [operator](#highlight.tags.operator).
-  */
-  controlOperator: t8(operator8),
-  /**
-  Program or markup punctuation.
-  */
-  punctuation: punctuation8,
-  /**
-  [Punctuation](#highlight.tags.punctuation) that separates
-  things.
-  */
-  separator: t8(punctuation8),
-  /**
-  Bracket-style [punctuation](#highlight.tags.punctuation).
-  */
-  bracket: bracket8,
-  /**
-  Angle [brackets](#highlight.tags.bracket) (usually `<` and `>`
-  tokens).
-  */
-  angleBracket: t8(bracket8),
-  /**
-  Square [brackets](#highlight.tags.bracket) (usually `[` and `]`
-  tokens).
-  */
-  squareBracket: t8(bracket8),
-  /**
-  Parentheses (usually `(` and `)` tokens). Subtag of
-  [bracket](#highlight.tags.bracket).
-  */
-  paren: t8(bracket8),
-  /**
-  Braces (usually `{` and `}` tokens). Subtag of
-  [bracket](#highlight.tags.bracket).
-  */
-  brace: t8(bracket8),
-  /**
-  Content, for example plain text in XML or markup documents.
-  */
-  content: content8,
-  /**
-  [Content](#highlight.tags.content) that represents a heading.
-  */
-  heading: heading8,
-  /**
-  A level 1 [heading](#highlight.tags.heading).
-  */
-  heading1: t8(heading8),
-  /**
-  A level 2 [heading](#highlight.tags.heading).
-  */
-  heading2: t8(heading8),
-  /**
-  A level 3 [heading](#highlight.tags.heading).
-  */
-  heading3: t8(heading8),
-  /**
-  A level 4 [heading](#highlight.tags.heading).
-  */
-  heading4: t8(heading8),
-  /**
-  A level 5 [heading](#highlight.tags.heading).
-  */
-  heading5: t8(heading8),
-  /**
-  A level 6 [heading](#highlight.tags.heading).
-  */
-  heading6: t8(heading8),
-  /**
-  A prose [content](#highlight.tags.content) separator (such as a horizontal rule).
-  */
-  contentSeparator: t8(content8),
-  /**
-  [Content](#highlight.tags.content) that represents a list.
-  */
-  list: t8(content8),
-  /**
-  [Content](#highlight.tags.content) that represents a quote.
-  */
-  quote: t8(content8),
-  /**
-  [Content](#highlight.tags.content) that is emphasized.
-  */
-  emphasis: t8(content8),
-  /**
-  [Content](#highlight.tags.content) that is styled strong.
-  */
-  strong: t8(content8),
-  /**
-  [Content](#highlight.tags.content) that is part of a link.
-  */
-  link: t8(content8),
-  /**
-  [Content](#highlight.tags.content) that is styled as code or
-  monospace.
-  */
-  monospace: t8(content8),
-  /**
-  [Content](#highlight.tags.content) that has a strike-through
-  style.
-  */
-  strikethrough: t8(content8),
-  /**
-  Inserted text in a change-tracking format.
-  */
-  inserted: t8(),
-  /**
-  Deleted text.
-  */
-  deleted: t8(),
-  /**
-  Changed text.
-  */
-  changed: t8(),
-  /**
-  An invalid or unsyntactic element.
-  */
-  invalid: t8(),
-  /**
-  Metadata or meta-instruction.
-  */
-  meta: meta8,
-  /**
-  [Metadata](#highlight.tags.meta) that applies to the entire
-  document.
-  */
-  documentMeta: t8(meta8),
-  /**
-  [Metadata](#highlight.tags.meta) that annotates or adds
-  attributes to a given syntactic element.
-  */
-  annotation: t8(meta8),
-  /**
-  Processing instruction or preprocessor directive. Subtag of
-  [meta](#highlight.tags.meta).
-  */
-  processingInstruction: t8(meta8),
-  /**
-  [Modifier](#highlight.Tag^defineModifier) that indicates that a
-  given element is being defined. Expected to be used with the
-  various [name](#highlight.tags.name) tags.
-  */
-  definition: Tag8.defineModifier("definition"),
-  /**
-  [Modifier](#highlight.Tag^defineModifier) that indicates that
-  something is constant. Mostly expected to be used with
-  [variable names](#highlight.tags.variableName).
-  */
-  constant: Tag8.defineModifier("constant"),
-  /**
-  [Modifier](#highlight.Tag^defineModifier) used to indicate that
-  a [variable](#highlight.tags.variableName) or [property
-  name](#highlight.tags.propertyName) is being called or defined
-  as a function.
-  */
-  function: Tag8.defineModifier("function"),
-  /**
-  [Modifier](#highlight.Tag^defineModifier) that can be applied to
-  [names](#highlight.tags.name) to indicate that they belong to
-  the language's standard environment.
-  */
-  standard: Tag8.defineModifier("standard"),
-  /**
-  [Modifier](#highlight.Tag^defineModifier) that indicates a given
-  [names](#highlight.tags.name) is local to some scope.
-  */
-  local: Tag8.defineModifier("local"),
-  /**
-  A generic variant [modifier](#highlight.Tag^defineModifier) that
-  can be used to tag language-specific alternative variants of
-  some common tag. It is recommended for themes to define special
-  forms of at least the [string](#highlight.tags.string) and
-  [variable name](#highlight.tags.variableName) tags, since those
-  come up a lot.
-  */
-  special: Tag8.defineModifier("special")
-};
-for (let name11 in tags9) {
-  let val = tags9[name11];
-  if (val instanceof Tag8)
-    val.name = name11;
-}
-var classHighlighter8 = tagHighlighter8([
-  { tag: tags9.link, class: "tok-link" },
-  { tag: tags9.heading, class: "tok-heading" },
-  { tag: tags9.emphasis, class: "tok-emphasis" },
-  { tag: tags9.strong, class: "tok-strong" },
-  { tag: tags9.keyword, class: "tok-keyword" },
-  { tag: tags9.atom, class: "tok-atom" },
-  { tag: tags9.bool, class: "tok-bool" },
-  { tag: tags9.url, class: "tok-url" },
-  { tag: tags9.labelName, class: "tok-labelName" },
-  { tag: tags9.inserted, class: "tok-inserted" },
-  { tag: tags9.deleted, class: "tok-deleted" },
-  { tag: tags9.literal, class: "tok-literal" },
-  { tag: tags9.string, class: "tok-string" },
-  { tag: tags9.number, class: "tok-number" },
-  { tag: [tags9.regexp, tags9.escape, tags9.special(tags9.string)], class: "tok-string2" },
-  { tag: tags9.variableName, class: "tok-variableName" },
-  { tag: tags9.local(tags9.variableName), class: "tok-variableName tok-local" },
-  { tag: tags9.definition(tags9.variableName), class: "tok-variableName tok-definition" },
-  { tag: tags9.special(tags9.variableName), class: "tok-variableName2" },
-  { tag: tags9.definition(tags9.propertyName), class: "tok-propertyName tok-definition" },
-  { tag: tags9.typeName, class: "tok-typeName" },
-  { tag: tags9.namespace, class: "tok-namespace" },
-  { tag: tags9.className, class: "tok-className" },
-  { tag: tags9.macroName, class: "tok-macroName" },
-  { tag: tags9.propertyName, class: "tok-propertyName" },
-  { tag: tags9.operator, class: "tok-operator" },
-  { tag: tags9.comment, class: "tok-comment" },
-  { tag: tags9.meta, class: "tok-meta" },
-  { tag: tags9.invalid, class: "tok-invalid" },
-  { tag: tags9.punctuation, class: "tok-punctuation" }
-]);
-
-// node_modules/@codemirror/lang-javascript/node_modules/@codemirror/language/dist/index.js
-var _a4;
-var languageDataProp4 = /* @__PURE__ */ new NodeProp8();
-function defineLanguageFacet3(baseData) {
-  return Facet.define({
-    combine: baseData ? (values2) => values2.concat(baseData) : void 0
-  });
-}
-var sublanguageProp4 = /* @__PURE__ */ new NodeProp8();
-var Language4 = class {
-  /**
-  Construct a language object. If you need to invoke this
-  directly, first define a data facet with
-  [`defineLanguageFacet`](https://codemirror.net/6/docs/ref/#language.defineLanguageFacet), and then
-  configure your parser to [attach](https://codemirror.net/6/docs/ref/#language.languageDataProp) it
-  to the language's outer syntax node.
-  */
-  constructor(data2, parser5, extraExtensions = [], name11 = "") {
-    this.data = data2;
-    this.name = name11;
-    if (!EditorState.prototype.hasOwnProperty("tree"))
-      Object.defineProperty(EditorState.prototype, "tree", { get() {
-        return syntaxTree4(this);
-      } });
-    this.parser = parser5;
-    this.extension = [
-      language4.of(this),
-      EditorState.languageData.of((state, pos, side) => {
-        let top2 = topNodeAt4(state, pos, side), data3 = top2.type.prop(languageDataProp4);
-        if (!data3)
-          return [];
-        let base2 = state.facet(data3), sub = top2.type.prop(sublanguageProp4);
-        if (sub) {
-          let innerNode = top2.resolve(pos - top2.from, side);
-          for (let sublang of sub)
-            if (sublang.test(innerNode, state)) {
-              let data4 = state.facet(sublang.facet);
-              return sublang.type == "replace" ? data4 : data4.concat(base2);
-            }
-        }
-        return base2;
-      })
-    ].concat(extraExtensions);
-  }
-  /**
-  Query whether this language is active at the given position.
-  */
-  isActiveAt(state, pos, side = -1) {
-    return topNodeAt4(state, pos, side).type.prop(languageDataProp4) == this.data;
-  }
-  /**
-  Find the document regions that were parsed using this language.
-  The returned regions will _include_ any nested languages rooted
-  in this language, when those exist.
-  */
-  findRegions(state) {
-    let lang = state.facet(language4);
-    if ((lang === null || lang === void 0 ? void 0 : lang.data) == this.data)
-      return [{ from: 0, to: state.doc.length }];
-    if (!lang || !lang.allowsNesting)
-      return [];
-    let result = [];
-    let explore = (tree, from) => {
-      if (tree.prop(languageDataProp4) == this.data) {
-        result.push({ from, to: from + tree.length });
-        return;
-      }
-      let mount = tree.prop(NodeProp8.mounted);
-      if (mount) {
-        if (mount.tree.prop(languageDataProp4) == this.data) {
-          if (mount.overlay)
-            for (let r of mount.overlay)
-              result.push({ from: r.from + from, to: r.to + from });
-          else
-            result.push({ from, to: from + tree.length });
-          return;
-        } else if (mount.overlay) {
-          let size = result.length;
-          explore(mount.tree, mount.overlay[0].from + from);
-          if (result.length > size)
-            return;
-        }
-      }
-      for (let i = 0; i < tree.children.length; i++) {
-        let ch = tree.children[i];
-        if (ch instanceof Tree8)
-          explore(ch, tree.positions[i] + from);
-      }
-    };
-    explore(syntaxTree4(state), 0);
-    return result;
-  }
-  /**
-  Indicates whether this language allows nested languages. The
-  default implementation returns true.
-  */
-  get allowsNesting() {
-    return true;
-  }
-};
-Language4.setState = /* @__PURE__ */ StateEffect.define();
-function topNodeAt4(state, pos, side) {
-  let topLang = state.facet(language4), tree = syntaxTree4(state).topNode;
-  if (!topLang || topLang.allowsNesting) {
-    for (let node = tree; node; node = node.enter(pos, side, IterMode8.ExcludeBuffers | IterMode8.EnterBracketed))
-      if (node.type.isTop)
-        tree = node;
-  }
-  return tree;
-}
-var LRLanguage2 = class _LRLanguage extends Language4 {
-  constructor(data2, parser5, name11) {
-    super(data2, parser5, [], name11);
-    this.parser = parser5;
-  }
-  /**
-  Define a language from a parser.
-  */
-  static define(spec) {
-    let data2 = defineLanguageFacet3(spec.languageData);
-    return new _LRLanguage(data2, spec.parser.configure({
-      props: [languageDataProp4.add((type) => type.isTop ? data2 : void 0)]
-    }), spec.name);
-  }
-  /**
-  Create a new instance of this language with a reconfigured
-  version of its parser and optionally a new name.
-  */
-  configure(options, name11) {
-    return new _LRLanguage(this.data, this.parser.configure(options), name11 || this.name);
-  }
-  get allowsNesting() {
-    return this.parser.hasWrappers();
-  }
-};
-function syntaxTree4(state) {
-  let field = state.field(Language4.state, false);
-  return field ? field.tree : Tree8.empty;
-}
-var DocInput4 = class {
-  /**
-  Create an input object for the given document.
-  */
-  constructor(doc2) {
-    this.doc = doc2;
-    this.cursorPos = 0;
-    this.string = "";
-    this.cursor = doc2.iter();
-  }
-  get length() {
-    return this.doc.length;
-  }
-  syncTo(pos) {
-    this.string = this.cursor.next(pos - this.cursorPos).value;
-    this.cursorPos = pos + this.string.length;
-    return this.cursorPos - this.string.length;
-  }
-  chunk(pos) {
-    this.syncTo(pos);
-    return this.string;
-  }
-  get lineChunks() {
-    return true;
-  }
-  read(from, to) {
-    let stringStart = this.cursorPos - this.string.length;
-    if (from < stringStart || to >= this.cursorPos)
-      return this.doc.sliceString(from, to);
-    else
-      return this.string.slice(from - stringStart, to - stringStart);
-  }
-};
-var currentContext4 = null;
-var ParseContext4 = class _ParseContext {
-  constructor(parser5, state, fragments = [], tree, treeLen, viewport, skipped, scheduleOn) {
-    this.parser = parser5;
-    this.state = state;
-    this.fragments = fragments;
-    this.tree = tree;
-    this.treeLen = treeLen;
-    this.viewport = viewport;
-    this.skipped = skipped;
-    this.scheduleOn = scheduleOn;
-    this.parse = null;
-    this.tempSkipped = [];
-  }
-  /**
-  @internal
-  */
-  static create(parser5, state, viewport) {
-    return new _ParseContext(parser5, state, [], Tree8.empty, 0, viewport, [], null);
-  }
-  startParse() {
-    return this.parser.startParse(new DocInput4(this.state.doc), this.fragments);
-  }
-  /**
-  @internal
-  */
-  work(until, upto) {
-    if (upto != null && upto >= this.state.doc.length)
-      upto = void 0;
-    if (this.tree != Tree8.empty && this.isDone(upto !== null && upto !== void 0 ? upto : this.state.doc.length)) {
-      this.takeTree();
-      return true;
-    }
-    return this.withContext(() => {
-      var _a7;
-      if (typeof until == "number") {
-        let endTime = Date.now() + until;
-        until = () => Date.now() > endTime;
-      }
-      if (!this.parse)
-        this.parse = this.startParse();
-      if (upto != null && (this.parse.stoppedAt == null || this.parse.stoppedAt > upto) && upto < this.state.doc.length)
-        this.parse.stopAt(upto);
-      for (; ; ) {
-        let done = this.parse.advance();
-        if (done) {
-          this.fragments = this.withoutTempSkipped(TreeFragment6.addTree(done, this.fragments, this.parse.stoppedAt != null));
-          this.treeLen = (_a7 = this.parse.stoppedAt) !== null && _a7 !== void 0 ? _a7 : this.state.doc.length;
-          this.tree = done;
-          this.parse = null;
-          if (this.treeLen < (upto !== null && upto !== void 0 ? upto : this.state.doc.length))
-            this.parse = this.startParse();
-          else
-            return true;
-        }
-        if (until())
-          return false;
-      }
-    });
-  }
-  /**
-  @internal
-  */
-  takeTree() {
-    let pos, tree;
-    if (this.parse && (pos = this.parse.parsedPos) >= this.treeLen) {
-      if (this.parse.stoppedAt == null || this.parse.stoppedAt > pos)
-        this.parse.stopAt(pos);
-      this.withContext(() => {
-        while (!(tree = this.parse.advance())) {
-        }
-      });
-      this.treeLen = pos;
-      this.tree = tree;
-      this.fragments = this.withoutTempSkipped(TreeFragment6.addTree(this.tree, this.fragments, true));
-      this.parse = null;
-    }
-  }
-  withContext(f) {
-    let prev = currentContext4;
-    currentContext4 = this;
-    try {
-      return f();
-    } finally {
-      currentContext4 = prev;
-    }
-  }
-  withoutTempSkipped(fragments) {
-    for (let r; r = this.tempSkipped.pop(); )
-      fragments = cutFragments4(fragments, r.from, r.to);
-    return fragments;
-  }
-  /**
-  @internal
-  */
-  changes(changes, newState) {
-    let { fragments, tree, treeLen, viewport, skipped } = this;
-    this.takeTree();
-    if (!changes.empty) {
-      let ranges = [];
-      changes.iterChangedRanges((fromA, toA, fromB, toB) => ranges.push({ fromA, toA, fromB, toB }));
-      fragments = TreeFragment6.applyChanges(fragments, ranges);
-      tree = Tree8.empty;
-      treeLen = 0;
-      viewport = { from: changes.mapPos(viewport.from, -1), to: changes.mapPos(viewport.to, 1) };
-      if (this.skipped.length) {
-        skipped = [];
-        for (let r of this.skipped) {
-          let from = changes.mapPos(r.from, 1), to = changes.mapPos(r.to, -1);
-          if (from < to)
-            skipped.push({ from, to });
-        }
-      }
-    }
-    return new _ParseContext(this.parser, newState, fragments, tree, treeLen, viewport, skipped, this.scheduleOn);
-  }
-  /**
-  @internal
-  */
-  updateViewport(viewport) {
-    if (this.viewport.from == viewport.from && this.viewport.to == viewport.to)
-      return false;
-    this.viewport = viewport;
-    let startLen = this.skipped.length;
-    for (let i = 0; i < this.skipped.length; i++) {
-      let { from, to } = this.skipped[i];
-      if (from < viewport.to && to > viewport.from) {
-        this.fragments = cutFragments4(this.fragments, from, to);
-        this.skipped.splice(i--, 1);
-      }
-    }
-    if (this.skipped.length >= startLen)
-      return false;
-    this.reset();
-    return true;
-  }
-  /**
-  @internal
-  */
-  reset() {
-    if (this.parse) {
-      this.takeTree();
-      this.parse = null;
-    }
-  }
-  /**
-  Notify the parse scheduler that the given region was skipped
-  because it wasn't in view, and the parse should be restarted
-  when it comes into view.
-  */
-  skipUntilInView(from, to) {
-    this.skipped.push({ from, to });
-  }
-  /**
-  Returns a parser intended to be used as placeholder when
-  asynchronously loading a nested parser. It'll skip its input and
-  mark it as not-really-parsed, so that the next update will parse
-  it again.
-  
-  When `until` is given, a reparse will be scheduled when that
-  promise resolves.
-  */
-  static getSkippingParser(until) {
-    return new class extends Parser8 {
-      createParse(input, fragments, ranges) {
-        let from = ranges[0].from, to = ranges[ranges.length - 1].to;
-        let parser5 = {
-          parsedPos: from,
-          advance() {
-            let cx = currentContext4;
-            if (cx) {
-              for (let r of ranges)
-                cx.tempSkipped.push(r);
-              if (until)
-                cx.scheduleOn = cx.scheduleOn ? Promise.all([cx.scheduleOn, until]) : until;
-            }
-            this.parsedPos = to;
-            return new Tree8(NodeType8.none, [], [], to - from);
-          },
-          stoppedAt: null,
-          stopAt() {
-          }
-        };
-        return parser5;
-      }
-    }();
-  }
-  /**
-  @internal
-  */
-  isDone(upto) {
-    upto = Math.min(upto, this.state.doc.length);
-    let frags = this.fragments;
-    return this.treeLen >= upto && frags.length && frags[0].from == 0 && frags[0].to >= upto;
-  }
-  /**
-  Get the context for the current parse, or `null` if no editor
-  parse is in progress.
-  */
-  static get() {
-    return currentContext4;
-  }
-};
-function cutFragments4(fragments, from, to) {
-  return TreeFragment6.applyChanges(fragments, [{ fromA: from, toA: to, fromB: from, toB: to }]);
-}
-var LanguageState4 = class _LanguageState {
-  constructor(context) {
-    this.context = context;
-    this.tree = context.tree;
-  }
-  apply(tr) {
-    if (!tr.docChanged && this.tree == this.context.tree)
-      return this;
-    let newCx = this.context.changes(tr.changes, tr.state);
-    let upto = this.context.treeLen == tr.startState.doc.length ? void 0 : Math.max(tr.changes.mapPos(this.context.treeLen), newCx.viewport.to);
-    if (!newCx.work(20, upto))
-      newCx.takeTree();
-    return new _LanguageState(newCx);
-  }
-  static init(state) {
-    let vpTo = Math.min(3e3, state.doc.length);
-    let parseState = ParseContext4.create(state.facet(language4).parser, state, { from: 0, to: vpTo });
-    if (!parseState.work(20, vpTo))
-      parseState.takeTree();
-    return new _LanguageState(parseState);
-  }
-};
-Language4.state = /* @__PURE__ */ StateField.define({
-  create: LanguageState4.init,
-  update(value, tr) {
-    for (let e of tr.effects)
-      if (e.is(Language4.setState))
-        return e.value;
-    if (tr.startState.facet(language4) != tr.state.facet(language4))
-      return LanguageState4.init(tr.state);
-    return value.apply(tr);
-  }
-});
-var requestIdle4 = (callback) => {
-  let timeout = setTimeout(
-    () => callback(),
-    500
-    /* Work.MaxPause */
-  );
-  return () => clearTimeout(timeout);
-};
-if (typeof requestIdleCallback != "undefined")
-  requestIdle4 = (callback) => {
-    let idle = -1, timeout = setTimeout(
-      () => {
-        idle = requestIdleCallback(callback, {
-          timeout: 500 - 100
-          /* Work.MinPause */
-        });
-      },
-      100
-      /* Work.MinPause */
-    );
-    return () => idle < 0 ? clearTimeout(timeout) : cancelIdleCallback(idle);
-  };
-var isInputPending4 = typeof navigator != "undefined" && ((_a4 = navigator.scheduling) === null || _a4 === void 0 ? void 0 : _a4.isInputPending) ? () => navigator.scheduling.isInputPending() : null;
-var parseWorker4 = /* @__PURE__ */ ViewPlugin.fromClass(class ParseWorker4 {
-  constructor(view) {
-    this.view = view;
-    this.working = null;
-    this.workScheduled = 0;
-    this.chunkEnd = -1;
-    this.chunkBudget = -1;
-    this.work = this.work.bind(this);
-    this.scheduleWork();
-  }
-  update(update) {
-    let cx = this.view.state.field(Language4.state).context;
-    if (cx.updateViewport(update.view.viewport) || this.view.viewport.to > cx.treeLen)
-      this.scheduleWork();
-    if (update.docChanged || update.selectionSet) {
-      if (this.view.hasFocus)
-        this.chunkBudget += 50;
-      this.scheduleWork();
-    }
-    this.checkAsyncSchedule(cx);
-  }
-  scheduleWork() {
-    if (this.working)
-      return;
-    let { state } = this.view, field = state.field(Language4.state);
-    if (field.tree != field.context.tree || !field.context.isDone(state.doc.length))
-      this.working = requestIdle4(this.work);
-  }
-  work(deadline) {
-    this.working = null;
-    let now = Date.now();
-    if (this.chunkEnd < now && (this.chunkEnd < 0 || this.view.hasFocus)) {
-      this.chunkEnd = now + 3e4;
-      this.chunkBudget = 3e3;
-    }
-    if (this.chunkBudget <= 0)
-      return;
-    let { state, viewport: { to: vpTo } } = this.view, field = state.field(Language4.state);
-    if (field.tree == field.context.tree && field.context.isDone(
-      vpTo + 1e5
-      /* Work.MaxParseAhead */
-    ))
-      return;
-    let endTime = Date.now() + Math.min(this.chunkBudget, 100, deadline && !isInputPending4 ? Math.max(25, deadline.timeRemaining() - 5) : 1e9);
-    let viewportFirst = field.context.treeLen < vpTo && state.doc.length > vpTo + 1e3;
-    let done = field.context.work(() => {
-      return isInputPending4 && isInputPending4() || Date.now() > endTime;
-    }, vpTo + (viewportFirst ? 0 : 1e5));
-    this.chunkBudget -= Date.now() - now;
-    if (done || this.chunkBudget <= 0) {
-      field.context.takeTree();
-      this.view.dispatch({ effects: Language4.setState.of(new LanguageState4(field.context)) });
-    }
-    if (this.chunkBudget > 0 && !(done && !viewportFirst))
-      this.scheduleWork();
-    this.checkAsyncSchedule(field.context);
-  }
-  checkAsyncSchedule(cx) {
-    if (cx.scheduleOn) {
-      this.workScheduled++;
-      cx.scheduleOn.then(() => this.scheduleWork()).catch((err) => logException(this.view.state, err)).then(() => this.workScheduled--);
-      cx.scheduleOn = null;
-    }
-  }
-  destroy() {
-    if (this.working)
-      this.working();
-  }
-  isWorking() {
-    return !!(this.working || this.workScheduled > 0);
-  }
-}, {
-  eventHandlers: { focus() {
-    this.scheduleWork();
-  } }
-});
-var language4 = /* @__PURE__ */ Facet.define({
-  combine(languages) {
-    return languages.length ? languages[0] : null;
-  },
-  enables: (language7) => [
-    Language4.state,
-    parseWorker4,
-    EditorView.contentAttributes.compute([language7], (state) => {
-      let lang = state.facet(language7);
-      return lang && lang.name ? { "data-language": lang.name } : {};
-    })
-  ]
-});
-var LanguageSupport3 = class {
-  /**
-  Create a language support object.
-  */
-  constructor(language7, support = []) {
-    this.language = language7;
-    this.support = support;
-    this.extension = [language7, support];
-  }
-};
-var indentUnit3 = /* @__PURE__ */ Facet.define({
-  combine: (values2) => {
-    if (!values2.length)
-      return "  ";
-    let unit = values2[0];
-    if (!unit || /\S/.test(unit) || Array.from(unit).some((e) => e != unit[0]))
-      throw new Error("Invalid indent unit: " + JSON.stringify(values2[0]));
-    return unit;
-  }
-});
-var indentNodeProp4 = /* @__PURE__ */ new NodeProp8();
-function bracketedAligned2(context) {
-  let tree = context.node;
-  let openToken = tree.childAfter(tree.from), last = tree.lastChild;
-  if (!openToken)
-    return null;
-  let sim = context.options.simulateBreak;
-  let openLine = context.state.doc.lineAt(openToken.from);
-  let lineEnd2 = sim == null || sim <= openLine.from ? openLine.to : Math.min(openLine.to, sim);
-  for (let pos = openToken.to; ; ) {
-    let next = tree.childAfter(pos);
-    if (!next || next == last)
-      return null;
-    if (!next.type.isSkipped) {
-      if (next.from >= lineEnd2)
-        return null;
-      let space4 = /^ */.exec(openLine.text.slice(openToken.to - openLine.from))[0].length;
-      return { from: openToken.from, to: openToken.to + space4 };
-    }
-    pos = next.to;
-  }
-}
-function delimitedIndent({ closing: closing2, align = true, units = 1 }) {
-  return (context) => delimitedStrategy2(context, align, units, closing2);
-}
-function delimitedStrategy2(context, align, units, closing2, closedAt) {
-  let after = context.textAfter, space4 = after.match(/^\s*/)[0].length;
-  let closed = closing2 && after.slice(space4, space4 + closing2.length) == closing2 || closedAt == context.pos + space4;
-  let aligned = align ? bracketedAligned2(context) : null;
-  if (aligned)
-    return closed ? context.column(aligned.from) : context.column(aligned.to);
-  return context.baseIndent + (closed ? 0 : context.unit * units);
-}
-var flatIndent = (context) => context.baseIndent;
-function continuedIndent2({ except, units = 1 } = {}) {
-  return (context) => {
-    let matchExcept = except && except.test(context.textAfter);
-    return context.baseIndent + (matchExcept ? 0 : units * context.unit);
-  };
-}
-var foldNodeProp4 = /* @__PURE__ */ new NodeProp8();
-function foldInside2(node) {
-  let first = node.firstChild, last = node.lastChild;
-  return first && first.to < last.from ? { from: first.to, to: last.type.isError ? node.to : last.from } : null;
-}
-var HighlightStyle4 = class _HighlightStyle {
-  constructor(specs, options) {
-    this.specs = specs;
-    let modSpec;
-    function def(spec) {
-      let cls = StyleModule.newName();
-      (modSpec || (modSpec = /* @__PURE__ */ Object.create(null)))["." + cls] = spec;
-      return cls;
-    }
-    const all = typeof options.all == "string" ? options.all : options.all ? def(options.all) : void 0;
-    const scopeOpt = options.scope;
-    this.scope = scopeOpt instanceof Language4 ? (type) => type.prop(languageDataProp4) == scopeOpt.data : scopeOpt ? (type) => type == scopeOpt : void 0;
-    this.style = tagHighlighter8(specs.map((style) => ({
-      tag: style.tag,
-      class: style.class || def(Object.assign({}, style, { tag: null }))
-    })), {
-      all
-    }).style;
-    this.module = modSpec ? new StyleModule(modSpec) : null;
-    this.themeType = options.themeType;
-  }
-  /**
-  Create a highlighter style that associates the given styles to
-  the given tags. The specs must be objects that hold a style tag
-  or array of tags in their `tag` property, and either a single
-  `class` property providing a static CSS class (for highlighter
-  that rely on external styling), or a
-  [`style-mod`](https://github.com/marijnh/style-mod#documentation)-style
-  set of CSS properties (which define the styling for those tags).
-  
-  The CSS rules created for a highlighter will be emitted in the
-  order of the spec's properties. That means that for elements that
-  have multiple tags associated with them, styles defined further
-  down in the list will have a higher CSS precedence than styles
-  defined earlier.
-  */
-  static define(specs, options) {
-    return new _HighlightStyle(specs, options || {});
-  }
-};
-var defaultHighlightStyle4 = /* @__PURE__ */ HighlightStyle4.define([
-  {
-    tag: tags9.meta,
-    color: "#404740"
-  },
-  {
-    tag: tags9.link,
-    textDecoration: "underline"
-  },
-  {
-    tag: tags9.heading,
-    textDecoration: "underline",
-    fontWeight: "bold"
-  },
-  {
-    tag: tags9.emphasis,
-    fontStyle: "italic"
-  },
-  {
-    tag: tags9.strong,
-    fontWeight: "bold"
-  },
-  {
-    tag: tags9.strikethrough,
-    textDecoration: "line-through"
-  },
-  {
-    tag: tags9.keyword,
-    color: "#708"
-  },
-  {
-    tag: [tags9.atom, tags9.bool, tags9.url, tags9.contentSeparator, tags9.labelName],
-    color: "#219"
-  },
-  {
-    tag: [tags9.literal, tags9.inserted],
-    color: "#164"
-  },
-  {
-    tag: [tags9.string, tags9.deleted],
-    color: "#a11"
-  },
-  {
-    tag: [tags9.regexp, tags9.escape, /* @__PURE__ */ tags9.special(tags9.string)],
-    color: "#e40"
-  },
-  {
-    tag: /* @__PURE__ */ tags9.definition(tags9.variableName),
-    color: "#00f"
-  },
-  {
-    tag: /* @__PURE__ */ tags9.local(tags9.variableName),
-    color: "#30a"
-  },
-  {
-    tag: [tags9.typeName, tags9.namespace],
-    color: "#085"
-  },
-  {
-    tag: tags9.className,
-    color: "#167"
-  },
-  {
-    tag: [/* @__PURE__ */ tags9.special(tags9.variableName), tags9.macroName],
-    color: "#256"
-  },
-  {
-    tag: /* @__PURE__ */ tags9.definition(tags9.propertyName),
-    color: "#00c"
-  },
-  {
-    tag: tags9.comment,
-    color: "#940"
-  },
-  {
-    tag: tags9.invalid,
-    color: "#f00"
-  }
-]);
-var noTokens4 = /* @__PURE__ */ Object.create(null);
-var typeArray4 = [NodeType8.none];
-var warned4 = [];
-var byTag4 = /* @__PURE__ */ Object.create(null);
-var defaultTable4 = /* @__PURE__ */ Object.create(null);
-for (let [legacyName, name11] of [
-  ["variable", "variableName"],
-  ["variable-2", "variableName.special"],
-  ["string-2", "string.special"],
-  ["def", "variableName.definition"],
-  ["tag", "tagName"],
-  ["attribute", "attributeName"],
-  ["type", "typeName"],
-  ["builtin", "variableName.standard"],
-  ["qualifier", "modifier"],
-  ["error", "invalid"],
-  ["header", "heading"],
-  ["property", "propertyName"]
-])
-  defaultTable4[legacyName] = /* @__PURE__ */ createTokenType4(noTokens4, name11);
-function warnForPart4(part, msg) {
-  if (warned4.indexOf(part) > -1)
-    return;
-  warned4.push(part);
-  console.warn(msg);
-}
-function createTokenType4(extra, tagStr) {
-  let tags$1 = [];
-  for (let name12 of tagStr.split(" ")) {
-    let found = [];
-    for (let part of name12.split(".")) {
-      let value = extra[part] || tags9[part];
-      if (!value) {
-        warnForPart4(part, `Unknown highlighting tag ${part}`);
-      } else if (typeof value == "function") {
-        if (!found.length)
-          warnForPart4(part, `Modifier ${part} used at start of tag`);
-        else
-          found = found.map(value);
-      } else {
-        if (found.length)
-          warnForPart4(part, `Tag ${part} used as modifier`);
-        else
-          found = Array.isArray(value) ? value : [value];
-      }
-    }
-    for (let tag of found)
-      tags$1.push(tag);
-  }
-  if (!tags$1.length)
-    return 0;
-  let name11 = tagStr.replace(/ /g, "_"), key = name11 + " " + tags$1.map((t11) => t11.id);
-  let known = byTag4[key];
-  if (known)
-    return known.id;
-  let type = byTag4[key] = NodeType8.define({
-    id: typeArray4.length,
-    name: name11,
-    props: [styleTags8({ [name11]: tags$1 })]
-  });
-  typeArray4.push(type);
-  return type.id;
-}
-var marks4 = {
-  rtl: /* @__PURE__ */ Decoration.mark({ class: "cm-iso", inclusive: true, attributes: { dir: "rtl" }, bidiIsolate: Direction.RTL }),
-  ltr: /* @__PURE__ */ Decoration.mark({ class: "cm-iso", inclusive: true, attributes: { dir: "ltr" }, bidiIsolate: Direction.LTR }),
-  auto: /* @__PURE__ */ Decoration.mark({ class: "cm-iso", inclusive: true, attributes: { dir: "auto" }, bidiIsolate: null })
-};
-
 // node_modules/@codemirror/lang-javascript/node_modules/@codemirror/autocomplete/dist/index.js
 function toSet2(chars) {
   let flat = Object.keys(chars).join("");
@@ -50104,7 +34575,7 @@ function completeFromList2(list) {
 }
 function ifNotIn(nodes, source) {
   return (context) => {
-    for (let pos = syntaxTree4(context.state).resolveInner(context.pos, -1); pos; pos = pos.parent) {
+    for (let pos = syntaxTree(context.state).resolveInner(context.pos, -1); pos; pos = pos.parent) {
       if (nodes.indexOf(pos.name) > -1)
         return null;
       if (pos.type.isTop)
@@ -50272,7 +34743,7 @@ var Snippet = class _Snippet {
       if (text.length) {
         let indent = baseIndent, tabs = /^\t*/.exec(line)[0].length;
         for (let i = 0; i < tabs; i++)
-          indent += state.facet(indentUnit3);
+          indent += state.facet(indentUnit);
         lineStart.push(pos + indent.length - tabs);
         line = indent + line.slice(tabs);
       }
@@ -50288,16 +34759,16 @@ var Snippet = class _Snippet {
     for (let line of template.split(/\r\n?|\n/)) {
       while (m = /[#$]\{(?:(\d+)(?::([^{}]*))?|((?:\\[{}]|[^{}])*))\}/.exec(line)) {
         let seq = m[1] ? +m[1] : null, rawName = m[2] || m[3] || "", found = -1;
-        let name11 = rawName.replace(/\\[{}]/g, (m2) => m2[1]);
+        let name7 = rawName.replace(/\\[{}]/g, (m2) => m2[1]);
         for (let i = 0; i < fields.length; i++) {
-          if (seq != null ? fields[i].seq == seq : name11 ? fields[i].name == name11 : false)
+          if (seq != null ? fields[i].seq == seq : name7 ? fields[i].name == name7 : false)
             found = i;
         }
         if (found < 0) {
           let i = 0;
           while (i < fields.length && (seq == null || fields[i].seq != null && fields[i].seq < seq))
             i++;
-          fields.splice(i, 0, { seq, name: name11 });
+          fields.splice(i, 0, { seq, name: name7 });
           found = i;
           for (let pos of positions)
             if (pos.field >= found)
@@ -50309,7 +34780,7 @@ var Snippet = class _Snippet {
             pos.from -= snip;
             pos.to -= snip;
           }
-        positions.push(new FieldPos(found, lines.length, m.index, m.index + name11.length));
+        positions.push(new FieldPos(found, lines.length, m.index, m.index + name7.length));
         line = line.slice(0, m.index) + rawName + line.slice(m.index + m[0].length);
       }
       line = line.replace(/\\([{}])/g, (_, brace, index) => {
@@ -50538,7 +35009,7 @@ var typescriptSnippets = /* @__PURE__ */ snippets.concat([
     type: "keyword"
   })
 ]);
-var cache = /* @__PURE__ */ new NodeWeakMap2();
+var cache = /* @__PURE__ */ new NodeWeakMap();
 var ScopeNodes = /* @__PURE__ */ new Set([
   "Script",
   "Block",
@@ -50579,10 +35050,10 @@ function getScope(doc2, node) {
     return cached;
   let completions = [], top2 = true;
   function def(node2, type) {
-    let name11 = doc2.sliceString(node2.from, node2.to);
-    completions.push({ label: name11, type });
+    let name7 = doc2.sliceString(node2.from, node2.to);
+    completions.push({ label: name7, type });
   }
-  node.cursor(IterMode8.IncludeAnonymous).iterate((node2) => {
+  node.cursor(IterMode.IncludeAnonymous).iterate((node2) => {
     if (top2) {
       top2 = false;
     } else if (node2.name) {
@@ -50621,7 +35092,7 @@ var dontComplete = [
   "?."
 ];
 function localCompletionSource(context) {
-  let inner = syntaxTree4(context.state).resolveInner(context.pos, -1);
+  let inner = syntaxTree(context.state).resolveInner(context.pos, -1);
   if (dontComplete.indexOf(inner.name) > -1)
     return null;
   let isWord = inner.name == "VariableName" || inner.to - inner.from < 20 && Identifier.test(context.state.sliceDoc(inner.from, inner.to));
@@ -50638,13 +35109,13 @@ function localCompletionSource(context) {
     validFor: Identifier
   };
 }
-var javascriptLanguage = /* @__PURE__ */ LRLanguage2.define({
+var javascriptLanguage = /* @__PURE__ */ LRLanguage.define({
   name: "javascript",
   parser: /* @__PURE__ */ parser4.configure({
     props: [
-      /* @__PURE__ */ indentNodeProp4.add({
-        IfStatement: /* @__PURE__ */ continuedIndent2({ except: /^\s*({|else\b)/ }),
-        TryStatement: /* @__PURE__ */ continuedIndent2({ except: /^\s*({|catch\b|finally\b)/ }),
+      /* @__PURE__ */ indentNodeProp.add({
+        IfStatement: /* @__PURE__ */ continuedIndent({ except: /^\s*({|else\b)/ }),
+        TryStatement: /* @__PURE__ */ continuedIndent({ except: /^\s*({|catch\b|finally\b)/ }),
         LabeledStatement: flatIndent,
         SwitchBody: (context) => {
           let after = context.textAfter, closed = /^\s*\}/.test(after), isCase = /^\s*(case|default)\b/.test(after);
@@ -50653,7 +35124,7 @@ var javascriptLanguage = /* @__PURE__ */ LRLanguage2.define({
         Block: /* @__PURE__ */ delimitedIndent({ closing: "}" }),
         ArrowFunction: (cx) => cx.baseIndent + cx.unit,
         "TemplateString BlockComment": () => null,
-        "Statement Property": /* @__PURE__ */ continuedIndent2({ except: /^\s*{/ }),
+        "Statement Property": /* @__PURE__ */ continuedIndent({ except: /^\s*{/ }),
         JSXElement(context) {
           let closed = /^\s*<\//.test(context.textAfter);
           return context.lineIndent(context.node.from) + (closed ? 0 : context.unit);
@@ -50666,8 +35137,8 @@ var javascriptLanguage = /* @__PURE__ */ LRLanguage2.define({
           return context.column(context.node.from) + context.unit;
         }
       }),
-      /* @__PURE__ */ foldNodeProp4.add({
-        "Block ClassBody SwitchBody EnumBody ObjectExpression ArrayExpression ObjectType": foldInside2,
+      /* @__PURE__ */ foldNodeProp.add({
+        "Block ClassBody SwitchBody EnumBody ObjectExpression ArrayExpression ObjectType": foldInside,
         BlockComment(tree) {
           return { from: tree.from + 2, to: tree.to - 2 };
         },
@@ -50679,11 +35150,11 @@ var javascriptLanguage = /* @__PURE__ */ LRLanguage2.define({
           return { from: open.to, to: close.type.isError ? tree.to : close.from };
         },
         "JSXSelfClosingTag JSXOpenTag"(tree) {
-          var _a7;
-          let name11 = (_a7 = tree.firstChild) === null || _a7 === void 0 ? void 0 : _a7.nextSibling, close = tree.lastChild;
-          if (!name11 || name11.type.isError)
+          var _a2;
+          let name7 = (_a2 = tree.firstChild) === null || _a2 === void 0 ? void 0 : _a2.nextSibling, close = tree.lastChild;
+          if (!name7 || name7.type.isError)
             return null;
-          return { from: name11.to, to: close.type.isError ? tree.to : close.from };
+          return { from: name7.to, to: close.type.isError ? tree.to : close.from };
         }
       })
     ]
@@ -50697,24 +35168,24 @@ var javascriptLanguage = /* @__PURE__ */ LRLanguage2.define({
 });
 var jsxSublanguage = {
   test: (node) => /^JSX/.test(node.name),
-  facet: /* @__PURE__ */ defineLanguageFacet3({ commentTokens: { block: { open: "{/*", close: "*/}" } } })
+  facet: /* @__PURE__ */ defineLanguageFacet({ commentTokens: { block: { open: "{/*", close: "*/}" } } })
 };
 var typescriptLanguage = /* @__PURE__ */ javascriptLanguage.configure({ dialect: "ts" }, "typescript");
 var jsxLanguage = /* @__PURE__ */ javascriptLanguage.configure({
   dialect: "jsx",
-  props: [/* @__PURE__ */ sublanguageProp4.add((n) => n.isTop ? [jsxSublanguage] : void 0)]
+  props: [/* @__PURE__ */ sublanguageProp.add((n) => n.isTop ? [jsxSublanguage] : void 0)]
 });
 var tsxLanguage = /* @__PURE__ */ javascriptLanguage.configure({
   dialect: "jsx ts",
-  props: [/* @__PURE__ */ sublanguageProp4.add((n) => n.isTop ? [jsxSublanguage] : void 0)]
+  props: [/* @__PURE__ */ sublanguageProp.add((n) => n.isTop ? [jsxSublanguage] : void 0)]
 }, "typescript");
-var kwCompletion = (name11) => ({ label: name11, type: "keyword" });
+var kwCompletion = (name7) => ({ label: name7, type: "keyword" });
 var keywords = /* @__PURE__ */ "break case const continue default delete export extends false finally in instanceof let new return static super switch this throw true typeof var yield".split(" ").map(kwCompletion);
 var typescriptKeywords = /* @__PURE__ */ keywords.concat(/* @__PURE__ */ ["declare", "implements", "private", "protected", "public"].map(kwCompletion));
 function javascript(config2 = {}) {
   let lang = config2.jsx ? config2.typescript ? tsxLanguage : jsxLanguage : config2.typescript ? typescriptLanguage : javascriptLanguage;
   let completions = config2.typescript ? typescriptSnippets.concat(typescriptKeywords) : snippets.concat(keywords);
-  return new LanguageSupport3(lang, [
+  return new LanguageSupport(lang, [
     javascriptLanguage.data.of({
       autocomplete: ifNotIn(dontComplete, completeFromList2(completions))
     }),
@@ -50746,8 +35217,8 @@ var autoCloseTags = /* @__PURE__ */ EditorView.inputHandler.of((view, from, to, 
     return false;
   let base2 = defaultInsert(), { state } = base2;
   let closeTags = state.changeByRange((range) => {
-    var _a7;
-    let { head } = range, around = syntaxTree4(state).resolveInner(head - 1, -1), name11;
+    var _a2;
+    let { head } = range, around = syntaxTree(state).resolveInner(head - 1, -1), name7;
     if (around.name == "JSXStartTag")
       around = around.parent;
     if (state.doc.sliceString(head - 1, head) != text || around.name == "JSXAttributeValue" && around.to > head) ;
@@ -50755,14 +35226,14 @@ var autoCloseTags = /* @__PURE__ */ EditorView.inputHandler.of((view, from, to, 
       return { range, changes: { from: head, insert: `</>` } };
     } else if (text == "/" && around.name == "JSXStartCloseTag") {
       let empty2 = around.parent, base3 = empty2.parent;
-      if (base3 && empty2.from == head - 2 && ((name11 = elementName(state.doc, base3.firstChild, head)) || ((_a7 = base3.firstChild) === null || _a7 === void 0 ? void 0 : _a7.name) == "JSXFragmentTag")) {
-        let insert2 = `${name11}>`;
+      if (base3 && empty2.from == head - 2 && ((name7 = elementName(state.doc, base3.firstChild, head)) || ((_a2 = base3.firstChild) === null || _a2 === void 0 ? void 0 : _a2.name) == "JSXFragmentTag")) {
+        let insert2 = `${name7}>`;
         return { range: EditorSelection.cursor(head + insert2.length, -1), changes: { from: head, insert: insert2 } };
       }
     } else if (text == ">") {
       let openTag = findOpenTag(around);
-      if (openTag && openTag.name == "JSXOpenTag" && !/^\/?>|^<\//.test(state.doc.sliceString(head, head + 2)) && (name11 = elementName(state.doc, openTag, head)))
-        return { range, changes: { from: head, insert: `</${name11}>` } };
+      if (openTag && openTag.name == "JSXOpenTag" && !/^\/?>|^<\//.test(state.doc.sliceString(head, head + 2)) && (name7 = elementName(state.doc, openTag, head)))
+        return { range, changes: { from: head, insert: `</${name7}>` } };
     }
     return { range };
   });
@@ -50774,2942 +35245,6 @@ var autoCloseTags = /* @__PURE__ */ EditorView.inputHandler.of((view, from, to, 
   ]);
   return true;
 });
-
-// node_modules/@codemirror/lang-html/node_modules/@lezer/common/dist/index.js
-var DefaultBufferLength9 = 1024;
-var nextPropID9 = 0;
-var Range10 = class {
-  constructor(from, to) {
-    this.from = from;
-    this.to = to;
-  }
-};
-var NodeProp9 = class {
-  /**
-  Create a new node prop type.
-  */
-  constructor(config2 = {}) {
-    this.id = nextPropID9++;
-    this.perNode = !!config2.perNode;
-    this.deserialize = config2.deserialize || (() => {
-      throw new Error("This node type doesn't define a deserialize function");
-    });
-    this.combine = config2.combine || null;
-  }
-  /**
-  This is meant to be used with
-  [`NodeSet.extend`](#common.NodeSet.extend) or
-  [`LRParser.configure`](#lr.ParserConfig.props) to compute
-  prop values for each node type in the set. Takes a [match
-  object](#common.NodeType^match) or function that returns undefined
-  if the node type doesn't get this prop, and the prop's value if
-  it does.
-  */
-  add(match) {
-    if (this.perNode)
-      throw new RangeError("Can't add per-node props to node types");
-    if (typeof match != "function")
-      match = NodeType9.match(match);
-    return (type) => {
-      let result = match(type);
-      return result === void 0 ? null : [this, result];
-    };
-  }
-};
-NodeProp9.closedBy = new NodeProp9({ deserialize: (str) => str.split(" ") });
-NodeProp9.openedBy = new NodeProp9({ deserialize: (str) => str.split(" ") });
-NodeProp9.group = new NodeProp9({ deserialize: (str) => str.split(" ") });
-NodeProp9.isolate = new NodeProp9({ deserialize: (value) => {
-  if (value && value != "rtl" && value != "ltr" && value != "auto")
-    throw new RangeError("Invalid value for isolate: " + value);
-  return value || "auto";
-} });
-NodeProp9.contextHash = new NodeProp9({ perNode: true });
-NodeProp9.lookAhead = new NodeProp9({ perNode: true });
-NodeProp9.mounted = new NodeProp9({ perNode: true });
-var MountedTree9 = class {
-  constructor(tree, overlay, parser5, bracketed = false) {
-    this.tree = tree;
-    this.overlay = overlay;
-    this.parser = parser5;
-    this.bracketed = bracketed;
-  }
-  /**
-  @internal
-  */
-  static get(tree) {
-    return tree && tree.props && tree.props[NodeProp9.mounted.id];
-  }
-};
-var noProps9 = /* @__PURE__ */ Object.create(null);
-var NodeType9 = class _NodeType {
-  /**
-  @internal
-  */
-  constructor(name11, props, id3, flags = 0) {
-    this.name = name11;
-    this.props = props;
-    this.id = id3;
-    this.flags = flags;
-  }
-  /**
-  Define a node type.
-  */
-  static define(spec) {
-    let props = spec.props && spec.props.length ? /* @__PURE__ */ Object.create(null) : noProps9;
-    let flags = (spec.top ? 1 : 0) | (spec.skipped ? 2 : 0) | (spec.error ? 4 : 0) | (spec.name == null ? 8 : 0);
-    let type = new _NodeType(spec.name || "", props, spec.id, flags);
-    if (spec.props)
-      for (let src of spec.props) {
-        if (!Array.isArray(src))
-          src = src(type);
-        if (src) {
-          if (src[0].perNode)
-            throw new RangeError("Can't store a per-node prop on a node type");
-          props[src[0].id] = src[1];
-        }
-      }
-    return type;
-  }
-  /**
-  Retrieves a node prop for this type. Will return `undefined` if
-  the prop isn't present on this node.
-  */
-  prop(prop) {
-    return this.props[prop.id];
-  }
-  /**
-  True when this is the top node of a grammar.
-  */
-  get isTop() {
-    return (this.flags & 1) > 0;
-  }
-  /**
-  True when this node is produced by a skip rule.
-  */
-  get isSkipped() {
-    return (this.flags & 2) > 0;
-  }
-  /**
-  Indicates whether this is an error node.
-  */
-  get isError() {
-    return (this.flags & 4) > 0;
-  }
-  /**
-  When true, this node type doesn't correspond to a user-declared
-  named node, for example because it is used to cache repetition.
-  */
-  get isAnonymous() {
-    return (this.flags & 8) > 0;
-  }
-  /**
-  Returns true when this node's name or one of its
-  [groups](#common.NodeProp^group) matches the given string.
-  */
-  is(name11) {
-    if (typeof name11 == "string") {
-      if (this.name == name11)
-        return true;
-      let group = this.prop(NodeProp9.group);
-      return group ? group.indexOf(name11) > -1 : false;
-    }
-    return this.id == name11;
-  }
-  /**
-  Create a function from node types to arbitrary values by
-  specifying an object whose property names are node or
-  [group](#common.NodeProp^group) names. Often useful with
-  [`NodeProp.add`](#common.NodeProp.add). You can put multiple
-  names, separated by spaces, in a single property name to map
-  multiple node names to a single value.
-  */
-  static match(map) {
-    let direct = /* @__PURE__ */ Object.create(null);
-    for (let prop in map)
-      for (let name11 of prop.split(" "))
-        direct[name11] = map[prop];
-    return (node) => {
-      for (let groups = node.prop(NodeProp9.group), i = -1; i < (groups ? groups.length : 0); i++) {
-        let found = direct[i < 0 ? node.name : groups[i]];
-        if (found)
-          return found;
-      }
-    };
-  }
-};
-NodeType9.none = new NodeType9(
-  "",
-  /* @__PURE__ */ Object.create(null),
-  0,
-  8
-  /* NodeFlag.Anonymous */
-);
-var CachedNode9 = /* @__PURE__ */ new WeakMap();
-var CachedInnerNode9 = /* @__PURE__ */ new WeakMap();
-var IterMode9;
-(function(IterMode11) {
-  IterMode11[IterMode11["ExcludeBuffers"] = 1] = "ExcludeBuffers";
-  IterMode11[IterMode11["IncludeAnonymous"] = 2] = "IncludeAnonymous";
-  IterMode11[IterMode11["IgnoreMounts"] = 4] = "IgnoreMounts";
-  IterMode11[IterMode11["IgnoreOverlays"] = 8] = "IgnoreOverlays";
-  IterMode11[IterMode11["EnterBracketed"] = 16] = "EnterBracketed";
-})(IterMode9 || (IterMode9 = {}));
-var Tree9 = class _Tree {
-  /**
-  Construct a new tree. See also [`Tree.build`](#common.Tree^build).
-  */
-  constructor(type, children, positions, length, props) {
-    this.type = type;
-    this.children = children;
-    this.positions = positions;
-    this.length = length;
-    this.props = null;
-    if (props && props.length) {
-      this.props = /* @__PURE__ */ Object.create(null);
-      for (let [prop, value] of props)
-        this.props[typeof prop == "number" ? prop : prop.id] = value;
-    }
-  }
-  /**
-  @internal
-  */
-  toString() {
-    let mounted = MountedTree9.get(this);
-    if (mounted && !mounted.overlay)
-      return mounted.tree.toString();
-    let children = "";
-    for (let ch of this.children) {
-      let str = ch.toString();
-      if (str) {
-        if (children)
-          children += ",";
-        children += str;
-      }
-    }
-    return !this.type.name ? children : (/\W/.test(this.type.name) && !this.type.isError ? JSON.stringify(this.type.name) : this.type.name) + (children.length ? "(" + children + ")" : "");
-  }
-  /**
-  Get a [tree cursor](#common.TreeCursor) positioned at the top of
-  the tree. Mode can be used to [control](#common.IterMode) which
-  nodes the cursor visits.
-  */
-  cursor(mode = 0) {
-    return new TreeCursor9(this.topNode, mode);
-  }
-  /**
-  Get a [tree cursor](#common.TreeCursor) pointing into this tree
-  at the given position and side (see
-  [`moveTo`](#common.TreeCursor.moveTo).
-  */
-  cursorAt(pos, side = 0, mode = 0) {
-    let scope = CachedNode9.get(this) || this.topNode;
-    let cursor2 = new TreeCursor9(scope);
-    cursor2.moveTo(pos, side);
-    CachedNode9.set(this, cursor2._tree);
-    return cursor2;
-  }
-  /**
-  Get a [syntax node](#common.SyntaxNode) object for the top of the
-  tree.
-  */
-  get topNode() {
-    return new TreeNode9(this, 0, 0, null);
-  }
-  /**
-  Get the [syntax node](#common.SyntaxNode) at the given position.
-  If `side` is -1, this will move into nodes that end at the
-  position. If 1, it'll move into nodes that start at the
-  position. With 0, it'll only enter nodes that cover the position
-  from both sides.
-  
-  Note that this will not enter
-  [overlays](#common.MountedTree.overlay), and you often want
-  [`resolveInner`](#common.Tree.resolveInner) instead.
-  */
-  resolve(pos, side = 0) {
-    let node = resolveNode9(CachedNode9.get(this) || this.topNode, pos, side, false);
-    CachedNode9.set(this, node);
-    return node;
-  }
-  /**
-  Like [`resolve`](#common.Tree.resolve), but will enter
-  [overlaid](#common.MountedTree.overlay) nodes, producing a syntax node
-  pointing into the innermost overlaid tree at the given position
-  (with parent links going through all parent structure, including
-  the host trees).
-  */
-  resolveInner(pos, side = 0) {
-    let node = resolveNode9(CachedInnerNode9.get(this) || this.topNode, pos, side, true);
-    CachedInnerNode9.set(this, node);
-    return node;
-  }
-  /**
-  In some situations, it can be useful to iterate through all
-  nodes around a position, including those in overlays that don't
-  directly cover the position. This method gives you an iterator
-  that will produce all nodes, from small to big, around the given
-  position.
-  */
-  resolveStack(pos, side = 0) {
-    return stackIterator9(this, pos, side);
-  }
-  /**
-  Iterate over the tree and its children, calling `enter` for any
-  node that touches the `from`/`to` region (if given) before
-  running over such a node's children, and `leave` (if given) when
-  leaving the node. When `enter` returns `false`, that node will
-  not have its children iterated over (or `leave` called).
-  */
-  iterate(spec) {
-    let { enter, leave, from = 0, to = this.length } = spec;
-    let mode = spec.mode || 0, anon = (mode & IterMode9.IncludeAnonymous) > 0;
-    for (let c = this.cursor(mode | IterMode9.IncludeAnonymous); ; ) {
-      let entered = false;
-      if (c.from <= to && c.to >= from && (!anon && c.type.isAnonymous || enter(c) !== false)) {
-        if (c.firstChild())
-          continue;
-        entered = true;
-      }
-      for (; ; ) {
-        if (entered && leave && (anon || !c.type.isAnonymous))
-          leave(c);
-        if (c.nextSibling())
-          break;
-        if (!c.parent())
-          return;
-        entered = true;
-      }
-    }
-  }
-  /**
-  Get the value of the given [node prop](#common.NodeProp) for this
-  node. Works with both per-node and per-type props.
-  */
-  prop(prop) {
-    return !prop.perNode ? this.type.prop(prop) : this.props ? this.props[prop.id] : void 0;
-  }
-  /**
-  Returns the node's [per-node props](#common.NodeProp.perNode) in a
-  format that can be passed to the [`Tree`](#common.Tree)
-  constructor.
-  */
-  get propValues() {
-    let result = [];
-    if (this.props)
-      for (let id3 in this.props)
-        result.push([+id3, this.props[id3]]);
-    return result;
-  }
-  /**
-  Balance the direct children of this tree, producing a copy of
-  which may have children grouped into subtrees with type
-  [`NodeType.none`](#common.NodeType^none).
-  */
-  balance(config2 = {}) {
-    return this.children.length <= 8 ? this : balanceRange9(NodeType9.none, this.children, this.positions, 0, this.children.length, 0, this.length, (children, positions, length) => new _Tree(this.type, children, positions, length, this.propValues), config2.makeTree || ((children, positions, length) => new _Tree(NodeType9.none, children, positions, length)));
-  }
-  /**
-  Build a tree from a postfix-ordered buffer of node information,
-  or a cursor over such a buffer.
-  */
-  static build(data2) {
-    return buildTree9(data2);
-  }
-};
-Tree9.empty = new Tree9(NodeType9.none, [], [], 0);
-var FlatBufferCursor9 = class _FlatBufferCursor {
-  constructor(buffer, index) {
-    this.buffer = buffer;
-    this.index = index;
-  }
-  get id() {
-    return this.buffer[this.index - 4];
-  }
-  get start() {
-    return this.buffer[this.index - 3];
-  }
-  get end() {
-    return this.buffer[this.index - 2];
-  }
-  get size() {
-    return this.buffer[this.index - 1];
-  }
-  get pos() {
-    return this.index;
-  }
-  next() {
-    this.index -= 4;
-  }
-  fork() {
-    return new _FlatBufferCursor(this.buffer, this.index);
-  }
-};
-var TreeBuffer9 = class _TreeBuffer {
-  /**
-  Create a tree buffer.
-  */
-  constructor(buffer, length, set) {
-    this.buffer = buffer;
-    this.length = length;
-    this.set = set;
-  }
-  /**
-  @internal
-  */
-  get type() {
-    return NodeType9.none;
-  }
-  /**
-  @internal
-  */
-  toString() {
-    let result = [];
-    for (let index = 0; index < this.buffer.length; ) {
-      result.push(this.childString(index));
-      index = this.buffer[index + 3];
-    }
-    return result.join(",");
-  }
-  /**
-  @internal
-  */
-  childString(index) {
-    let id3 = this.buffer[index], endIndex = this.buffer[index + 3];
-    let type = this.set.types[id3], result = type.name;
-    if (/\W/.test(result) && !type.isError)
-      result = JSON.stringify(result);
-    index += 4;
-    if (endIndex == index)
-      return result;
-    let children = [];
-    while (index < endIndex) {
-      children.push(this.childString(index));
-      index = this.buffer[index + 3];
-    }
-    return result + "(" + children.join(",") + ")";
-  }
-  /**
-  @internal
-  */
-  findChild(startIndex, endIndex, dir, pos, side) {
-    let { buffer } = this, pick = -1;
-    for (let i = startIndex; i != endIndex; i = buffer[i + 3]) {
-      if (checkSide9(side, pos, buffer[i + 1], buffer[i + 2])) {
-        pick = i;
-        if (dir > 0)
-          break;
-      }
-    }
-    return pick;
-  }
-  /**
-  @internal
-  */
-  slice(startI, endI, from) {
-    let b = this.buffer;
-    let copy = new Uint16Array(endI - startI), len = 0;
-    for (let i = startI, j = 0; i < endI; ) {
-      copy[j++] = b[i++];
-      copy[j++] = b[i++] - from;
-      let to = copy[j++] = b[i++] - from;
-      copy[j++] = b[i++] - startI;
-      len = Math.max(len, to);
-    }
-    return new _TreeBuffer(copy, len, this.set);
-  }
-};
-function checkSide9(side, pos, from, to) {
-  switch (side) {
-    case -2:
-      return from < pos;
-    case -1:
-      return to >= pos && from < pos;
-    case 0:
-      return from < pos && to > pos;
-    case 1:
-      return from <= pos && to > pos;
-    case 2:
-      return to > pos;
-    case 4:
-      return true;
-  }
-}
-function resolveNode9(node, pos, side, overlays) {
-  var _a7;
-  while (node.from == node.to || (side < 1 ? node.from >= pos : node.from > pos) || (side > -1 ? node.to <= pos : node.to < pos)) {
-    let parent = !overlays && node instanceof TreeNode9 && node.index < 0 ? null : node.parent;
-    if (!parent)
-      return node;
-    node = parent;
-  }
-  let mode = overlays ? 0 : IterMode9.IgnoreOverlays;
-  if (overlays)
-    for (let scan = node, parent = scan.parent; parent; scan = parent, parent = scan.parent) {
-      if (scan instanceof TreeNode9 && scan.index < 0 && ((_a7 = parent.enter(pos, side, mode)) === null || _a7 === void 0 ? void 0 : _a7.from) != scan.from)
-        node = parent;
-    }
-  for (; ; ) {
-    let inner = node.enter(pos, side, mode);
-    if (!inner)
-      return node;
-    node = inner;
-  }
-}
-var BaseNode9 = class {
-  cursor(mode = 0) {
-    return new TreeCursor9(this, mode);
-  }
-  getChild(type, before = null, after = null) {
-    let r = getChildren9(this, type, before, after);
-    return r.length ? r[0] : null;
-  }
-  getChildren(type, before = null, after = null) {
-    return getChildren9(this, type, before, after);
-  }
-  resolve(pos, side = 0) {
-    return resolveNode9(this, pos, side, false);
-  }
-  resolveInner(pos, side = 0) {
-    return resolveNode9(this, pos, side, true);
-  }
-  matchContext(context) {
-    return matchNodeContext9(this.parent, context);
-  }
-  enterUnfinishedNodesBefore(pos) {
-    let scan = this.childBefore(pos), node = this;
-    while (scan) {
-      let last = scan.lastChild;
-      if (!last || last.to != scan.to)
-        break;
-      if (last.type.isError && last.from == last.to) {
-        node = scan;
-        scan = last.prevSibling;
-      } else {
-        scan = last;
-      }
-    }
-    return node;
-  }
-  get node() {
-    return this;
-  }
-  get next() {
-    return this.parent;
-  }
-};
-var TreeNode9 = class _TreeNode extends BaseNode9 {
-  constructor(_tree, from, index, _parent) {
-    super();
-    this._tree = _tree;
-    this.from = from;
-    this.index = index;
-    this._parent = _parent;
-  }
-  get type() {
-    return this._tree.type;
-  }
-  get name() {
-    return this._tree.type.name;
-  }
-  get to() {
-    return this.from + this._tree.length;
-  }
-  nextChild(i, dir, pos, side, mode = 0) {
-    for (let parent = this; ; ) {
-      for (let { children, positions } = parent._tree, e = dir > 0 ? children.length : -1; i != e; i += dir) {
-        let next = children[i], start = positions[i] + parent.from, mounted;
-        if (!(mode & IterMode9.EnterBracketed && next instanceof Tree9 && (mounted = MountedTree9.get(next)) && !mounted.overlay && mounted.bracketed && pos >= start && pos <= start + next.length) && !checkSide9(side, pos, start, start + next.length))
-          continue;
-        if (next instanceof TreeBuffer9) {
-          if (mode & IterMode9.ExcludeBuffers)
-            continue;
-          let index = next.findChild(0, next.buffer.length, dir, pos - start, side);
-          if (index > -1)
-            return new BufferNode9(new BufferContext9(parent, next, i, start), null, index);
-        } else if (mode & IterMode9.IncludeAnonymous || (!next.type.isAnonymous || hasChild9(next))) {
-          let mounted2;
-          if (!(mode & IterMode9.IgnoreMounts) && (mounted2 = MountedTree9.get(next)) && !mounted2.overlay)
-            return new _TreeNode(mounted2.tree, start, i, parent);
-          let inner = new _TreeNode(next, start, i, parent);
-          return mode & IterMode9.IncludeAnonymous || !inner.type.isAnonymous ? inner : inner.nextChild(dir < 0 ? next.children.length - 1 : 0, dir, pos, side, mode);
-        }
-      }
-      if (mode & IterMode9.IncludeAnonymous || !parent.type.isAnonymous)
-        return null;
-      if (parent.index >= 0)
-        i = parent.index + dir;
-      else
-        i = dir < 0 ? -1 : parent._parent._tree.children.length;
-      parent = parent._parent;
-      if (!parent)
-        return null;
-    }
-  }
-  get firstChild() {
-    return this.nextChild(
-      0,
-      1,
-      0,
-      4
-      /* Side.DontCare */
-    );
-  }
-  get lastChild() {
-    return this.nextChild(
-      this._tree.children.length - 1,
-      -1,
-      0,
-      4
-      /* Side.DontCare */
-    );
-  }
-  childAfter(pos) {
-    return this.nextChild(
-      0,
-      1,
-      pos,
-      2
-      /* Side.After */
-    );
-  }
-  childBefore(pos) {
-    return this.nextChild(
-      this._tree.children.length - 1,
-      -1,
-      pos,
-      -2
-      /* Side.Before */
-    );
-  }
-  prop(prop) {
-    return this._tree.prop(prop);
-  }
-  enter(pos, side, mode = 0) {
-    let mounted;
-    if (!(mode & IterMode9.IgnoreOverlays) && (mounted = MountedTree9.get(this._tree)) && mounted.overlay) {
-      let rPos = pos - this.from, enterBracketed = mode & IterMode9.EnterBracketed && mounted.bracketed;
-      for (let { from, to } of mounted.overlay) {
-        if ((side > 0 || enterBracketed ? from <= rPos : from < rPos) && (side < 0 || enterBracketed ? to >= rPos : to > rPos))
-          return new _TreeNode(mounted.tree, mounted.overlay[0].from + this.from, -1, this);
-      }
-    }
-    return this.nextChild(0, 1, pos, side, mode);
-  }
-  nextSignificantParent() {
-    let val = this;
-    while (val.type.isAnonymous && val._parent)
-      val = val._parent;
-    return val;
-  }
-  get parent() {
-    return this._parent ? this._parent.nextSignificantParent() : null;
-  }
-  get nextSibling() {
-    return this._parent && this.index >= 0 ? this._parent.nextChild(
-      this.index + 1,
-      1,
-      0,
-      4
-      /* Side.DontCare */
-    ) : null;
-  }
-  get prevSibling() {
-    return this._parent && this.index >= 0 ? this._parent.nextChild(
-      this.index - 1,
-      -1,
-      0,
-      4
-      /* Side.DontCare */
-    ) : null;
-  }
-  get tree() {
-    return this._tree;
-  }
-  toTree() {
-    return this._tree;
-  }
-  /**
-  @internal
-  */
-  toString() {
-    return this._tree.toString();
-  }
-};
-function getChildren9(node, type, before, after) {
-  let cur2 = node.cursor(), result = [];
-  if (!cur2.firstChild())
-    return result;
-  if (before != null)
-    for (let found = false; !found; ) {
-      found = cur2.type.is(before);
-      if (!cur2.nextSibling())
-        return result;
-    }
-  for (; ; ) {
-    if (after != null && cur2.type.is(after))
-      return result;
-    if (cur2.type.is(type))
-      result.push(cur2.node);
-    if (!cur2.nextSibling())
-      return after == null ? result : [];
-  }
-}
-function matchNodeContext9(node, context, i = context.length - 1) {
-  for (let p = node; i >= 0; p = p.parent) {
-    if (!p)
-      return false;
-    if (!p.type.isAnonymous) {
-      if (context[i] && context[i] != p.name)
-        return false;
-      i--;
-    }
-  }
-  return true;
-}
-var BufferContext9 = class {
-  constructor(parent, buffer, index, start) {
-    this.parent = parent;
-    this.buffer = buffer;
-    this.index = index;
-    this.start = start;
-  }
-};
-var BufferNode9 = class _BufferNode extends BaseNode9 {
-  get name() {
-    return this.type.name;
-  }
-  get from() {
-    return this.context.start + this.context.buffer.buffer[this.index + 1];
-  }
-  get to() {
-    return this.context.start + this.context.buffer.buffer[this.index + 2];
-  }
-  constructor(context, _parent, index) {
-    super();
-    this.context = context;
-    this._parent = _parent;
-    this.index = index;
-    this.type = context.buffer.set.types[context.buffer.buffer[index]];
-  }
-  child(dir, pos, side) {
-    let { buffer } = this.context;
-    let index = buffer.findChild(this.index + 4, buffer.buffer[this.index + 3], dir, pos - this.context.start, side);
-    return index < 0 ? null : new _BufferNode(this.context, this, index);
-  }
-  get firstChild() {
-    return this.child(
-      1,
-      0,
-      4
-      /* Side.DontCare */
-    );
-  }
-  get lastChild() {
-    return this.child(
-      -1,
-      0,
-      4
-      /* Side.DontCare */
-    );
-  }
-  childAfter(pos) {
-    return this.child(
-      1,
-      pos,
-      2
-      /* Side.After */
-    );
-  }
-  childBefore(pos) {
-    return this.child(
-      -1,
-      pos,
-      -2
-      /* Side.Before */
-    );
-  }
-  prop(prop) {
-    return this.type.prop(prop);
-  }
-  enter(pos, side, mode = 0) {
-    if (mode & IterMode9.ExcludeBuffers)
-      return null;
-    let { buffer } = this.context;
-    let index = buffer.findChild(this.index + 4, buffer.buffer[this.index + 3], side > 0 ? 1 : -1, pos - this.context.start, side);
-    return index < 0 ? null : new _BufferNode(this.context, this, index);
-  }
-  get parent() {
-    return this._parent || this.context.parent.nextSignificantParent();
-  }
-  externalSibling(dir) {
-    return this._parent ? null : this.context.parent.nextChild(
-      this.context.index + dir,
-      dir,
-      0,
-      4
-      /* Side.DontCare */
-    );
-  }
-  get nextSibling() {
-    let { buffer } = this.context;
-    let after = buffer.buffer[this.index + 3];
-    if (after < (this._parent ? buffer.buffer[this._parent.index + 3] : buffer.buffer.length))
-      return new _BufferNode(this.context, this._parent, after);
-    return this.externalSibling(1);
-  }
-  get prevSibling() {
-    let { buffer } = this.context;
-    let parentStart = this._parent ? this._parent.index + 4 : 0;
-    if (this.index == parentStart)
-      return this.externalSibling(-1);
-    return new _BufferNode(this.context, this._parent, buffer.findChild(
-      parentStart,
-      this.index,
-      -1,
-      0,
-      4
-      /* Side.DontCare */
-    ));
-  }
-  get tree() {
-    return null;
-  }
-  toTree() {
-    let children = [], positions = [];
-    let { buffer } = this.context;
-    let startI = this.index + 4, endI = buffer.buffer[this.index + 3];
-    if (endI > startI) {
-      let from = buffer.buffer[this.index + 1];
-      children.push(buffer.slice(startI, endI, from));
-      positions.push(0);
-    }
-    return new Tree9(this.type, children, positions, this.to - this.from);
-  }
-  /**
-  @internal
-  */
-  toString() {
-    return this.context.buffer.childString(this.index);
-  }
-};
-function iterStack9(heads) {
-  if (!heads.length)
-    return null;
-  let pick = 0, picked = heads[0];
-  for (let i = 1; i < heads.length; i++) {
-    let node = heads[i];
-    if (node.from > picked.from || node.to < picked.to) {
-      picked = node;
-      pick = i;
-    }
-  }
-  let next = picked instanceof TreeNode9 && picked.index < 0 ? null : picked.parent;
-  let newHeads = heads.slice();
-  if (next)
-    newHeads[pick] = next;
-  else
-    newHeads.splice(pick, 1);
-  return new StackIterator9(newHeads, picked);
-}
-var StackIterator9 = class {
-  constructor(heads, node) {
-    this.heads = heads;
-    this.node = node;
-  }
-  get next() {
-    return iterStack9(this.heads);
-  }
-};
-function stackIterator9(tree, pos, side) {
-  let inner = tree.resolveInner(pos, side), layers = null;
-  for (let scan = inner instanceof TreeNode9 ? inner : inner.context.parent; scan; scan = scan.parent) {
-    if (scan.index < 0) {
-      let parent = scan.parent;
-      (layers || (layers = [inner])).push(parent.resolve(pos, side));
-      scan = parent;
-    } else {
-      let mount = MountedTree9.get(scan.tree);
-      if (mount && mount.overlay && mount.overlay[0].from <= pos && mount.overlay[mount.overlay.length - 1].to >= pos) {
-        let root = new TreeNode9(mount.tree, mount.overlay[0].from + scan.from, -1, scan);
-        (layers || (layers = [inner])).push(resolveNode9(root, pos, side, false));
-      }
-    }
-  }
-  return layers ? iterStack9(layers) : inner;
-}
-var TreeCursor9 = class {
-  /**
-  Shorthand for `.type.name`.
-  */
-  get name() {
-    return this.type.name;
-  }
-  /**
-  @internal
-  */
-  constructor(node, mode = 0) {
-    this.buffer = null;
-    this.stack = [];
-    this.index = 0;
-    this.bufferNode = null;
-    this.mode = mode & ~IterMode9.EnterBracketed;
-    if (node instanceof TreeNode9) {
-      this.yieldNode(node);
-    } else {
-      this._tree = node.context.parent;
-      this.buffer = node.context;
-      for (let n = node._parent; n; n = n._parent)
-        this.stack.unshift(n.index);
-      this.bufferNode = node;
-      this.yieldBuf(node.index);
-    }
-  }
-  yieldNode(node) {
-    if (!node)
-      return false;
-    this._tree = node;
-    this.type = node.type;
-    this.from = node.from;
-    this.to = node.to;
-    return true;
-  }
-  yieldBuf(index, type) {
-    this.index = index;
-    let { start, buffer } = this.buffer;
-    this.type = type || buffer.set.types[buffer.buffer[index]];
-    this.from = start + buffer.buffer[index + 1];
-    this.to = start + buffer.buffer[index + 2];
-    return true;
-  }
-  /**
-  @internal
-  */
-  yield(node) {
-    if (!node)
-      return false;
-    if (node instanceof TreeNode9) {
-      this.buffer = null;
-      return this.yieldNode(node);
-    }
-    this.buffer = node.context;
-    return this.yieldBuf(node.index, node.type);
-  }
-  /**
-  @internal
-  */
-  toString() {
-    return this.buffer ? this.buffer.buffer.childString(this.index) : this._tree.toString();
-  }
-  /**
-  @internal
-  */
-  enterChild(dir, pos, side) {
-    if (!this.buffer)
-      return this.yield(this._tree.nextChild(dir < 0 ? this._tree._tree.children.length - 1 : 0, dir, pos, side, this.mode));
-    let { buffer } = this.buffer;
-    let index = buffer.findChild(this.index + 4, buffer.buffer[this.index + 3], dir, pos - this.buffer.start, side);
-    if (index < 0)
-      return false;
-    this.stack.push(this.index);
-    return this.yieldBuf(index);
-  }
-  /**
-  Move the cursor to this node's first child. When this returns
-  false, the node has no child, and the cursor has not been moved.
-  */
-  firstChild() {
-    return this.enterChild(
-      1,
-      0,
-      4
-      /* Side.DontCare */
-    );
-  }
-  /**
-  Move the cursor to this node's last child.
-  */
-  lastChild() {
-    return this.enterChild(
-      -1,
-      0,
-      4
-      /* Side.DontCare */
-    );
-  }
-  /**
-  Move the cursor to the first child that ends after `pos`.
-  */
-  childAfter(pos) {
-    return this.enterChild(
-      1,
-      pos,
-      2
-      /* Side.After */
-    );
-  }
-  /**
-  Move to the last child that starts before `pos`.
-  */
-  childBefore(pos) {
-    return this.enterChild(
-      -1,
-      pos,
-      -2
-      /* Side.Before */
-    );
-  }
-  /**
-  Move the cursor to the child around `pos`. If side is -1 the
-  child may end at that position, when 1 it may start there. This
-  will also enter [overlaid](#common.MountedTree.overlay)
-  [mounted](#common.NodeProp^mounted) trees unless `overlays` is
-  set to false.
-  */
-  enter(pos, side, mode = this.mode) {
-    if (!this.buffer)
-      return this.yield(this._tree.enter(pos, side, mode));
-    return mode & IterMode9.ExcludeBuffers ? false : this.enterChild(1, pos, side);
-  }
-  /**
-  Move to the node's parent node, if this isn't the top node.
-  */
-  parent() {
-    if (!this.buffer)
-      return this.yieldNode(this.mode & IterMode9.IncludeAnonymous ? this._tree._parent : this._tree.parent);
-    if (this.stack.length)
-      return this.yieldBuf(this.stack.pop());
-    let parent = this.mode & IterMode9.IncludeAnonymous ? this.buffer.parent : this.buffer.parent.nextSignificantParent();
-    this.buffer = null;
-    return this.yieldNode(parent);
-  }
-  /**
-  @internal
-  */
-  sibling(dir) {
-    if (!this.buffer)
-      return !this._tree._parent ? false : this.yield(this._tree.index < 0 ? null : this._tree._parent.nextChild(this._tree.index + dir, dir, 0, 4, this.mode));
-    let { buffer } = this.buffer, d = this.stack.length - 1;
-    if (dir < 0) {
-      let parentStart = d < 0 ? 0 : this.stack[d] + 4;
-      if (this.index != parentStart)
-        return this.yieldBuf(buffer.findChild(
-          parentStart,
-          this.index,
-          -1,
-          0,
-          4
-          /* Side.DontCare */
-        ));
-    } else {
-      let after = buffer.buffer[this.index + 3];
-      if (after < (d < 0 ? buffer.buffer.length : buffer.buffer[this.stack[d] + 3]))
-        return this.yieldBuf(after);
-    }
-    return d < 0 ? this.yield(this.buffer.parent.nextChild(this.buffer.index + dir, dir, 0, 4, this.mode)) : false;
-  }
-  /**
-  Move to this node's next sibling, if any.
-  */
-  nextSibling() {
-    return this.sibling(1);
-  }
-  /**
-  Move to this node's previous sibling, if any.
-  */
-  prevSibling() {
-    return this.sibling(-1);
-  }
-  atLastNode(dir) {
-    let index, parent, { buffer } = this;
-    if (buffer) {
-      if (dir > 0) {
-        if (this.index < buffer.buffer.buffer.length)
-          return false;
-      } else {
-        for (let i = 0; i < this.index; i++)
-          if (buffer.buffer.buffer[i + 3] < this.index)
-            return false;
-      }
-      ({ index, parent } = buffer);
-    } else {
-      ({ index, _parent: parent } = this._tree);
-    }
-    for (; parent; { index, _parent: parent } = parent) {
-      if (index > -1)
-        for (let i = index + dir, e = dir < 0 ? -1 : parent._tree.children.length; i != e; i += dir) {
-          let child = parent._tree.children[i];
-          if (this.mode & IterMode9.IncludeAnonymous || child instanceof TreeBuffer9 || !child.type.isAnonymous || hasChild9(child))
-            return false;
-        }
-    }
-    return true;
-  }
-  move(dir, enter) {
-    if (enter && this.enterChild(
-      dir,
-      0,
-      4
-      /* Side.DontCare */
-    ))
-      return true;
-    for (; ; ) {
-      if (this.sibling(dir))
-        return true;
-      if (this.atLastNode(dir) || !this.parent())
-        return false;
-    }
-  }
-  /**
-  Move to the next node in a
-  [pre-order](https://en.wikipedia.org/wiki/Tree_traversal#Pre-order,_NLR)
-  traversal, going from a node to its first child or, if the
-  current node is empty or `enter` is false, its next sibling or
-  the next sibling of the first parent node that has one.
-  */
-  next(enter = true) {
-    return this.move(1, enter);
-  }
-  /**
-  Move to the next node in a last-to-first pre-order traversal. A
-  node is followed by its last child or, if it has none, its
-  previous sibling or the previous sibling of the first parent
-  node that has one.
-  */
-  prev(enter = true) {
-    return this.move(-1, enter);
-  }
-  /**
-  Move the cursor to the innermost node that covers `pos`. If
-  `side` is -1, it will enter nodes that end at `pos`. If it is 1,
-  it will enter nodes that start at `pos`.
-  */
-  moveTo(pos, side = 0) {
-    while (this.from == this.to || (side < 1 ? this.from >= pos : this.from > pos) || (side > -1 ? this.to <= pos : this.to < pos))
-      if (!this.parent())
-        break;
-    while (this.enterChild(1, pos, side)) {
-    }
-    return this;
-  }
-  /**
-  Get a [syntax node](#common.SyntaxNode) at the cursor's current
-  position.
-  */
-  get node() {
-    if (!this.buffer)
-      return this._tree;
-    let cache2 = this.bufferNode, result = null, depth = 0;
-    if (cache2 && cache2.context == this.buffer) {
-      scan: for (let index = this.index, d = this.stack.length; d >= 0; ) {
-        for (let c = cache2; c; c = c._parent)
-          if (c.index == index) {
-            if (index == this.index)
-              return c;
-            result = c;
-            depth = d + 1;
-            break scan;
-          }
-        index = this.stack[--d];
-      }
-    }
-    for (let i = depth; i < this.stack.length; i++)
-      result = new BufferNode9(this.buffer, result, this.stack[i]);
-    return this.bufferNode = new BufferNode9(this.buffer, result, this.index);
-  }
-  /**
-  Get the [tree](#common.Tree) that represents the current node, if
-  any. Will return null when the node is in a [tree
-  buffer](#common.TreeBuffer).
-  */
-  get tree() {
-    return this.buffer ? null : this._tree._tree;
-  }
-  /**
-  Iterate over the current node and all its descendants, calling
-  `enter` when entering a node and `leave`, if given, when leaving
-  one. When `enter` returns `false`, any children of that node are
-  skipped, and `leave` isn't called for it.
-  */
-  iterate(enter, leave) {
-    for (let depth = 0; ; ) {
-      let mustLeave = false;
-      if (this.type.isAnonymous || enter(this) !== false) {
-        if (this.firstChild()) {
-          depth++;
-          continue;
-        }
-        if (!this.type.isAnonymous)
-          mustLeave = true;
-      }
-      for (; ; ) {
-        if (mustLeave && leave)
-          leave(this);
-        mustLeave = this.type.isAnonymous;
-        if (!depth)
-          return;
-        if (this.nextSibling())
-          break;
-        this.parent();
-        depth--;
-        mustLeave = true;
-      }
-    }
-  }
-  /**
-  Test whether the current node matches a given context—a sequence
-  of direct parent node names. Empty strings in the context array
-  are treated as wildcards.
-  */
-  matchContext(context) {
-    if (!this.buffer)
-      return matchNodeContext9(this.node.parent, context);
-    let { buffer } = this.buffer, { types: types2 } = buffer.set;
-    for (let i = context.length - 1, d = this.stack.length - 1; i >= 0; d--) {
-      if (d < 0)
-        return matchNodeContext9(this._tree, context, i);
-      let type = types2[buffer.buffer[this.stack[d]]];
-      if (!type.isAnonymous) {
-        if (context[i] && context[i] != type.name)
-          return false;
-        i--;
-      }
-    }
-    return true;
-  }
-};
-function hasChild9(tree) {
-  return tree.children.some((ch) => ch instanceof TreeBuffer9 || !ch.type.isAnonymous || hasChild9(ch));
-}
-function buildTree9(data2) {
-  var _a7;
-  let { buffer, nodeSet, maxBufferLength = DefaultBufferLength9, reused = [], minRepeatType = nodeSet.types.length } = data2;
-  let cursor2 = Array.isArray(buffer) ? new FlatBufferCursor9(buffer, buffer.length) : buffer;
-  let types2 = nodeSet.types;
-  let contextHash = 0, lookAhead = 0;
-  function takeNode(parentStart, minPos, children2, positions2, inRepeat, depth) {
-    let { id: id3, start, end, size } = cursor2;
-    let lookAheadAtStart = lookAhead, contextAtStart = contextHash;
-    if (size < 0) {
-      cursor2.next();
-      if (size == -1) {
-        let node2 = reused[id3];
-        children2.push(node2);
-        positions2.push(start - parentStart);
-        return;
-      } else if (size == -3) {
-        contextHash = id3;
-        return;
-      } else if (size == -4) {
-        lookAhead = id3;
-        return;
-      } else {
-        throw new RangeError(`Unrecognized record size: ${size}`);
-      }
-    }
-    let type = types2[id3], node, buffer2;
-    let startPos = start - parentStart;
-    if (end - start <= maxBufferLength && (buffer2 = findBufferSize(cursor2.pos - minPos, inRepeat))) {
-      let data3 = new Uint16Array(buffer2.size - buffer2.skip);
-      let endPos = cursor2.pos - buffer2.size, index = data3.length;
-      while (cursor2.pos > endPos)
-        index = copyToBuffer(buffer2.start, data3, index);
-      node = new TreeBuffer9(data3, end - buffer2.start, nodeSet);
-      startPos = buffer2.start - parentStart;
-    } else {
-      let endPos = cursor2.pos - size;
-      cursor2.next();
-      let localChildren = [], localPositions = [];
-      let localInRepeat = id3 >= minRepeatType ? id3 : -1;
-      let lastGroup = 0, lastEnd = end;
-      while (cursor2.pos > endPos) {
-        if (localInRepeat >= 0 && cursor2.id == localInRepeat && cursor2.size >= 0) {
-          if (cursor2.end <= lastEnd - maxBufferLength) {
-            makeRepeatLeaf(localChildren, localPositions, start, lastGroup, cursor2.end, lastEnd, localInRepeat, lookAheadAtStart, contextAtStart);
-            lastGroup = localChildren.length;
-            lastEnd = cursor2.end;
-          }
-          cursor2.next();
-        } else if (depth > 2500) {
-          takeFlatNode(start, endPos, localChildren, localPositions);
-        } else {
-          takeNode(start, endPos, localChildren, localPositions, localInRepeat, depth + 1);
-        }
-      }
-      if (localInRepeat >= 0 && lastGroup > 0 && lastGroup < localChildren.length)
-        makeRepeatLeaf(localChildren, localPositions, start, lastGroup, start, lastEnd, localInRepeat, lookAheadAtStart, contextAtStart);
-      localChildren.reverse();
-      localPositions.reverse();
-      if (localInRepeat > -1 && lastGroup > 0) {
-        let make = makeBalanced(type, contextAtStart);
-        node = balanceRange9(type, localChildren, localPositions, 0, localChildren.length, 0, end - start, make, make);
-      } else {
-        node = makeTree(type, localChildren, localPositions, end - start, lookAheadAtStart - end, contextAtStart);
-      }
-    }
-    children2.push(node);
-    positions2.push(startPos);
-  }
-  function takeFlatNode(parentStart, minPos, children2, positions2) {
-    let nodes = [];
-    let nodeCount = 0, stopAt = -1;
-    while (cursor2.pos > minPos) {
-      let { id: id3, start, end, size } = cursor2;
-      if (size > 4) {
-        cursor2.next();
-      } else if (stopAt > -1 && start < stopAt) {
-        break;
-      } else {
-        if (stopAt < 0)
-          stopAt = end - maxBufferLength;
-        nodes.push(id3, start, end);
-        nodeCount++;
-        cursor2.next();
-      }
-    }
-    if (nodeCount) {
-      let buffer2 = new Uint16Array(nodeCount * 4);
-      let start = nodes[nodes.length - 2];
-      for (let i = nodes.length - 3, j = 0; i >= 0; i -= 3) {
-        buffer2[j++] = nodes[i];
-        buffer2[j++] = nodes[i + 1] - start;
-        buffer2[j++] = nodes[i + 2] - start;
-        buffer2[j++] = j;
-      }
-      children2.push(new TreeBuffer9(buffer2, nodes[2] - start, nodeSet));
-      positions2.push(start - parentStart);
-    }
-  }
-  function makeBalanced(type, contextHash2) {
-    return (children2, positions2, length2) => {
-      let lookAhead2 = 0, lastI = children2.length - 1, last, lookAheadProp;
-      if (lastI >= 0 && (last = children2[lastI]) instanceof Tree9) {
-        if (!lastI && last.type == type && last.length == length2)
-          return last;
-        if (lookAheadProp = last.prop(NodeProp9.lookAhead))
-          lookAhead2 = positions2[lastI] + last.length + lookAheadProp;
-      }
-      return makeTree(type, children2, positions2, length2, lookAhead2, contextHash2);
-    };
-  }
-  function makeRepeatLeaf(children2, positions2, base2, i, from, to, type, lookAhead2, contextHash2) {
-    let localChildren = [], localPositions = [];
-    while (children2.length > i) {
-      localChildren.push(children2.pop());
-      localPositions.push(positions2.pop() + base2 - from);
-    }
-    children2.push(makeTree(nodeSet.types[type], localChildren, localPositions, to - from, lookAhead2 - to, contextHash2));
-    positions2.push(from - base2);
-  }
-  function makeTree(type, children2, positions2, length2, lookAhead2, contextHash2, props) {
-    if (contextHash2) {
-      let pair4 = [NodeProp9.contextHash, contextHash2];
-      props = props ? [pair4].concat(props) : [pair4];
-    }
-    if (lookAhead2 > 25) {
-      let pair4 = [NodeProp9.lookAhead, lookAhead2];
-      props = props ? [pair4].concat(props) : [pair4];
-    }
-    return new Tree9(type, children2, positions2, length2, props);
-  }
-  function findBufferSize(maxSize, inRepeat) {
-    let fork = cursor2.fork();
-    let size = 0, start = 0, skip = 0, minStart = fork.end - maxBufferLength;
-    let result = { size: 0, start: 0, skip: 0 };
-    scan: for (let minPos = fork.pos - maxSize; fork.pos > minPos; ) {
-      let nodeSize11 = fork.size;
-      if (fork.id == inRepeat && nodeSize11 >= 0) {
-        result.size = size;
-        result.start = start;
-        result.skip = skip;
-        skip += 4;
-        size += 4;
-        fork.next();
-        continue;
-      }
-      let startPos = fork.pos - nodeSize11;
-      if (nodeSize11 < 0 || startPos < minPos || fork.start < minStart)
-        break;
-      let localSkipped = fork.id >= minRepeatType ? 4 : 0;
-      let nodeStart2 = fork.start;
-      fork.next();
-      while (fork.pos > startPos) {
-        if (fork.size < 0) {
-          if (fork.size == -3 || fork.size == -4)
-            localSkipped += 4;
-          else
-            break scan;
-        } else if (fork.id >= minRepeatType) {
-          localSkipped += 4;
-        }
-        fork.next();
-      }
-      start = nodeStart2;
-      size += nodeSize11;
-      skip += localSkipped;
-    }
-    if (inRepeat < 0 || size == maxSize) {
-      result.size = size;
-      result.start = start;
-      result.skip = skip;
-    }
-    return result.size > 4 ? result : void 0;
-  }
-  function copyToBuffer(bufferStart, buffer2, index) {
-    let { id: id3, start, end, size } = cursor2;
-    cursor2.next();
-    if (size >= 0 && id3 < minRepeatType) {
-      let startIndex = index;
-      if (size > 4) {
-        let endPos = cursor2.pos - (size - 4);
-        while (cursor2.pos > endPos)
-          index = copyToBuffer(bufferStart, buffer2, index);
-      }
-      buffer2[--index] = startIndex;
-      buffer2[--index] = end - bufferStart;
-      buffer2[--index] = start - bufferStart;
-      buffer2[--index] = id3;
-    } else if (size == -3) {
-      contextHash = id3;
-    } else if (size == -4) {
-      lookAhead = id3;
-    }
-    return index;
-  }
-  let children = [], positions = [];
-  while (cursor2.pos > 0)
-    takeNode(data2.start || 0, data2.bufferStart || 0, children, positions, -1, 0);
-  let length = (_a7 = data2.length) !== null && _a7 !== void 0 ? _a7 : children.length ? positions[0] + children[0].length : 0;
-  return new Tree9(types2[data2.topID], children.reverse(), positions.reverse(), length);
-}
-var nodeSizeCache9 = /* @__PURE__ */ new WeakMap();
-function nodeSize9(balanceType, node) {
-  if (!balanceType.isAnonymous || node instanceof TreeBuffer9 || node.type != balanceType)
-    return 1;
-  let size = nodeSizeCache9.get(node);
-  if (size == null) {
-    size = 1;
-    for (let child of node.children) {
-      if (child.type != balanceType || !(child instanceof Tree9)) {
-        size = 1;
-        break;
-      }
-      size += nodeSize9(balanceType, child);
-    }
-    nodeSizeCache9.set(node, size);
-  }
-  return size;
-}
-function balanceRange9(balanceType, children, positions, from, to, start, length, mkTop, mkTree) {
-  let total = 0;
-  for (let i = from; i < to; i++)
-    total += nodeSize9(balanceType, children[i]);
-  let maxChild = Math.ceil(
-    total * 1.5 / 8
-    /* Balance.BranchFactor */
-  );
-  let localChildren = [], localPositions = [];
-  function divide(children2, positions2, from2, to2, offset) {
-    for (let i = from2; i < to2; ) {
-      let groupFrom = i, groupStart = positions2[i], groupSize = nodeSize9(balanceType, children2[i]);
-      i++;
-      for (; i < to2; i++) {
-        let nextSize = nodeSize9(balanceType, children2[i]);
-        if (groupSize + nextSize >= maxChild)
-          break;
-        groupSize += nextSize;
-      }
-      if (i == groupFrom + 1) {
-        if (groupSize > maxChild) {
-          let only = children2[groupFrom];
-          divide(only.children, only.positions, 0, only.children.length, positions2[groupFrom] + offset);
-          continue;
-        }
-        localChildren.push(children2[groupFrom]);
-      } else {
-        let length2 = positions2[i - 1] + children2[i - 1].length - groupStart;
-        localChildren.push(balanceRange9(balanceType, children2, positions2, groupFrom, i, groupStart, length2, null, mkTree));
-      }
-      localPositions.push(groupStart + offset - start);
-    }
-  }
-  divide(children, positions, from, to, 0);
-  return (mkTop || mkTree)(localChildren, localPositions, length);
-}
-var TreeFragment7 = class _TreeFragment {
-  /**
-  Construct a tree fragment. You'll usually want to use
-  [`addTree`](#common.TreeFragment^addTree) and
-  [`applyChanges`](#common.TreeFragment^applyChanges) instead of
-  calling this directly.
-  */
-  constructor(from, to, tree, offset, openStart = false, openEnd = false) {
-    this.from = from;
-    this.to = to;
-    this.tree = tree;
-    this.offset = offset;
-    this.open = (openStart ? 1 : 0) | (openEnd ? 2 : 0);
-  }
-  /**
-  Whether the start of the fragment represents the start of a
-  parse, or the end of a change. (In the second case, it may not
-  be safe to reuse some nodes at the start, depending on the
-  parsing algorithm.)
-  */
-  get openStart() {
-    return (this.open & 1) > 0;
-  }
-  /**
-  Whether the end of the fragment represents the end of a
-  full-document parse, or the start of a change.
-  */
-  get openEnd() {
-    return (this.open & 2) > 0;
-  }
-  /**
-  Create a set of fragments from a freshly parsed tree, or update
-  an existing set of fragments by replacing the ones that overlap
-  with a tree with content from the new tree. When `partial` is
-  true, the parse is treated as incomplete, and the resulting
-  fragment has [`openEnd`](#common.TreeFragment.openEnd) set to
-  true.
-  */
-  static addTree(tree, fragments = [], partial = false) {
-    let result = [new _TreeFragment(0, tree.length, tree, 0, false, partial)];
-    for (let f of fragments)
-      if (f.to > tree.length)
-        result.push(f);
-    return result;
-  }
-  /**
-  Apply a set of edits to an array of fragments, removing or
-  splitting fragments as necessary to remove edited ranges, and
-  adjusting offsets for fragments that moved.
-  */
-  static applyChanges(fragments, changes, minGap = 128) {
-    if (!changes.length)
-      return fragments;
-    let result = [];
-    let fI = 1, nextF = fragments.length ? fragments[0] : null;
-    for (let cI = 0, pos = 0, off = 0; ; cI++) {
-      let nextC = cI < changes.length ? changes[cI] : null;
-      let nextPos = nextC ? nextC.fromA : 1e9;
-      if (nextPos - pos >= minGap)
-        while (nextF && nextF.from < nextPos) {
-          let cut = nextF;
-          if (pos >= cut.from || nextPos <= cut.to || off) {
-            let fFrom = Math.max(cut.from, pos) - off, fTo = Math.min(cut.to, nextPos) - off;
-            cut = fFrom >= fTo ? null : new _TreeFragment(fFrom, fTo, cut.tree, cut.offset + off, cI > 0, !!nextC);
-          }
-          if (cut)
-            result.push(cut);
-          if (nextF.to > nextPos)
-            break;
-          nextF = fI < fragments.length ? fragments[fI++] : null;
-        }
-      if (!nextC)
-        break;
-      pos = nextC.toA;
-      off = nextC.toA - nextC.toB;
-    }
-    return result;
-  }
-};
-var Parser9 = class {
-  /**
-  Start a parse, returning a [partial parse](#common.PartialParse)
-  object. [`fragments`](#common.TreeFragment) can be passed in to
-  make the parse incremental.
-  
-  By default, the entire input is parsed. You can pass `ranges`,
-  which should be a sorted array of non-empty, non-overlapping
-  ranges, to parse only those ranges. The tree returned in that
-  case will start at `ranges[0].from`.
-  */
-  startParse(input, fragments, ranges) {
-    if (typeof input == "string")
-      input = new StringInput9(input);
-    ranges = !ranges ? [new Range10(0, input.length)] : ranges.length ? ranges.map((r) => new Range10(r.from, r.to)) : [new Range10(0, 0)];
-    return this.createParse(input, fragments || [], ranges);
-  }
-  /**
-  Run a full parse, returning the resulting tree.
-  */
-  parse(input, fragments, ranges) {
-    let parse = this.startParse(input, fragments, ranges);
-    for (; ; ) {
-      let done = parse.advance();
-      if (done)
-        return done;
-    }
-  }
-};
-var StringInput9 = class {
-  constructor(string11) {
-    this.string = string11;
-  }
-  get length() {
-    return this.string.length;
-  }
-  chunk(from) {
-    return this.string.slice(from);
-  }
-  get lineChunks() {
-    return false;
-  }
-  read(from, to) {
-    return this.string.slice(from, to);
-  }
-};
-var stoppedInner9 = new NodeProp9({ perNode: true });
-
-// node_modules/@codemirror/lang-html/node_modules/@lezer/highlight/dist/index.js
-var nextTagID9 = 0;
-var Tag9 = class _Tag {
-  /**
-  @internal
-  */
-  constructor(name11, set, base2, modified) {
-    this.name = name11;
-    this.set = set;
-    this.base = base2;
-    this.modified = modified;
-    this.id = nextTagID9++;
-  }
-  toString() {
-    let { name: name11 } = this;
-    for (let mod of this.modified)
-      if (mod.name)
-        name11 = `${mod.name}(${name11})`;
-    return name11;
-  }
-  static define(nameOrParent, parent) {
-    let name11 = typeof nameOrParent == "string" ? nameOrParent : "?";
-    if (nameOrParent instanceof _Tag)
-      parent = nameOrParent;
-    if (parent === null || parent === void 0 ? void 0 : parent.base)
-      throw new Error("Can not derive from a modified tag");
-    let tag = new _Tag(name11, [], null, []);
-    tag.set.push(tag);
-    if (parent)
-      for (let t11 of parent.set)
-        tag.set.push(t11);
-    return tag;
-  }
-  /**
-  Define a tag _modifier_, which is a function that, given a tag,
-  will return a tag that is a subtag of the original. Applying the
-  same modifier to a twice tag will return the same value (`m1(t1)
-  == m1(t1)`) and applying multiple modifiers will, regardless or
-  order, produce the same tag (`m1(m2(t1)) == m2(m1(t1))`).
-  
-  When multiple modifiers are applied to a given base tag, each
-  smaller set of modifiers is registered as a parent, so that for
-  example `m1(m2(m3(t1)))` is a subtype of `m1(m2(t1))`,
-  `m1(m3(t1)`, and so on.
-  */
-  static defineModifier(name11) {
-    let mod = new Modifier9(name11);
-    return (tag) => {
-      if (tag.modified.indexOf(mod) > -1)
-        return tag;
-      return Modifier9.get(tag.base || tag, tag.modified.concat(mod).sort((a, b) => a.id - b.id));
-    };
-  }
-};
-var nextModifierID9 = 0;
-var Modifier9 = class _Modifier {
-  constructor(name11) {
-    this.name = name11;
-    this.instances = [];
-    this.id = nextModifierID9++;
-  }
-  static get(base2, mods) {
-    if (!mods.length)
-      return base2;
-    let exists = mods[0].instances.find((t11) => t11.base == base2 && sameArray10(mods, t11.modified));
-    if (exists)
-      return exists;
-    let set = [], tag = new Tag9(base2.name, set, base2, mods);
-    for (let m of mods)
-      m.instances.push(tag);
-    let configs = powerSet9(mods);
-    for (let parent of base2.set)
-      if (!parent.modified.length)
-        for (let config2 of configs)
-          set.push(_Modifier.get(parent, config2));
-    return tag;
-  }
-};
-function sameArray10(a, b) {
-  return a.length == b.length && a.every((x, i) => x == b[i]);
-}
-function powerSet9(array) {
-  let sets = [[]];
-  for (let i = 0; i < array.length; i++) {
-    for (let j = 0, e = sets.length; j < e; j++) {
-      sets.push(sets[j].concat(array[i]));
-    }
-  }
-  return sets.sort((a, b) => b.length - a.length);
-}
-function styleTags9(spec) {
-  let byName = /* @__PURE__ */ Object.create(null);
-  for (let prop in spec) {
-    let tags12 = spec[prop];
-    if (!Array.isArray(tags12))
-      tags12 = [tags12];
-    for (let part of prop.split(" "))
-      if (part) {
-        let pieces = [], mode = 2, rest = part;
-        for (let pos = 0; ; ) {
-          if (rest == "..." && pos > 0 && pos + 3 == part.length) {
-            mode = 1;
-            break;
-          }
-          let m = /^"(?:[^"\\]|\\.)*?"|[^\/!]+/.exec(rest);
-          if (!m)
-            throw new RangeError("Invalid path: " + part);
-          pieces.push(m[0] == "*" ? "" : m[0][0] == '"' ? JSON.parse(m[0]) : m[0]);
-          pos += m[0].length;
-          if (pos == part.length)
-            break;
-          let next = part[pos++];
-          if (pos == part.length && next == "!") {
-            mode = 0;
-            break;
-          }
-          if (next != "/")
-            throw new RangeError("Invalid path: " + part);
-          rest = part.slice(pos);
-        }
-        let last = pieces.length - 1, inner = pieces[last];
-        if (!inner)
-          throw new RangeError("Invalid path: " + part);
-        let rule = new Rule9(tags12, mode, last > 0 ? pieces.slice(0, last) : null);
-        byName[inner] = rule.sort(byName[inner]);
-      }
-  }
-  return ruleNodeProp9.add(byName);
-}
-var ruleNodeProp9 = new NodeProp9({
-  combine(a, b) {
-    let cur2, root, take;
-    while (a || b) {
-      if (!a || b && a.depth >= b.depth) {
-        take = b;
-        b = b.next;
-      } else {
-        take = a;
-        a = a.next;
-      }
-      if (cur2 && cur2.mode == take.mode && !take.context && !cur2.context)
-        continue;
-      let copy = new Rule9(take.tags, take.mode, take.context);
-      if (cur2)
-        cur2.next = copy;
-      else
-        root = copy;
-      cur2 = copy;
-    }
-    return root;
-  }
-});
-var Rule9 = class {
-  constructor(tags12, mode, context, next) {
-    this.tags = tags12;
-    this.mode = mode;
-    this.context = context;
-    this.next = next;
-  }
-  get opaque() {
-    return this.mode == 0;
-  }
-  get inherit() {
-    return this.mode == 1;
-  }
-  sort(other) {
-    if (!other || other.depth < this.depth) {
-      this.next = other;
-      return this;
-    }
-    other.next = this.sort(other.next);
-    return other;
-  }
-  get depth() {
-    return this.context ? this.context.length : 0;
-  }
-};
-Rule9.empty = new Rule9([], 2, null);
-function tagHighlighter9(tags12, options) {
-  let map = /* @__PURE__ */ Object.create(null);
-  for (let style of tags12) {
-    if (!Array.isArray(style.tag))
-      map[style.tag.id] = style.class;
-    else
-      for (let tag of style.tag)
-        map[tag.id] = style.class;
-  }
-  let { scope, all = null } = options || {};
-  return {
-    style: (tags13) => {
-      let cls = all;
-      for (let tag of tags13) {
-        for (let sub of tag.set) {
-          let tagClass = map[sub.id];
-          if (tagClass) {
-            cls = cls ? cls + " " + tagClass : tagClass;
-            break;
-          }
-        }
-      }
-      return cls;
-    },
-    scope
-  };
-}
-var t9 = Tag9.define;
-var comment9 = t9();
-var name9 = t9();
-var typeName9 = t9(name9);
-var propertyName9 = t9(name9);
-var literal9 = t9();
-var string9 = t9(literal9);
-var number9 = t9(literal9);
-var content9 = t9();
-var heading9 = t9(content9);
-var keyword9 = t9();
-var operator9 = t9();
-var punctuation9 = t9();
-var bracket9 = t9(punctuation9);
-var meta9 = t9();
-var tags10 = {
-  /**
-  A comment.
-  */
-  comment: comment9,
-  /**
-  A line [comment](#highlight.tags.comment).
-  */
-  lineComment: t9(comment9),
-  /**
-  A block [comment](#highlight.tags.comment).
-  */
-  blockComment: t9(comment9),
-  /**
-  A documentation [comment](#highlight.tags.comment).
-  */
-  docComment: t9(comment9),
-  /**
-  Any kind of identifier.
-  */
-  name: name9,
-  /**
-  The [name](#highlight.tags.name) of a variable.
-  */
-  variableName: t9(name9),
-  /**
-  A type [name](#highlight.tags.name).
-  */
-  typeName: typeName9,
-  /**
-  A tag name (subtag of [`typeName`](#highlight.tags.typeName)).
-  */
-  tagName: t9(typeName9),
-  /**
-  A property or field [name](#highlight.tags.name).
-  */
-  propertyName: propertyName9,
-  /**
-  An attribute name (subtag of [`propertyName`](#highlight.tags.propertyName)).
-  */
-  attributeName: t9(propertyName9),
-  /**
-  The [name](#highlight.tags.name) of a class.
-  */
-  className: t9(name9),
-  /**
-  A label [name](#highlight.tags.name).
-  */
-  labelName: t9(name9),
-  /**
-  A namespace [name](#highlight.tags.name).
-  */
-  namespace: t9(name9),
-  /**
-  The [name](#highlight.tags.name) of a macro.
-  */
-  macroName: t9(name9),
-  /**
-  A literal value.
-  */
-  literal: literal9,
-  /**
-  A string [literal](#highlight.tags.literal).
-  */
-  string: string9,
-  /**
-  A documentation [string](#highlight.tags.string).
-  */
-  docString: t9(string9),
-  /**
-  A character literal (subtag of [string](#highlight.tags.string)).
-  */
-  character: t9(string9),
-  /**
-  An attribute value (subtag of [string](#highlight.tags.string)).
-  */
-  attributeValue: t9(string9),
-  /**
-  A number [literal](#highlight.tags.literal).
-  */
-  number: number9,
-  /**
-  An integer [number](#highlight.tags.number) literal.
-  */
-  integer: t9(number9),
-  /**
-  A floating-point [number](#highlight.tags.number) literal.
-  */
-  float: t9(number9),
-  /**
-  A boolean [literal](#highlight.tags.literal).
-  */
-  bool: t9(literal9),
-  /**
-  Regular expression [literal](#highlight.tags.literal).
-  */
-  regexp: t9(literal9),
-  /**
-  An escape [literal](#highlight.tags.literal), for example a
-  backslash escape in a string.
-  */
-  escape: t9(literal9),
-  /**
-  A color [literal](#highlight.tags.literal).
-  */
-  color: t9(literal9),
-  /**
-  A URL [literal](#highlight.tags.literal).
-  */
-  url: t9(literal9),
-  /**
-  A language keyword.
-  */
-  keyword: keyword9,
-  /**
-  The [keyword](#highlight.tags.keyword) for the self or this
-  object.
-  */
-  self: t9(keyword9),
-  /**
-  The [keyword](#highlight.tags.keyword) for null.
-  */
-  null: t9(keyword9),
-  /**
-  A [keyword](#highlight.tags.keyword) denoting some atomic value.
-  */
-  atom: t9(keyword9),
-  /**
-  A [keyword](#highlight.tags.keyword) that represents a unit.
-  */
-  unit: t9(keyword9),
-  /**
-  A modifier [keyword](#highlight.tags.keyword).
-  */
-  modifier: t9(keyword9),
-  /**
-  A [keyword](#highlight.tags.keyword) that acts as an operator.
-  */
-  operatorKeyword: t9(keyword9),
-  /**
-  A control-flow related [keyword](#highlight.tags.keyword).
-  */
-  controlKeyword: t9(keyword9),
-  /**
-  A [keyword](#highlight.tags.keyword) that defines something.
-  */
-  definitionKeyword: t9(keyword9),
-  /**
-  A [keyword](#highlight.tags.keyword) related to defining or
-  interfacing with modules.
-  */
-  moduleKeyword: t9(keyword9),
-  /**
-  An operator.
-  */
-  operator: operator9,
-  /**
-  An [operator](#highlight.tags.operator) that dereferences something.
-  */
-  derefOperator: t9(operator9),
-  /**
-  Arithmetic-related [operator](#highlight.tags.operator).
-  */
-  arithmeticOperator: t9(operator9),
-  /**
-  Logical [operator](#highlight.tags.operator).
-  */
-  logicOperator: t9(operator9),
-  /**
-  Bit [operator](#highlight.tags.operator).
-  */
-  bitwiseOperator: t9(operator9),
-  /**
-  Comparison [operator](#highlight.tags.operator).
-  */
-  compareOperator: t9(operator9),
-  /**
-  [Operator](#highlight.tags.operator) that updates its operand.
-  */
-  updateOperator: t9(operator9),
-  /**
-  [Operator](#highlight.tags.operator) that defines something.
-  */
-  definitionOperator: t9(operator9),
-  /**
-  Type-related [operator](#highlight.tags.operator).
-  */
-  typeOperator: t9(operator9),
-  /**
-  Control-flow [operator](#highlight.tags.operator).
-  */
-  controlOperator: t9(operator9),
-  /**
-  Program or markup punctuation.
-  */
-  punctuation: punctuation9,
-  /**
-  [Punctuation](#highlight.tags.punctuation) that separates
-  things.
-  */
-  separator: t9(punctuation9),
-  /**
-  Bracket-style [punctuation](#highlight.tags.punctuation).
-  */
-  bracket: bracket9,
-  /**
-  Angle [brackets](#highlight.tags.bracket) (usually `<` and `>`
-  tokens).
-  */
-  angleBracket: t9(bracket9),
-  /**
-  Square [brackets](#highlight.tags.bracket) (usually `[` and `]`
-  tokens).
-  */
-  squareBracket: t9(bracket9),
-  /**
-  Parentheses (usually `(` and `)` tokens). Subtag of
-  [bracket](#highlight.tags.bracket).
-  */
-  paren: t9(bracket9),
-  /**
-  Braces (usually `{` and `}` tokens). Subtag of
-  [bracket](#highlight.tags.bracket).
-  */
-  brace: t9(bracket9),
-  /**
-  Content, for example plain text in XML or markup documents.
-  */
-  content: content9,
-  /**
-  [Content](#highlight.tags.content) that represents a heading.
-  */
-  heading: heading9,
-  /**
-  A level 1 [heading](#highlight.tags.heading).
-  */
-  heading1: t9(heading9),
-  /**
-  A level 2 [heading](#highlight.tags.heading).
-  */
-  heading2: t9(heading9),
-  /**
-  A level 3 [heading](#highlight.tags.heading).
-  */
-  heading3: t9(heading9),
-  /**
-  A level 4 [heading](#highlight.tags.heading).
-  */
-  heading4: t9(heading9),
-  /**
-  A level 5 [heading](#highlight.tags.heading).
-  */
-  heading5: t9(heading9),
-  /**
-  A level 6 [heading](#highlight.tags.heading).
-  */
-  heading6: t9(heading9),
-  /**
-  A prose [content](#highlight.tags.content) separator (such as a horizontal rule).
-  */
-  contentSeparator: t9(content9),
-  /**
-  [Content](#highlight.tags.content) that represents a list.
-  */
-  list: t9(content9),
-  /**
-  [Content](#highlight.tags.content) that represents a quote.
-  */
-  quote: t9(content9),
-  /**
-  [Content](#highlight.tags.content) that is emphasized.
-  */
-  emphasis: t9(content9),
-  /**
-  [Content](#highlight.tags.content) that is styled strong.
-  */
-  strong: t9(content9),
-  /**
-  [Content](#highlight.tags.content) that is part of a link.
-  */
-  link: t9(content9),
-  /**
-  [Content](#highlight.tags.content) that is styled as code or
-  monospace.
-  */
-  monospace: t9(content9),
-  /**
-  [Content](#highlight.tags.content) that has a strike-through
-  style.
-  */
-  strikethrough: t9(content9),
-  /**
-  Inserted text in a change-tracking format.
-  */
-  inserted: t9(),
-  /**
-  Deleted text.
-  */
-  deleted: t9(),
-  /**
-  Changed text.
-  */
-  changed: t9(),
-  /**
-  An invalid or unsyntactic element.
-  */
-  invalid: t9(),
-  /**
-  Metadata or meta-instruction.
-  */
-  meta: meta9,
-  /**
-  [Metadata](#highlight.tags.meta) that applies to the entire
-  document.
-  */
-  documentMeta: t9(meta9),
-  /**
-  [Metadata](#highlight.tags.meta) that annotates or adds
-  attributes to a given syntactic element.
-  */
-  annotation: t9(meta9),
-  /**
-  Processing instruction or preprocessor directive. Subtag of
-  [meta](#highlight.tags.meta).
-  */
-  processingInstruction: t9(meta9),
-  /**
-  [Modifier](#highlight.Tag^defineModifier) that indicates that a
-  given element is being defined. Expected to be used with the
-  various [name](#highlight.tags.name) tags.
-  */
-  definition: Tag9.defineModifier("definition"),
-  /**
-  [Modifier](#highlight.Tag^defineModifier) that indicates that
-  something is constant. Mostly expected to be used with
-  [variable names](#highlight.tags.variableName).
-  */
-  constant: Tag9.defineModifier("constant"),
-  /**
-  [Modifier](#highlight.Tag^defineModifier) used to indicate that
-  a [variable](#highlight.tags.variableName) or [property
-  name](#highlight.tags.propertyName) is being called or defined
-  as a function.
-  */
-  function: Tag9.defineModifier("function"),
-  /**
-  [Modifier](#highlight.Tag^defineModifier) that can be applied to
-  [names](#highlight.tags.name) to indicate that they belong to
-  the language's standard environment.
-  */
-  standard: Tag9.defineModifier("standard"),
-  /**
-  [Modifier](#highlight.Tag^defineModifier) that indicates a given
-  [names](#highlight.tags.name) is local to some scope.
-  */
-  local: Tag9.defineModifier("local"),
-  /**
-  A generic variant [modifier](#highlight.Tag^defineModifier) that
-  can be used to tag language-specific alternative variants of
-  some common tag. It is recommended for themes to define special
-  forms of at least the [string](#highlight.tags.string) and
-  [variable name](#highlight.tags.variableName) tags, since those
-  come up a lot.
-  */
-  special: Tag9.defineModifier("special")
-};
-for (let name11 in tags10) {
-  let val = tags10[name11];
-  if (val instanceof Tag9)
-    val.name = name11;
-}
-var classHighlighter9 = tagHighlighter9([
-  { tag: tags10.link, class: "tok-link" },
-  { tag: tags10.heading, class: "tok-heading" },
-  { tag: tags10.emphasis, class: "tok-emphasis" },
-  { tag: tags10.strong, class: "tok-strong" },
-  { tag: tags10.keyword, class: "tok-keyword" },
-  { tag: tags10.atom, class: "tok-atom" },
-  { tag: tags10.bool, class: "tok-bool" },
-  { tag: tags10.url, class: "tok-url" },
-  { tag: tags10.labelName, class: "tok-labelName" },
-  { tag: tags10.inserted, class: "tok-inserted" },
-  { tag: tags10.deleted, class: "tok-deleted" },
-  { tag: tags10.literal, class: "tok-literal" },
-  { tag: tags10.string, class: "tok-string" },
-  { tag: tags10.number, class: "tok-number" },
-  { tag: [tags10.regexp, tags10.escape, tags10.special(tags10.string)], class: "tok-string2" },
-  { tag: tags10.variableName, class: "tok-variableName" },
-  { tag: tags10.local(tags10.variableName), class: "tok-variableName tok-local" },
-  { tag: tags10.definition(tags10.variableName), class: "tok-variableName tok-definition" },
-  { tag: tags10.special(tags10.variableName), class: "tok-variableName2" },
-  { tag: tags10.definition(tags10.propertyName), class: "tok-propertyName tok-definition" },
-  { tag: tags10.typeName, class: "tok-typeName" },
-  { tag: tags10.namespace, class: "tok-namespace" },
-  { tag: tags10.className, class: "tok-className" },
-  { tag: tags10.macroName, class: "tok-macroName" },
-  { tag: tags10.propertyName, class: "tok-propertyName" },
-  { tag: tags10.operator, class: "tok-operator" },
-  { tag: tags10.comment, class: "tok-comment" },
-  { tag: tags10.meta, class: "tok-meta" },
-  { tag: tags10.invalid, class: "tok-invalid" },
-  { tag: tags10.punctuation, class: "tok-punctuation" }
-]);
-
-// node_modules/@codemirror/lang-html/node_modules/@codemirror/language/dist/index.js
-var _a5;
-var languageDataProp5 = /* @__PURE__ */ new NodeProp9();
-function defineLanguageFacet4(baseData) {
-  return Facet.define({
-    combine: baseData ? (values2) => values2.concat(baseData) : void 0
-  });
-}
-var sublanguageProp5 = /* @__PURE__ */ new NodeProp9();
-var Language5 = class {
-  /**
-  Construct a language object. If you need to invoke this
-  directly, first define a data facet with
-  [`defineLanguageFacet`](https://codemirror.net/6/docs/ref/#language.defineLanguageFacet), and then
-  configure your parser to [attach](https://codemirror.net/6/docs/ref/#language.languageDataProp) it
-  to the language's outer syntax node.
-  */
-  constructor(data2, parser5, extraExtensions = [], name11 = "") {
-    this.data = data2;
-    this.name = name11;
-    if (!EditorState.prototype.hasOwnProperty("tree"))
-      Object.defineProperty(EditorState.prototype, "tree", { get() {
-        return syntaxTree5(this);
-      } });
-    this.parser = parser5;
-    this.extension = [
-      language5.of(this),
-      EditorState.languageData.of((state, pos, side) => {
-        let top2 = topNodeAt5(state, pos, side), data3 = top2.type.prop(languageDataProp5);
-        if (!data3)
-          return [];
-        let base2 = state.facet(data3), sub = top2.type.prop(sublanguageProp5);
-        if (sub) {
-          let innerNode = top2.resolve(pos - top2.from, side);
-          for (let sublang of sub)
-            if (sublang.test(innerNode, state)) {
-              let data4 = state.facet(sublang.facet);
-              return sublang.type == "replace" ? data4 : data4.concat(base2);
-            }
-        }
-        return base2;
-      })
-    ].concat(extraExtensions);
-  }
-  /**
-  Query whether this language is active at the given position.
-  */
-  isActiveAt(state, pos, side = -1) {
-    return topNodeAt5(state, pos, side).type.prop(languageDataProp5) == this.data;
-  }
-  /**
-  Find the document regions that were parsed using this language.
-  The returned regions will _include_ any nested languages rooted
-  in this language, when those exist.
-  */
-  findRegions(state) {
-    let lang = state.facet(language5);
-    if ((lang === null || lang === void 0 ? void 0 : lang.data) == this.data)
-      return [{ from: 0, to: state.doc.length }];
-    if (!lang || !lang.allowsNesting)
-      return [];
-    let result = [];
-    let explore = (tree, from) => {
-      if (tree.prop(languageDataProp5) == this.data) {
-        result.push({ from, to: from + tree.length });
-        return;
-      }
-      let mount = tree.prop(NodeProp9.mounted);
-      if (mount) {
-        if (mount.tree.prop(languageDataProp5) == this.data) {
-          if (mount.overlay)
-            for (let r of mount.overlay)
-              result.push({ from: r.from + from, to: r.to + from });
-          else
-            result.push({ from, to: from + tree.length });
-          return;
-        } else if (mount.overlay) {
-          let size = result.length;
-          explore(mount.tree, mount.overlay[0].from + from);
-          if (result.length > size)
-            return;
-        }
-      }
-      for (let i = 0; i < tree.children.length; i++) {
-        let ch = tree.children[i];
-        if (ch instanceof Tree9)
-          explore(ch, tree.positions[i] + from);
-      }
-    };
-    explore(syntaxTree5(state), 0);
-    return result;
-  }
-  /**
-  Indicates whether this language allows nested languages. The
-  default implementation returns true.
-  */
-  get allowsNesting() {
-    return true;
-  }
-};
-Language5.setState = /* @__PURE__ */ StateEffect.define();
-function topNodeAt5(state, pos, side) {
-  let topLang = state.facet(language5), tree = syntaxTree5(state).topNode;
-  if (!topLang || topLang.allowsNesting) {
-    for (let node = tree; node; node = node.enter(pos, side, IterMode9.ExcludeBuffers | IterMode9.EnterBracketed))
-      if (node.type.isTop)
-        tree = node;
-  }
-  return tree;
-}
-var LRLanguage3 = class _LRLanguage extends Language5 {
-  constructor(data2, parser5, name11) {
-    super(data2, parser5, [], name11);
-    this.parser = parser5;
-  }
-  /**
-  Define a language from a parser.
-  */
-  static define(spec) {
-    let data2 = defineLanguageFacet4(spec.languageData);
-    return new _LRLanguage(data2, spec.parser.configure({
-      props: [languageDataProp5.add((type) => type.isTop ? data2 : void 0)]
-    }), spec.name);
-  }
-  /**
-  Create a new instance of this language with a reconfigured
-  version of its parser and optionally a new name.
-  */
-  configure(options, name11) {
-    return new _LRLanguage(this.data, this.parser.configure(options), name11 || this.name);
-  }
-  get allowsNesting() {
-    return this.parser.hasWrappers();
-  }
-};
-function syntaxTree5(state) {
-  let field = state.field(Language5.state, false);
-  return field ? field.tree : Tree9.empty;
-}
-var DocInput5 = class {
-  /**
-  Create an input object for the given document.
-  */
-  constructor(doc2) {
-    this.doc = doc2;
-    this.cursorPos = 0;
-    this.string = "";
-    this.cursor = doc2.iter();
-  }
-  get length() {
-    return this.doc.length;
-  }
-  syncTo(pos) {
-    this.string = this.cursor.next(pos - this.cursorPos).value;
-    this.cursorPos = pos + this.string.length;
-    return this.cursorPos - this.string.length;
-  }
-  chunk(pos) {
-    this.syncTo(pos);
-    return this.string;
-  }
-  get lineChunks() {
-    return true;
-  }
-  read(from, to) {
-    let stringStart = this.cursorPos - this.string.length;
-    if (from < stringStart || to >= this.cursorPos)
-      return this.doc.sliceString(from, to);
-    else
-      return this.string.slice(from - stringStart, to - stringStart);
-  }
-};
-var currentContext5 = null;
-var ParseContext5 = class _ParseContext {
-  constructor(parser5, state, fragments = [], tree, treeLen, viewport, skipped, scheduleOn) {
-    this.parser = parser5;
-    this.state = state;
-    this.fragments = fragments;
-    this.tree = tree;
-    this.treeLen = treeLen;
-    this.viewport = viewport;
-    this.skipped = skipped;
-    this.scheduleOn = scheduleOn;
-    this.parse = null;
-    this.tempSkipped = [];
-  }
-  /**
-  @internal
-  */
-  static create(parser5, state, viewport) {
-    return new _ParseContext(parser5, state, [], Tree9.empty, 0, viewport, [], null);
-  }
-  startParse() {
-    return this.parser.startParse(new DocInput5(this.state.doc), this.fragments);
-  }
-  /**
-  @internal
-  */
-  work(until, upto) {
-    if (upto != null && upto >= this.state.doc.length)
-      upto = void 0;
-    if (this.tree != Tree9.empty && this.isDone(upto !== null && upto !== void 0 ? upto : this.state.doc.length)) {
-      this.takeTree();
-      return true;
-    }
-    return this.withContext(() => {
-      var _a7;
-      if (typeof until == "number") {
-        let endTime = Date.now() + until;
-        until = () => Date.now() > endTime;
-      }
-      if (!this.parse)
-        this.parse = this.startParse();
-      if (upto != null && (this.parse.stoppedAt == null || this.parse.stoppedAt > upto) && upto < this.state.doc.length)
-        this.parse.stopAt(upto);
-      for (; ; ) {
-        let done = this.parse.advance();
-        if (done) {
-          this.fragments = this.withoutTempSkipped(TreeFragment7.addTree(done, this.fragments, this.parse.stoppedAt != null));
-          this.treeLen = (_a7 = this.parse.stoppedAt) !== null && _a7 !== void 0 ? _a7 : this.state.doc.length;
-          this.tree = done;
-          this.parse = null;
-          if (this.treeLen < (upto !== null && upto !== void 0 ? upto : this.state.doc.length))
-            this.parse = this.startParse();
-          else
-            return true;
-        }
-        if (until())
-          return false;
-      }
-    });
-  }
-  /**
-  @internal
-  */
-  takeTree() {
-    let pos, tree;
-    if (this.parse && (pos = this.parse.parsedPos) >= this.treeLen) {
-      if (this.parse.stoppedAt == null || this.parse.stoppedAt > pos)
-        this.parse.stopAt(pos);
-      this.withContext(() => {
-        while (!(tree = this.parse.advance())) {
-        }
-      });
-      this.treeLen = pos;
-      this.tree = tree;
-      this.fragments = this.withoutTempSkipped(TreeFragment7.addTree(this.tree, this.fragments, true));
-      this.parse = null;
-    }
-  }
-  withContext(f) {
-    let prev = currentContext5;
-    currentContext5 = this;
-    try {
-      return f();
-    } finally {
-      currentContext5 = prev;
-    }
-  }
-  withoutTempSkipped(fragments) {
-    for (let r; r = this.tempSkipped.pop(); )
-      fragments = cutFragments5(fragments, r.from, r.to);
-    return fragments;
-  }
-  /**
-  @internal
-  */
-  changes(changes, newState) {
-    let { fragments, tree, treeLen, viewport, skipped } = this;
-    this.takeTree();
-    if (!changes.empty) {
-      let ranges = [];
-      changes.iterChangedRanges((fromA, toA, fromB, toB) => ranges.push({ fromA, toA, fromB, toB }));
-      fragments = TreeFragment7.applyChanges(fragments, ranges);
-      tree = Tree9.empty;
-      treeLen = 0;
-      viewport = { from: changes.mapPos(viewport.from, -1), to: changes.mapPos(viewport.to, 1) };
-      if (this.skipped.length) {
-        skipped = [];
-        for (let r of this.skipped) {
-          let from = changes.mapPos(r.from, 1), to = changes.mapPos(r.to, -1);
-          if (from < to)
-            skipped.push({ from, to });
-        }
-      }
-    }
-    return new _ParseContext(this.parser, newState, fragments, tree, treeLen, viewport, skipped, this.scheduleOn);
-  }
-  /**
-  @internal
-  */
-  updateViewport(viewport) {
-    if (this.viewport.from == viewport.from && this.viewport.to == viewport.to)
-      return false;
-    this.viewport = viewport;
-    let startLen = this.skipped.length;
-    for (let i = 0; i < this.skipped.length; i++) {
-      let { from, to } = this.skipped[i];
-      if (from < viewport.to && to > viewport.from) {
-        this.fragments = cutFragments5(this.fragments, from, to);
-        this.skipped.splice(i--, 1);
-      }
-    }
-    if (this.skipped.length >= startLen)
-      return false;
-    this.reset();
-    return true;
-  }
-  /**
-  @internal
-  */
-  reset() {
-    if (this.parse) {
-      this.takeTree();
-      this.parse = null;
-    }
-  }
-  /**
-  Notify the parse scheduler that the given region was skipped
-  because it wasn't in view, and the parse should be restarted
-  when it comes into view.
-  */
-  skipUntilInView(from, to) {
-    this.skipped.push({ from, to });
-  }
-  /**
-  Returns a parser intended to be used as placeholder when
-  asynchronously loading a nested parser. It'll skip its input and
-  mark it as not-really-parsed, so that the next update will parse
-  it again.
-  
-  When `until` is given, a reparse will be scheduled when that
-  promise resolves.
-  */
-  static getSkippingParser(until) {
-    return new class extends Parser9 {
-      createParse(input, fragments, ranges) {
-        let from = ranges[0].from, to = ranges[ranges.length - 1].to;
-        let parser5 = {
-          parsedPos: from,
-          advance() {
-            let cx = currentContext5;
-            if (cx) {
-              for (let r of ranges)
-                cx.tempSkipped.push(r);
-              if (until)
-                cx.scheduleOn = cx.scheduleOn ? Promise.all([cx.scheduleOn, until]) : until;
-            }
-            this.parsedPos = to;
-            return new Tree9(NodeType9.none, [], [], to - from);
-          },
-          stoppedAt: null,
-          stopAt() {
-          }
-        };
-        return parser5;
-      }
-    }();
-  }
-  /**
-  @internal
-  */
-  isDone(upto) {
-    upto = Math.min(upto, this.state.doc.length);
-    let frags = this.fragments;
-    return this.treeLen >= upto && frags.length && frags[0].from == 0 && frags[0].to >= upto;
-  }
-  /**
-  Get the context for the current parse, or `null` if no editor
-  parse is in progress.
-  */
-  static get() {
-    return currentContext5;
-  }
-};
-function cutFragments5(fragments, from, to) {
-  return TreeFragment7.applyChanges(fragments, [{ fromA: from, toA: to, fromB: from, toB: to }]);
-}
-var LanguageState5 = class _LanguageState {
-  constructor(context) {
-    this.context = context;
-    this.tree = context.tree;
-  }
-  apply(tr) {
-    if (!tr.docChanged && this.tree == this.context.tree)
-      return this;
-    let newCx = this.context.changes(tr.changes, tr.state);
-    let upto = this.context.treeLen == tr.startState.doc.length ? void 0 : Math.max(tr.changes.mapPos(this.context.treeLen), newCx.viewport.to);
-    if (!newCx.work(20, upto))
-      newCx.takeTree();
-    return new _LanguageState(newCx);
-  }
-  static init(state) {
-    let vpTo = Math.min(3e3, state.doc.length);
-    let parseState = ParseContext5.create(state.facet(language5).parser, state, { from: 0, to: vpTo });
-    if (!parseState.work(20, vpTo))
-      parseState.takeTree();
-    return new _LanguageState(parseState);
-  }
-};
-Language5.state = /* @__PURE__ */ StateField.define({
-  create: LanguageState5.init,
-  update(value, tr) {
-    for (let e of tr.effects)
-      if (e.is(Language5.setState))
-        return e.value;
-    if (tr.startState.facet(language5) != tr.state.facet(language5))
-      return LanguageState5.init(tr.state);
-    return value.apply(tr);
-  }
-});
-var requestIdle5 = (callback) => {
-  let timeout = setTimeout(
-    () => callback(),
-    500
-    /* Work.MaxPause */
-  );
-  return () => clearTimeout(timeout);
-};
-if (typeof requestIdleCallback != "undefined")
-  requestIdle5 = (callback) => {
-    let idle = -1, timeout = setTimeout(
-      () => {
-        idle = requestIdleCallback(callback, {
-          timeout: 500 - 100
-          /* Work.MinPause */
-        });
-      },
-      100
-      /* Work.MinPause */
-    );
-    return () => idle < 0 ? clearTimeout(timeout) : cancelIdleCallback(idle);
-  };
-var isInputPending5 = typeof navigator != "undefined" && ((_a5 = navigator.scheduling) === null || _a5 === void 0 ? void 0 : _a5.isInputPending) ? () => navigator.scheduling.isInputPending() : null;
-var parseWorker5 = /* @__PURE__ */ ViewPlugin.fromClass(class ParseWorker5 {
-  constructor(view) {
-    this.view = view;
-    this.working = null;
-    this.workScheduled = 0;
-    this.chunkEnd = -1;
-    this.chunkBudget = -1;
-    this.work = this.work.bind(this);
-    this.scheduleWork();
-  }
-  update(update) {
-    let cx = this.view.state.field(Language5.state).context;
-    if (cx.updateViewport(update.view.viewport) || this.view.viewport.to > cx.treeLen)
-      this.scheduleWork();
-    if (update.docChanged || update.selectionSet) {
-      if (this.view.hasFocus)
-        this.chunkBudget += 50;
-      this.scheduleWork();
-    }
-    this.checkAsyncSchedule(cx);
-  }
-  scheduleWork() {
-    if (this.working)
-      return;
-    let { state } = this.view, field = state.field(Language5.state);
-    if (field.tree != field.context.tree || !field.context.isDone(state.doc.length))
-      this.working = requestIdle5(this.work);
-  }
-  work(deadline) {
-    this.working = null;
-    let now = Date.now();
-    if (this.chunkEnd < now && (this.chunkEnd < 0 || this.view.hasFocus)) {
-      this.chunkEnd = now + 3e4;
-      this.chunkBudget = 3e3;
-    }
-    if (this.chunkBudget <= 0)
-      return;
-    let { state, viewport: { to: vpTo } } = this.view, field = state.field(Language5.state);
-    if (field.tree == field.context.tree && field.context.isDone(
-      vpTo + 1e5
-      /* Work.MaxParseAhead */
-    ))
-      return;
-    let endTime = Date.now() + Math.min(this.chunkBudget, 100, deadline && !isInputPending5 ? Math.max(25, deadline.timeRemaining() - 5) : 1e9);
-    let viewportFirst = field.context.treeLen < vpTo && state.doc.length > vpTo + 1e3;
-    let done = field.context.work(() => {
-      return isInputPending5 && isInputPending5() || Date.now() > endTime;
-    }, vpTo + (viewportFirst ? 0 : 1e5));
-    this.chunkBudget -= Date.now() - now;
-    if (done || this.chunkBudget <= 0) {
-      field.context.takeTree();
-      this.view.dispatch({ effects: Language5.setState.of(new LanguageState5(field.context)) });
-    }
-    if (this.chunkBudget > 0 && !(done && !viewportFirst))
-      this.scheduleWork();
-    this.checkAsyncSchedule(field.context);
-  }
-  checkAsyncSchedule(cx) {
-    if (cx.scheduleOn) {
-      this.workScheduled++;
-      cx.scheduleOn.then(() => this.scheduleWork()).catch((err) => logException(this.view.state, err)).then(() => this.workScheduled--);
-      cx.scheduleOn = null;
-    }
-  }
-  destroy() {
-    if (this.working)
-      this.working();
-  }
-  isWorking() {
-    return !!(this.working || this.workScheduled > 0);
-  }
-}, {
-  eventHandlers: { focus() {
-    this.scheduleWork();
-  } }
-});
-var language5 = /* @__PURE__ */ Facet.define({
-  combine(languages) {
-    return languages.length ? languages[0] : null;
-  },
-  enables: (language7) => [
-    Language5.state,
-    parseWorker5,
-    EditorView.contentAttributes.compute([language7], (state) => {
-      let lang = state.facet(language7);
-      return lang && lang.name ? { "data-language": lang.name } : {};
-    })
-  ]
-});
-var LanguageSupport4 = class {
-  /**
-  Create a language support object.
-  */
-  constructor(language7, support = []) {
-    this.language = language7;
-    this.support = support;
-    this.extension = [language7, support];
-  }
-};
-var indentNodeProp5 = /* @__PURE__ */ new NodeProp9();
-var foldNodeProp5 = /* @__PURE__ */ new NodeProp9();
-var HighlightStyle5 = class _HighlightStyle {
-  constructor(specs, options) {
-    this.specs = specs;
-    let modSpec;
-    function def(spec) {
-      let cls = StyleModule.newName();
-      (modSpec || (modSpec = /* @__PURE__ */ Object.create(null)))["." + cls] = spec;
-      return cls;
-    }
-    const all = typeof options.all == "string" ? options.all : options.all ? def(options.all) : void 0;
-    const scopeOpt = options.scope;
-    this.scope = scopeOpt instanceof Language5 ? (type) => type.prop(languageDataProp5) == scopeOpt.data : scopeOpt ? (type) => type == scopeOpt : void 0;
-    this.style = tagHighlighter9(specs.map((style) => ({
-      tag: style.tag,
-      class: style.class || def(Object.assign({}, style, { tag: null }))
-    })), {
-      all
-    }).style;
-    this.module = modSpec ? new StyleModule(modSpec) : null;
-    this.themeType = options.themeType;
-  }
-  /**
-  Create a highlighter style that associates the given styles to
-  the given tags. The specs must be objects that hold a style tag
-  or array of tags in their `tag` property, and either a single
-  `class` property providing a static CSS class (for highlighter
-  that rely on external styling), or a
-  [`style-mod`](https://github.com/marijnh/style-mod#documentation)-style
-  set of CSS properties (which define the styling for those tags).
-  
-  The CSS rules created for a highlighter will be emitted in the
-  order of the spec's properties. That means that for elements that
-  have multiple tags associated with them, styles defined further
-  down in the list will have a higher CSS precedence than styles
-  defined earlier.
-  */
-  static define(specs, options) {
-    return new _HighlightStyle(specs, options || {});
-  }
-};
-var defaultHighlightStyle5 = /* @__PURE__ */ HighlightStyle5.define([
-  {
-    tag: tags10.meta,
-    color: "#404740"
-  },
-  {
-    tag: tags10.link,
-    textDecoration: "underline"
-  },
-  {
-    tag: tags10.heading,
-    textDecoration: "underline",
-    fontWeight: "bold"
-  },
-  {
-    tag: tags10.emphasis,
-    fontStyle: "italic"
-  },
-  {
-    tag: tags10.strong,
-    fontWeight: "bold"
-  },
-  {
-    tag: tags10.strikethrough,
-    textDecoration: "line-through"
-  },
-  {
-    tag: tags10.keyword,
-    color: "#708"
-  },
-  {
-    tag: [tags10.atom, tags10.bool, tags10.url, tags10.contentSeparator, tags10.labelName],
-    color: "#219"
-  },
-  {
-    tag: [tags10.literal, tags10.inserted],
-    color: "#164"
-  },
-  {
-    tag: [tags10.string, tags10.deleted],
-    color: "#a11"
-  },
-  {
-    tag: [tags10.regexp, tags10.escape, /* @__PURE__ */ tags10.special(tags10.string)],
-    color: "#e40"
-  },
-  {
-    tag: /* @__PURE__ */ tags10.definition(tags10.variableName),
-    color: "#00f"
-  },
-  {
-    tag: /* @__PURE__ */ tags10.local(tags10.variableName),
-    color: "#30a"
-  },
-  {
-    tag: [tags10.typeName, tags10.namespace],
-    color: "#085"
-  },
-  {
-    tag: tags10.className,
-    color: "#167"
-  },
-  {
-    tag: [/* @__PURE__ */ tags10.special(tags10.variableName), tags10.macroName],
-    color: "#256"
-  },
-  {
-    tag: /* @__PURE__ */ tags10.definition(tags10.propertyName),
-    color: "#00c"
-  },
-  {
-    tag: tags10.comment,
-    color: "#940"
-  },
-  {
-    tag: tags10.invalid,
-    color: "#f00"
-  }
-]);
-var bracketMatchingHandle2 = /* @__PURE__ */ new NodeProp9();
-var noTokens5 = /* @__PURE__ */ Object.create(null);
-var typeArray5 = [NodeType9.none];
-var warned5 = [];
-var byTag5 = /* @__PURE__ */ Object.create(null);
-var defaultTable5 = /* @__PURE__ */ Object.create(null);
-for (let [legacyName, name11] of [
-  ["variable", "variableName"],
-  ["variable-2", "variableName.special"],
-  ["string-2", "string.special"],
-  ["def", "variableName.definition"],
-  ["tag", "tagName"],
-  ["attribute", "attributeName"],
-  ["type", "typeName"],
-  ["builtin", "variableName.standard"],
-  ["qualifier", "modifier"],
-  ["error", "invalid"],
-  ["header", "heading"],
-  ["property", "propertyName"]
-])
-  defaultTable5[legacyName] = /* @__PURE__ */ createTokenType5(noTokens5, name11);
-function warnForPart5(part, msg) {
-  if (warned5.indexOf(part) > -1)
-    return;
-  warned5.push(part);
-  console.warn(msg);
-}
-function createTokenType5(extra, tagStr) {
-  let tags$1 = [];
-  for (let name12 of tagStr.split(" ")) {
-    let found = [];
-    for (let part of name12.split(".")) {
-      let value = extra[part] || tags10[part];
-      if (!value) {
-        warnForPart5(part, `Unknown highlighting tag ${part}`);
-      } else if (typeof value == "function") {
-        if (!found.length)
-          warnForPart5(part, `Modifier ${part} used at start of tag`);
-        else
-          found = found.map(value);
-      } else {
-        if (found.length)
-          warnForPart5(part, `Tag ${part} used as modifier`);
-        else
-          found = Array.isArray(value) ? value : [value];
-      }
-    }
-    for (let tag of found)
-      tags$1.push(tag);
-  }
-  if (!tags$1.length)
-    return 0;
-  let name11 = tagStr.replace(/ /g, "_"), key = name11 + " " + tags$1.map((t11) => t11.id);
-  let known = byTag5[key];
-  if (known)
-    return known.id;
-  let type = byTag5[key] = NodeType9.define({
-    id: typeArray5.length,
-    name: name11,
-    props: [styleTags9({ [name11]: tags$1 })]
-  });
-  typeArray5.push(type);
-  return type.id;
-}
-var marks5 = {
-  rtl: /* @__PURE__ */ Decoration.mark({ class: "cm-iso", inclusive: true, attributes: { dir: "rtl" }, bidiIsolate: Direction.RTL }),
-  ltr: /* @__PURE__ */ Decoration.mark({ class: "cm-iso", inclusive: true, attributes: { dir: "ltr" }, bidiIsolate: Direction.LTR }),
-  auto: /* @__PURE__ */ Decoration.mark({ class: "cm-iso", inclusive: true, attributes: { dir: "auto" }, bidiIsolate: null })
-};
 
 // node_modules/@codemirror/lang-html/dist/index.js
 var Targets = ["_blank", "_self", "_top", "_parent"];
@@ -54154,8 +35689,8 @@ function elementName2(doc2, tree, max = doc2.length) {
   if (!tree)
     return "";
   let tag = tree.firstChild;
-  let name11 = tag && tag.getChild("TagName");
-  return name11 ? doc2.sliceString(name11.from, Math.min(name11.to, max)) : "";
+  let name7 = tag && tag.getChild("TagName");
+  return name7 ? doc2.sliceString(name7.from, Math.min(name7.to, max)) : "";
 }
 function findParentElement(tree, skip = false) {
   for (; tree; tree = tree.parent)
@@ -54227,8 +35762,8 @@ function completeAttrName(state, schema, tree, from, to) {
   };
 }
 function completeAttrValue(state, schema, tree, from, to) {
-  var _a7;
-  let nameNode = (_a7 = tree.parent) === null || _a7 === void 0 ? void 0 : _a7.getChild("AttributeName");
+  var _a2;
+  let nameNode = (_a2 = tree.parent) === null || _a2 === void 0 ? void 0 : _a2.getChild("AttributeName");
   let options = [], token = void 0;
   if (nameNode) {
     let attrName = state.sliceDoc(nameNode.from, nameNode.to);
@@ -54255,7 +35790,7 @@ function completeAttrValue(state, schema, tree, from, to) {
   return { from, to, options, validFor: token };
 }
 function htmlCompletionFor(schema, context) {
-  let { state, pos } = context, tree = syntaxTree5(state).resolveInner(pos, -1), around = tree.resolve(pos);
+  let { state, pos } = context, tree = syntaxTree(state).resolveInner(pos, -1), around = tree.resolve(pos);
   for (let scan = pos, before; around == tree && (before = tree.childBefore(scan)); ) {
     let last = before.lastChild;
     if (!last || !last.type.isError || last.from < last.to)
@@ -54331,12 +35866,12 @@ var defaultAttrs = /* @__PURE__ */ [
     name: "style",
     parser: /* @__PURE__ */ cssLanguage.parser.configure({ top: "Styles" })
   }
-].concat(/* @__PURE__ */ eventAttributes.map((name11) => ({ name: name11, parser: javascriptLanguage.parser })));
-var htmlPlain = /* @__PURE__ */ LRLanguage3.define({
+].concat(/* @__PURE__ */ eventAttributes.map((name7) => ({ name: name7, parser: javascriptLanguage.parser })));
+var htmlPlain = /* @__PURE__ */ LRLanguage.define({
   name: "html",
   parser: /* @__PURE__ */ parser2.configure({
     props: [
-      /* @__PURE__ */ indentNodeProp5.add({
+      /* @__PURE__ */ indentNodeProp.add({
         Element(context) {
           let after = /^(\s*)(<\/)?/.exec(context.textAfter);
           if (context.node.to <= context.pos + after[0].length)
@@ -54361,7 +35896,7 @@ var htmlPlain = /* @__PURE__ */ LRLanguage3.define({
           return null;
         }
       }),
-      /* @__PURE__ */ foldNodeProp5.add({
+      /* @__PURE__ */ foldNodeProp.add({
         Element(node) {
           let first = node.firstChild, last = node.lastChild;
           if (!first || first.name != "OpenTag")
@@ -54369,7 +35904,7 @@ var htmlPlain = /* @__PURE__ */ LRLanguage3.define({
           return { from: first.to, to: last.name == "CloseTag" ? last.from : node.to };
         }
       }),
-      /* @__PURE__ */ bracketMatchingHandle2.add({
+      /* @__PURE__ */ bracketMatchingHandle.add({
         "OpenTag CloseTag": (node) => node.getChild("TagName")
       })
     ]
@@ -54392,7 +35927,7 @@ function html(config2 = {}) {
   if (config2.nestedLanguages && config2.nestedLanguages.length || config2.nestedAttributes && config2.nestedAttributes.length)
     wrap = configureNesting((config2.nestedLanguages || []).concat(defaultNesting), (config2.nestedAttributes || []).concat(defaultAttrs));
   let lang = wrap ? htmlPlain.configure({ wrap, dialect }) : dialect ? htmlLanguage.configure({ dialect }) : htmlLanguage;
-  return new LanguageSupport4(lang, [
+  return new LanguageSupport(lang, [
     htmlLanguage.data.of({ autocomplete: htmlCompletionSourceWith(config2) }),
     config2.autoCloseTags !== false ? autoCloseTags2 : [],
     javascript().support,
@@ -54405,21 +35940,21 @@ var autoCloseTags2 = /* @__PURE__ */ EditorView.inputHandler.of((view, from, to,
     return false;
   let base2 = insertTransaction(), { state } = base2;
   let closeTags = state.changeByRange((range) => {
-    var _a7, _b, _c;
+    var _a2, _b, _c;
     let didType = state.doc.sliceString(range.from - 1, range.to) == text;
-    let { head } = range, after = syntaxTree5(state).resolveInner(head, -1), name11;
+    let { head } = range, after = syntaxTree(state).resolveInner(head, -1), name7;
     if (didType && text == ">" && after.name == "EndTag") {
       let tag = after.parent;
-      if (((_b = (_a7 = tag.parent) === null || _a7 === void 0 ? void 0 : _a7.lastChild) === null || _b === void 0 ? void 0 : _b.name) != "CloseTag" && (name11 = elementName2(state.doc, tag.parent, head)) && !selfClosers2.has(name11)) {
+      if (((_b = (_a2 = tag.parent) === null || _a2 === void 0 ? void 0 : _a2.lastChild) === null || _b === void 0 ? void 0 : _b.name) != "CloseTag" && (name7 = elementName2(state.doc, tag.parent, head)) && !selfClosers2.has(name7)) {
         let to2 = head + (state.doc.sliceString(head, head + 1) === ">" ? 1 : 0);
-        let insert2 = `</${name11}>`;
+        let insert2 = `</${name7}>`;
         return { range, changes: { from: head, to: to2, insert: insert2 } };
       }
     } else if (didType && text == "/" && after.name == "IncompleteCloseTag") {
       let tag = after.parent;
-      if (after.from == head - 2 && ((_c = tag.lastChild) === null || _c === void 0 ? void 0 : _c.name) != "CloseTag" && (name11 = elementName2(state.doc, tag, head)) && !selfClosers2.has(name11)) {
+      if (after.from == head - 2 && ((_c = tag.lastChild) === null || _c === void 0 ? void 0 : _c.name) != "CloseTag" && (name7 = elementName2(state.doc, tag, head)) && !selfClosers2.has(name7)) {
         let to2 = head + (state.doc.sliceString(head, head + 1) === ">" ? 1 : 0);
-        let insert2 = `${name11}>`;
+        let insert2 = `${name7}>`;
         return {
           range: EditorSelection.cursor(head + insert2.length, -1),
           changes: { from: head, to: to2, insert: insert2 }
@@ -54442,17 +35977,17 @@ var autoCloseTags2 = /* @__PURE__ */ EditorView.inputHandler.of((view, from, to,
 
 // node_modules/@codemirror/lang-markdown/dist/index.js
 var data = /* @__PURE__ */ defineLanguageFacet({ commentTokens: { block: { open: "<!--", close: "-->" } } });
-var headingProp = /* @__PURE__ */ new NodeProp2();
+var headingProp = /* @__PURE__ */ new NodeProp();
 var commonmark = /* @__PURE__ */ parser.configure({
   props: [
-    /* @__PURE__ */ foldNodeProp2.add((type) => {
+    /* @__PURE__ */ foldNodeProp.add((type) => {
       return !type.is("Block") || type.is("Document") || isHeading(type) != null || isList(type) ? void 0 : (tree, state) => ({ from: state.doc.lineAt(tree.from).to, to: tree.to });
     }),
     /* @__PURE__ */ headingProp.add(isHeading),
-    /* @__PURE__ */ indentNodeProp2.add({
+    /* @__PURE__ */ indentNodeProp.add({
       Document: () => null
     }),
-    /* @__PURE__ */ languageDataProp2.add({
+    /* @__PURE__ */ languageDataProp.add({
       Document: data
     })
   ]
@@ -54467,33 +36002,33 @@ function isList(type) {
 function findSectionEnd(headerNode, level) {
   let last = headerNode;
   for (; ; ) {
-    let next = last.nextSibling, heading11;
-    if (!next || (heading11 = isHeading(next.type)) != null && heading11 <= level)
+    let next = last.nextSibling, heading7;
+    if (!next || (heading7 = isHeading(next.type)) != null && heading7 <= level)
       break;
     last = next;
   }
   return last.to;
 }
-var headerIndent = /* @__PURE__ */ foldService2.of((state, start, end) => {
-  for (let node = syntaxTree2(state).resolveInner(end, -1); node; node = node.parent) {
+var headerIndent = /* @__PURE__ */ foldService.of((state, start, end) => {
+  for (let node = syntaxTree(state).resolveInner(end, -1); node; node = node.parent) {
     if (node.from < start)
       break;
-    let heading11 = node.type.prop(headingProp);
-    if (heading11 == null)
+    let heading7 = node.type.prop(headingProp);
+    if (heading7 == null)
       continue;
-    let upto = findSectionEnd(node, heading11);
+    let upto = findSectionEnd(node, heading7);
     if (upto > end)
       return { from: end, to: upto };
   }
   return null;
 });
 function mkLang(parser5) {
-  return new Language2(data, parser5, [], "markdown");
+  return new Language(data, parser5, [], "markdown");
 }
 var commonmarkLanguage = /* @__PURE__ */ mkLang(commonmark);
 var extended = /* @__PURE__ */ commonmark.configure([GFM, Subscript, Superscript, Emoji, {
   props: [
-    /* @__PURE__ */ foldNodeProp2.add({
+    /* @__PURE__ */ foldNodeProp.add({
       Table: (tree, state) => ({ from: state.doc.lineAt(tree.from).to, to: tree.to })
     })
   ]
@@ -54509,7 +36044,7 @@ function getCodeParser(languages, defaultLanguage) {
       else
         found = LanguageDescription.matchLanguageName(languages, info, true);
       if (found instanceof LanguageDescription)
-        return found.support ? found.support.language.parser : ParseContext2.getSkippingParser(found.load());
+        return found.support ? found.support.language.parser : ParseContext.getSkippingParser(found.load());
       else if (found)
         return found.parser;
     }
@@ -54539,8 +36074,8 @@ var Context = class {
     }
   }
   marker(doc2, add2) {
-    let number11 = this.node.name == "OrderedList" ? String(+itemNumber(this.item, doc2)[2] + add2) : "";
-    return this.spaceBefore + number11 + this.type + this.spaceAfter;
+    let number7 = this.node.name == "OrderedList" ? String(+itemNumber(this.item, doc2)[2] + add2) : "";
+    return this.spaceBefore + number7 + this.type + this.spaceAfter;
   }
 };
 function getContext(node, doc2) {
@@ -54584,13 +36119,13 @@ function renumberList(after, doc2, changes, offset = 0) {
   for (let prev = -1, node = after; ; ) {
     if (node.name == "ListItem") {
       let m = itemNumber(node, doc2);
-      let number11 = +m[2];
+      let number7 = +m[2];
       if (prev >= 0) {
-        if (number11 != prev + 1)
+        if (number7 != prev + 1)
           return;
         changes.push({ from: node.from + m[1].length, to: node.from + m[0].length, insert: String(prev + 2 + offset) });
       }
-      prev = number11;
+      prev = number7;
     }
     let next = node.nextSibling;
     if (!next)
@@ -54598,11 +36133,11 @@ function renumberList(after, doc2, changes, offset = 0) {
     node = next;
   }
 }
-function normalizeIndent(content11, state) {
-  let blank = /^[ \t]*/.exec(content11)[0].length;
-  if (!blank || state.facet(indentUnit2) != "	")
-    return content11;
-  let col = countColumn(content11, 4, blank);
+function normalizeIndent(content7, state) {
+  let blank = /^[ \t]*/.exec(content7)[0].length;
+  if (!blank || state.facet(indentUnit) != "	")
+    return content7;
+  let col = countColumn(content7, 4, blank);
   let space4 = "";
   for (let i = col; i > 0; ) {
     if (i >= 4) {
@@ -54613,10 +36148,10 @@ function normalizeIndent(content11, state) {
       i--;
     }
   }
-  return space4 + content11.slice(blank);
+  return space4 + content7.slice(blank);
 }
 var insertNewlineContinueMarkupCommand = (config2 = {}) => ({ state, dispatch }) => {
-  let tree = syntaxTree2(state), { doc: doc2 } = state;
+  let tree = syntaxTree(state), { doc: doc2 } = state;
   let dont = null, changes = state.changeByRange((range) => {
     if (!range.empty || !markdownLanguage.isActiveAt(state, range.from, -1) && !markdownLanguage.isActiveAt(state, range.from, 1))
       return dont = { range };
@@ -54729,7 +36264,7 @@ function contextNodeForDelete(tree, pos) {
   return node;
 }
 var deleteMarkupBackward = ({ state, dispatch }) => {
-  let tree = syntaxTree2(state);
+  let tree = syntaxTree(state);
   let dont = null, changes = state.changeByRange((range) => {
     let pos = range.from, { doc: doc2 } = state;
     if (range.empty && markdownLanguage.isActiveAt(state, range.from)) {
@@ -54801,7 +36336,7 @@ function htmlTagCompletion(context) {
   let { state, pos } = context, m = /<[:\-\.\w\u00b7-\uffff]*$/.exec(state.sliceDoc(pos - 25, pos));
   if (!m)
     return null;
-  let tree = syntaxTree2(state).resolveInner(pos, -1);
+  let tree = syntaxTree(state).resolveInner(pos, -1);
   while (tree && !tree.type.isTop) {
     if (tree.name == "CodeBlock" || tree.name == "FencedCode" || tree.name == "ProcessingInstructionBlock" || tree.name == "CommentBlock" || tree.name == "Link" || tree.name == "Image")
       return null;
@@ -54824,18 +36359,18 @@ function htmlTagCompletions() {
 var nonPlainText = /code|horizontalrule|html|link|comment|processing|escape|entity|image|mark|url/i;
 var pasteURLAsLink = /* @__PURE__ */ EditorView.domEventHandlers({
   paste: (event, view) => {
-    var _a7;
+    var _a2;
     let { main } = view.state.selection;
     if (main.empty)
       return false;
-    let link = (_a7 = event.clipboardData) === null || _a7 === void 0 ? void 0 : _a7.getData("text/plain");
+    let link = (_a2 = event.clipboardData) === null || _a2 === void 0 ? void 0 : _a2.getData("text/plain");
     if (!link || !/^(https?:\/\/|mailto:|xmpp:|www\.)/.test(link))
       return false;
     if (/^www\./.test(link))
       link = "https://" + link;
     if (!markdownLanguage.isActiveAt(view.state, main.from, 1))
       return false;
-    let tree = syntaxTree2(view.state), crossesNode = false;
+    let tree = syntaxTree(view.state), crossesNode = false;
     tree.iterate({
       from: main.from,
       to: main.to,
@@ -54859,1625 +36394,37 @@ var pasteURLAsLink = /* @__PURE__ */ EditorView.domEventHandlers({
   }
 });
 
-// node_modules/@codemirror/theme-one-dark/node_modules/@lezer/common/dist/index.js
-var DefaultBufferLength10 = 1024;
-var nextPropID10 = 0;
-var Range11 = class {
-  constructor(from, to) {
-    this.from = from;
-    this.to = to;
-  }
-};
-var NodeProp10 = class {
-  /**
-  Create a new node prop type.
-  */
-  constructor(config2 = {}) {
-    this.id = nextPropID10++;
-    this.perNode = !!config2.perNode;
-    this.deserialize = config2.deserialize || (() => {
-      throw new Error("This node type doesn't define a deserialize function");
-    });
-    this.combine = config2.combine || null;
-  }
-  /**
-  This is meant to be used with
-  [`NodeSet.extend`](#common.NodeSet.extend) or
-  [`LRParser.configure`](#lr.ParserConfig.props) to compute
-  prop values for each node type in the set. Takes a [match
-  object](#common.NodeType^match) or function that returns undefined
-  if the node type doesn't get this prop, and the prop's value if
-  it does.
-  */
-  add(match) {
-    if (this.perNode)
-      throw new RangeError("Can't add per-node props to node types");
-    if (typeof match != "function")
-      match = NodeType10.match(match);
-    return (type) => {
-      let result = match(type);
-      return result === void 0 ? null : [this, result];
-    };
-  }
-};
-NodeProp10.closedBy = new NodeProp10({ deserialize: (str) => str.split(" ") });
-NodeProp10.openedBy = new NodeProp10({ deserialize: (str) => str.split(" ") });
-NodeProp10.group = new NodeProp10({ deserialize: (str) => str.split(" ") });
-NodeProp10.isolate = new NodeProp10({ deserialize: (value) => {
-  if (value && value != "rtl" && value != "ltr" && value != "auto")
-    throw new RangeError("Invalid value for isolate: " + value);
-  return value || "auto";
-} });
-NodeProp10.contextHash = new NodeProp10({ perNode: true });
-NodeProp10.lookAhead = new NodeProp10({ perNode: true });
-NodeProp10.mounted = new NodeProp10({ perNode: true });
-var MountedTree10 = class {
-  constructor(tree, overlay, parser5, bracketed = false) {
-    this.tree = tree;
-    this.overlay = overlay;
-    this.parser = parser5;
-    this.bracketed = bracketed;
-  }
-  /**
-  @internal
-  */
-  static get(tree) {
-    return tree && tree.props && tree.props[NodeProp10.mounted.id];
-  }
-};
-var noProps10 = /* @__PURE__ */ Object.create(null);
-var NodeType10 = class _NodeType {
-  /**
-  @internal
-  */
-  constructor(name11, props, id3, flags = 0) {
-    this.name = name11;
-    this.props = props;
-    this.id = id3;
-    this.flags = flags;
-  }
-  /**
-  Define a node type.
-  */
-  static define(spec) {
-    let props = spec.props && spec.props.length ? /* @__PURE__ */ Object.create(null) : noProps10;
-    let flags = (spec.top ? 1 : 0) | (spec.skipped ? 2 : 0) | (spec.error ? 4 : 0) | (spec.name == null ? 8 : 0);
-    let type = new _NodeType(spec.name || "", props, spec.id, flags);
-    if (spec.props)
-      for (let src of spec.props) {
-        if (!Array.isArray(src))
-          src = src(type);
-        if (src) {
-          if (src[0].perNode)
-            throw new RangeError("Can't store a per-node prop on a node type");
-          props[src[0].id] = src[1];
-        }
-      }
-    return type;
-  }
-  /**
-  Retrieves a node prop for this type. Will return `undefined` if
-  the prop isn't present on this node.
-  */
-  prop(prop) {
-    return this.props[prop.id];
-  }
-  /**
-  True when this is the top node of a grammar.
-  */
-  get isTop() {
-    return (this.flags & 1) > 0;
-  }
-  /**
-  True when this node is produced by a skip rule.
-  */
-  get isSkipped() {
-    return (this.flags & 2) > 0;
-  }
-  /**
-  Indicates whether this is an error node.
-  */
-  get isError() {
-    return (this.flags & 4) > 0;
-  }
-  /**
-  When true, this node type doesn't correspond to a user-declared
-  named node, for example because it is used to cache repetition.
-  */
-  get isAnonymous() {
-    return (this.flags & 8) > 0;
-  }
-  /**
-  Returns true when this node's name or one of its
-  [groups](#common.NodeProp^group) matches the given string.
-  */
-  is(name11) {
-    if (typeof name11 == "string") {
-      if (this.name == name11)
-        return true;
-      let group = this.prop(NodeProp10.group);
-      return group ? group.indexOf(name11) > -1 : false;
-    }
-    return this.id == name11;
-  }
-  /**
-  Create a function from node types to arbitrary values by
-  specifying an object whose property names are node or
-  [group](#common.NodeProp^group) names. Often useful with
-  [`NodeProp.add`](#common.NodeProp.add). You can put multiple
-  names, separated by spaces, in a single property name to map
-  multiple node names to a single value.
-  */
-  static match(map) {
-    let direct = /* @__PURE__ */ Object.create(null);
-    for (let prop in map)
-      for (let name11 of prop.split(" "))
-        direct[name11] = map[prop];
-    return (node) => {
-      for (let groups = node.prop(NodeProp10.group), i = -1; i < (groups ? groups.length : 0); i++) {
-        let found = direct[i < 0 ? node.name : groups[i]];
-        if (found)
-          return found;
-      }
-    };
-  }
-};
-NodeType10.none = new NodeType10(
-  "",
-  /* @__PURE__ */ Object.create(null),
-  0,
-  8
-  /* NodeFlag.Anonymous */
-);
-var CachedNode10 = /* @__PURE__ */ new WeakMap();
-var CachedInnerNode10 = /* @__PURE__ */ new WeakMap();
-var IterMode10;
-(function(IterMode11) {
-  IterMode11[IterMode11["ExcludeBuffers"] = 1] = "ExcludeBuffers";
-  IterMode11[IterMode11["IncludeAnonymous"] = 2] = "IncludeAnonymous";
-  IterMode11[IterMode11["IgnoreMounts"] = 4] = "IgnoreMounts";
-  IterMode11[IterMode11["IgnoreOverlays"] = 8] = "IgnoreOverlays";
-  IterMode11[IterMode11["EnterBracketed"] = 16] = "EnterBracketed";
-})(IterMode10 || (IterMode10 = {}));
-var Tree10 = class _Tree {
-  /**
-  Construct a new tree. See also [`Tree.build`](#common.Tree^build).
-  */
-  constructor(type, children, positions, length, props) {
-    this.type = type;
-    this.children = children;
-    this.positions = positions;
-    this.length = length;
-    this.props = null;
-    if (props && props.length) {
-      this.props = /* @__PURE__ */ Object.create(null);
-      for (let [prop, value] of props)
-        this.props[typeof prop == "number" ? prop : prop.id] = value;
-    }
-  }
-  /**
-  @internal
-  */
-  toString() {
-    let mounted = MountedTree10.get(this);
-    if (mounted && !mounted.overlay)
-      return mounted.tree.toString();
-    let children = "";
-    for (let ch of this.children) {
-      let str = ch.toString();
-      if (str) {
-        if (children)
-          children += ",";
-        children += str;
-      }
-    }
-    return !this.type.name ? children : (/\W/.test(this.type.name) && !this.type.isError ? JSON.stringify(this.type.name) : this.type.name) + (children.length ? "(" + children + ")" : "");
-  }
-  /**
-  Get a [tree cursor](#common.TreeCursor) positioned at the top of
-  the tree. Mode can be used to [control](#common.IterMode) which
-  nodes the cursor visits.
-  */
-  cursor(mode = 0) {
-    return new TreeCursor10(this.topNode, mode);
-  }
-  /**
-  Get a [tree cursor](#common.TreeCursor) pointing into this tree
-  at the given position and side (see
-  [`moveTo`](#common.TreeCursor.moveTo).
-  */
-  cursorAt(pos, side = 0, mode = 0) {
-    let scope = CachedNode10.get(this) || this.topNode;
-    let cursor2 = new TreeCursor10(scope);
-    cursor2.moveTo(pos, side);
-    CachedNode10.set(this, cursor2._tree);
-    return cursor2;
-  }
-  /**
-  Get a [syntax node](#common.SyntaxNode) object for the top of the
-  tree.
-  */
-  get topNode() {
-    return new TreeNode10(this, 0, 0, null);
-  }
-  /**
-  Get the [syntax node](#common.SyntaxNode) at the given position.
-  If `side` is -1, this will move into nodes that end at the
-  position. If 1, it'll move into nodes that start at the
-  position. With 0, it'll only enter nodes that cover the position
-  from both sides.
-  
-  Note that this will not enter
-  [overlays](#common.MountedTree.overlay), and you often want
-  [`resolveInner`](#common.Tree.resolveInner) instead.
-  */
-  resolve(pos, side = 0) {
-    let node = resolveNode10(CachedNode10.get(this) || this.topNode, pos, side, false);
-    CachedNode10.set(this, node);
-    return node;
-  }
-  /**
-  Like [`resolve`](#common.Tree.resolve), but will enter
-  [overlaid](#common.MountedTree.overlay) nodes, producing a syntax node
-  pointing into the innermost overlaid tree at the given position
-  (with parent links going through all parent structure, including
-  the host trees).
-  */
-  resolveInner(pos, side = 0) {
-    let node = resolveNode10(CachedInnerNode10.get(this) || this.topNode, pos, side, true);
-    CachedInnerNode10.set(this, node);
-    return node;
-  }
-  /**
-  In some situations, it can be useful to iterate through all
-  nodes around a position, including those in overlays that don't
-  directly cover the position. This method gives you an iterator
-  that will produce all nodes, from small to big, around the given
-  position.
-  */
-  resolveStack(pos, side = 0) {
-    return stackIterator10(this, pos, side);
-  }
-  /**
-  Iterate over the tree and its children, calling `enter` for any
-  node that touches the `from`/`to` region (if given) before
-  running over such a node's children, and `leave` (if given) when
-  leaving the node. When `enter` returns `false`, that node will
-  not have its children iterated over (or `leave` called).
-  */
-  iterate(spec) {
-    let { enter, leave, from = 0, to = this.length } = spec;
-    let mode = spec.mode || 0, anon = (mode & IterMode10.IncludeAnonymous) > 0;
-    for (let c = this.cursor(mode | IterMode10.IncludeAnonymous); ; ) {
-      let entered = false;
-      if (c.from <= to && c.to >= from && (!anon && c.type.isAnonymous || enter(c) !== false)) {
-        if (c.firstChild())
-          continue;
-        entered = true;
-      }
-      for (; ; ) {
-        if (entered && leave && (anon || !c.type.isAnonymous))
-          leave(c);
-        if (c.nextSibling())
-          break;
-        if (!c.parent())
-          return;
-        entered = true;
-      }
-    }
-  }
-  /**
-  Get the value of the given [node prop](#common.NodeProp) for this
-  node. Works with both per-node and per-type props.
-  */
-  prop(prop) {
-    return !prop.perNode ? this.type.prop(prop) : this.props ? this.props[prop.id] : void 0;
-  }
-  /**
-  Returns the node's [per-node props](#common.NodeProp.perNode) in a
-  format that can be passed to the [`Tree`](#common.Tree)
-  constructor.
-  */
-  get propValues() {
-    let result = [];
-    if (this.props)
-      for (let id3 in this.props)
-        result.push([+id3, this.props[id3]]);
-    return result;
-  }
-  /**
-  Balance the direct children of this tree, producing a copy of
-  which may have children grouped into subtrees with type
-  [`NodeType.none`](#common.NodeType^none).
-  */
-  balance(config2 = {}) {
-    return this.children.length <= 8 ? this : balanceRange10(NodeType10.none, this.children, this.positions, 0, this.children.length, 0, this.length, (children, positions, length) => new _Tree(this.type, children, positions, length, this.propValues), config2.makeTree || ((children, positions, length) => new _Tree(NodeType10.none, children, positions, length)));
-  }
-  /**
-  Build a tree from a postfix-ordered buffer of node information,
-  or a cursor over such a buffer.
-  */
-  static build(data2) {
-    return buildTree10(data2);
-  }
-};
-Tree10.empty = new Tree10(NodeType10.none, [], [], 0);
-var FlatBufferCursor10 = class _FlatBufferCursor {
-  constructor(buffer, index) {
-    this.buffer = buffer;
-    this.index = index;
-  }
-  get id() {
-    return this.buffer[this.index - 4];
-  }
-  get start() {
-    return this.buffer[this.index - 3];
-  }
-  get end() {
-    return this.buffer[this.index - 2];
-  }
-  get size() {
-    return this.buffer[this.index - 1];
-  }
-  get pos() {
-    return this.index;
-  }
-  next() {
-    this.index -= 4;
-  }
-  fork() {
-    return new _FlatBufferCursor(this.buffer, this.index);
-  }
-};
-var TreeBuffer10 = class _TreeBuffer {
-  /**
-  Create a tree buffer.
-  */
-  constructor(buffer, length, set) {
-    this.buffer = buffer;
-    this.length = length;
-    this.set = set;
-  }
-  /**
-  @internal
-  */
-  get type() {
-    return NodeType10.none;
-  }
-  /**
-  @internal
-  */
-  toString() {
-    let result = [];
-    for (let index = 0; index < this.buffer.length; ) {
-      result.push(this.childString(index));
-      index = this.buffer[index + 3];
-    }
-    return result.join(",");
-  }
-  /**
-  @internal
-  */
-  childString(index) {
-    let id3 = this.buffer[index], endIndex = this.buffer[index + 3];
-    let type = this.set.types[id3], result = type.name;
-    if (/\W/.test(result) && !type.isError)
-      result = JSON.stringify(result);
-    index += 4;
-    if (endIndex == index)
-      return result;
-    let children = [];
-    while (index < endIndex) {
-      children.push(this.childString(index));
-      index = this.buffer[index + 3];
-    }
-    return result + "(" + children.join(",") + ")";
-  }
-  /**
-  @internal
-  */
-  findChild(startIndex, endIndex, dir, pos, side) {
-    let { buffer } = this, pick = -1;
-    for (let i = startIndex; i != endIndex; i = buffer[i + 3]) {
-      if (checkSide10(side, pos, buffer[i + 1], buffer[i + 2])) {
-        pick = i;
-        if (dir > 0)
-          break;
-      }
-    }
-    return pick;
-  }
-  /**
-  @internal
-  */
-  slice(startI, endI, from) {
-    let b = this.buffer;
-    let copy = new Uint16Array(endI - startI), len = 0;
-    for (let i = startI, j = 0; i < endI; ) {
-      copy[j++] = b[i++];
-      copy[j++] = b[i++] - from;
-      let to = copy[j++] = b[i++] - from;
-      copy[j++] = b[i++] - startI;
-      len = Math.max(len, to);
-    }
-    return new _TreeBuffer(copy, len, this.set);
-  }
-};
-function checkSide10(side, pos, from, to) {
-  switch (side) {
-    case -2:
-      return from < pos;
-    case -1:
-      return to >= pos && from < pos;
-    case 0:
-      return from < pos && to > pos;
-    case 1:
-      return from <= pos && to > pos;
-    case 2:
-      return to > pos;
-    case 4:
-      return true;
-  }
-}
-function resolveNode10(node, pos, side, overlays) {
-  var _a7;
-  while (node.from == node.to || (side < 1 ? node.from >= pos : node.from > pos) || (side > -1 ? node.to <= pos : node.to < pos)) {
-    let parent = !overlays && node instanceof TreeNode10 && node.index < 0 ? null : node.parent;
-    if (!parent)
-      return node;
-    node = parent;
-  }
-  let mode = overlays ? 0 : IterMode10.IgnoreOverlays;
-  if (overlays)
-    for (let scan = node, parent = scan.parent; parent; scan = parent, parent = scan.parent) {
-      if (scan instanceof TreeNode10 && scan.index < 0 && ((_a7 = parent.enter(pos, side, mode)) === null || _a7 === void 0 ? void 0 : _a7.from) != scan.from)
-        node = parent;
-    }
-  for (; ; ) {
-    let inner = node.enter(pos, side, mode);
-    if (!inner)
-      return node;
-    node = inner;
-  }
-}
-var BaseNode10 = class {
-  cursor(mode = 0) {
-    return new TreeCursor10(this, mode);
-  }
-  getChild(type, before = null, after = null) {
-    let r = getChildren10(this, type, before, after);
-    return r.length ? r[0] : null;
-  }
-  getChildren(type, before = null, after = null) {
-    return getChildren10(this, type, before, after);
-  }
-  resolve(pos, side = 0) {
-    return resolveNode10(this, pos, side, false);
-  }
-  resolveInner(pos, side = 0) {
-    return resolveNode10(this, pos, side, true);
-  }
-  matchContext(context) {
-    return matchNodeContext10(this.parent, context);
-  }
-  enterUnfinishedNodesBefore(pos) {
-    let scan = this.childBefore(pos), node = this;
-    while (scan) {
-      let last = scan.lastChild;
-      if (!last || last.to != scan.to)
-        break;
-      if (last.type.isError && last.from == last.to) {
-        node = scan;
-        scan = last.prevSibling;
-      } else {
-        scan = last;
-      }
-    }
-    return node;
-  }
-  get node() {
-    return this;
-  }
-  get next() {
-    return this.parent;
-  }
-};
-var TreeNode10 = class _TreeNode extends BaseNode10 {
-  constructor(_tree, from, index, _parent) {
-    super();
-    this._tree = _tree;
-    this.from = from;
-    this.index = index;
-    this._parent = _parent;
-  }
-  get type() {
-    return this._tree.type;
-  }
-  get name() {
-    return this._tree.type.name;
-  }
-  get to() {
-    return this.from + this._tree.length;
-  }
-  nextChild(i, dir, pos, side, mode = 0) {
-    for (let parent = this; ; ) {
-      for (let { children, positions } = parent._tree, e = dir > 0 ? children.length : -1; i != e; i += dir) {
-        let next = children[i], start = positions[i] + parent.from, mounted;
-        if (!(mode & IterMode10.EnterBracketed && next instanceof Tree10 && (mounted = MountedTree10.get(next)) && !mounted.overlay && mounted.bracketed && pos >= start && pos <= start + next.length) && !checkSide10(side, pos, start, start + next.length))
-          continue;
-        if (next instanceof TreeBuffer10) {
-          if (mode & IterMode10.ExcludeBuffers)
-            continue;
-          let index = next.findChild(0, next.buffer.length, dir, pos - start, side);
-          if (index > -1)
-            return new BufferNode10(new BufferContext10(parent, next, i, start), null, index);
-        } else if (mode & IterMode10.IncludeAnonymous || (!next.type.isAnonymous || hasChild10(next))) {
-          let mounted2;
-          if (!(mode & IterMode10.IgnoreMounts) && (mounted2 = MountedTree10.get(next)) && !mounted2.overlay)
-            return new _TreeNode(mounted2.tree, start, i, parent);
-          let inner = new _TreeNode(next, start, i, parent);
-          return mode & IterMode10.IncludeAnonymous || !inner.type.isAnonymous ? inner : inner.nextChild(dir < 0 ? next.children.length - 1 : 0, dir, pos, side, mode);
-        }
-      }
-      if (mode & IterMode10.IncludeAnonymous || !parent.type.isAnonymous)
-        return null;
-      if (parent.index >= 0)
-        i = parent.index + dir;
-      else
-        i = dir < 0 ? -1 : parent._parent._tree.children.length;
-      parent = parent._parent;
-      if (!parent)
-        return null;
-    }
-  }
-  get firstChild() {
-    return this.nextChild(
-      0,
-      1,
-      0,
-      4
-      /* Side.DontCare */
-    );
-  }
-  get lastChild() {
-    return this.nextChild(
-      this._tree.children.length - 1,
-      -1,
-      0,
-      4
-      /* Side.DontCare */
-    );
-  }
-  childAfter(pos) {
-    return this.nextChild(
-      0,
-      1,
-      pos,
-      2
-      /* Side.After */
-    );
-  }
-  childBefore(pos) {
-    return this.nextChild(
-      this._tree.children.length - 1,
-      -1,
-      pos,
-      -2
-      /* Side.Before */
-    );
-  }
-  prop(prop) {
-    return this._tree.prop(prop);
-  }
-  enter(pos, side, mode = 0) {
-    let mounted;
-    if (!(mode & IterMode10.IgnoreOverlays) && (mounted = MountedTree10.get(this._tree)) && mounted.overlay) {
-      let rPos = pos - this.from, enterBracketed = mode & IterMode10.EnterBracketed && mounted.bracketed;
-      for (let { from, to } of mounted.overlay) {
-        if ((side > 0 || enterBracketed ? from <= rPos : from < rPos) && (side < 0 || enterBracketed ? to >= rPos : to > rPos))
-          return new _TreeNode(mounted.tree, mounted.overlay[0].from + this.from, -1, this);
-      }
-    }
-    return this.nextChild(0, 1, pos, side, mode);
-  }
-  nextSignificantParent() {
-    let val = this;
-    while (val.type.isAnonymous && val._parent)
-      val = val._parent;
-    return val;
-  }
-  get parent() {
-    return this._parent ? this._parent.nextSignificantParent() : null;
-  }
-  get nextSibling() {
-    return this._parent && this.index >= 0 ? this._parent.nextChild(
-      this.index + 1,
-      1,
-      0,
-      4
-      /* Side.DontCare */
-    ) : null;
-  }
-  get prevSibling() {
-    return this._parent && this.index >= 0 ? this._parent.nextChild(
-      this.index - 1,
-      -1,
-      0,
-      4
-      /* Side.DontCare */
-    ) : null;
-  }
-  get tree() {
-    return this._tree;
-  }
-  toTree() {
-    return this._tree;
-  }
-  /**
-  @internal
-  */
-  toString() {
-    return this._tree.toString();
-  }
-};
-function getChildren10(node, type, before, after) {
-  let cur2 = node.cursor(), result = [];
-  if (!cur2.firstChild())
-    return result;
-  if (before != null)
-    for (let found = false; !found; ) {
-      found = cur2.type.is(before);
-      if (!cur2.nextSibling())
-        return result;
-    }
-  for (; ; ) {
-    if (after != null && cur2.type.is(after))
-      return result;
-    if (cur2.type.is(type))
-      result.push(cur2.node);
-    if (!cur2.nextSibling())
-      return after == null ? result : [];
-  }
-}
-function matchNodeContext10(node, context, i = context.length - 1) {
-  for (let p = node; i >= 0; p = p.parent) {
-    if (!p)
-      return false;
-    if (!p.type.isAnonymous) {
-      if (context[i] && context[i] != p.name)
-        return false;
-      i--;
-    }
-  }
-  return true;
-}
-var BufferContext10 = class {
-  constructor(parent, buffer, index, start) {
-    this.parent = parent;
-    this.buffer = buffer;
-    this.index = index;
-    this.start = start;
-  }
-};
-var BufferNode10 = class _BufferNode extends BaseNode10 {
-  get name() {
-    return this.type.name;
-  }
-  get from() {
-    return this.context.start + this.context.buffer.buffer[this.index + 1];
-  }
-  get to() {
-    return this.context.start + this.context.buffer.buffer[this.index + 2];
-  }
-  constructor(context, _parent, index) {
-    super();
-    this.context = context;
-    this._parent = _parent;
-    this.index = index;
-    this.type = context.buffer.set.types[context.buffer.buffer[index]];
-  }
-  child(dir, pos, side) {
-    let { buffer } = this.context;
-    let index = buffer.findChild(this.index + 4, buffer.buffer[this.index + 3], dir, pos - this.context.start, side);
-    return index < 0 ? null : new _BufferNode(this.context, this, index);
-  }
-  get firstChild() {
-    return this.child(
-      1,
-      0,
-      4
-      /* Side.DontCare */
-    );
-  }
-  get lastChild() {
-    return this.child(
-      -1,
-      0,
-      4
-      /* Side.DontCare */
-    );
-  }
-  childAfter(pos) {
-    return this.child(
-      1,
-      pos,
-      2
-      /* Side.After */
-    );
-  }
-  childBefore(pos) {
-    return this.child(
-      -1,
-      pos,
-      -2
-      /* Side.Before */
-    );
-  }
-  prop(prop) {
-    return this.type.prop(prop);
-  }
-  enter(pos, side, mode = 0) {
-    if (mode & IterMode10.ExcludeBuffers)
-      return null;
-    let { buffer } = this.context;
-    let index = buffer.findChild(this.index + 4, buffer.buffer[this.index + 3], side > 0 ? 1 : -1, pos - this.context.start, side);
-    return index < 0 ? null : new _BufferNode(this.context, this, index);
-  }
-  get parent() {
-    return this._parent || this.context.parent.nextSignificantParent();
-  }
-  externalSibling(dir) {
-    return this._parent ? null : this.context.parent.nextChild(
-      this.context.index + dir,
-      dir,
-      0,
-      4
-      /* Side.DontCare */
-    );
-  }
-  get nextSibling() {
-    let { buffer } = this.context;
-    let after = buffer.buffer[this.index + 3];
-    if (after < (this._parent ? buffer.buffer[this._parent.index + 3] : buffer.buffer.length))
-      return new _BufferNode(this.context, this._parent, after);
-    return this.externalSibling(1);
-  }
-  get prevSibling() {
-    let { buffer } = this.context;
-    let parentStart = this._parent ? this._parent.index + 4 : 0;
-    if (this.index == parentStart)
-      return this.externalSibling(-1);
-    return new _BufferNode(this.context, this._parent, buffer.findChild(
-      parentStart,
-      this.index,
-      -1,
-      0,
-      4
-      /* Side.DontCare */
-    ));
-  }
-  get tree() {
-    return null;
-  }
-  toTree() {
-    let children = [], positions = [];
-    let { buffer } = this.context;
-    let startI = this.index + 4, endI = buffer.buffer[this.index + 3];
-    if (endI > startI) {
-      let from = buffer.buffer[this.index + 1];
-      children.push(buffer.slice(startI, endI, from));
-      positions.push(0);
-    }
-    return new Tree10(this.type, children, positions, this.to - this.from);
-  }
-  /**
-  @internal
-  */
-  toString() {
-    return this.context.buffer.childString(this.index);
-  }
-};
-function iterStack10(heads) {
-  if (!heads.length)
-    return null;
-  let pick = 0, picked = heads[0];
-  for (let i = 1; i < heads.length; i++) {
-    let node = heads[i];
-    if (node.from > picked.from || node.to < picked.to) {
-      picked = node;
-      pick = i;
-    }
-  }
-  let next = picked instanceof TreeNode10 && picked.index < 0 ? null : picked.parent;
-  let newHeads = heads.slice();
-  if (next)
-    newHeads[pick] = next;
-  else
-    newHeads.splice(pick, 1);
-  return new StackIterator10(newHeads, picked);
-}
-var StackIterator10 = class {
-  constructor(heads, node) {
-    this.heads = heads;
-    this.node = node;
-  }
-  get next() {
-    return iterStack10(this.heads);
-  }
-};
-function stackIterator10(tree, pos, side) {
-  let inner = tree.resolveInner(pos, side), layers = null;
-  for (let scan = inner instanceof TreeNode10 ? inner : inner.context.parent; scan; scan = scan.parent) {
-    if (scan.index < 0) {
-      let parent = scan.parent;
-      (layers || (layers = [inner])).push(parent.resolve(pos, side));
-      scan = parent;
-    } else {
-      let mount = MountedTree10.get(scan.tree);
-      if (mount && mount.overlay && mount.overlay[0].from <= pos && mount.overlay[mount.overlay.length - 1].to >= pos) {
-        let root = new TreeNode10(mount.tree, mount.overlay[0].from + scan.from, -1, scan);
-        (layers || (layers = [inner])).push(resolveNode10(root, pos, side, false));
-      }
-    }
-  }
-  return layers ? iterStack10(layers) : inner;
-}
-var TreeCursor10 = class {
-  /**
-  Shorthand for `.type.name`.
-  */
-  get name() {
-    return this.type.name;
-  }
-  /**
-  @internal
-  */
-  constructor(node, mode = 0) {
-    this.buffer = null;
-    this.stack = [];
-    this.index = 0;
-    this.bufferNode = null;
-    this.mode = mode & ~IterMode10.EnterBracketed;
-    if (node instanceof TreeNode10) {
-      this.yieldNode(node);
-    } else {
-      this._tree = node.context.parent;
-      this.buffer = node.context;
-      for (let n = node._parent; n; n = n._parent)
-        this.stack.unshift(n.index);
-      this.bufferNode = node;
-      this.yieldBuf(node.index);
-    }
-  }
-  yieldNode(node) {
-    if (!node)
-      return false;
-    this._tree = node;
-    this.type = node.type;
-    this.from = node.from;
-    this.to = node.to;
-    return true;
-  }
-  yieldBuf(index, type) {
-    this.index = index;
-    let { start, buffer } = this.buffer;
-    this.type = type || buffer.set.types[buffer.buffer[index]];
-    this.from = start + buffer.buffer[index + 1];
-    this.to = start + buffer.buffer[index + 2];
-    return true;
-  }
-  /**
-  @internal
-  */
-  yield(node) {
-    if (!node)
-      return false;
-    if (node instanceof TreeNode10) {
-      this.buffer = null;
-      return this.yieldNode(node);
-    }
-    this.buffer = node.context;
-    return this.yieldBuf(node.index, node.type);
-  }
-  /**
-  @internal
-  */
-  toString() {
-    return this.buffer ? this.buffer.buffer.childString(this.index) : this._tree.toString();
-  }
-  /**
-  @internal
-  */
-  enterChild(dir, pos, side) {
-    if (!this.buffer)
-      return this.yield(this._tree.nextChild(dir < 0 ? this._tree._tree.children.length - 1 : 0, dir, pos, side, this.mode));
-    let { buffer } = this.buffer;
-    let index = buffer.findChild(this.index + 4, buffer.buffer[this.index + 3], dir, pos - this.buffer.start, side);
-    if (index < 0)
-      return false;
-    this.stack.push(this.index);
-    return this.yieldBuf(index);
-  }
-  /**
-  Move the cursor to this node's first child. When this returns
-  false, the node has no child, and the cursor has not been moved.
-  */
-  firstChild() {
-    return this.enterChild(
-      1,
-      0,
-      4
-      /* Side.DontCare */
-    );
-  }
-  /**
-  Move the cursor to this node's last child.
-  */
-  lastChild() {
-    return this.enterChild(
-      -1,
-      0,
-      4
-      /* Side.DontCare */
-    );
-  }
-  /**
-  Move the cursor to the first child that ends after `pos`.
-  */
-  childAfter(pos) {
-    return this.enterChild(
-      1,
-      pos,
-      2
-      /* Side.After */
-    );
-  }
-  /**
-  Move to the last child that starts before `pos`.
-  */
-  childBefore(pos) {
-    return this.enterChild(
-      -1,
-      pos,
-      -2
-      /* Side.Before */
-    );
-  }
-  /**
-  Move the cursor to the child around `pos`. If side is -1 the
-  child may end at that position, when 1 it may start there. This
-  will also enter [overlaid](#common.MountedTree.overlay)
-  [mounted](#common.NodeProp^mounted) trees unless `overlays` is
-  set to false.
-  */
-  enter(pos, side, mode = this.mode) {
-    if (!this.buffer)
-      return this.yield(this._tree.enter(pos, side, mode));
-    return mode & IterMode10.ExcludeBuffers ? false : this.enterChild(1, pos, side);
-  }
-  /**
-  Move to the node's parent node, if this isn't the top node.
-  */
-  parent() {
-    if (!this.buffer)
-      return this.yieldNode(this.mode & IterMode10.IncludeAnonymous ? this._tree._parent : this._tree.parent);
-    if (this.stack.length)
-      return this.yieldBuf(this.stack.pop());
-    let parent = this.mode & IterMode10.IncludeAnonymous ? this.buffer.parent : this.buffer.parent.nextSignificantParent();
-    this.buffer = null;
-    return this.yieldNode(parent);
-  }
-  /**
-  @internal
-  */
-  sibling(dir) {
-    if (!this.buffer)
-      return !this._tree._parent ? false : this.yield(this._tree.index < 0 ? null : this._tree._parent.nextChild(this._tree.index + dir, dir, 0, 4, this.mode));
-    let { buffer } = this.buffer, d = this.stack.length - 1;
-    if (dir < 0) {
-      let parentStart = d < 0 ? 0 : this.stack[d] + 4;
-      if (this.index != parentStart)
-        return this.yieldBuf(buffer.findChild(
-          parentStart,
-          this.index,
-          -1,
-          0,
-          4
-          /* Side.DontCare */
-        ));
-    } else {
-      let after = buffer.buffer[this.index + 3];
-      if (after < (d < 0 ? buffer.buffer.length : buffer.buffer[this.stack[d] + 3]))
-        return this.yieldBuf(after);
-    }
-    return d < 0 ? this.yield(this.buffer.parent.nextChild(this.buffer.index + dir, dir, 0, 4, this.mode)) : false;
-  }
-  /**
-  Move to this node's next sibling, if any.
-  */
-  nextSibling() {
-    return this.sibling(1);
-  }
-  /**
-  Move to this node's previous sibling, if any.
-  */
-  prevSibling() {
-    return this.sibling(-1);
-  }
-  atLastNode(dir) {
-    let index, parent, { buffer } = this;
-    if (buffer) {
-      if (dir > 0) {
-        if (this.index < buffer.buffer.buffer.length)
-          return false;
-      } else {
-        for (let i = 0; i < this.index; i++)
-          if (buffer.buffer.buffer[i + 3] < this.index)
-            return false;
-      }
-      ({ index, parent } = buffer);
-    } else {
-      ({ index, _parent: parent } = this._tree);
-    }
-    for (; parent; { index, _parent: parent } = parent) {
-      if (index > -1)
-        for (let i = index + dir, e = dir < 0 ? -1 : parent._tree.children.length; i != e; i += dir) {
-          let child = parent._tree.children[i];
-          if (this.mode & IterMode10.IncludeAnonymous || child instanceof TreeBuffer10 || !child.type.isAnonymous || hasChild10(child))
-            return false;
-        }
-    }
-    return true;
-  }
-  move(dir, enter) {
-    if (enter && this.enterChild(
-      dir,
-      0,
-      4
-      /* Side.DontCare */
-    ))
-      return true;
-    for (; ; ) {
-      if (this.sibling(dir))
-        return true;
-      if (this.atLastNode(dir) || !this.parent())
-        return false;
-    }
-  }
-  /**
-  Move to the next node in a
-  [pre-order](https://en.wikipedia.org/wiki/Tree_traversal#Pre-order,_NLR)
-  traversal, going from a node to its first child or, if the
-  current node is empty or `enter` is false, its next sibling or
-  the next sibling of the first parent node that has one.
-  */
-  next(enter = true) {
-    return this.move(1, enter);
-  }
-  /**
-  Move to the next node in a last-to-first pre-order traversal. A
-  node is followed by its last child or, if it has none, its
-  previous sibling or the previous sibling of the first parent
-  node that has one.
-  */
-  prev(enter = true) {
-    return this.move(-1, enter);
-  }
-  /**
-  Move the cursor to the innermost node that covers `pos`. If
-  `side` is -1, it will enter nodes that end at `pos`. If it is 1,
-  it will enter nodes that start at `pos`.
-  */
-  moveTo(pos, side = 0) {
-    while (this.from == this.to || (side < 1 ? this.from >= pos : this.from > pos) || (side > -1 ? this.to <= pos : this.to < pos))
-      if (!this.parent())
-        break;
-    while (this.enterChild(1, pos, side)) {
-    }
-    return this;
-  }
-  /**
-  Get a [syntax node](#common.SyntaxNode) at the cursor's current
-  position.
-  */
-  get node() {
-    if (!this.buffer)
-      return this._tree;
-    let cache2 = this.bufferNode, result = null, depth = 0;
-    if (cache2 && cache2.context == this.buffer) {
-      scan: for (let index = this.index, d = this.stack.length; d >= 0; ) {
-        for (let c = cache2; c; c = c._parent)
-          if (c.index == index) {
-            if (index == this.index)
-              return c;
-            result = c;
-            depth = d + 1;
-            break scan;
-          }
-        index = this.stack[--d];
-      }
-    }
-    for (let i = depth; i < this.stack.length; i++)
-      result = new BufferNode10(this.buffer, result, this.stack[i]);
-    return this.bufferNode = new BufferNode10(this.buffer, result, this.index);
-  }
-  /**
-  Get the [tree](#common.Tree) that represents the current node, if
-  any. Will return null when the node is in a [tree
-  buffer](#common.TreeBuffer).
-  */
-  get tree() {
-    return this.buffer ? null : this._tree._tree;
-  }
-  /**
-  Iterate over the current node and all its descendants, calling
-  `enter` when entering a node and `leave`, if given, when leaving
-  one. When `enter` returns `false`, any children of that node are
-  skipped, and `leave` isn't called for it.
-  */
-  iterate(enter, leave) {
-    for (let depth = 0; ; ) {
-      let mustLeave = false;
-      if (this.type.isAnonymous || enter(this) !== false) {
-        if (this.firstChild()) {
-          depth++;
-          continue;
-        }
-        if (!this.type.isAnonymous)
-          mustLeave = true;
-      }
-      for (; ; ) {
-        if (mustLeave && leave)
-          leave(this);
-        mustLeave = this.type.isAnonymous;
-        if (!depth)
-          return;
-        if (this.nextSibling())
-          break;
-        this.parent();
-        depth--;
-        mustLeave = true;
-      }
-    }
-  }
-  /**
-  Test whether the current node matches a given context—a sequence
-  of direct parent node names. Empty strings in the context array
-  are treated as wildcards.
-  */
-  matchContext(context) {
-    if (!this.buffer)
-      return matchNodeContext10(this.node.parent, context);
-    let { buffer } = this.buffer, { types: types2 } = buffer.set;
-    for (let i = context.length - 1, d = this.stack.length - 1; i >= 0; d--) {
-      if (d < 0)
-        return matchNodeContext10(this._tree, context, i);
-      let type = types2[buffer.buffer[this.stack[d]]];
-      if (!type.isAnonymous) {
-        if (context[i] && context[i] != type.name)
-          return false;
-        i--;
-      }
-    }
-    return true;
-  }
-};
-function hasChild10(tree) {
-  return tree.children.some((ch) => ch instanceof TreeBuffer10 || !ch.type.isAnonymous || hasChild10(ch));
-}
-function buildTree10(data2) {
-  var _a7;
-  let { buffer, nodeSet, maxBufferLength = DefaultBufferLength10, reused = [], minRepeatType = nodeSet.types.length } = data2;
-  let cursor2 = Array.isArray(buffer) ? new FlatBufferCursor10(buffer, buffer.length) : buffer;
-  let types2 = nodeSet.types;
-  let contextHash = 0, lookAhead = 0;
-  function takeNode(parentStart, minPos, children2, positions2, inRepeat, depth) {
-    let { id: id3, start, end, size } = cursor2;
-    let lookAheadAtStart = lookAhead, contextAtStart = contextHash;
-    if (size < 0) {
-      cursor2.next();
-      if (size == -1) {
-        let node2 = reused[id3];
-        children2.push(node2);
-        positions2.push(start - parentStart);
-        return;
-      } else if (size == -3) {
-        contextHash = id3;
-        return;
-      } else if (size == -4) {
-        lookAhead = id3;
-        return;
-      } else {
-        throw new RangeError(`Unrecognized record size: ${size}`);
-      }
-    }
-    let type = types2[id3], node, buffer2;
-    let startPos = start - parentStart;
-    if (end - start <= maxBufferLength && (buffer2 = findBufferSize(cursor2.pos - minPos, inRepeat))) {
-      let data3 = new Uint16Array(buffer2.size - buffer2.skip);
-      let endPos = cursor2.pos - buffer2.size, index = data3.length;
-      while (cursor2.pos > endPos)
-        index = copyToBuffer(buffer2.start, data3, index);
-      node = new TreeBuffer10(data3, end - buffer2.start, nodeSet);
-      startPos = buffer2.start - parentStart;
-    } else {
-      let endPos = cursor2.pos - size;
-      cursor2.next();
-      let localChildren = [], localPositions = [];
-      let localInRepeat = id3 >= minRepeatType ? id3 : -1;
-      let lastGroup = 0, lastEnd = end;
-      while (cursor2.pos > endPos) {
-        if (localInRepeat >= 0 && cursor2.id == localInRepeat && cursor2.size >= 0) {
-          if (cursor2.end <= lastEnd - maxBufferLength) {
-            makeRepeatLeaf(localChildren, localPositions, start, lastGroup, cursor2.end, lastEnd, localInRepeat, lookAheadAtStart, contextAtStart);
-            lastGroup = localChildren.length;
-            lastEnd = cursor2.end;
-          }
-          cursor2.next();
-        } else if (depth > 2500) {
-          takeFlatNode(start, endPos, localChildren, localPositions);
-        } else {
-          takeNode(start, endPos, localChildren, localPositions, localInRepeat, depth + 1);
-        }
-      }
-      if (localInRepeat >= 0 && lastGroup > 0 && lastGroup < localChildren.length)
-        makeRepeatLeaf(localChildren, localPositions, start, lastGroup, start, lastEnd, localInRepeat, lookAheadAtStart, contextAtStart);
-      localChildren.reverse();
-      localPositions.reverse();
-      if (localInRepeat > -1 && lastGroup > 0) {
-        let make = makeBalanced(type, contextAtStart);
-        node = balanceRange10(type, localChildren, localPositions, 0, localChildren.length, 0, end - start, make, make);
-      } else {
-        node = makeTree(type, localChildren, localPositions, end - start, lookAheadAtStart - end, contextAtStart);
-      }
-    }
-    children2.push(node);
-    positions2.push(startPos);
-  }
-  function takeFlatNode(parentStart, minPos, children2, positions2) {
-    let nodes = [];
-    let nodeCount = 0, stopAt = -1;
-    while (cursor2.pos > minPos) {
-      let { id: id3, start, end, size } = cursor2;
-      if (size > 4) {
-        cursor2.next();
-      } else if (stopAt > -1 && start < stopAt) {
-        break;
-      } else {
-        if (stopAt < 0)
-          stopAt = end - maxBufferLength;
-        nodes.push(id3, start, end);
-        nodeCount++;
-        cursor2.next();
-      }
-    }
-    if (nodeCount) {
-      let buffer2 = new Uint16Array(nodeCount * 4);
-      let start = nodes[nodes.length - 2];
-      for (let i = nodes.length - 3, j = 0; i >= 0; i -= 3) {
-        buffer2[j++] = nodes[i];
-        buffer2[j++] = nodes[i + 1] - start;
-        buffer2[j++] = nodes[i + 2] - start;
-        buffer2[j++] = j;
-      }
-      children2.push(new TreeBuffer10(buffer2, nodes[2] - start, nodeSet));
-      positions2.push(start - parentStart);
-    }
-  }
-  function makeBalanced(type, contextHash2) {
-    return (children2, positions2, length2) => {
-      let lookAhead2 = 0, lastI = children2.length - 1, last, lookAheadProp;
-      if (lastI >= 0 && (last = children2[lastI]) instanceof Tree10) {
-        if (!lastI && last.type == type && last.length == length2)
-          return last;
-        if (lookAheadProp = last.prop(NodeProp10.lookAhead))
-          lookAhead2 = positions2[lastI] + last.length + lookAheadProp;
-      }
-      return makeTree(type, children2, positions2, length2, lookAhead2, contextHash2);
-    };
-  }
-  function makeRepeatLeaf(children2, positions2, base2, i, from, to, type, lookAhead2, contextHash2) {
-    let localChildren = [], localPositions = [];
-    while (children2.length > i) {
-      localChildren.push(children2.pop());
-      localPositions.push(positions2.pop() + base2 - from);
-    }
-    children2.push(makeTree(nodeSet.types[type], localChildren, localPositions, to - from, lookAhead2 - to, contextHash2));
-    positions2.push(from - base2);
-  }
-  function makeTree(type, children2, positions2, length2, lookAhead2, contextHash2, props) {
-    if (contextHash2) {
-      let pair4 = [NodeProp10.contextHash, contextHash2];
-      props = props ? [pair4].concat(props) : [pair4];
-    }
-    if (lookAhead2 > 25) {
-      let pair4 = [NodeProp10.lookAhead, lookAhead2];
-      props = props ? [pair4].concat(props) : [pair4];
-    }
-    return new Tree10(type, children2, positions2, length2, props);
-  }
-  function findBufferSize(maxSize, inRepeat) {
-    let fork = cursor2.fork();
-    let size = 0, start = 0, skip = 0, minStart = fork.end - maxBufferLength;
-    let result = { size: 0, start: 0, skip: 0 };
-    scan: for (let minPos = fork.pos - maxSize; fork.pos > minPos; ) {
-      let nodeSize11 = fork.size;
-      if (fork.id == inRepeat && nodeSize11 >= 0) {
-        result.size = size;
-        result.start = start;
-        result.skip = skip;
-        skip += 4;
-        size += 4;
-        fork.next();
-        continue;
-      }
-      let startPos = fork.pos - nodeSize11;
-      if (nodeSize11 < 0 || startPos < minPos || fork.start < minStart)
-        break;
-      let localSkipped = fork.id >= minRepeatType ? 4 : 0;
-      let nodeStart2 = fork.start;
-      fork.next();
-      while (fork.pos > startPos) {
-        if (fork.size < 0) {
-          if (fork.size == -3 || fork.size == -4)
-            localSkipped += 4;
-          else
-            break scan;
-        } else if (fork.id >= minRepeatType) {
-          localSkipped += 4;
-        }
-        fork.next();
-      }
-      start = nodeStart2;
-      size += nodeSize11;
-      skip += localSkipped;
-    }
-    if (inRepeat < 0 || size == maxSize) {
-      result.size = size;
-      result.start = start;
-      result.skip = skip;
-    }
-    return result.size > 4 ? result : void 0;
-  }
-  function copyToBuffer(bufferStart, buffer2, index) {
-    let { id: id3, start, end, size } = cursor2;
-    cursor2.next();
-    if (size >= 0 && id3 < minRepeatType) {
-      let startIndex = index;
-      if (size > 4) {
-        let endPos = cursor2.pos - (size - 4);
-        while (cursor2.pos > endPos)
-          index = copyToBuffer(bufferStart, buffer2, index);
-      }
-      buffer2[--index] = startIndex;
-      buffer2[--index] = end - bufferStart;
-      buffer2[--index] = start - bufferStart;
-      buffer2[--index] = id3;
-    } else if (size == -3) {
-      contextHash = id3;
-    } else if (size == -4) {
-      lookAhead = id3;
-    }
-    return index;
-  }
-  let children = [], positions = [];
-  while (cursor2.pos > 0)
-    takeNode(data2.start || 0, data2.bufferStart || 0, children, positions, -1, 0);
-  let length = (_a7 = data2.length) !== null && _a7 !== void 0 ? _a7 : children.length ? positions[0] + children[0].length : 0;
-  return new Tree10(types2[data2.topID], children.reverse(), positions.reverse(), length);
-}
-var nodeSizeCache10 = /* @__PURE__ */ new WeakMap();
-function nodeSize10(balanceType, node) {
-  if (!balanceType.isAnonymous || node instanceof TreeBuffer10 || node.type != balanceType)
-    return 1;
-  let size = nodeSizeCache10.get(node);
-  if (size == null) {
-    size = 1;
-    for (let child of node.children) {
-      if (child.type != balanceType || !(child instanceof Tree10)) {
-        size = 1;
-        break;
-      }
-      size += nodeSize10(balanceType, child);
-    }
-    nodeSizeCache10.set(node, size);
-  }
-  return size;
-}
-function balanceRange10(balanceType, children, positions, from, to, start, length, mkTop, mkTree) {
-  let total = 0;
-  for (let i = from; i < to; i++)
-    total += nodeSize10(balanceType, children[i]);
-  let maxChild = Math.ceil(
-    total * 1.5 / 8
-    /* Balance.BranchFactor */
-  );
-  let localChildren = [], localPositions = [];
-  function divide(children2, positions2, from2, to2, offset) {
-    for (let i = from2; i < to2; ) {
-      let groupFrom = i, groupStart = positions2[i], groupSize = nodeSize10(balanceType, children2[i]);
-      i++;
-      for (; i < to2; i++) {
-        let nextSize = nodeSize10(balanceType, children2[i]);
-        if (groupSize + nextSize >= maxChild)
-          break;
-        groupSize += nextSize;
-      }
-      if (i == groupFrom + 1) {
-        if (groupSize > maxChild) {
-          let only = children2[groupFrom];
-          divide(only.children, only.positions, 0, only.children.length, positions2[groupFrom] + offset);
-          continue;
-        }
-        localChildren.push(children2[groupFrom]);
-      } else {
-        let length2 = positions2[i - 1] + children2[i - 1].length - groupStart;
-        localChildren.push(balanceRange10(balanceType, children2, positions2, groupFrom, i, groupStart, length2, null, mkTree));
-      }
-      localPositions.push(groupStart + offset - start);
-    }
-  }
-  divide(children, positions, from, to, 0);
-  return (mkTop || mkTree)(localChildren, localPositions, length);
-}
-var TreeFragment8 = class _TreeFragment {
-  /**
-  Construct a tree fragment. You'll usually want to use
-  [`addTree`](#common.TreeFragment^addTree) and
-  [`applyChanges`](#common.TreeFragment^applyChanges) instead of
-  calling this directly.
-  */
-  constructor(from, to, tree, offset, openStart = false, openEnd = false) {
-    this.from = from;
-    this.to = to;
-    this.tree = tree;
-    this.offset = offset;
-    this.open = (openStart ? 1 : 0) | (openEnd ? 2 : 0);
-  }
-  /**
-  Whether the start of the fragment represents the start of a
-  parse, or the end of a change. (In the second case, it may not
-  be safe to reuse some nodes at the start, depending on the
-  parsing algorithm.)
-  */
-  get openStart() {
-    return (this.open & 1) > 0;
-  }
-  /**
-  Whether the end of the fragment represents the end of a
-  full-document parse, or the start of a change.
-  */
-  get openEnd() {
-    return (this.open & 2) > 0;
-  }
-  /**
-  Create a set of fragments from a freshly parsed tree, or update
-  an existing set of fragments by replacing the ones that overlap
-  with a tree with content from the new tree. When `partial` is
-  true, the parse is treated as incomplete, and the resulting
-  fragment has [`openEnd`](#common.TreeFragment.openEnd) set to
-  true.
-  */
-  static addTree(tree, fragments = [], partial = false) {
-    let result = [new _TreeFragment(0, tree.length, tree, 0, false, partial)];
-    for (let f of fragments)
-      if (f.to > tree.length)
-        result.push(f);
-    return result;
-  }
-  /**
-  Apply a set of edits to an array of fragments, removing or
-  splitting fragments as necessary to remove edited ranges, and
-  adjusting offsets for fragments that moved.
-  */
-  static applyChanges(fragments, changes, minGap = 128) {
-    if (!changes.length)
-      return fragments;
-    let result = [];
-    let fI = 1, nextF = fragments.length ? fragments[0] : null;
-    for (let cI = 0, pos = 0, off = 0; ; cI++) {
-      let nextC = cI < changes.length ? changes[cI] : null;
-      let nextPos = nextC ? nextC.fromA : 1e9;
-      if (nextPos - pos >= minGap)
-        while (nextF && nextF.from < nextPos) {
-          let cut = nextF;
-          if (pos >= cut.from || nextPos <= cut.to || off) {
-            let fFrom = Math.max(cut.from, pos) - off, fTo = Math.min(cut.to, nextPos) - off;
-            cut = fFrom >= fTo ? null : new _TreeFragment(fFrom, fTo, cut.tree, cut.offset + off, cI > 0, !!nextC);
-          }
-          if (cut)
-            result.push(cut);
-          if (nextF.to > nextPos)
-            break;
-          nextF = fI < fragments.length ? fragments[fI++] : null;
-        }
-      if (!nextC)
-        break;
-      pos = nextC.toA;
-      off = nextC.toA - nextC.toB;
-    }
-    return result;
-  }
-};
-var Parser10 = class {
-  /**
-  Start a parse, returning a [partial parse](#common.PartialParse)
-  object. [`fragments`](#common.TreeFragment) can be passed in to
-  make the parse incremental.
-  
-  By default, the entire input is parsed. You can pass `ranges`,
-  which should be a sorted array of non-empty, non-overlapping
-  ranges, to parse only those ranges. The tree returned in that
-  case will start at `ranges[0].from`.
-  */
-  startParse(input, fragments, ranges) {
-    if (typeof input == "string")
-      input = new StringInput10(input);
-    ranges = !ranges ? [new Range11(0, input.length)] : ranges.length ? ranges.map((r) => new Range11(r.from, r.to)) : [new Range11(0, 0)];
-    return this.createParse(input, fragments || [], ranges);
-  }
-  /**
-  Run a full parse, returning the resulting tree.
-  */
-  parse(input, fragments, ranges) {
-    let parse = this.startParse(input, fragments, ranges);
-    for (; ; ) {
-      let done = parse.advance();
-      if (done)
-        return done;
-    }
-  }
-};
-var StringInput10 = class {
-  constructor(string11) {
-    this.string = string11;
-  }
-  get length() {
-    return this.string.length;
-  }
-  chunk(from) {
-    return this.string.slice(from);
-  }
-  get lineChunks() {
-    return false;
-  }
-  read(from, to) {
-    return this.string.slice(from, to);
-  }
-};
-var stoppedInner10 = new NodeProp10({ perNode: true });
-
 // node_modules/@codemirror/theme-one-dark/node_modules/@lezer/highlight/dist/index.js
-var nextTagID10 = 0;
-var Tag10 = class _Tag {
+var nextTagID6 = 0;
+var Tag6 = class _Tag {
   /**
   @internal
   */
-  constructor(name11, set, base2, modified) {
-    this.name = name11;
+  constructor(name7, set, base2, modified) {
+    this.name = name7;
     this.set = set;
     this.base = base2;
     this.modified = modified;
-    this.id = nextTagID10++;
+    this.id = nextTagID6++;
   }
   toString() {
-    let { name: name11 } = this;
+    let { name: name7 } = this;
     for (let mod of this.modified)
       if (mod.name)
-        name11 = `${mod.name}(${name11})`;
-    return name11;
+        name7 = `${mod.name}(${name7})`;
+    return name7;
   }
   static define(nameOrParent, parent) {
-    let name11 = typeof nameOrParent == "string" ? nameOrParent : "?";
+    let name7 = typeof nameOrParent == "string" ? nameOrParent : "?";
     if (nameOrParent instanceof _Tag)
       parent = nameOrParent;
     if (parent === null || parent === void 0 ? void 0 : parent.base)
       throw new Error("Can not derive from a modified tag");
-    let tag = new _Tag(name11, [], null, []);
+    let tag = new _Tag(name7, [], null, []);
     tag.set.push(tag);
     if (parent)
-      for (let t11 of parent.set)
-        tag.set.push(t11);
+      for (let t7 of parent.set)
+        tag.set.push(t7);
     return tag;
   }
   /**
@@ -56492,32 +36439,32 @@ var Tag10 = class _Tag {
   example `m1(m2(m3(t1)))` is a subtype of `m1(m2(t1))`,
   `m1(m3(t1)`, and so on.
   */
-  static defineModifier(name11) {
-    let mod = new Modifier10(name11);
+  static defineModifier(name7) {
+    let mod = new Modifier6(name7);
     return (tag) => {
       if (tag.modified.indexOf(mod) > -1)
         return tag;
-      return Modifier10.get(tag.base || tag, tag.modified.concat(mod).sort((a, b) => a.id - b.id));
+      return Modifier6.get(tag.base || tag, tag.modified.concat(mod).sort((a, b) => a.id - b.id));
     };
   }
 };
-var nextModifierID10 = 0;
-var Modifier10 = class _Modifier {
-  constructor(name11) {
-    this.name = name11;
+var nextModifierID6 = 0;
+var Modifier6 = class _Modifier {
+  constructor(name7) {
+    this.name = name7;
     this.instances = [];
-    this.id = nextModifierID10++;
+    this.id = nextModifierID6++;
   }
   static get(base2, mods) {
     if (!mods.length)
       return base2;
-    let exists = mods[0].instances.find((t11) => t11.base == base2 && sameArray11(mods, t11.modified));
+    let exists = mods[0].instances.find((t7) => t7.base == base2 && sameArray7(mods, t7.modified));
     if (exists)
       return exists;
-    let set = [], tag = new Tag10(base2.name, set, base2, mods);
+    let set = [], tag = new Tag6(base2.name, set, base2, mods);
     for (let m of mods)
       m.instances.push(tag);
-    let configs = powerSet10(mods);
+    let configs = powerSet6(mods);
     for (let parent of base2.set)
       if (!parent.modified.length)
         for (let config2 of configs)
@@ -56525,10 +36472,10 @@ var Modifier10 = class _Modifier {
     return tag;
   }
 };
-function sameArray11(a, b) {
+function sameArray7(a, b) {
   return a.length == b.length && a.every((x, i) => x == b[i]);
 }
-function powerSet10(array) {
+function powerSet6(array) {
   let sets = [[]];
   for (let i = 0; i < array.length; i++) {
     for (let j = 0, e = sets.length; j < e; j++) {
@@ -56537,46 +36484,7 @@ function powerSet10(array) {
   }
   return sets.sort((a, b) => b.length - a.length);
 }
-function styleTags10(spec) {
-  let byName = /* @__PURE__ */ Object.create(null);
-  for (let prop in spec) {
-    let tags12 = spec[prop];
-    if (!Array.isArray(tags12))
-      tags12 = [tags12];
-    for (let part of prop.split(" "))
-      if (part) {
-        let pieces = [], mode = 2, rest = part;
-        for (let pos = 0; ; ) {
-          if (rest == "..." && pos > 0 && pos + 3 == part.length) {
-            mode = 1;
-            break;
-          }
-          let m = /^"(?:[^"\\]|\\.)*?"|[^\/!]+/.exec(rest);
-          if (!m)
-            throw new RangeError("Invalid path: " + part);
-          pieces.push(m[0] == "*" ? "" : m[0][0] == '"' ? JSON.parse(m[0]) : m[0]);
-          pos += m[0].length;
-          if (pos == part.length)
-            break;
-          let next = part[pos++];
-          if (pos == part.length && next == "!") {
-            mode = 0;
-            break;
-          }
-          if (next != "/")
-            throw new RangeError("Invalid path: " + part);
-          rest = part.slice(pos);
-        }
-        let last = pieces.length - 1, inner = pieces[last];
-        if (!inner)
-          throw new RangeError("Invalid path: " + part);
-        let rule = new Rule10(tags12, mode, last > 0 ? pieces.slice(0, last) : null);
-        byName[inner] = rule.sort(byName[inner]);
-      }
-  }
-  return ruleNodeProp10.add(byName);
-}
-var ruleNodeProp10 = new NodeProp10({
+var ruleNodeProp6 = new NodeProp({
   combine(a, b) {
     let cur2, root, take;
     while (a || b) {
@@ -56589,7 +36497,7 @@ var ruleNodeProp10 = new NodeProp10({
       }
       if (cur2 && cur2.mode == take.mode && !take.context && !cur2.context)
         continue;
-      let copy = new Rule10(take.tags, take.mode, take.context);
+      let copy = new Rule6(take.tags, take.mode, take.context);
       if (cur2)
         cur2.next = copy;
       else
@@ -56599,9 +36507,9 @@ var ruleNodeProp10 = new NodeProp10({
     return root;
   }
 });
-var Rule10 = class {
-  constructor(tags12, mode, context, next) {
-    this.tags = tags12;
+var Rule6 = class {
+  constructor(tags8, mode, context, next) {
+    this.tags = tags8;
     this.mode = mode;
     this.context = context;
     this.next = next;
@@ -56624,10 +36532,10 @@ var Rule10 = class {
     return this.context ? this.context.length : 0;
   }
 };
-Rule10.empty = new Rule10([], 2, null);
-function tagHighlighter10(tags12, options) {
+Rule6.empty = new Rule6([], 2, null);
+function tagHighlighter6(tags8, options) {
   let map = /* @__PURE__ */ Object.create(null);
-  for (let style of tags12) {
+  for (let style of tags8) {
     if (!Array.isArray(style.tag))
       map[style.tag.id] = style.class;
     else
@@ -56636,9 +36544,9 @@ function tagHighlighter10(tags12, options) {
   }
   let { scope, all = null } = options || {};
   return {
-    style: (tags13) => {
+    style: (tags9) => {
       let cls = all;
-      for (let tag of tags13) {
+      for (let tag of tags9) {
         for (let sub of tag.set) {
           let tagClass = map[sub.id];
           if (tagClass) {
@@ -56652,477 +36560,377 @@ function tagHighlighter10(tags12, options) {
     scope
   };
 }
-function highlightTags2(highlighters, tags12) {
-  let result = null;
-  for (let highlighter of highlighters) {
-    let value = highlighter.style(tags12);
-    if (value)
-      result = result ? result + " " + value : value;
-  }
-  return result;
-}
-function highlightTree6(tree, highlighter, putStyle, from = 0, to = tree.length) {
-  let builder = new HighlightBuilder2(from, Array.isArray(highlighter) ? highlighter : [highlighter], putStyle);
-  builder.highlightRange(tree.cursor(), from, to, "", builder.highlighters);
-  builder.flush(to);
-}
-var HighlightBuilder2 = class {
-  constructor(at, highlighters, span) {
-    this.at = at;
-    this.highlighters = highlighters;
-    this.span = span;
-    this.class = "";
-  }
-  startSpan(at, cls) {
-    if (cls != this.class) {
-      this.flush(at);
-      if (at > this.at)
-        this.at = at;
-      this.class = cls;
-    }
-  }
-  flush(to) {
-    if (to > this.at && this.class)
-      this.span(this.at, to, this.class);
-  }
-  highlightRange(cursor2, from, to, inheritedClass, highlighters) {
-    let { type, from: start, to: end } = cursor2;
-    if (start >= to || end <= from)
-      return;
-    if (type.isTop)
-      highlighters = this.highlighters.filter((h) => !h.scope || h.scope(type));
-    let cls = inheritedClass;
-    let rule = getStyleTags2(cursor2) || Rule10.empty;
-    let tagCls = highlightTags2(highlighters, rule.tags);
-    if (tagCls) {
-      if (cls)
-        cls += " ";
-      cls += tagCls;
-      if (rule.mode == 1)
-        inheritedClass += (inheritedClass ? " " : "") + tagCls;
-    }
-    this.startSpan(Math.max(from, start), cls);
-    if (rule.opaque)
-      return;
-    let mounted = cursor2.tree && cursor2.tree.prop(NodeProp10.mounted);
-    if (mounted && mounted.overlay) {
-      let inner = cursor2.node.enter(mounted.overlay[0].from + start, 1);
-      let innerHighlighters = this.highlighters.filter((h) => !h.scope || h.scope(mounted.tree.type));
-      let hasChild11 = cursor2.firstChild();
-      for (let i = 0, pos = start; ; i++) {
-        let next = i < mounted.overlay.length ? mounted.overlay[i] : null;
-        let nextPos = next ? next.from + start : end;
-        let rangeFrom2 = Math.max(from, pos), rangeTo2 = Math.min(to, nextPos);
-        if (rangeFrom2 < rangeTo2 && hasChild11) {
-          while (cursor2.from < rangeTo2) {
-            this.highlightRange(cursor2, rangeFrom2, rangeTo2, inheritedClass, highlighters);
-            this.startSpan(Math.min(rangeTo2, cursor2.to), cls);
-            if (cursor2.to >= nextPos || !cursor2.nextSibling())
-              break;
-          }
-        }
-        if (!next || nextPos > to)
-          break;
-        pos = next.to + start;
-        if (pos > from) {
-          this.highlightRange(inner.cursor(), Math.max(from, next.from + start), Math.min(to, pos), "", innerHighlighters);
-          this.startSpan(Math.min(to, pos), cls);
-        }
-      }
-      if (hasChild11)
-        cursor2.parent();
-    } else if (cursor2.firstChild()) {
-      if (mounted)
-        inheritedClass = "";
-      do {
-        if (cursor2.to <= from)
-          continue;
-        if (cursor2.from >= to)
-          break;
-        this.highlightRange(cursor2, from, to, inheritedClass, highlighters);
-        this.startSpan(Math.min(to, cursor2.to), cls);
-      } while (cursor2.nextSibling());
-      cursor2.parent();
-    }
-  }
-};
-function getStyleTags2(node) {
-  let rule = node.type.prop(ruleNodeProp10);
-  while (rule && rule.context && !node.matchContext(rule.context))
-    rule = rule.next;
-  return rule || null;
-}
-var t10 = Tag10.define;
-var comment10 = t10();
-var name10 = t10();
-var typeName10 = t10(name10);
-var propertyName10 = t10(name10);
-var literal10 = t10();
-var string10 = t10(literal10);
-var number10 = t10(literal10);
-var content10 = t10();
-var heading10 = t10(content10);
-var keyword10 = t10();
-var operator10 = t10();
-var punctuation10 = t10();
-var bracket10 = t10(punctuation10);
-var meta10 = t10();
-var tags11 = {
+var t6 = Tag6.define;
+var comment6 = t6();
+var name6 = t6();
+var typeName6 = t6(name6);
+var propertyName6 = t6(name6);
+var literal6 = t6();
+var string6 = t6(literal6);
+var number6 = t6(literal6);
+var content6 = t6();
+var heading6 = t6(content6);
+var keyword6 = t6();
+var operator6 = t6();
+var punctuation6 = t6();
+var bracket6 = t6(punctuation6);
+var meta6 = t6();
+var tags7 = {
   /**
   A comment.
   */
-  comment: comment10,
+  comment: comment6,
   /**
   A line [comment](#highlight.tags.comment).
   */
-  lineComment: t10(comment10),
+  lineComment: t6(comment6),
   /**
   A block [comment](#highlight.tags.comment).
   */
-  blockComment: t10(comment10),
+  blockComment: t6(comment6),
   /**
   A documentation [comment](#highlight.tags.comment).
   */
-  docComment: t10(comment10),
+  docComment: t6(comment6),
   /**
   Any kind of identifier.
   */
-  name: name10,
+  name: name6,
   /**
   The [name](#highlight.tags.name) of a variable.
   */
-  variableName: t10(name10),
+  variableName: t6(name6),
   /**
   A type [name](#highlight.tags.name).
   */
-  typeName: typeName10,
+  typeName: typeName6,
   /**
   A tag name (subtag of [`typeName`](#highlight.tags.typeName)).
   */
-  tagName: t10(typeName10),
+  tagName: t6(typeName6),
   /**
   A property or field [name](#highlight.tags.name).
   */
-  propertyName: propertyName10,
+  propertyName: propertyName6,
   /**
   An attribute name (subtag of [`propertyName`](#highlight.tags.propertyName)).
   */
-  attributeName: t10(propertyName10),
+  attributeName: t6(propertyName6),
   /**
   The [name](#highlight.tags.name) of a class.
   */
-  className: t10(name10),
+  className: t6(name6),
   /**
   A label [name](#highlight.tags.name).
   */
-  labelName: t10(name10),
+  labelName: t6(name6),
   /**
   A namespace [name](#highlight.tags.name).
   */
-  namespace: t10(name10),
+  namespace: t6(name6),
   /**
   The [name](#highlight.tags.name) of a macro.
   */
-  macroName: t10(name10),
+  macroName: t6(name6),
   /**
   A literal value.
   */
-  literal: literal10,
+  literal: literal6,
   /**
   A string [literal](#highlight.tags.literal).
   */
-  string: string10,
+  string: string6,
   /**
   A documentation [string](#highlight.tags.string).
   */
-  docString: t10(string10),
+  docString: t6(string6),
   /**
   A character literal (subtag of [string](#highlight.tags.string)).
   */
-  character: t10(string10),
+  character: t6(string6),
   /**
   An attribute value (subtag of [string](#highlight.tags.string)).
   */
-  attributeValue: t10(string10),
+  attributeValue: t6(string6),
   /**
   A number [literal](#highlight.tags.literal).
   */
-  number: number10,
+  number: number6,
   /**
   An integer [number](#highlight.tags.number) literal.
   */
-  integer: t10(number10),
+  integer: t6(number6),
   /**
   A floating-point [number](#highlight.tags.number) literal.
   */
-  float: t10(number10),
+  float: t6(number6),
   /**
   A boolean [literal](#highlight.tags.literal).
   */
-  bool: t10(literal10),
+  bool: t6(literal6),
   /**
   Regular expression [literal](#highlight.tags.literal).
   */
-  regexp: t10(literal10),
+  regexp: t6(literal6),
   /**
   An escape [literal](#highlight.tags.literal), for example a
   backslash escape in a string.
   */
-  escape: t10(literal10),
+  escape: t6(literal6),
   /**
   A color [literal](#highlight.tags.literal).
   */
-  color: t10(literal10),
+  color: t6(literal6),
   /**
   A URL [literal](#highlight.tags.literal).
   */
-  url: t10(literal10),
+  url: t6(literal6),
   /**
   A language keyword.
   */
-  keyword: keyword10,
+  keyword: keyword6,
   /**
   The [keyword](#highlight.tags.keyword) for the self or this
   object.
   */
-  self: t10(keyword10),
+  self: t6(keyword6),
   /**
   The [keyword](#highlight.tags.keyword) for null.
   */
-  null: t10(keyword10),
+  null: t6(keyword6),
   /**
   A [keyword](#highlight.tags.keyword) denoting some atomic value.
   */
-  atom: t10(keyword10),
+  atom: t6(keyword6),
   /**
   A [keyword](#highlight.tags.keyword) that represents a unit.
   */
-  unit: t10(keyword10),
+  unit: t6(keyword6),
   /**
   A modifier [keyword](#highlight.tags.keyword).
   */
-  modifier: t10(keyword10),
+  modifier: t6(keyword6),
   /**
   A [keyword](#highlight.tags.keyword) that acts as an operator.
   */
-  operatorKeyword: t10(keyword10),
+  operatorKeyword: t6(keyword6),
   /**
   A control-flow related [keyword](#highlight.tags.keyword).
   */
-  controlKeyword: t10(keyword10),
+  controlKeyword: t6(keyword6),
   /**
   A [keyword](#highlight.tags.keyword) that defines something.
   */
-  definitionKeyword: t10(keyword10),
+  definitionKeyword: t6(keyword6),
   /**
   A [keyword](#highlight.tags.keyword) related to defining or
   interfacing with modules.
   */
-  moduleKeyword: t10(keyword10),
+  moduleKeyword: t6(keyword6),
   /**
   An operator.
   */
-  operator: operator10,
+  operator: operator6,
   /**
   An [operator](#highlight.tags.operator) that dereferences something.
   */
-  derefOperator: t10(operator10),
+  derefOperator: t6(operator6),
   /**
   Arithmetic-related [operator](#highlight.tags.operator).
   */
-  arithmeticOperator: t10(operator10),
+  arithmeticOperator: t6(operator6),
   /**
   Logical [operator](#highlight.tags.operator).
   */
-  logicOperator: t10(operator10),
+  logicOperator: t6(operator6),
   /**
   Bit [operator](#highlight.tags.operator).
   */
-  bitwiseOperator: t10(operator10),
+  bitwiseOperator: t6(operator6),
   /**
   Comparison [operator](#highlight.tags.operator).
   */
-  compareOperator: t10(operator10),
+  compareOperator: t6(operator6),
   /**
   [Operator](#highlight.tags.operator) that updates its operand.
   */
-  updateOperator: t10(operator10),
+  updateOperator: t6(operator6),
   /**
   [Operator](#highlight.tags.operator) that defines something.
   */
-  definitionOperator: t10(operator10),
+  definitionOperator: t6(operator6),
   /**
   Type-related [operator](#highlight.tags.operator).
   */
-  typeOperator: t10(operator10),
+  typeOperator: t6(operator6),
   /**
   Control-flow [operator](#highlight.tags.operator).
   */
-  controlOperator: t10(operator10),
+  controlOperator: t6(operator6),
   /**
   Program or markup punctuation.
   */
-  punctuation: punctuation10,
+  punctuation: punctuation6,
   /**
   [Punctuation](#highlight.tags.punctuation) that separates
   things.
   */
-  separator: t10(punctuation10),
+  separator: t6(punctuation6),
   /**
   Bracket-style [punctuation](#highlight.tags.punctuation).
   */
-  bracket: bracket10,
+  bracket: bracket6,
   /**
   Angle [brackets](#highlight.tags.bracket) (usually `<` and `>`
   tokens).
   */
-  angleBracket: t10(bracket10),
+  angleBracket: t6(bracket6),
   /**
   Square [brackets](#highlight.tags.bracket) (usually `[` and `]`
   tokens).
   */
-  squareBracket: t10(bracket10),
+  squareBracket: t6(bracket6),
   /**
   Parentheses (usually `(` and `)` tokens). Subtag of
   [bracket](#highlight.tags.bracket).
   */
-  paren: t10(bracket10),
+  paren: t6(bracket6),
   /**
   Braces (usually `{` and `}` tokens). Subtag of
   [bracket](#highlight.tags.bracket).
   */
-  brace: t10(bracket10),
+  brace: t6(bracket6),
   /**
   Content, for example plain text in XML or markup documents.
   */
-  content: content10,
+  content: content6,
   /**
   [Content](#highlight.tags.content) that represents a heading.
   */
-  heading: heading10,
+  heading: heading6,
   /**
   A level 1 [heading](#highlight.tags.heading).
   */
-  heading1: t10(heading10),
+  heading1: t6(heading6),
   /**
   A level 2 [heading](#highlight.tags.heading).
   */
-  heading2: t10(heading10),
+  heading2: t6(heading6),
   /**
   A level 3 [heading](#highlight.tags.heading).
   */
-  heading3: t10(heading10),
+  heading3: t6(heading6),
   /**
   A level 4 [heading](#highlight.tags.heading).
   */
-  heading4: t10(heading10),
+  heading4: t6(heading6),
   /**
   A level 5 [heading](#highlight.tags.heading).
   */
-  heading5: t10(heading10),
+  heading5: t6(heading6),
   /**
   A level 6 [heading](#highlight.tags.heading).
   */
-  heading6: t10(heading10),
+  heading6: t6(heading6),
   /**
   A prose [content](#highlight.tags.content) separator (such as a horizontal rule).
   */
-  contentSeparator: t10(content10),
+  contentSeparator: t6(content6),
   /**
   [Content](#highlight.tags.content) that represents a list.
   */
-  list: t10(content10),
+  list: t6(content6),
   /**
   [Content](#highlight.tags.content) that represents a quote.
   */
-  quote: t10(content10),
+  quote: t6(content6),
   /**
   [Content](#highlight.tags.content) that is emphasized.
   */
-  emphasis: t10(content10),
+  emphasis: t6(content6),
   /**
   [Content](#highlight.tags.content) that is styled strong.
   */
-  strong: t10(content10),
+  strong: t6(content6),
   /**
   [Content](#highlight.tags.content) that is part of a link.
   */
-  link: t10(content10),
+  link: t6(content6),
   /**
   [Content](#highlight.tags.content) that is styled as code or
   monospace.
   */
-  monospace: t10(content10),
+  monospace: t6(content6),
   /**
   [Content](#highlight.tags.content) that has a strike-through
   style.
   */
-  strikethrough: t10(content10),
+  strikethrough: t6(content6),
   /**
   Inserted text in a change-tracking format.
   */
-  inserted: t10(),
+  inserted: t6(),
   /**
   Deleted text.
   */
-  deleted: t10(),
+  deleted: t6(),
   /**
   Changed text.
   */
-  changed: t10(),
+  changed: t6(),
   /**
   An invalid or unsyntactic element.
   */
-  invalid: t10(),
+  invalid: t6(),
   /**
   Metadata or meta-instruction.
   */
-  meta: meta10,
+  meta: meta6,
   /**
   [Metadata](#highlight.tags.meta) that applies to the entire
   document.
   */
-  documentMeta: t10(meta10),
+  documentMeta: t6(meta6),
   /**
   [Metadata](#highlight.tags.meta) that annotates or adds
   attributes to a given syntactic element.
   */
-  annotation: t10(meta10),
+  annotation: t6(meta6),
   /**
   Processing instruction or preprocessor directive. Subtag of
   [meta](#highlight.tags.meta).
   */
-  processingInstruction: t10(meta10),
+  processingInstruction: t6(meta6),
   /**
   [Modifier](#highlight.Tag^defineModifier) that indicates that a
   given element is being defined. Expected to be used with the
   various [name](#highlight.tags.name) tags.
   */
-  definition: Tag10.defineModifier("definition"),
+  definition: Tag6.defineModifier("definition"),
   /**
   [Modifier](#highlight.Tag^defineModifier) that indicates that
   something is constant. Mostly expected to be used with
   [variable names](#highlight.tags.variableName).
   */
-  constant: Tag10.defineModifier("constant"),
+  constant: Tag6.defineModifier("constant"),
   /**
   [Modifier](#highlight.Tag^defineModifier) used to indicate that
   a [variable](#highlight.tags.variableName) or [property
   name](#highlight.tags.propertyName) is being called or defined
   as a function.
   */
-  function: Tag10.defineModifier("function"),
+  function: Tag6.defineModifier("function"),
   /**
   [Modifier](#highlight.Tag^defineModifier) that can be applied to
   [names](#highlight.tags.name) to indicate that they belong to
   the language's standard environment.
   */
-  standard: Tag10.defineModifier("standard"),
+  standard: Tag6.defineModifier("standard"),
   /**
   [Modifier](#highlight.Tag^defineModifier) that indicates a given
   [names](#highlight.tags.name) is local to some scope.
   */
-  local: Tag10.defineModifier("local"),
+  local: Tag6.defineModifier("local"),
   /**
   A generic variant [modifier](#highlight.Tag^defineModifier) that
   can be used to tag language-specific alternative variants of
@@ -57131,788 +36939,45 @@ var tags11 = {
   [variable name](#highlight.tags.variableName) tags, since those
   come up a lot.
   */
-  special: Tag10.defineModifier("special")
+  special: Tag6.defineModifier("special")
 };
-for (let name11 in tags11) {
-  let val = tags11[name11];
-  if (val instanceof Tag10)
-    val.name = name11;
+for (let name7 in tags7) {
+  let val = tags7[name7];
+  if (val instanceof Tag6)
+    val.name = name7;
 }
-var classHighlighter10 = tagHighlighter10([
-  { tag: tags11.link, class: "tok-link" },
-  { tag: tags11.heading, class: "tok-heading" },
-  { tag: tags11.emphasis, class: "tok-emphasis" },
-  { tag: tags11.strong, class: "tok-strong" },
-  { tag: tags11.keyword, class: "tok-keyword" },
-  { tag: tags11.atom, class: "tok-atom" },
-  { tag: tags11.bool, class: "tok-bool" },
-  { tag: tags11.url, class: "tok-url" },
-  { tag: tags11.labelName, class: "tok-labelName" },
-  { tag: tags11.inserted, class: "tok-inserted" },
-  { tag: tags11.deleted, class: "tok-deleted" },
-  { tag: tags11.literal, class: "tok-literal" },
-  { tag: tags11.string, class: "tok-string" },
-  { tag: tags11.number, class: "tok-number" },
-  { tag: [tags11.regexp, tags11.escape, tags11.special(tags11.string)], class: "tok-string2" },
-  { tag: tags11.variableName, class: "tok-variableName" },
-  { tag: tags11.local(tags11.variableName), class: "tok-variableName tok-local" },
-  { tag: tags11.definition(tags11.variableName), class: "tok-variableName tok-definition" },
-  { tag: tags11.special(tags11.variableName), class: "tok-variableName2" },
-  { tag: tags11.definition(tags11.propertyName), class: "tok-propertyName tok-definition" },
-  { tag: tags11.typeName, class: "tok-typeName" },
-  { tag: tags11.namespace, class: "tok-namespace" },
-  { tag: tags11.className, class: "tok-className" },
-  { tag: tags11.macroName, class: "tok-macroName" },
-  { tag: tags11.propertyName, class: "tok-propertyName" },
-  { tag: tags11.operator, class: "tok-operator" },
-  { tag: tags11.comment, class: "tok-comment" },
-  { tag: tags11.meta, class: "tok-meta" },
-  { tag: tags11.invalid, class: "tok-invalid" },
-  { tag: tags11.punctuation, class: "tok-punctuation" }
+var classHighlighter6 = tagHighlighter6([
+  { tag: tags7.link, class: "tok-link" },
+  { tag: tags7.heading, class: "tok-heading" },
+  { tag: tags7.emphasis, class: "tok-emphasis" },
+  { tag: tags7.strong, class: "tok-strong" },
+  { tag: tags7.keyword, class: "tok-keyword" },
+  { tag: tags7.atom, class: "tok-atom" },
+  { tag: tags7.bool, class: "tok-bool" },
+  { tag: tags7.url, class: "tok-url" },
+  { tag: tags7.labelName, class: "tok-labelName" },
+  { tag: tags7.inserted, class: "tok-inserted" },
+  { tag: tags7.deleted, class: "tok-deleted" },
+  { tag: tags7.literal, class: "tok-literal" },
+  { tag: tags7.string, class: "tok-string" },
+  { tag: tags7.number, class: "tok-number" },
+  { tag: [tags7.regexp, tags7.escape, tags7.special(tags7.string)], class: "tok-string2" },
+  { tag: tags7.variableName, class: "tok-variableName" },
+  { tag: tags7.local(tags7.variableName), class: "tok-variableName tok-local" },
+  { tag: tags7.definition(tags7.variableName), class: "tok-variableName tok-definition" },
+  { tag: tags7.special(tags7.variableName), class: "tok-variableName2" },
+  { tag: tags7.definition(tags7.propertyName), class: "tok-propertyName tok-definition" },
+  { tag: tags7.typeName, class: "tok-typeName" },
+  { tag: tags7.namespace, class: "tok-namespace" },
+  { tag: tags7.className, class: "tok-className" },
+  { tag: tags7.macroName, class: "tok-macroName" },
+  { tag: tags7.propertyName, class: "tok-propertyName" },
+  { tag: tags7.operator, class: "tok-operator" },
+  { tag: tags7.comment, class: "tok-comment" },
+  { tag: tags7.meta, class: "tok-meta" },
+  { tag: tags7.invalid, class: "tok-invalid" },
+  { tag: tags7.punctuation, class: "tok-punctuation" }
 ]);
-
-// node_modules/@codemirror/theme-one-dark/node_modules/@codemirror/language/dist/index.js
-var _a6;
-var languageDataProp6 = /* @__PURE__ */ new NodeProp10();
-var sublanguageProp6 = /* @__PURE__ */ new NodeProp10();
-var Language6 = class {
-  /**
-  Construct a language object. If you need to invoke this
-  directly, first define a data facet with
-  [`defineLanguageFacet`](https://codemirror.net/6/docs/ref/#language.defineLanguageFacet), and then
-  configure your parser to [attach](https://codemirror.net/6/docs/ref/#language.languageDataProp) it
-  to the language's outer syntax node.
-  */
-  constructor(data2, parser5, extraExtensions = [], name11 = "") {
-    this.data = data2;
-    this.name = name11;
-    if (!EditorState.prototype.hasOwnProperty("tree"))
-      Object.defineProperty(EditorState.prototype, "tree", { get() {
-        return syntaxTree6(this);
-      } });
-    this.parser = parser5;
-    this.extension = [
-      language6.of(this),
-      EditorState.languageData.of((state, pos, side) => {
-        let top2 = topNodeAt6(state, pos, side), data3 = top2.type.prop(languageDataProp6);
-        if (!data3)
-          return [];
-        let base2 = state.facet(data3), sub = top2.type.prop(sublanguageProp6);
-        if (sub) {
-          let innerNode = top2.resolve(pos - top2.from, side);
-          for (let sublang of sub)
-            if (sublang.test(innerNode, state)) {
-              let data4 = state.facet(sublang.facet);
-              return sublang.type == "replace" ? data4 : data4.concat(base2);
-            }
-        }
-        return base2;
-      })
-    ].concat(extraExtensions);
-  }
-  /**
-  Query whether this language is active at the given position.
-  */
-  isActiveAt(state, pos, side = -1) {
-    return topNodeAt6(state, pos, side).type.prop(languageDataProp6) == this.data;
-  }
-  /**
-  Find the document regions that were parsed using this language.
-  The returned regions will _include_ any nested languages rooted
-  in this language, when those exist.
-  */
-  findRegions(state) {
-    let lang = state.facet(language6);
-    if ((lang === null || lang === void 0 ? void 0 : lang.data) == this.data)
-      return [{ from: 0, to: state.doc.length }];
-    if (!lang || !lang.allowsNesting)
-      return [];
-    let result = [];
-    let explore = (tree, from) => {
-      if (tree.prop(languageDataProp6) == this.data) {
-        result.push({ from, to: from + tree.length });
-        return;
-      }
-      let mount = tree.prop(NodeProp10.mounted);
-      if (mount) {
-        if (mount.tree.prop(languageDataProp6) == this.data) {
-          if (mount.overlay)
-            for (let r of mount.overlay)
-              result.push({ from: r.from + from, to: r.to + from });
-          else
-            result.push({ from, to: from + tree.length });
-          return;
-        } else if (mount.overlay) {
-          let size = result.length;
-          explore(mount.tree, mount.overlay[0].from + from);
-          if (result.length > size)
-            return;
-        }
-      }
-      for (let i = 0; i < tree.children.length; i++) {
-        let ch = tree.children[i];
-        if (ch instanceof Tree10)
-          explore(ch, tree.positions[i] + from);
-      }
-    };
-    explore(syntaxTree6(state), 0);
-    return result;
-  }
-  /**
-  Indicates whether this language allows nested languages. The
-  default implementation returns true.
-  */
-  get allowsNesting() {
-    return true;
-  }
-};
-Language6.setState = /* @__PURE__ */ StateEffect.define();
-function topNodeAt6(state, pos, side) {
-  let topLang = state.facet(language6), tree = syntaxTree6(state).topNode;
-  if (!topLang || topLang.allowsNesting) {
-    for (let node = tree; node; node = node.enter(pos, side, IterMode10.ExcludeBuffers | IterMode10.EnterBracketed))
-      if (node.type.isTop)
-        tree = node;
-  }
-  return tree;
-}
-function syntaxTree6(state) {
-  let field = state.field(Language6.state, false);
-  return field ? field.tree : Tree10.empty;
-}
-var DocInput6 = class {
-  /**
-  Create an input object for the given document.
-  */
-  constructor(doc2) {
-    this.doc = doc2;
-    this.cursorPos = 0;
-    this.string = "";
-    this.cursor = doc2.iter();
-  }
-  get length() {
-    return this.doc.length;
-  }
-  syncTo(pos) {
-    this.string = this.cursor.next(pos - this.cursorPos).value;
-    this.cursorPos = pos + this.string.length;
-    return this.cursorPos - this.string.length;
-  }
-  chunk(pos) {
-    this.syncTo(pos);
-    return this.string;
-  }
-  get lineChunks() {
-    return true;
-  }
-  read(from, to) {
-    let stringStart = this.cursorPos - this.string.length;
-    if (from < stringStart || to >= this.cursorPos)
-      return this.doc.sliceString(from, to);
-    else
-      return this.string.slice(from - stringStart, to - stringStart);
-  }
-};
-var currentContext6 = null;
-var ParseContext6 = class _ParseContext {
-  constructor(parser5, state, fragments = [], tree, treeLen, viewport, skipped, scheduleOn) {
-    this.parser = parser5;
-    this.state = state;
-    this.fragments = fragments;
-    this.tree = tree;
-    this.treeLen = treeLen;
-    this.viewport = viewport;
-    this.skipped = skipped;
-    this.scheduleOn = scheduleOn;
-    this.parse = null;
-    this.tempSkipped = [];
-  }
-  /**
-  @internal
-  */
-  static create(parser5, state, viewport) {
-    return new _ParseContext(parser5, state, [], Tree10.empty, 0, viewport, [], null);
-  }
-  startParse() {
-    return this.parser.startParse(new DocInput6(this.state.doc), this.fragments);
-  }
-  /**
-  @internal
-  */
-  work(until, upto) {
-    if (upto != null && upto >= this.state.doc.length)
-      upto = void 0;
-    if (this.tree != Tree10.empty && this.isDone(upto !== null && upto !== void 0 ? upto : this.state.doc.length)) {
-      this.takeTree();
-      return true;
-    }
-    return this.withContext(() => {
-      var _a7;
-      if (typeof until == "number") {
-        let endTime = Date.now() + until;
-        until = () => Date.now() > endTime;
-      }
-      if (!this.parse)
-        this.parse = this.startParse();
-      if (upto != null && (this.parse.stoppedAt == null || this.parse.stoppedAt > upto) && upto < this.state.doc.length)
-        this.parse.stopAt(upto);
-      for (; ; ) {
-        let done = this.parse.advance();
-        if (done) {
-          this.fragments = this.withoutTempSkipped(TreeFragment8.addTree(done, this.fragments, this.parse.stoppedAt != null));
-          this.treeLen = (_a7 = this.parse.stoppedAt) !== null && _a7 !== void 0 ? _a7 : this.state.doc.length;
-          this.tree = done;
-          this.parse = null;
-          if (this.treeLen < (upto !== null && upto !== void 0 ? upto : this.state.doc.length))
-            this.parse = this.startParse();
-          else
-            return true;
-        }
-        if (until())
-          return false;
-      }
-    });
-  }
-  /**
-  @internal
-  */
-  takeTree() {
-    let pos, tree;
-    if (this.parse && (pos = this.parse.parsedPos) >= this.treeLen) {
-      if (this.parse.stoppedAt == null || this.parse.stoppedAt > pos)
-        this.parse.stopAt(pos);
-      this.withContext(() => {
-        while (!(tree = this.parse.advance())) {
-        }
-      });
-      this.treeLen = pos;
-      this.tree = tree;
-      this.fragments = this.withoutTempSkipped(TreeFragment8.addTree(this.tree, this.fragments, true));
-      this.parse = null;
-    }
-  }
-  withContext(f) {
-    let prev = currentContext6;
-    currentContext6 = this;
-    try {
-      return f();
-    } finally {
-      currentContext6 = prev;
-    }
-  }
-  withoutTempSkipped(fragments) {
-    for (let r; r = this.tempSkipped.pop(); )
-      fragments = cutFragments6(fragments, r.from, r.to);
-    return fragments;
-  }
-  /**
-  @internal
-  */
-  changes(changes, newState) {
-    let { fragments, tree, treeLen, viewport, skipped } = this;
-    this.takeTree();
-    if (!changes.empty) {
-      let ranges = [];
-      changes.iterChangedRanges((fromA, toA, fromB, toB) => ranges.push({ fromA, toA, fromB, toB }));
-      fragments = TreeFragment8.applyChanges(fragments, ranges);
-      tree = Tree10.empty;
-      treeLen = 0;
-      viewport = { from: changes.mapPos(viewport.from, -1), to: changes.mapPos(viewport.to, 1) };
-      if (this.skipped.length) {
-        skipped = [];
-        for (let r of this.skipped) {
-          let from = changes.mapPos(r.from, 1), to = changes.mapPos(r.to, -1);
-          if (from < to)
-            skipped.push({ from, to });
-        }
-      }
-    }
-    return new _ParseContext(this.parser, newState, fragments, tree, treeLen, viewport, skipped, this.scheduleOn);
-  }
-  /**
-  @internal
-  */
-  updateViewport(viewport) {
-    if (this.viewport.from == viewport.from && this.viewport.to == viewport.to)
-      return false;
-    this.viewport = viewport;
-    let startLen = this.skipped.length;
-    for (let i = 0; i < this.skipped.length; i++) {
-      let { from, to } = this.skipped[i];
-      if (from < viewport.to && to > viewport.from) {
-        this.fragments = cutFragments6(this.fragments, from, to);
-        this.skipped.splice(i--, 1);
-      }
-    }
-    if (this.skipped.length >= startLen)
-      return false;
-    this.reset();
-    return true;
-  }
-  /**
-  @internal
-  */
-  reset() {
-    if (this.parse) {
-      this.takeTree();
-      this.parse = null;
-    }
-  }
-  /**
-  Notify the parse scheduler that the given region was skipped
-  because it wasn't in view, and the parse should be restarted
-  when it comes into view.
-  */
-  skipUntilInView(from, to) {
-    this.skipped.push({ from, to });
-  }
-  /**
-  Returns a parser intended to be used as placeholder when
-  asynchronously loading a nested parser. It'll skip its input and
-  mark it as not-really-parsed, so that the next update will parse
-  it again.
-  
-  When `until` is given, a reparse will be scheduled when that
-  promise resolves.
-  */
-  static getSkippingParser(until) {
-    return new class extends Parser10 {
-      createParse(input, fragments, ranges) {
-        let from = ranges[0].from, to = ranges[ranges.length - 1].to;
-        let parser5 = {
-          parsedPos: from,
-          advance() {
-            let cx = currentContext6;
-            if (cx) {
-              for (let r of ranges)
-                cx.tempSkipped.push(r);
-              if (until)
-                cx.scheduleOn = cx.scheduleOn ? Promise.all([cx.scheduleOn, until]) : until;
-            }
-            this.parsedPos = to;
-            return new Tree10(NodeType10.none, [], [], to - from);
-          },
-          stoppedAt: null,
-          stopAt() {
-          }
-        };
-        return parser5;
-      }
-    }();
-  }
-  /**
-  @internal
-  */
-  isDone(upto) {
-    upto = Math.min(upto, this.state.doc.length);
-    let frags = this.fragments;
-    return this.treeLen >= upto && frags.length && frags[0].from == 0 && frags[0].to >= upto;
-  }
-  /**
-  Get the context for the current parse, or `null` if no editor
-  parse is in progress.
-  */
-  static get() {
-    return currentContext6;
-  }
-};
-function cutFragments6(fragments, from, to) {
-  return TreeFragment8.applyChanges(fragments, [{ fromA: from, toA: to, fromB: from, toB: to }]);
-}
-var LanguageState6 = class _LanguageState {
-  constructor(context) {
-    this.context = context;
-    this.tree = context.tree;
-  }
-  apply(tr) {
-    if (!tr.docChanged && this.tree == this.context.tree)
-      return this;
-    let newCx = this.context.changes(tr.changes, tr.state);
-    let upto = this.context.treeLen == tr.startState.doc.length ? void 0 : Math.max(tr.changes.mapPos(this.context.treeLen), newCx.viewport.to);
-    if (!newCx.work(20, upto))
-      newCx.takeTree();
-    return new _LanguageState(newCx);
-  }
-  static init(state) {
-    let vpTo = Math.min(3e3, state.doc.length);
-    let parseState = ParseContext6.create(state.facet(language6).parser, state, { from: 0, to: vpTo });
-    if (!parseState.work(20, vpTo))
-      parseState.takeTree();
-    return new _LanguageState(parseState);
-  }
-};
-Language6.state = /* @__PURE__ */ StateField.define({
-  create: LanguageState6.init,
-  update(value, tr) {
-    for (let e of tr.effects)
-      if (e.is(Language6.setState))
-        return e.value;
-    if (tr.startState.facet(language6) != tr.state.facet(language6))
-      return LanguageState6.init(tr.state);
-    return value.apply(tr);
-  }
-});
-var requestIdle6 = (callback) => {
-  let timeout = setTimeout(
-    () => callback(),
-    500
-    /* Work.MaxPause */
-  );
-  return () => clearTimeout(timeout);
-};
-if (typeof requestIdleCallback != "undefined")
-  requestIdle6 = (callback) => {
-    let idle = -1, timeout = setTimeout(
-      () => {
-        idle = requestIdleCallback(callback, {
-          timeout: 500 - 100
-          /* Work.MinPause */
-        });
-      },
-      100
-      /* Work.MinPause */
-    );
-    return () => idle < 0 ? clearTimeout(timeout) : cancelIdleCallback(idle);
-  };
-var isInputPending6 = typeof navigator != "undefined" && ((_a6 = navigator.scheduling) === null || _a6 === void 0 ? void 0 : _a6.isInputPending) ? () => navigator.scheduling.isInputPending() : null;
-var parseWorker6 = /* @__PURE__ */ ViewPlugin.fromClass(class ParseWorker6 {
-  constructor(view) {
-    this.view = view;
-    this.working = null;
-    this.workScheduled = 0;
-    this.chunkEnd = -1;
-    this.chunkBudget = -1;
-    this.work = this.work.bind(this);
-    this.scheduleWork();
-  }
-  update(update) {
-    let cx = this.view.state.field(Language6.state).context;
-    if (cx.updateViewport(update.view.viewport) || this.view.viewport.to > cx.treeLen)
-      this.scheduleWork();
-    if (update.docChanged || update.selectionSet) {
-      if (this.view.hasFocus)
-        this.chunkBudget += 50;
-      this.scheduleWork();
-    }
-    this.checkAsyncSchedule(cx);
-  }
-  scheduleWork() {
-    if (this.working)
-      return;
-    let { state } = this.view, field = state.field(Language6.state);
-    if (field.tree != field.context.tree || !field.context.isDone(state.doc.length))
-      this.working = requestIdle6(this.work);
-  }
-  work(deadline) {
-    this.working = null;
-    let now = Date.now();
-    if (this.chunkEnd < now && (this.chunkEnd < 0 || this.view.hasFocus)) {
-      this.chunkEnd = now + 3e4;
-      this.chunkBudget = 3e3;
-    }
-    if (this.chunkBudget <= 0)
-      return;
-    let { state, viewport: { to: vpTo } } = this.view, field = state.field(Language6.state);
-    if (field.tree == field.context.tree && field.context.isDone(
-      vpTo + 1e5
-      /* Work.MaxParseAhead */
-    ))
-      return;
-    let endTime = Date.now() + Math.min(this.chunkBudget, 100, deadline && !isInputPending6 ? Math.max(25, deadline.timeRemaining() - 5) : 1e9);
-    let viewportFirst = field.context.treeLen < vpTo && state.doc.length > vpTo + 1e3;
-    let done = field.context.work(() => {
-      return isInputPending6 && isInputPending6() || Date.now() > endTime;
-    }, vpTo + (viewportFirst ? 0 : 1e5));
-    this.chunkBudget -= Date.now() - now;
-    if (done || this.chunkBudget <= 0) {
-      field.context.takeTree();
-      this.view.dispatch({ effects: Language6.setState.of(new LanguageState6(field.context)) });
-    }
-    if (this.chunkBudget > 0 && !(done && !viewportFirst))
-      this.scheduleWork();
-    this.checkAsyncSchedule(field.context);
-  }
-  checkAsyncSchedule(cx) {
-    if (cx.scheduleOn) {
-      this.workScheduled++;
-      cx.scheduleOn.then(() => this.scheduleWork()).catch((err) => logException(this.view.state, err)).then(() => this.workScheduled--);
-      cx.scheduleOn = null;
-    }
-  }
-  destroy() {
-    if (this.working)
-      this.working();
-  }
-  isWorking() {
-    return !!(this.working || this.workScheduled > 0);
-  }
-}, {
-  eventHandlers: { focus() {
-    this.scheduleWork();
-  } }
-});
-var language6 = /* @__PURE__ */ Facet.define({
-  combine(languages) {
-    return languages.length ? languages[0] : null;
-  },
-  enables: (language7) => [
-    Language6.state,
-    parseWorker6,
-    EditorView.contentAttributes.compute([language7], (state) => {
-      let lang = state.facet(language7);
-      return lang && lang.name ? { "data-language": lang.name } : {};
-    })
-  ]
-});
-var HighlightStyle6 = class _HighlightStyle {
-  constructor(specs, options) {
-    this.specs = specs;
-    let modSpec;
-    function def(spec) {
-      let cls = StyleModule.newName();
-      (modSpec || (modSpec = /* @__PURE__ */ Object.create(null)))["." + cls] = spec;
-      return cls;
-    }
-    const all = typeof options.all == "string" ? options.all : options.all ? def(options.all) : void 0;
-    const scopeOpt = options.scope;
-    this.scope = scopeOpt instanceof Language6 ? (type) => type.prop(languageDataProp6) == scopeOpt.data : scopeOpt ? (type) => type == scopeOpt : void 0;
-    this.style = tagHighlighter10(specs.map((style) => ({
-      tag: style.tag,
-      class: style.class || def(Object.assign({}, style, { tag: null }))
-    })), {
-      all
-    }).style;
-    this.module = modSpec ? new StyleModule(modSpec) : null;
-    this.themeType = options.themeType;
-  }
-  /**
-  Create a highlighter style that associates the given styles to
-  the given tags. The specs must be objects that hold a style tag
-  or array of tags in their `tag` property, and either a single
-  `class` property providing a static CSS class (for highlighter
-  that rely on external styling), or a
-  [`style-mod`](https://github.com/marijnh/style-mod#documentation)-style
-  set of CSS properties (which define the styling for those tags).
-  
-  The CSS rules created for a highlighter will be emitted in the
-  order of the spec's properties. That means that for elements that
-  have multiple tags associated with them, styles defined further
-  down in the list will have a higher CSS precedence than styles
-  defined earlier.
-  */
-  static define(specs, options) {
-    return new _HighlightStyle(specs, options || {});
-  }
-};
-var highlighterFacet2 = /* @__PURE__ */ Facet.define();
-var fallbackHighlighter2 = /* @__PURE__ */ Facet.define({
-  combine(values2) {
-    return values2.length ? [values2[0]] : null;
-  }
-});
-function getHighlighters2(state) {
-  let main = state.facet(highlighterFacet2);
-  return main.length ? main : state.facet(fallbackHighlighter2);
-}
-function syntaxHighlighting2(highlighter, options) {
-  let ext = [treeHighlighter2], themeType;
-  if (highlighter instanceof HighlightStyle6) {
-    if (highlighter.module)
-      ext.push(EditorView.styleModule.of(highlighter.module));
-    themeType = highlighter.themeType;
-  }
-  if (options === null || options === void 0 ? void 0 : options.fallback)
-    ext.push(fallbackHighlighter2.of(highlighter));
-  else if (themeType)
-    ext.push(highlighterFacet2.computeN([EditorView.darkTheme], (state) => {
-      return state.facet(EditorView.darkTheme) == (themeType == "dark") ? [highlighter] : [];
-    }));
-  else
-    ext.push(highlighterFacet2.of(highlighter));
-  return ext;
-}
-var TreeHighlighter2 = class {
-  constructor(view) {
-    this.markCache = /* @__PURE__ */ Object.create(null);
-    this.tree = syntaxTree6(view.state);
-    this.decorations = this.buildDeco(view, getHighlighters2(view.state));
-    this.decoratedTo = view.viewport.to;
-  }
-  update(update) {
-    let tree = syntaxTree6(update.state), highlighters = getHighlighters2(update.state);
-    let styleChange = highlighters != getHighlighters2(update.startState);
-    let { viewport } = update.view, decoratedToMapped = update.changes.mapPos(this.decoratedTo, 1);
-    if (tree.length < viewport.to && !styleChange && tree.type == this.tree.type && decoratedToMapped >= viewport.to) {
-      this.decorations = this.decorations.map(update.changes);
-      this.decoratedTo = decoratedToMapped;
-    } else if (tree != this.tree || update.viewportChanged || styleChange) {
-      this.tree = tree;
-      this.decorations = this.buildDeco(update.view, highlighters);
-      this.decoratedTo = viewport.to;
-    }
-  }
-  buildDeco(view, highlighters) {
-    if (!highlighters || !this.tree.length)
-      return Decoration.none;
-    let builder = new RangeSetBuilder();
-    for (let { from, to } of view.visibleRanges) {
-      highlightTree6(this.tree, highlighters, (from2, to2, style) => {
-        builder.add(from2, to2, this.markCache[style] || (this.markCache[style] = Decoration.mark({ class: style })));
-      }, from, to);
-    }
-    return builder.finish();
-  }
-};
-var treeHighlighter2 = /* @__PURE__ */ Prec.high(/* @__PURE__ */ ViewPlugin.fromClass(TreeHighlighter2, {
-  decorations: (v) => v.decorations
-}));
-var defaultHighlightStyle6 = /* @__PURE__ */ HighlightStyle6.define([
-  {
-    tag: tags11.meta,
-    color: "#404740"
-  },
-  {
-    tag: tags11.link,
-    textDecoration: "underline"
-  },
-  {
-    tag: tags11.heading,
-    textDecoration: "underline",
-    fontWeight: "bold"
-  },
-  {
-    tag: tags11.emphasis,
-    fontStyle: "italic"
-  },
-  {
-    tag: tags11.strong,
-    fontWeight: "bold"
-  },
-  {
-    tag: tags11.strikethrough,
-    textDecoration: "line-through"
-  },
-  {
-    tag: tags11.keyword,
-    color: "#708"
-  },
-  {
-    tag: [tags11.atom, tags11.bool, tags11.url, tags11.contentSeparator, tags11.labelName],
-    color: "#219"
-  },
-  {
-    tag: [tags11.literal, tags11.inserted],
-    color: "#164"
-  },
-  {
-    tag: [tags11.string, tags11.deleted],
-    color: "#a11"
-  },
-  {
-    tag: [tags11.regexp, tags11.escape, /* @__PURE__ */ tags11.special(tags11.string)],
-    color: "#e40"
-  },
-  {
-    tag: /* @__PURE__ */ tags11.definition(tags11.variableName),
-    color: "#00f"
-  },
-  {
-    tag: /* @__PURE__ */ tags11.local(tags11.variableName),
-    color: "#30a"
-  },
-  {
-    tag: [tags11.typeName, tags11.namespace],
-    color: "#085"
-  },
-  {
-    tag: tags11.className,
-    color: "#167"
-  },
-  {
-    tag: [/* @__PURE__ */ tags11.special(tags11.variableName), tags11.macroName],
-    color: "#256"
-  },
-  {
-    tag: /* @__PURE__ */ tags11.definition(tags11.propertyName),
-    color: "#00c"
-  },
-  {
-    tag: tags11.comment,
-    color: "#940"
-  },
-  {
-    tag: tags11.invalid,
-    color: "#f00"
-  }
-]);
-var noTokens6 = /* @__PURE__ */ Object.create(null);
-var typeArray6 = [NodeType10.none];
-var warned6 = [];
-var byTag6 = /* @__PURE__ */ Object.create(null);
-var defaultTable6 = /* @__PURE__ */ Object.create(null);
-for (let [legacyName, name11] of [
-  ["variable", "variableName"],
-  ["variable-2", "variableName.special"],
-  ["string-2", "string.special"],
-  ["def", "variableName.definition"],
-  ["tag", "tagName"],
-  ["attribute", "attributeName"],
-  ["type", "typeName"],
-  ["builtin", "variableName.standard"],
-  ["qualifier", "modifier"],
-  ["error", "invalid"],
-  ["header", "heading"],
-  ["property", "propertyName"]
-])
-  defaultTable6[legacyName] = /* @__PURE__ */ createTokenType6(noTokens6, name11);
-function warnForPart6(part, msg) {
-  if (warned6.indexOf(part) > -1)
-    return;
-  warned6.push(part);
-  console.warn(msg);
-}
-function createTokenType6(extra, tagStr) {
-  let tags$1 = [];
-  for (let name12 of tagStr.split(" ")) {
-    let found = [];
-    for (let part of name12.split(".")) {
-      let value = extra[part] || tags11[part];
-      if (!value) {
-        warnForPart6(part, `Unknown highlighting tag ${part}`);
-      } else if (typeof value == "function") {
-        if (!found.length)
-          warnForPart6(part, `Modifier ${part} used at start of tag`);
-        else
-          found = found.map(value);
-      } else {
-        if (found.length)
-          warnForPart6(part, `Tag ${part} used as modifier`);
-        else
-          found = Array.isArray(value) ? value : [value];
-      }
-    }
-    for (let tag of found)
-      tags$1.push(tag);
-  }
-  if (!tags$1.length)
-    return 0;
-  let name11 = tagStr.replace(/ /g, "_"), key = name11 + " " + tags$1.map((t11) => t11.id);
-  let known = byTag6[key];
-  if (known)
-    return known.id;
-  let type = byTag6[key] = NodeType10.define({
-    id: typeArray6.length,
-    name: name11,
-    props: [styleTags10({ [name11]: tags$1 })]
-  });
-  typeArray6.push(type);
-  return type.id;
-}
-var marks6 = {
-  rtl: /* @__PURE__ */ Decoration.mark({ class: "cm-iso", inclusive: true, attributes: { dir: "rtl" }, bidiIsolate: Direction.RTL }),
-  ltr: /* @__PURE__ */ Decoration.mark({ class: "cm-iso", inclusive: true, attributes: { dir: "ltr" }, bidiIsolate: Direction.LTR }),
-  auto: /* @__PURE__ */ Decoration.mark({ class: "cm-iso", inclusive: true, attributes: { dir: "auto" }, bidiIsolate: null })
-};
 
 // node_modules/@codemirror/theme-one-dark/dist/index.js
 var chalky = "#e5c07b";
@@ -57988,80 +37053,86 @@ var oneDarkTheme = /* @__PURE__ */ EditorView.theme({
     }
   }
 }, { dark: true });
-var oneDarkHighlightStyle = /* @__PURE__ */ HighlightStyle6.define([
+var oneDarkHighlightStyle = /* @__PURE__ */ HighlightStyle.define([
   {
-    tag: tags11.keyword,
+    tag: tags7.keyword,
     color: violet
   },
   {
-    tag: [tags11.name, tags11.deleted, tags11.character, tags11.propertyName, tags11.macroName],
+    tag: [tags7.name, tags7.deleted, tags7.character, tags7.propertyName, tags7.macroName],
     color: coral
   },
   {
-    tag: [/* @__PURE__ */ tags11.function(tags11.variableName), tags11.labelName],
+    tag: [/* @__PURE__ */ tags7.function(tags7.variableName), tags7.labelName],
     color: malibu
   },
   {
-    tag: [tags11.color, /* @__PURE__ */ tags11.constant(tags11.name), /* @__PURE__ */ tags11.standard(tags11.name)],
+    tag: [tags7.color, /* @__PURE__ */ tags7.constant(tags7.name), /* @__PURE__ */ tags7.standard(tags7.name)],
     color: whiskey
   },
   {
-    tag: [/* @__PURE__ */ tags11.definition(tags11.name), tags11.separator],
+    tag: [/* @__PURE__ */ tags7.definition(tags7.name), tags7.separator],
     color: ivory
   },
   {
-    tag: [tags11.typeName, tags11.className, tags11.number, tags11.changed, tags11.annotation, tags11.modifier, tags11.self, tags11.namespace],
+    tag: [tags7.typeName, tags7.className, tags7.number, tags7.changed, tags7.annotation, tags7.modifier, tags7.self, tags7.namespace],
     color: chalky
   },
   {
-    tag: [tags11.operator, tags11.operatorKeyword, tags11.url, tags11.escape, tags11.regexp, tags11.link, /* @__PURE__ */ tags11.special(tags11.string)],
+    tag: [tags7.operator, tags7.operatorKeyword, tags7.url, tags7.escape, tags7.regexp, tags7.link, /* @__PURE__ */ tags7.special(tags7.string)],
     color: cyan
   },
   {
-    tag: [tags11.meta, tags11.comment],
+    tag: [tags7.meta, tags7.comment],
     color: stone
   },
   {
-    tag: tags11.strong,
+    tag: tags7.strong,
     fontWeight: "bold"
   },
   {
-    tag: tags11.emphasis,
+    tag: tags7.emphasis,
     fontStyle: "italic"
   },
   {
-    tag: tags11.strikethrough,
+    tag: tags7.strikethrough,
     textDecoration: "line-through"
   },
   {
-    tag: tags11.link,
+    tag: tags7.link,
     color: stone,
     textDecoration: "underline"
   },
   {
-    tag: tags11.heading,
+    tag: tags7.heading,
     fontWeight: "bold",
     color: coral
   },
   {
-    tag: [tags11.atom, tags11.bool, /* @__PURE__ */ tags11.special(tags11.variableName)],
+    tag: [tags7.atom, tags7.bool, /* @__PURE__ */ tags7.special(tags7.variableName)],
     color: whiskey
   },
   {
-    tag: [tags11.processingInstruction, tags11.string, tags11.inserted],
+    tag: [tags7.processingInstruction, tags7.string, tags7.inserted],
     color: sage
   },
   {
-    tag: tags11.invalid,
+    tag: tags7.invalid,
     color: invalid
   }
 ]);
-var oneDark = [oneDarkTheme, /* @__PURE__ */ syntaxHighlighting2(oneDarkHighlightStyle)];
+var oneDark = [oneDarkTheme, /* @__PURE__ */ syntaxHighlighting(oneDarkHighlightStyle)];
 export {
+  Compartment,
+  Decoration,
   EditorState,
   EditorView,
+  GFM,
+  ViewPlugin,
   basicSetup,
   markdown,
-  oneDark
+  markdownLanguage,
+  oneDark,
+  syntaxTree
 };
 //# sourceMappingURL=codemirror.bundle.js.map
