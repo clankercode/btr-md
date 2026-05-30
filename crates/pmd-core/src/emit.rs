@@ -2,6 +2,7 @@ use pulldown_cmark::{Alignment, Event, Parser, Tag, TagEnd};
 use serde::{Deserialize, Serialize};
 
 use crate::escape::escape_html;
+use crate::facts::CoreDocumentFacts;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct BlockRef {
@@ -17,6 +18,7 @@ pub struct RenderResult {
     pub render_nonce: String,
     #[serde(default)]
     pub blocks: Vec<BlockRef>,
+    pub facts: CoreDocumentFacts,
 }
 
 pub(crate) fn byte_to_line(md: &str) -> impl Fn(usize) -> u32 + '_ {
@@ -57,6 +59,11 @@ fn alignment_value(alignment: Alignment) -> Option<&'static str> {
         Alignment::Center => Some("center"),
         Alignment::Right => Some("right"),
     }
+}
+
+fn add_word_count(facts: &mut CoreDocumentFacts, text: &str) {
+    let words = text.split_whitespace().count();
+    facts.counts.words = facts.counts.words.saturating_add(words as u32);
 }
 
 fn emit_open_tag(
@@ -451,6 +458,8 @@ pub fn render_fragment(md: &str, render_nonce: &str) -> FragmentRender {
     let parser = Parser::new_ext(md, opts).into_offset_iter();
 
     let mut html = String::new();
+    let mut facts = CoreDocumentFacts::empty();
+    facts.counts.bytes = md.len().try_into().unwrap_or(u32::MAX);
     let mut source_map = Vec::<(u32, u32)>::new();
     let mut block_stack: Vec<(u32, usize)> = Vec::new();
     let mut in_table_head = false;
@@ -516,6 +525,9 @@ pub fn render_fragment(md: &str, render_nonce: &str) -> FragmentRender {
                 }
                 if matches!(tag, Tag::CodeBlock(_)) {
                     in_code_block += 1;
+                }
+                if matches!(tag, Tag::Paragraph) {
+                    facts.counts.paragraphs = facts.counts.paragraphs.saturating_add(1);
                 }
                 if let Tag::Image {
                     dest_url, title, ..
@@ -642,6 +654,7 @@ pub fn render_fragment(md: &str, render_nonce: &str) -> FragmentRender {
                 }
             }
             Event::Text(t) => {
+                add_word_count(&mut facts, &t);
                 // While scanning a blockquote's first line, buffer its text so
                 // the (multi-token) `[!TYPE]` marker can be reassembled.
                 if matches!(alert_state, AlertScan::ScanningMarker { .. }) {
@@ -657,6 +670,7 @@ pub fn render_fragment(md: &str, render_nonce: &str) -> FragmentRender {
                 }
             }
             Event::Code(t) => {
+                add_word_count(&mut facts, &t);
                 flush_alert_marker(
                     &mut html,
                     &mut alert_state,
@@ -800,5 +814,6 @@ pub fn render_string(md: &str) -> RenderResult {
         source_map: frag.source_map,
         render_nonce,
         blocks: Vec::new(),
+        facts,
     }
 }

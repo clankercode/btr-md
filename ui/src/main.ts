@@ -35,6 +35,17 @@ interface RenderResult {
   version: number;
   render_nonce: string;
   blocks?: BlockRef[];
+  facts: {
+    headings: unknown[];
+    links: unknown[];
+    images: unknown[];
+    blocks: unknown[];
+    counts: {
+      words: number;
+      paragraphs: number;
+    };
+  };
+  diagnostics?: null;
 }
 
 interface Settings {
