@@ -1455,3 +1455,9 @@ body[data-state="welcome"] #split-resizer {
   height: 16px;
   accent-color: var(--pmd-accent);
 }
+
+/* Settings menu can exceed the viewport now — make it scrollable. */
+.pmd-settings-menu {
+  max-height: min(70vh, 540px);
+  overflow-y: auto;
+}

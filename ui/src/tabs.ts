@@ -18,6 +18,8 @@ export interface DocTab {
   title: string;
   mode: Mode;
   fileState: FileState;
+  /** Last-loaded / last-saved text — the diff-view baseline. */
+  baseContent: string;
   /** Live CodeMirror state for this tab. Held in memory only — NEVER serialized. */
   editorState: EditorState | null;
   /** Last rendered preview HTML (restored when re-activating the tab). */
@@ -50,6 +52,7 @@ export interface NewDocTab {
   title: string;
   mode: Mode;
   fileState: FileState;
+  baseContent: string;
   editorState: EditorState | null;
 }
 
@@ -100,6 +103,7 @@ export function createTabStore(): TabStore {
       title: spec.title,
       mode: spec.mode,
       fileState: spec.fileState,
+      baseContent: spec.baseContent,
       editorState: spec.editorState,
       cachedHtml: null,
       scrollEditor: 0,

@@ -5,6 +5,7 @@ import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
 import { syntaxTree } from '@codemirror/language';
 import { GFM } from '@lezer/markdown';
 import { oneDark } from '@codemirror/theme-one-dark';
+import { unifiedMergeView } from '@codemirror/merge';
 
 export {
   EditorState,
@@ -18,4 +19,5 @@ export {
   syntaxTree,
   GFM,
   oneDark,
+  unifiedMergeView,
 };

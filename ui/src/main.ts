@@ -250,13 +250,12 @@ async function openGist(): Promise<void> {
   }
 }
 
-/** Apply the current diff mode to the editor (no-op until the editor's diff
- *  support is present; the setting still persists). */
+/** Apply the current diff mode to the editor (baseline = the active tab's
+ *  last-loaded/saved content). */
 function applyDiffMode(): void {
+  if (!editor) return;
   const tab = store.activeDoc();
-  const setDiff = (editor as unknown as { setDiff?: (m: DiffMode, base: string) => void } | null)
-    ?.setDiff;
-  if (setDiff) setDiff(diffMode, tab && 'baseContent' in tab ? (tab as any).baseContent ?? '' : '');
+  editor.setDiff(diffMode, tab ? tab.baseContent : '');
 }
 
 let editor: EditorHandle | null = null;
@@ -732,6 +731,7 @@ async function activateDocTab(tab: DocTab): Promise<void> {
   refreshChrome(tab.fileState);
   await scheduleRender();
   chrome.setCounts(computeCounts(editor.getValue()));
+  applyDiffMode();
   editor.view.scrollDOM.scrollTop = tab.scrollEditor;
   previewPane.scrollTop = tab.scrollPreview;
   editor.focus();
@@ -792,6 +792,7 @@ async function addDocTab(
       title: opts.title ?? (filePath ? basename(filePath) : 'Untitled'),
       mode: currentMode,
       fileState: doc.state,
+      baseContent: doc.contents,
       editorState,
     },
     { background: opts.background }
@@ -877,7 +878,7 @@ async function saveCurrentDoc(): Promise<void> {
       updateFileOps();
       saveSession();
     }
-    store.updateDoc(tab.id, { fileState: state });
+    store.updateDoc(tab.id, { fileState: state, baseContent: contents });
     refreshChrome(state);
     chrome.setStatus('Saved');
     loadRecentFiles();
@@ -897,9 +898,10 @@ async function doReload(): Promise<void> {
     editor.setValueProgrammatic(res.contents);
     const max = editor.view.state.doc.length;
     editor.view.dispatch({ selection: { anchor: Math.min(cursor, max) } });
-    store.updateDoc(tab.id, { fileState: res.state });
+    store.updateDoc(tab.id, { fileState: res.state, baseContent: res.contents });
     refreshChrome(res.state);
     await scheduleRender();
+    applyDiffMode();
     chrome.setStatus('Reloaded from disk');
   } catch (e) {
     showError(`Reload failed: ${String(e)}`);

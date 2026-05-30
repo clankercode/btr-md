@@ -9,6 +9,7 @@ import {
   markdown,
   markdownLanguage,
   GFM,
+  unifiedMergeView,
 } from '../vendor/codemirror-6/codemirror.bundle.js';
 
 // One EditorView is reused across all document tabs; each tab owns a live
@@ -30,6 +31,8 @@ export interface EditorHandle {
   focus: () => void;
   /** Toggle soft word wrap; returns the new enabled state. */
   toggleWrap: () => boolean;
+  /** Show/hide a unified diff of the buffer against `baseline` (last saved). */
+  setDiff: (mode: string, baseline: string) => void;
   destroy: () => void;
 }
 
@@ -98,6 +101,7 @@ let programmaticDepth = 0;
 let wrapEnabled = true;
 let userEditCb: (doc: string) => void = () => {};
 const wrapCompartment = new Compartment();
+const diffCompartment = new Compartment();
 
 const editorTheme = EditorView.theme({
   '&': {
@@ -149,6 +153,7 @@ function buildExtensions() {
     basicSetup,
     markdown({ base: markdownLanguage, extensions: [GFM] }),
     wrapCompartment.of(wrapEnabled ? EditorView.lineWrapping : []),
+    diffCompartment.of([]),
     markdownDecorations,
     EditorView.updateListener.of((update: any) => {
       // Fire only for genuine user edits — never for programmatic sets
@@ -201,6 +206,35 @@ export async function mountEditor(
         effects: wrapCompartment.reconfigure(wrapEnabled ? EditorView.lineWrapping : []),
       });
       return wrapEnabled;
+    },
+    setDiff: (mode: string, baseline: string) => {
+      let ext: any = [];
+      if (mode === 'gutter') {
+        ext = unifiedMergeView({
+          original: baseline,
+          gutter: true,
+          highlightChanges: false,
+          mergeControls: false,
+        });
+      } else if (mode === 'line_by_line') {
+        ext = unifiedMergeView({
+          original: baseline,
+          gutter: true,
+          highlightChanges: false,
+          allowInlineDiffs: false,
+          mergeControls: false,
+        });
+      } else if (mode === 'word_by_word') {
+        ext = unifiedMergeView({
+          original: baseline,
+          gutter: true,
+          highlightChanges: true,
+          allowInlineDiffs: true,
+          mergeControls: false,
+        });
+      }
+      // Effects-only dispatch (no docChanged) so the edit callback never fires.
+      view.dispatch({ effects: diffCompartment.reconfigure(ext) });
     },
     destroy: () => view.destroy(),
   };
