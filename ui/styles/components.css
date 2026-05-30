@@ -1283,3 +1283,69 @@ body[data-state="welcome"] #split-resizer {
   color: var(--pmd-fg-muted);
   font-family: var(--pmd-font-mono, monospace);
 }
+
+/* --------------------------------------------
+   19. GitHub alerts + footnotes (Phase 4)
+   -------------------------------------------- */
+
+.pmd-alert {
+  border-left: 4px solid var(--pmd-alert-color, var(--pmd-accent));
+  background: color-mix(in srgb, var(--pmd-alert-color, var(--pmd-accent)) 8%, transparent);
+  padding: var(--pmd-space-3) var(--pmd-space-4);
+  border-radius: var(--pmd-radius-sm);
+}
+
+.pmd-alert-title {
+  display: flex;
+  align-items: center;
+  gap: var(--pmd-space-2);
+  margin: 0 0 var(--pmd-space-2) 0;
+  font-weight: var(--pmd-font-semibold);
+  color: var(--pmd-alert-color, var(--pmd-accent));
+}
+
+/* Icon via mask-image (the sanitizer allows no inline <svg>); a single
+   info-style octicon tinted per alert severity. */
+.pmd-alert-title::before {
+  content: '';
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  flex: 0 0 auto;
+  background-color: currentColor;
+  mask: var(--pmd-alert-icon) center / contain no-repeat;
+  -webkit-mask: var(--pmd-alert-icon) center / contain no-repeat;
+}
+
+.pmd-alert {
+  --pmd-alert-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill-rule='evenodd' d='M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z'/%3E%3C/svg%3E");
+}
+
+.pmd-alert-note { --pmd-alert-color: #539bf5; }
+.pmd-alert-tip { --pmd-alert-color: #57ab5a; }
+.pmd-alert-important { --pmd-alert-color: #986ee2; }
+.pmd-alert-warning { --pmd-alert-color: #c69026; }
+.pmd-alert-caution { --pmd-alert-color: #e5534b; }
+
+/* Footnotes */
+.pmd-footnotes {
+  margin-top: var(--pmd-space-6);
+  font-size: 0.875em;
+  color: var(--pmd-fg-muted);
+}
+
+.pmd-footnotes hr {
+  border: none;
+  border-top: 1px solid var(--pmd-border);
+  margin-bottom: var(--pmd-space-3);
+}
+
+.pmd-fnref a,
+.pmd-fn-backref {
+  text-decoration: none;
+  color: var(--pmd-accent);
+}
+
+.pmd-fn-backref {
+  margin-left: var(--pmd-space-2);
+}

@@ -270,6 +270,133 @@ fn emit_close_tag(html: &mut String, tag_end: &TagEnd, in_table_head: bool) {
     }
 }
 
+/// The five GitHub alert kinds.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+enum AlertKind {
+    Note,
+    Tip,
+    Important,
+    Warning,
+    Caution,
+}
+
+impl AlertKind {
+    fn slug(self) -> &'static str {
+        match self {
+            AlertKind::Note => "note",
+            AlertKind::Tip => "tip",
+            AlertKind::Important => "important",
+            AlertKind::Warning => "warning",
+            AlertKind::Caution => "caution",
+        }
+    }
+    fn label(self) -> &'static str {
+        match self {
+            AlertKind::Note => "Note",
+            AlertKind::Tip => "Tip",
+            AlertKind::Important => "Important",
+            AlertKind::Warning => "Warning",
+            AlertKind::Caution => "Caution",
+        }
+    }
+}
+
+/// Parse a GitHub-alert marker. The marker must be the *only* content on the
+/// blockquote's first line (after trimming), i.e. exactly `[!TYPE]`.
+fn parse_alert_marker(text: &str) -> Option<AlertKind> {
+    let inner = text.trim().strip_prefix("[!")?.strip_suffix(']')?;
+    match inner.to_ascii_uppercase().as_str() {
+        "NOTE" => Some(AlertKind::Note),
+        "TIP" => Some(AlertKind::Tip),
+        "IMPORTANT" => Some(AlertKind::Important),
+        "WARNING" => Some(AlertKind::Warning),
+        "CAUTION" => Some(AlertKind::Caution),
+        _ => None,
+    }
+}
+
+/// Detection state for a GitHub alert blockquote. pulldown tokenises `[!NOTE]`
+/// into several text events (`[`, `!NOTE`, `]`), so the first line's text is
+/// accumulated in a buffer and the marker decision is made at the line break.
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum AlertScan {
+    None,
+    /// Just opened a blockquote; awaiting its first child.
+    ExpectFirstChild {
+        bq_open_pos: usize,
+    },
+    /// First child is a paragraph; accumulating its first line into `alert_buf`.
+    ScanningMarker {
+        bq_open_pos: usize,
+        para_open_pos: usize,
+    },
+}
+
+/// Abandon an in-progress marker scan: emit whatever first-line text was
+/// buffered (it was not a bare marker) and reset to `None`.
+fn flush_alert_marker(
+    html: &mut String,
+    alert_state: &mut AlertScan,
+    alert_buf: &mut String,
+    block_math: &mut Option<String>,
+    render_nonce: &str,
+) {
+    if matches!(alert_state, AlertScan::ScanningMarker { .. }) {
+        if !alert_buf.is_empty() {
+            emit_text_with_math(html, alert_buf, block_math, render_nonce);
+            alert_buf.clear();
+        }
+        *alert_state = AlertScan::None;
+    }
+}
+
+/// After inserting `n` bytes at `at`, shift every block_stack open position
+/// that sits at or after `at` so pending `data-src-end` fills stay correct.
+fn adjust_block_stack(block_stack: &mut [(u32, usize)], at: usize, n: usize) {
+    for (_, pos) in block_stack.iter_mut() {
+        if *pos >= at {
+            *pos += n;
+        }
+    }
+}
+
+/// Turn an already-emitted blockquote + first paragraph into a GitHub alert:
+/// add the alert class to the blockquote and inject a title paragraph before
+/// the body. Stack positions are adjusted so later end-line fills are correct.
+fn apply_alert(
+    html: &mut String,
+    block_stack: &mut [(u32, usize)],
+    bq_open_pos: usize,
+    para_open_pos: usize,
+    kind: AlertKind,
+) {
+    let title = format!("<p class=\"pmd-alert-title\">{}</p>", kind.label());
+    html.insert_str(para_open_pos, &title);
+    adjust_block_stack(block_stack, para_open_pos, title.len());
+
+    let class_str = format!(" class=\"pmd-alert pmd-alert-{}\"", kind.slug());
+    let class_at = bq_open_pos + "<blockquote".len();
+    html.insert_str(class_at, &class_str);
+    adjust_block_stack(block_stack, class_at, class_str.len());
+}
+
+/// Emit the collected footnote definitions as a back-linked section.
+fn emit_footnotes_section(html: &mut String, mut footnotes: Vec<(usize, String)>) {
+    if footnotes.is_empty() {
+        return;
+    }
+    footnotes.sort_by_key(|(n, _)| *n);
+    html.push_str("<section class=\"pmd-footnotes\" aria-label=\"Footnotes\"><hr><ol>");
+    for (n, body) in footnotes {
+        html.push_str(&format!("<li id=\"fn-{n}\">"));
+        html.push_str(&body);
+        html.push_str(&format!(
+            "<a href=\"#fnref-{n}\" class=\"pmd-fn-backref\" aria-label=\"Back to content\">↩</a></li>"
+        ));
+    }
+    html.push_str("</ol></section>");
+}
+
 pub fn render_string(md: &str) -> RenderResult {
     let render_nonce = generate_render_nonce();
     let to_line = byte_to_line(md);
@@ -297,6 +424,17 @@ pub fn render_string(md: &str) -> RenderResult {
     // While inside Tag::Image, collect plain text into the alt attribute and
     // suppress body emission. Image markup is emitted on close.
     let mut image_state: Option<ImageState> = None;
+    // GitHub-alert detection (buffered: the blockquote open tag is rewritten in
+    // place once its first paragraph's leading text is inspected).
+    let mut alert_state = AlertScan::None;
+    let mut alert_buf = String::new();
+    // Footnotes: number ids by first reference; collect definition bodies into a
+    // back-linked section emitted at the end. `fn_def_start` marks where the
+    // current definition's body began in `html` so it can be split off.
+    let mut fn_numbers: std::collections::HashMap<String, usize> = std::collections::HashMap::new();
+    let mut next_fn_number = 1usize;
+    let mut footnotes: Vec<(usize, String)> = Vec::new();
+    let mut fn_def_start: Option<(String, usize)> = None;
 
     for (event, range) in parser {
         match event {
@@ -305,6 +443,23 @@ pub fn render_string(md: &str) -> RenderResult {
                 if image_state.is_some() && !starts_image {
                     continue;
                 }
+                // Footnote definitions are redirected: their body is captured
+                // (via split_off at End) and re-emitted as a back-linked
+                // section, so bypass the generic emit + block_stack push.
+                if let Tag::FootnoteDefinition(id) = &tag {
+                    fn_def_start = Some((id.to_string(), html.len()));
+                    continue;
+                }
+                // A nested element while scanning a marker means the first line
+                // has inline content beyond a bare marker — abandon the scan and
+                // emit the buffered text before this element's open tag.
+                flush_alert_marker(
+                    &mut html,
+                    &mut alert_state,
+                    &mut alert_buf,
+                    &mut block_math,
+                    &render_nonce,
+                );
                 if matches!(tag, Tag::TableHead) {
                     in_table_head = true;
                 }
@@ -346,11 +501,75 @@ pub fn render_string(md: &str) -> RenderResult {
                     &render_nonce,
                 );
                 block_stack.push((line, open_pos));
+
+                // Drive GitHub-alert detection.
+                alert_state = match (alert_state, &tag) {
+                    (AlertScan::None, Tag::BlockQuote) => AlertScan::ExpectFirstChild {
+                        bq_open_pos: open_pos,
+                    },
+                    (AlertScan::ExpectFirstChild { bq_open_pos }, Tag::Paragraph) => {
+                        alert_buf.clear();
+                        AlertScan::ScanningMarker {
+                            bq_open_pos,
+                            para_open_pos: open_pos,
+                        }
+                    }
+                    // A nested blockquote as the first child starts its own scan.
+                    (AlertScan::ExpectFirstChild { .. }, Tag::BlockQuote) => {
+                        AlertScan::ExpectFirstChild {
+                            bq_open_pos: open_pos,
+                        }
+                    }
+                    // Any other opening tag means this is not a (simple) alert.
+                    _ => AlertScan::None,
+                };
             }
             Event::End(tag_end) => {
                 let ends_image = matches!(tag_end, TagEnd::Image);
                 if image_state.is_some() && !ends_image {
                     continue;
+                }
+                // Close a footnote definition: split its rendered body out of
+                // `html` and stash it (numbered) for the footnotes section.
+                if matches!(tag_end, TagEnd::FootnoteDefinition) {
+                    if let Some((id, def_start)) = fn_def_start.take() {
+                        let body = html.split_off(def_start);
+                        let n = *fn_numbers.entry(id).or_insert_with(|| {
+                            let n = next_fn_number;
+                            next_fn_number += 1;
+                            n
+                        });
+                        footnotes.push((n, body));
+                    }
+                    continue;
+                }
+                if matches!(tag_end, TagEnd::Paragraph) {
+                    // First line ended at the paragraph end (single-line blockquote):
+                    // decide the marker, or flush the buffered text.
+                    if let AlertScan::ScanningMarker {
+                        bq_open_pos,
+                        para_open_pos,
+                    } = alert_state
+                    {
+                        if let Some(kind) = parse_alert_marker(&alert_buf) {
+                            apply_alert(
+                                &mut html,
+                                &mut block_stack,
+                                bq_open_pos,
+                                para_open_pos,
+                                kind,
+                            );
+                        } else if !alert_buf.is_empty() {
+                            emit_text_with_math(
+                                &mut html,
+                                &alert_buf,
+                                &mut block_math,
+                                &render_nonce,
+                            );
+                        }
+                        alert_buf.clear();
+                    }
+                    alert_state = AlertScan::None;
                 }
                 if matches!(tag_end, TagEnd::TableHead) {
                     in_table_head = false;
@@ -379,6 +598,12 @@ pub fn render_string(md: &str) -> RenderResult {
                 }
             }
             Event::Text(t) => {
+                // While scanning a blockquote's first line, buffer its text so
+                // the (multi-token) `[!TYPE]` marker can be reassembled.
+                if matches!(alert_state, AlertScan::ScanningMarker { .. }) {
+                    alert_buf.push_str(&t);
+                    continue;
+                }
                 if let Some(state) = image_state.as_mut() {
                     state.alt.push_str(&t);
                 } else if in_code_block > 0 {
@@ -388,6 +613,13 @@ pub fn render_string(md: &str) -> RenderResult {
                 }
             }
             Event::Code(t) => {
+                flush_alert_marker(
+                    &mut html,
+                    &mut alert_state,
+                    &mut alert_buf,
+                    &mut block_math,
+                    &render_nonce,
+                );
                 if let Some(state) = image_state.as_mut() {
                     state.alt.push_str(&t);
                 } else {
@@ -397,6 +629,27 @@ pub fn render_string(md: &str) -> RenderResult {
                 }
             }
             Event::SoftBreak => {
+                // End of the blockquote's first line: decide the marker.
+                if let AlertScan::ScanningMarker {
+                    bq_open_pos,
+                    para_open_pos,
+                } = alert_state
+                {
+                    alert_state = AlertScan::None;
+                    if let Some(kind) = parse_alert_marker(&alert_buf) {
+                        apply_alert(
+                            &mut html,
+                            &mut block_stack,
+                            bq_open_pos,
+                            para_open_pos,
+                            kind,
+                        );
+                        alert_buf.clear();
+                        continue; // drop the break that followed the marker line
+                    }
+                    emit_text_with_math(&mut html, &alert_buf, &mut block_math, &render_nonce);
+                    alert_buf.clear();
+                }
                 if let Some(state) = image_state.as_mut() {
                     state.alt.push(' ');
                 } else if let Some(buffer) = &mut block_math {
@@ -406,6 +659,13 @@ pub fn render_string(md: &str) -> RenderResult {
                 }
             }
             Event::HardBreak => {
+                flush_alert_marker(
+                    &mut html,
+                    &mut alert_state,
+                    &mut alert_buf,
+                    &mut block_math,
+                    &render_nonce,
+                );
                 if let Some(state) = image_state.as_mut() {
                     state.alt.push(' ');
                 } else if let Some(buffer) = &mut block_math {
@@ -415,6 +675,13 @@ pub fn render_string(md: &str) -> RenderResult {
                 }
             }
             Event::Html(t) => {
+                flush_alert_marker(
+                    &mut html,
+                    &mut alert_state,
+                    &mut alert_buf,
+                    &mut block_math,
+                    &render_nonce,
+                );
                 if image_state.is_none() {
                     html.push_str(&t);
                 }
@@ -422,12 +689,33 @@ pub fn render_string(md: &str) -> RenderResult {
                 // attribute, and we refuse to let attacker markup leak there.
             }
             Event::InlineHtml(t) => {
+                flush_alert_marker(
+                    &mut html,
+                    &mut alert_state,
+                    &mut alert_buf,
+                    &mut block_math,
+                    &render_nonce,
+                );
                 if image_state.is_none() {
                     html.push_str(&t);
                 }
             }
             Event::FootnoteReference(t) => {
-                html.push_str(&format!("<sup>{}</sup>", escape_html(&t)));
+                flush_alert_marker(
+                    &mut html,
+                    &mut alert_state,
+                    &mut alert_buf,
+                    &mut block_math,
+                    &render_nonce,
+                );
+                let n = *fn_numbers.entry(t.to_string()).or_insert_with(|| {
+                    let n = next_fn_number;
+                    next_fn_number += 1;
+                    n
+                });
+                html.push_str(&format!(
+                    "<sup class=\"pmd-fnref\" id=\"fnref-{n}\"><a href=\"#fn-{n}\">{n}</a></sup>"
+                ));
             }
             Event::Rule => {
                 html.push_str("<hr>");
@@ -446,6 +734,7 @@ pub fn render_string(md: &str) -> RenderResult {
         html.push_str("$$");
         html.push_str(&escape_html(&math));
     }
+    emit_footnotes_section(&mut html, footnotes);
     let html = crate::sanitize::clean_with_render_nonce(&html, &render_nonce);
     RenderResult {
         version: 0,
