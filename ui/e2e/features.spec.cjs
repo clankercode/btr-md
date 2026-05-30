@@ -70,6 +70,28 @@ test('source view wraps lines by default, decorates markdown, and Alt+Z toggles 
   await expect(content).toHaveClass(/cm-lineWrapping/);
 });
 
+test('settings menu exposes lifecycle controls and calls their setters', async ({ page }) => {
+  await installTauriMock(page);
+  await page.goto(appUrl());
+
+  // Open the Settings dropdown (its trigger is appended to the toolbar).
+  await page.getByRole('button', { name: 'Settings' }).click();
+
+  const autosave = page.locator('#pmd-set-autosave');
+  await expect(autosave).toBeVisible();
+  await expect(page.locator('#pmd-set-autoreload')).toBeVisible();
+  await expect(page.locator('#pmd-set-merge')).toBeVisible();
+
+  // Changing a control invokes its backend setter.
+  await autosave.selectOption('on_idle');
+  const calledSetter = await page.evaluate(() =>
+    window.__pmdInvocations.some(
+      (i) => i.cmd === 'set_autosave_mode' && i.args && i.args.mode === 'on_idle'
+    )
+  );
+  expect(calledSetter).toBe(true);
+});
+
 test('reload button is hidden until an external change with a dirty buffer', async ({ page }) => {
   await installTauriMock(page);
   await page.goto(appUrl());

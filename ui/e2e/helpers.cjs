@@ -129,6 +129,19 @@ async function installTauriMock(page, options = {}) {
         if (cmd === 'plugin:event|listen') return args.handler;
         if (cmd === 'plugin:event|unlisten') return null;
         if (cmd === 'get_recent_files') return [];
+        if (cmd === 'get_settings') {
+          return {
+            active_theme: null,
+            light_theme: null,
+            dark_theme: null,
+            auto_switch: false,
+            default_mode: null,
+            autosave_mode: 'off',
+            autoreload_mode: 'when_clean',
+            merge_strategy: 'raise_conflict',
+            browser_base_dir: null,
+          };
+        }
         if (cmd === 'get_initial_path') return initialPath ?? null;
         if (cmd === 'get_open_dialog_on_start') return false;
         if (cmd === 'list_themes') return themes;

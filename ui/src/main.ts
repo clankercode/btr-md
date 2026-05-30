@@ -21,6 +21,7 @@ import {
 import { createTabStore, type Tab, type DocTab } from './tabs.js';
 import { createTabBar, type TabBarInstance } from './tabbar.js';
 import { createFileBrowser, type FileBrowserInstance } from './file_browser.js';
+import { createSettingsMenu, type SettingsSnapshot } from './settings_menu.js';
 
 interface RenderResult {
   html: string;
@@ -166,6 +167,28 @@ const tabBar: TabBarInstance = createTabBar(store, {
 });
 // Tab strip lives inside `.pmd-chrome`, below the toolbar.
 chrome.el.appendChild(tabBar.el);
+
+// Settings dropdown: appends its own trigger into the toolbar.
+const toolbarEl = chrome.el.querySelector('.pmd-toolbar');
+if (toolbarEl instanceof HTMLElement) {
+  createSettingsMenu(toolbarEl, {
+    getSettings: () => invoke<SettingsSnapshot>('get_settings'),
+    setAutosaveMode: (m) => invoke('set_autosave_mode', { mode: m }).then(() => {}),
+    setAutoreloadMode: (m) => invoke('set_autoreload_mode', { mode: m }).then(() => {}),
+    setMergeStrategy: (m) => invoke('set_merge_strategy', { strategy: m }).then(() => {}),
+    pickBaseDir: () => invoke<string | null>('pick_base_dir'),
+    onAutosaveChange: (m) => {
+      autosaveMode = m;
+    },
+    onAutoreloadChange: (m) => {
+      autoreloadMode = m;
+    },
+    onBaseDirChange: (dir) => {
+      browserBaseDir = dir;
+      saveSession();
+    },
+  });
+}
 
 let editor: EditorHandle | null = null;
 let fileBrowser: FileBrowserInstance | null = null;

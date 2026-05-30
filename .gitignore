@@ -12,3 +12,9 @@ tests/screenshots/playwright/
 
 # Claude Code agent worktrees (transient)
 .claude/worktrees/
+
+# Local worktrees (transient parallel work)
+.worktrees/
+
+# Machine-local cargo build config (sccache)
+.cargo/config.toml
