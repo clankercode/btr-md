@@ -8,12 +8,13 @@
     "typecheck": "tsc -p tsconfig.json",
     "test:e2e:playwright": "NODE_PATH=${NODE_PATH:-$HOME/.bun/install/global/node_modules} playwright test -c playwright.config.cjs",
     "visual-review": "NODE_PATH=${NODE_PATH:-$HOME/.bun/install/global/node_modules} playwright test -c playwright.config.cjs --grep @visual",
+    "test:unit": "node --test src/*.test.ts",
     "test": "npm run test:e2e:playwright"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
+  "type": "module",
   "dependencies": {
     "@codemirror/basic-setup": "^0.20.0",
     "@codemirror/lang-markdown": "^6.5.0",
