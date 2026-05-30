@@ -9,7 +9,11 @@ Terminal=false
 Categories=Utility;TextEditor;
 MimeType=text/markdown;text/x-markdown;
 StartupNotify=true
-StartupWMClass=md.btr.app
+# Must match the window's runtime WM_CLASS / Wayland app-id. Tauri leaves
+# enableGTKAppId off (multi-process, one window per file — see btr-md.1), so the
+# GTK app-id is unset and the class falls back to the binary name (btr-md), not
+# the identifier. KDE matches this to the entry, then uses Icon= below.
+StartupWMClass=btr-md
 Actions=NewWindow;OpenFile;
 
 [Desktop Action NewWindow]
