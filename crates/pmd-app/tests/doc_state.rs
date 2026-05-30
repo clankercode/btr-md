@@ -141,7 +141,8 @@ fn save_round_trip_from_dirty() {
         FileState::SaveInProgress {
             base: Some(base),
             target,
-            edited_during: None
+            edited_during: None,
+            disk_during: None,
         }
     );
     assert_eq!(
@@ -182,7 +183,8 @@ fn save_as_from_untitled() {
         FileState::SaveInProgress {
             base: None,
             target,
-            edited_during: None
+            edited_during: None,
+            disk_during: None,
         }
     );
     assert_eq!(
@@ -287,4 +289,55 @@ fn only_the_active_doc_is_a_save_target() {
     reg.drop_doc(b);
     assert!(!reg.is_active(b));
     assert_eq!(reg.active(), None);
+}
+
+#[test]
+fn save_failed_with_disk_during_recovers_disk_changed_state() {
+    // A disk change arrives mid-save; if the write then fails, the state
+    // must land in DiskChangedClean (not the silently-lost Clean/Dirty).
+    let base = d("base");
+    // Saving the current (clean) buffer: target == base.
+    let target = base;
+    let disk_change = d("external");
+
+    // Start from Clean (no local edits), begin a save.
+    let sip = FileState::Clean { base }.apply(DocEvent::SaveStarted { target });
+    // An external write fires during the in-flight save.
+    let sip = sip.apply(DocEvent::DiskModified { disk: disk_change });
+    // The write fails — buffer is still target = base, disk has changed.
+    let recovered = sip.apply(DocEvent::SaveFailed);
+    assert_eq!(
+        recovered,
+        FileState::DiskChangedClean {
+            base,
+            disk: disk_change,
+        },
+        "SaveFailed must recover DiskChangedClean when a disk change was seen mid-save"
+    );
+}
+
+#[test]
+fn save_failed_from_disk_changed_dirty_with_new_disk_event_preserves_latest_disk() {
+    // Start from DiskChangedDirty, begin a save (user chose to save anyway),
+    // then a second external write fires before the save completes, and the
+    // save fails.
+    let base = d("base");
+    let mem = d("my-edits");
+    let disk_v1 = d("disk-v1"); // the disk change that created DiskChangedDirty
+    let disk_v2 = d("disk-v2"); // a second external change mid-save
+
+    let sip = FileState::DiskChangedDirty { base, mem, disk: disk_v1 }
+        .apply(DocEvent::SaveStarted { target: mem });
+    // A second disk event arrives mid-save.
+    let sip = sip.apply(DocEvent::DiskModified { disk: disk_v2 });
+    let recovered = sip.apply(DocEvent::SaveFailed);
+    assert_eq!(
+        recovered,
+        FileState::DiskChangedDirty {
+            base,
+            mem,
+            disk: disk_v2,
+        },
+        "SaveFailed from DiskChangedDirty must recover with the latest observed disk digest"
+    );
 }

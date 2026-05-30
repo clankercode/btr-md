@@ -114,17 +114,24 @@ fn try_push_recent(path: &PathBuf) {
     }
 }
 
-/// Register a freshly-opened file in the registry, make it the active document,
-/// and start watching it. Shared by every trusted open entry point.
+/// Register a freshly-opened file in the registry and start watching it.
+/// If `foreground` is true, also mark the document as the active one (the
+/// save-authority target). Background opens (e.g. restoring a session tab
+/// while another tab is already active) must NOT steal save authority, so they
+/// pass `foreground = false` and rely on the explicit `set_active_doc` IPC
+/// call that fires when the tab is actually focused.
 fn register_opened(
     app: &tauri::AppHandle,
     state: &crate::AppState,
     canon: PathBuf,
     contents: String,
+    foreground: bool,
 ) -> OpenedDoc {
     let contents_ui = contents.clone();
     let (doc_id, fstate) = state.docs.register(Some(canon.clone()), contents);
-    state.docs.set_active(doc_id);
+    if foreground {
+        state.docs.set_active(doc_id);
+    }
     state.watcher.set_target(app.clone(), doc_id, canon.clone());
     OpenedDoc {
         doc_id,
@@ -146,16 +153,23 @@ pub async fn open_file(
     }
     let contents = std::fs::read_to_string(&canon).map_err(|e| e.to_string())?;
     try_push_recent(&canon);
-    Ok(register_opened(&app, &state, canon, contents))
+    Ok(register_opened(&app, &state, canon, contents, true))
 }
 
 /// User-initiated open from a Tauri-event-driven entry point (drag/drop,
 /// recents, the `open-file` event). Admission: already-scoped or in recents.
+///
+/// `background` mirrors the UI concept: a background open registers the doc
+/// and starts watching it, but does NOT transfer save authority to it.
+/// Authority is transferred only when the user activates the tab
+/// (`set_active_doc` IPC). Foreground opens (the default) transfer authority
+/// immediately, matching `open_dialog` behaviour.
 #[tauri::command]
 pub async fn request_open_file(
     app: tauri::AppHandle,
     state: tauri::State<'_, crate::AppState>,
     path: PathBuf,
+    background: Option<bool>,
 ) -> Result<OpenedDoc, String> {
     if !is_markdown_path(&path) {
         return Err(format!(
@@ -193,7 +207,8 @@ pub async fn request_open_file(
     let canon = state.scope.allow_canonical(&canon);
     let contents = std::fs::read_to_string(&canon).map_err(|e| e.to_string())?;
     try_push_recent(&canon);
-    Ok(register_opened(&app, &state, canon, contents))
+    let foreground = !background.unwrap_or(false);
+    Ok(register_opened(&app, &state, canon, contents, foreground))
 }
 
 #[tauri::command]
@@ -232,7 +247,7 @@ pub async fn open_dialog(
         let canon = state.scope.allow(&canon).map_err(|e| e.to_string())?;
         let contents = std::fs::read_to_string(&canon).map_err(|e| e.to_string())?;
         try_push_recent(&canon);
-        Ok(Some(register_opened(&app, &state, canon, contents)))
+        Ok(Some(register_opened(&app, &state, canon, contents, true)))
     } else {
         Ok(None)
     }
