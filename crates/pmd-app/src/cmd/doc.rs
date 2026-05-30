@@ -103,21 +103,6 @@ pub async fn save_doc(
         ));
     }
 
-    // Guard: refuse a save while the backend knows the disk has changed but
-    // the user has not yet acknowledged the change (reload or merge). The UI
-    // disables the Save button in `disk_changed_clean` state, but Ctrl+S can
-    // bypass that. Without this check, the external change would be silently
-    // overwritten. (For `disk_changed_dirty` the user has local edits they
-    // want to keep, so save is intentional and allowed.)
-    if matches!(
-        state.docs.state_of(doc_id),
-        Some(crate::doc::state::FileState::DiskChangedClean { .. })
-    ) {
-        return Err(
-            "save_doc: disk has changed since last load — reload or merge before saving".into(),
-        );
-    }
-
     // Resolve (and, for save-as, bind) the target path.
     let canon = match path {
         Some(p) => {
@@ -140,9 +125,20 @@ pub async fn save_doc(
         return Err("save_doc: path not in active scope".into());
     }
 
-    // Record intent, then write. A watcher event seen during the write sees
-    // SaveInProgress and is reconciled on completion (self-write vs race).
-    state.docs.save_started(doc_id, &contents);
+    // Atomically guard + begin the save transition under one registry lock.
+    // Refuses `DiskChangedClean` (unacknowledged external change that would
+    // be silently overwritten); the check and the `SaveStarted` transition are
+    // indivisible so a concurrent watcher event cannot slip between them.
+    // `DiskChangedDirty` is intentionally permitted — the user has local edits
+    // they want to keep, and the backend is aware of the disk conflict.
+    state
+        .docs
+        .begin_save_if_permitted(doc_id, &contents)
+        .ok_or_else(|| format!("save_doc: doc {} vanished", doc_id.0))?
+        .map_err(|_| {
+            "save_doc: disk has changed since last load — reload or merge before saving"
+                .to_string()
+        })?;
 
     match crate::cmd::file::write_no_follow(&canon, contents.as_bytes()) {
         Ok(()) => {

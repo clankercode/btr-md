@@ -20,7 +20,7 @@ export type FileState =
   | { kind: 'disk_changed_clean'; base: Digest; disk: Digest }
   | { kind: 'disk_changed_dirty'; base: Digest; mem: Digest; disk: Digest }
   | { kind: 'removed'; base: Digest; mem: Digest }
-  | { kind: 'save_in_progress'; base: Digest | null; target: Digest; edited_during: Digest | null; disk_during: Digest | null };
+  | { kind: 'save_in_progress'; base: Digest | null; target: Digest; edited_during: Digest | null; disk_before: Digest | null; disk_during: Digest | null; removed_during: boolean };
 
 /** The `doc_state_changed` event payload emitted by the watcher. */
 export interface DocStateChanged {
