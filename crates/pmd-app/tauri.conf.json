@@ -9,7 +9,8 @@
   "bundle": {
     "resources": {
       "../../themes": "themes"
-    }
+    },
+    "icon": ["icons/icon.png"]
   },
   "app": {
     "windows": [
