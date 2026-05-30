@@ -559,6 +559,9 @@ let rendering = false;
 let currentVersion = 0;
 
 function scheduleRender(): Promise<void> {
+  // Drop any pending debounced edit-render: this render supersedes it (covers
+  // immediate tab-switch/reload/merge renders, and the debounced fire itself).
+  scheduleRenderDebounced.cancel();
   const tab = store.activeDoc();
   if (!tab || !editor) return Promise.resolve();
   tab.renderSeq++;
@@ -615,10 +618,19 @@ async function ensureEditor(): Promise<void> {
   attachScrollSync(editor.view, previewPane);
 }
 
+// Coalesce keystroke bursts into a single render. Each render re-parses the
+// whole document (Rust) and rebuilds the preview DOM (JS main thread); firing
+// one per keystroke on a large file pins the main thread and makes typing lag.
+// Tab-switch / reload / merge paths still call scheduleRender() directly so the
+// preview updates immediately on those non-typing actions.
+const scheduleRenderDebounced = debounce(() => {
+  scheduleRender();
+}, 80);
+
 function onActiveEdit(): void {
   const tab = store.activeDoc();
   if (!tab || !editor) return;
-  scheduleRender();
+  scheduleRenderDebounced();
   sendDocEdited(tab.docId, editor.getValue());
   scheduleIdleAutosave();
   scheduleCounts();
