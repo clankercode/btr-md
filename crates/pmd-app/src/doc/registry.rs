@@ -116,6 +116,27 @@ impl DocRegistry {
         })
     }
 
+    /// Atomically check that the document state permits a save, then record
+    /// the save-in-progress transition. Returns `Err` (with the current state)
+    /// if the document is in `DiskChangedClean` (an unacknowledged disk change
+    /// that would be silently overwritten), or `None` if the document does not
+    /// exist. The check-and-transition are done under the same lock acquisition,
+    /// so a concurrent watcher event cannot slip between them.
+    pub fn begin_save_if_permitted(
+        &self,
+        doc: DocId,
+        contents: &str,
+    ) -> Option<Result<FileState, FileState>> {
+        let target = Digest::of(contents);
+        let mut docs = self.lock();
+        let entry = docs.get_mut(&doc)?;
+        if matches!(entry.state, crate::doc::state::FileState::DiskChangedClean { .. }) {
+            return Some(Err(entry.state.clone()));
+        }
+        entry.state = entry.state.clone().apply(DocEvent::SaveStarted { target });
+        Some(Ok(entry.state.clone()))
+    }
+
     /// Record a successful save. `base_content` advances to the saved text.
     pub fn save_succeeded(&self, doc: DocId, contents: String) -> Option<FileState> {
         self.transition(doc, |e| {
