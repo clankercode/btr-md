@@ -52,7 +52,10 @@ mod tests {
     #[test]
     fn does_not_double_escape_entities() {
         // `&` is escaped to `&amp;`; the emitted entities must not be re-escaped.
-        assert_eq!(escape_html("<a href=\"x&y\">"), "&lt;a href=&quot;x&amp;y&quot;&gt;");
+        assert_eq!(
+            escape_html("<a href=\"x&y\">"),
+            "&lt;a href=&quot;x&amp;y&quot;&gt;"
+        );
     }
 
     #[test]
