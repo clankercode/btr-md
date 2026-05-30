@@ -142,7 +142,9 @@ fn save_round_trip_from_dirty() {
             base: Some(base),
             target,
             edited_during: None,
+            disk_before: None,
             disk_during: None,
+            removed_during: false,
         }
     );
     assert_eq!(
@@ -184,7 +186,9 @@ fn save_as_from_untitled() {
             base: None,
             target,
             edited_during: None,
+            disk_before: None,
             disk_during: None,
+            removed_during: false,
         }
     );
     assert_eq!(
@@ -339,5 +343,42 @@ fn save_failed_from_disk_changed_dirty_with_new_disk_event_preserves_latest_disk
             disk: disk_v2,
         },
         "SaveFailed from DiskChangedDirty must recover with the latest observed disk digest"
+    );
+}
+
+#[test]
+fn disk_changed_dirty_save_success_is_clean_not_disk_changed() {
+    // Saving from DiskChangedDirty is intentional (user writes over the conflict).
+    // A successful save must land in Clean, NOT DiskChangedClean — disk_before
+    // must not be mistaken for a mid-save external event.
+    let base = d("base");
+    let mem = d("my-edits");
+    let disk_v1 = d("disk-v1");
+
+    let succeeded = FileState::DiskChangedDirty { base, mem, disk: disk_v1 }
+        .apply(DocEvent::SaveStarted { target: mem })
+        .apply(DocEvent::SaveSucceeded);
+    assert_eq!(
+        succeeded,
+        FileState::Clean { base: mem },
+        "intentional save over DiskChangedDirty must land Clean, not DiskChanged*"
+    );
+}
+
+#[test]
+fn disk_removed_mid_save_recovered_on_fail() {
+    // If the file is removed while a save is in flight, SaveFailed must recover
+    // to Removed rather than Clean/Dirty.
+    let base = d("base");
+    let mem = d("my-edits");
+
+    let recovered = FileState::Dirty { base, mem }
+        .apply(DocEvent::SaveStarted { target: mem })
+        .apply(DocEvent::DiskRemoved)
+        .apply(DocEvent::SaveFailed);
+    assert_eq!(
+        recovered,
+        FileState::Removed { base, mem },
+        "SaveFailed after DiskRemoved must land in Removed"
     );
 }
