@@ -1,3 +1,4 @@
+use crate::doc::modes::{AutoreloadMode, AutosaveMode, MergeStrategy};
 use crate::state::{recents, settings};
 use serde::Serialize;
 use std::path::PathBuf;
@@ -9,6 +10,9 @@ pub struct Settings {
     pub dark_theme: Option<String>,
     pub auto_switch: bool,
     pub default_mode: Option<String>,
+    pub autosave_mode: AutosaveMode,
+    pub autoreload_mode: AutoreloadMode,
+    pub merge_strategy: MergeStrategy,
 }
 
 impl From<settings::Settings> for Settings {
@@ -19,6 +23,9 @@ impl From<settings::Settings> for Settings {
             dark_theme: s.dark_theme,
             auto_switch: s.auto_switch,
             default_mode: s.default_mode,
+            autosave_mode: s.autosave_mode,
+            autoreload_mode: s.autoreload_mode,
+            merge_strategy: s.merge_strategy,
         }
     }
 }
@@ -72,6 +79,33 @@ pub fn set_theme_pair(light: Option<String>, dark: Option<String>) -> Result<(),
 #[tauri::command]
 pub fn set_auto_switch(auto_switch: bool) -> Result<(), String> {
     settings::rmw(|s| settings::Settings { auto_switch, ..s }).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn set_autosave_mode(mode: AutosaveMode) -> Result<(), String> {
+    settings::rmw(|s| settings::Settings {
+        autosave_mode: mode,
+        ..s
+    })
+    .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn set_autoreload_mode(mode: AutoreloadMode) -> Result<(), String> {
+    settings::rmw(|s| settings::Settings {
+        autoreload_mode: mode,
+        ..s
+    })
+    .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn set_merge_strategy(strategy: MergeStrategy) -> Result<(), String> {
+    settings::rmw(|s| settings::Settings {
+        merge_strategy: strategy,
+        ..s
+    })
+    .map_err(|e| e.to_string())
 }
 
 #[tauri::command]

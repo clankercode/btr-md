@@ -1,3 +1,4 @@
+pub mod doc;
 pub mod file;
 pub mod render;
 pub mod settings;

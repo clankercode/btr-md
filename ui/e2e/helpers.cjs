@@ -91,6 +91,7 @@ function screenshotPath(name) {
 async function installTauriMock(page, options = {}) {
   await page.addInitScript(({ initialPath, themes, renderHtml }) => {
     let callbackId = 1;
+    let nextDocId = 1;
     const callbacks = new Map();
     const files = {
       '/work/tests/corpus/hello.md': '# Hello\n\nThis file was opened by the test harness.',
@@ -149,8 +150,28 @@ async function installTauriMock(page, options = {}) {
           render_nonce: '',
         };
         if (cmd === 'open_file' || cmd === 'request_open_file') {
-          return { path: args.path, contents: files[args.path] ?? '# Missing fixture' };
+          return {
+            doc_id: nextDocId++,
+            path: args.path,
+            contents: files[args.path] ?? '# Missing fixture',
+            state: { kind: 'clean', base: '00' },
+          };
         }
+        if (cmd === 'register_doc') {
+          return {
+            doc_id: nextDocId++,
+            state: args.path ? { kind: 'clean', base: '00' } : { kind: 'untitled' },
+          };
+        }
+        if (cmd === 'doc_edited') return { kind: 'dirty', base: '00', mem: 'ff' };
+        if (cmd === 'save_doc') return { kind: 'clean', base: '00' };
+        if (cmd === 'pull_from_disk') {
+          return { contents: files[args.path] ?? '', state: { kind: 'clean', base: '00' } };
+        }
+        if (cmd === 'resolve_disk_change') {
+          return { merged: '', state: { kind: 'clean', base: '00' }, conflicted: false };
+        }
+        // set_active_doc / drop_doc / set_*_mode and friends: no return value.
         return null;
       },
     };

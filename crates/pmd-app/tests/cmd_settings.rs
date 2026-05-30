@@ -45,8 +45,7 @@ impl Drop for ConfigHomeGuard {
 #[test]
 fn renderer_cannot_register_add_recent_file_command() {
     let manifest_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
-    let main_rs =
-        std::fs::read_to_string(manifest_dir.join("src/main.rs")).expect("read main.rs");
+    let main_rs = std::fs::read_to_string(manifest_dir.join("src/main.rs")).expect("read main.rs");
     let settings_rs = std::fs::read_to_string(manifest_dir.join("src/cmd/settings.rs"))
         .expect("read settings command source");
 

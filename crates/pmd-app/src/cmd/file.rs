@@ -1,4 +1,4 @@
-//! File commands: open / save / dialog / initial-path.
+//! File commands: open / save-as dialog / initial-path.
 //!
 //! # Security model
 //!
@@ -6,66 +6,46 @@
 //! and save commands therefore distinguish between two kinds of paths:
 //!
 //! - **Scope-admitted paths**: paths the *backend* (this process, not the
-//!   renderer) has admitted via a trusted entry point. Trusted entry points
-//!   are the CLI argv parser, the OS file dialog (`open_dialog` /
-//!   `save_dialog`), the initial recents seeding from those entry points,
-//!   and `request_open_file` only for paths that already pass an admission
-//!   gate (see below). Once admitted, scope membership is permanent for
-//!   process lifetime.
+//!   renderer) has admitted via a trusted entry point — the CLI argv parser,
+//!   the OS file dialog (`open_dialog` / `save_dialog`), the initial recents
+//!   seeding from those entry points, and `request_open_file` only for paths
+//!   that already pass an admission gate (see below). Once admitted, scope
+//!   membership is permanent for process lifetime.
 //!
-//! - **Currently active path**: `AppState::current_path`, the canonical path
-//!   of the file the user is editing right now. `save_file` requires the
-//!   target to equal `current_path` (or to be a fresh save-as target the
-//!   user just confirmed via `save_dialog`). This narrows authority so a
-//!   compromised renderer can't overwrite an arbitrary previously-opened
-//!   file — only the active buffer.
+//! - **The active document**: `AppState::docs` tracks which `DocId` is active.
+//!   `cmd::doc::save_doc` requires the target document to be the active one (and
+//!   its path to be in scope). This narrows write authority so a compromised
+//!   renderer can't overwrite an arbitrary previously-opened file — only the
+//!   active buffer. See `crate::doc::registry` for the save-authority model.
 //!
 //! ## `request_open_file` admission
 //!
 //! `request_open_file` is the renderer's entry point for paths it has been
-//! given by Tauri events (the `open-file` emit, recents picks, drag/drop).
-//! We admit a path only when one of the following holds:
-//!
-//! 1. It is already in the scope (re-open without re-prompting).
-//! 2. It appears in the persisted recents list (the user previously chose it
-//!    through a trusted entry point).
-//!
-//! Anything else is rejected with a clear error. To open an arbitrary new
-//! file, the user must go through `open_dialog`, which is OS-mediated and
-//! cannot be triggered by markup alone.
+//! given by Tauri events (the `open-file` emit, recents picks, drag/drop). We
+//! admit a path only when it is already in the scope (re-open) or appears in
+//! the persisted recents list (the user previously chose it through a trusted
+//! entry point). Anything else is rejected; new files must go through
+//! `open_dialog`, which is OS-mediated and cannot be triggered by markup.
 //!
 //! ## TOCTOU
 //!
-//! All read/write paths use the canonical form returned by admission. The
-//! window between canonicalise and open is unavoidably non-zero on a
-//! filesystem we don't control, but reading by the canonical path (rather
-//! than the renderer's input) keeps the attack surface to "swap the inode
-//! at the canonical path after admit" — which a local attacker who can
-//! already write the user's home dir can do regardless of our checks.
-//! `save_file` additionally opens with `O_NOFOLLOW` (Unix) so a
-//! mid-flight symlink swap cannot redirect the write.
+//! All read/write paths use the canonical form returned by admission. Saving
+//! opens with `O_NOFOLLOW` (Unix) so a mid-flight symlink swap cannot redirect
+//! the write.
 
 use serde::Serialize;
 use std::fs::OpenOptions;
 use std::io::Write;
 use std::path::{Path, PathBuf};
-use tauri::Manager;
 use tauri_plugin_dialog::DialogExt;
+
+use crate::doc::state::{DocId, FileState};
 
 /// Write `contents` to `path` while refusing to follow symlinks.
 ///
-/// The scope check happens before the write, so an attacker who can place
-/// files in the parent directory of an allowed-but-nonexistent path could
-/// race to plant a symlink between the check and the write. We mitigate
-/// the race two ways:
-///
-/// 1. On Unix, open with `O_NOFOLLOW` so the kernel refuses to follow a
-///    symlink at the final path component.
-/// 2. On other platforms, fall back to `std::fs::write` after a
-///    best-effort `symlink_metadata` check.
-fn write_no_follow(path: &Path, contents: &[u8]) -> std::io::Result<()> {
-    // Pre-write best-effort symlink check (catches the common case even on
-    // platforms without O_NOFOLLOW).
+/// 1. On Unix, open with `O_NOFOLLOW` so the kernel refuses a final-component
+///    symlink. 2. Elsewhere, a best-effort `symlink_metadata` check first.
+pub(crate) fn write_no_follow(path: &Path, contents: &[u8]) -> std::io::Result<()> {
     if let Ok(meta) = std::fs::symlink_metadata(path) {
         if meta.file_type().is_symlink() {
             return Err(std::io::Error::new(
@@ -113,33 +93,17 @@ fn is_markdown_path(p: &Path) -> bool {
     MARKDOWN_EXTENSIONS.iter().any(|e| *e == lower)
 }
 
+/// What an open command returns: enough for the renderer to adopt the document
+/// (its `doc_id`, canonical `path`, `contents`, and initial lifecycle `state`).
 #[derive(Serialize)]
-pub struct FileBuffer {
+pub struct OpenedDoc {
+    pub doc_id: DocId,
     pub path: PathBuf,
     pub contents: String,
+    pub state: FileState,
 }
 
-/// Set the "currently active" path on `AppState`. Called by every successful
-/// open and by save-as. Lock-poison-tolerant.
-fn set_current(state: &crate::AppState, path: Option<PathBuf>) {
-    let mut cur = state
-        .current_path
-        .lock()
-        .unwrap_or_else(|poisoned| poisoned.into_inner());
-    *cur = path;
-}
-
-fn current(state: &crate::AppState) -> Option<PathBuf> {
-    state
-        .current_path
-        .lock()
-        .map(|g| g.clone())
-        .unwrap_or_else(|poisoned| poisoned.into_inner().clone())
-}
-
-/// Push to recents, but treat I/O / parse failures as non-fatal: log and
-/// move on. Open commands must not fail just because the recents file is
-/// corrupt or unwritable.
+/// Push to recents, treating I/O / parse failures as non-fatal.
 fn try_push_recent(path: &PathBuf) {
     if let Err(e) = crate::state::recents::push(path) {
         eprintln!(
@@ -150,11 +114,24 @@ fn try_push_recent(path: &PathBuf) {
     }
 }
 
-/// Start (or restart) the file watcher for `path` on the shared state's
-/// watcher slot. Idempotent across opens.
-fn rewatch(app: &tauri::AppHandle, path: &Path) {
-    let state = app.state::<crate::AppState>();
-    state.watcher.set_target(app.clone(), path.to_path_buf());
+/// Register a freshly-opened file in the registry, make it the active document,
+/// and start watching it. Shared by every trusted open entry point.
+fn register_opened(
+    app: &tauri::AppHandle,
+    state: &crate::AppState,
+    canon: PathBuf,
+    contents: String,
+) -> OpenedDoc {
+    let contents_ui = contents.clone();
+    let (doc_id, fstate) = state.docs.register(Some(canon.clone()), contents);
+    state.docs.set_active(doc_id);
+    state.watcher.set_target(app.clone(), doc_id, canon.clone());
+    OpenedDoc {
+        doc_id,
+        path: canon,
+        contents: contents_ui,
+        state: fstate,
+    }
 }
 
 #[tauri::command]
@@ -162,37 +139,24 @@ pub async fn open_file(
     app: tauri::AppHandle,
     state: tauri::State<'_, crate::AppState>,
     path: PathBuf,
-) -> Result<FileBuffer, String> {
-    // Read the canonical path, not the renderer's input — admission stored
-    // the canonical form, and using it here removes a TOCTOU step between
-    // "scope says yes" and "read".
+) -> Result<OpenedDoc, String> {
     let canon = crate::path_scope::PathScope::canonicalise(&path).map_err(|e| e.to_string())?;
     if !state.scope.check_canonical(&canon) {
         return Err(format!("path not in active scope: {}", canon.display()));
     }
     let contents = std::fs::read_to_string(&canon).map_err(|e| e.to_string())?;
     try_push_recent(&canon);
-    set_current(&state, Some(canon.clone()));
-    rewatch(&app, &canon);
-    Ok(FileBuffer {
-        path: canon,
-        contents,
-    })
+    Ok(register_opened(&app, &state, canon, contents))
 }
 
-/// User-initiated open. The renderer calls this from Tauri-event-driven
-/// entry points (drag/drop, recents, the `open-file` event).
-///
-/// Admission rule: the path must be either already-scoped or present in the
-/// persisted recents list. Anything else is rejected — to open a brand new
-/// file the user must go through `open_dialog`. See the module-level docs
-/// for the full security model.
+/// User-initiated open from a Tauri-event-driven entry point (drag/drop,
+/// recents, the `open-file` event). Admission: already-scoped or in recents.
 #[tauri::command]
 pub async fn request_open_file(
     app: tauri::AppHandle,
     state: tauri::State<'_, crate::AppState>,
     path: PathBuf,
-) -> Result<FileBuffer, String> {
+) -> Result<OpenedDoc, String> {
     if !is_markdown_path(&path) {
         return Err(format!(
             "request_open_file refuses non-markdown extension: {}",
@@ -214,7 +178,6 @@ pub async fn request_open_file(
         ));
     }
 
-    // Admission gate: either already scoped, or in recents.
     let already_scoped = state.scope.check_canonical(&canon);
     let in_recents = crate::state::recents::contains_canonical_eq(&canon);
     if !already_scoped && !in_recents {
@@ -224,59 +187,14 @@ pub async fn request_open_file(
         ));
     }
 
-    // It's fine to re-admit an already-scoped path; HashSet inserts are
-    // idempotent. For recents-only paths this is the moment we add the
-    // canonical form to the in-process scope.
     let canon = state.scope.allow_canonical(&canon);
     let contents = std::fs::read_to_string(&canon).map_err(|e| e.to_string())?;
     try_push_recent(&canon);
-    set_current(&state, Some(canon.clone()));
-    rewatch(&app, &canon);
-    Ok(FileBuffer {
-        path: canon,
-        contents,
-    })
-}
-
-#[tauri::command]
-pub async fn save_file(
-    app: tauri::AppHandle,
-    state: tauri::State<'_, crate::AppState>,
-    path: PathBuf,
-    contents: String,
-) -> Result<(), String> {
-    // Authorise by *active* path, not scope membership. The scope is
-    // append-only, so a path opened earlier in the session would otherwise
-    // remain writable forever; restricting `save_file` to the current path
-    // means at most one file is overwritable at any moment.
-    let canon = crate::path_scope::PathScope::canonicalise(&path).map_err(|e| e.to_string())?;
-    let active = current(&state);
-    let authorised = match active.as_deref() {
-        Some(active_canon) => active_canon == canon.as_path(),
-        None => false,
-    };
-    if !authorised {
-        return Err(format!(
-            "save_file refuses {}: not the active file",
-            canon.display()
-        ));
-    }
-    // Belt-and-braces: even the active path must still be in scope.
-    if !state.scope.check_canonical(&canon) {
-        return Err("path not in active scope".into());
-    }
-    write_no_follow(&canon, contents.as_bytes()).map_err(|e| e.to_string())?;
-    // After a successful save, ensure the watcher is pointing at the
-    // canonical path (it might not be, for an untitled buffer that was
-    // just saved-as). Idempotent for the common case.
-    rewatch(&app, &canon);
-    Ok(())
+    Ok(register_opened(&app, &state, canon, contents))
 }
 
 #[tauri::command]
 pub fn get_initial_path(state: tauri::State<'_, crate::AppState>) -> Option<PathBuf> {
-    // Recover from a poisoned lock — initial_path is a leaf Option with no
-    // multi-step invariants that could be left half-written.
     state
         .initial_path
         .lock()
@@ -299,7 +217,7 @@ pub fn get_open_dialog_on_start(state: tauri::State<'_, crate::AppState>) -> boo
 pub async fn open_dialog(
     app: tauri::AppHandle,
     state: tauri::State<'_, crate::AppState>,
-) -> Result<Option<FileBuffer>, String> {
+) -> Result<Option<OpenedDoc>, String> {
     let file_path = app
         .dialog()
         .file()
@@ -311,17 +229,15 @@ pub async fn open_dialog(
         let canon = state.scope.allow(&canon).map_err(|e| e.to_string())?;
         let contents = std::fs::read_to_string(&canon).map_err(|e| e.to_string())?;
         try_push_recent(&canon);
-        set_current(&state, Some(canon.clone()));
-        rewatch(&app, &canon);
-        Ok(Some(FileBuffer {
-            path: canon,
-            contents,
-        }))
+        Ok(Some(register_opened(&app, &state, canon, contents)))
     } else {
         Ok(None)
     }
 }
 
+/// Pick a save-as target. Admits the chosen path to the scope and returns its
+/// canonical form; the renderer then calls `save_doc` with this path so the
+/// document is (re)bound and written in one authorised step.
 #[tauri::command]
 pub async fn save_dialog(
     app: tauri::AppHandle,
@@ -338,21 +254,8 @@ pub async fn save_dialog(
     if let Some(path) = file_path {
         let canon = path.into_path().map_err(|e| e.to_string())?;
         let canon = state.scope.allow(&canon).map_err(|e| e.to_string())?;
-        // The renderer's next call will be `save_file`; pre-set the active
-        // path so that authorisation succeeds without an additional round
-        // trip, and start watching the new target.
-        set_current(&state, Some(canon.clone()));
-        rewatch(&app, &canon);
         Ok(Some(canon))
     } else {
         Ok(None)
     }
-}
-
-/// Notify the backend that the renderer has switched to an untitled buffer
-/// ("new file"). Clears the active path and stops watching.
-#[tauri::command]
-pub fn clear_active_file(state: tauri::State<'_, crate::AppState>) {
-    set_current(&state, None);
-    state.watcher.clear();
 }

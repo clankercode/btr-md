@@ -1005,3 +1005,30 @@ body[data-state="welcome"] #split-resizer {
   padding-right: var(--pmd-space-3);
   pointer-events: auto;
 }
+
+/* Save button: always present; `:disabled` (no unsaved changes) is styled by
+   the shared `.pmd-btn:disabled` rule. */
+.pmd-save-btn {
+  white-space: nowrap;
+}
+
+/* Merge button: animates in like the reload button, but only on a real
+   disk-vs-memory conflict. */
+.pmd-merge-btn {
+  max-width: 0;
+  opacity: 0;
+  padding-left: 0;
+  padding-right: 0;
+  overflow: hidden;
+  pointer-events: none;
+  white-space: nowrap;
+  transition: max-width 180ms ease, opacity 180ms ease, padding 180ms ease;
+}
+
+.pmd-merge-btn[data-visible] {
+  max-width: 9rem;
+  opacity: 1;
+  padding-left: var(--pmd-space-3);
+  padding-right: var(--pmd-space-3);
+  pointer-events: auto;
+}

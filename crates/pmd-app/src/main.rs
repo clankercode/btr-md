@@ -1,5 +1,5 @@
 use pmd_app_lib::{cli, cmd, path_scope::PathScope, AppState};
-use tauri::{Emitter, Manager};
+use tauri::Emitter;
 
 fn main() {
     let scope = PathScope::new();
@@ -15,15 +15,15 @@ fn main() {
 
     let initial_path = args.initial_path.clone();
 
-    // Pre-populate AppState with the path the CLI already admitted to its
-    // local scope. The watcher and `current_path` are set after the Tauri
-    // app is up so we have an `AppHandle` to drive event emission.
+    // The CLI already admitted `initial_path` to the local scope. The document
+    // itself is registered (and its watcher started) by the frontend's open
+    // flow once the app is up, via `request_open_file` / `open_file`.
     let state = AppState {
         scope,
         initial_path: std::sync::Mutex::new(initial_path.clone()),
         open_dialog_on_start: std::sync::Mutex::new(args.open_dialog),
-        current_path: std::sync::Mutex::new(initial_path.clone()),
-        watcher: pmd_app_lib::watcher::FileWatcher::new(),
+        docs: pmd_app_lib::doc::DocRegistry::new(),
+        watcher: pmd_app_lib::watcher::WatcherSet::new(),
     };
 
     tauri::Builder::default()
@@ -33,10 +33,15 @@ fn main() {
             cmd::render::render_cmd,
             cmd::file::open_file,
             cmd::file::request_open_file,
-            cmd::file::save_file,
             cmd::file::open_dialog,
             cmd::file::save_dialog,
-            cmd::file::clear_active_file,
+            cmd::doc::register_doc,
+            cmd::doc::set_active_doc,
+            cmd::doc::doc_edited,
+            cmd::doc::save_doc,
+            cmd::doc::pull_from_disk,
+            cmd::doc::resolve_disk_change,
+            cmd::doc::drop_doc,
             cmd::theme::list_themes,
             cmd::theme::set_theme,
             cmd::settings::get_settings,
@@ -44,6 +49,9 @@ fn main() {
             cmd::settings::set_default_mode,
             cmd::settings::set_theme_pair,
             cmd::settings::set_auto_switch,
+            cmd::settings::set_autosave_mode,
+            cmd::settings::set_autoreload_mode,
+            cmd::settings::set_merge_strategy,
             cmd::settings::get_recent_files,
             cmd::settings::clear_recent_files,
             cmd::file::get_initial_path,
@@ -51,11 +59,10 @@ fn main() {
             cmd::window::set_window_title,
         ])
         .setup(move |app| {
+            // The watcher + registry entry for the initial file are created by
+            // the frontend's open flow; here we only nudge it to open.
             if let Some(ref p) = args.initial_path {
                 let _ = app.emit("open-file", p.to_string_lossy().to_string());
-                app.state::<AppState>()
-                    .watcher
-                    .set_target(app.handle().clone(), p.clone());
             }
             Ok(())
         })

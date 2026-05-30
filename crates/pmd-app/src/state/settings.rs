@@ -1,3 +1,4 @@
+use crate::doc::modes::{AutoreloadMode, AutosaveMode, MergeStrategy};
 use anyhow::Result;
 use fs2::FileExt;
 use serde::{Deserialize, Serialize};
@@ -14,6 +15,27 @@ pub struct Settings {
     pub dark_theme: Option<String>,
     pub auto_switch: bool,
     pub default_mode: Option<String>,
+    /// Lifecycle policies (Phase 1). `#[serde(default)]` keeps old `state.toml`
+    /// files (written before these existed) parsing into the safe defaults.
+    #[serde(default)]
+    pub autosave_mode: AutosaveMode,
+    #[serde(default)]
+    pub autoreload_mode: AutoreloadMode,
+    #[serde(default)]
+    pub merge_strategy: MergeStrategy,
+}
+
+/// Read the current settings from disk, falling back to defaults if the file is
+/// missing or unreadable. Convenience for read-only callers (e.g. the merge
+/// command) that don't need the locking read-modify-write path.
+pub fn load() -> Settings {
+    let p = path();
+    if !p.exists() {
+        return Settings::default();
+    }
+    std::fs::read_to_string(&p)
+        .map(|s| parse_or_default(&s))
+        .unwrap_or_default()
 }
 
 pub fn path() -> PathBuf {

@@ -19,6 +19,10 @@ export interface ChromeInstance {
   onClearRecentFiles: (handler: () => void) => void;
   setReloadVisible: (visible: boolean) => void;
   onReloadClick: (handler: () => void) => void;
+  setSaveEnabled: (enabled: boolean) => void;
+  onSaveClick: (handler: () => void) => void;
+  setMergeVisible: (visible: boolean) => void;
+  onMergeClick: (handler: () => void) => void;
   destroy: () => void;
 }
 
@@ -89,6 +93,24 @@ export function createChrome(parent: HTMLElement): ChromeInstance {
   const toolbarSpacer = document.createElement('div');
   toolbarSpacer.className = 'pmd-toolbar-spacer';
   toolbar.appendChild(toolbarSpacer);
+
+  // Save button: always present, disabled unless the lifecycle state has
+  // something writable (dirty / untitled / conflict / removed).
+  const saveBtn = document.createElement('button');
+  saveBtn.className = 'pmd-btn pmd-btn-primary pmd-btn-sm pmd-save-btn';
+  saveBtn.textContent = 'Save';
+  saveBtn.type = 'button';
+  saveBtn.title = 'Save (Ctrl+S)';
+  saveBtn.disabled = true;
+  toolbar.appendChild(saveBtn);
+
+  // Merge button: animated in (see CSS) on a real disk-vs-memory conflict.
+  const mergeBtn = document.createElement('button');
+  mergeBtn.className = 'pmd-btn pmd-btn-ghost pmd-btn-sm pmd-merge-btn';
+  mergeBtn.textContent = 'Merge';
+  mergeBtn.type = 'button';
+  mergeBtn.title = 'Merge the on-disk changes into the editor (does not save)';
+  toolbar.appendChild(mergeBtn);
 
   // Reload button: hidden by default, animated in (see CSS) when the active
   // file changes on disk while the buffer is modified. Sits to the LEFT of
@@ -181,10 +203,20 @@ export function createChrome(parent: HTMLElement): ChromeInstance {
     reloadHandlers.forEach((h) => h());
   });
 
+  saveBtn.addEventListener('click', () => {
+    saveHandlers.forEach((h) => h());
+  });
+
+  mergeBtn.addEventListener('click', () => {
+    mergeHandlers.forEach((h) => h());
+  });
+
   setMode(currentMode);
 
   let themePickerHandlers: (() => void)[] = [];
   let reloadHandlers: (() => void)[] = [];
+  let saveHandlers: (() => void)[] = [];
+  let mergeHandlers: (() => void)[] = [];
 
   return {
     el: container,
@@ -255,6 +287,18 @@ export function createChrome(parent: HTMLElement): ChromeInstance {
     },
     onReloadClick: (handler: () => void) => {
       reloadHandlers.push(handler);
+    },
+    setSaveEnabled: (enabled: boolean) => {
+      saveBtn.disabled = !enabled;
+    },
+    onSaveClick: (handler: () => void) => {
+      saveHandlers.push(handler);
+    },
+    setMergeVisible: (visible: boolean) => {
+      mergeBtn.toggleAttribute('data-visible', visible);
+    },
+    onMergeClick: (handler: () => void) => {
+      mergeHandlers.push(handler);
     },
     destroy: () => {
       document.removeEventListener('click', handleDocumentClick);

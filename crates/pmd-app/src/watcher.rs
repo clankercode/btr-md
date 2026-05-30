@@ -1,27 +1,48 @@
-use notify::{Config, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
-use std::path::{Path, PathBuf};
-use std::sync::mpsc::channel;
-use std::sync::Mutex;
-use tauri::{AppHandle, Emitter, Runtime};
+//! Per-document file watching.
+//!
+//! [`WatcherSet`] holds at most one `notify` watcher per open [`DocId`], so
+//! background tabs detect disk changes too (Phase 2). Each worker thread is
+//! *content-aware*: on an inotify burst it coalesces, re-reads and blake3-hashes
+//! the file itself, drives the [`DocRegistry`] state machine, and emits a single
+//! structured `doc_state_changed` event ({ doc_id, state }). This removes the
+//! old "emit a path, make the renderer re-read" round trip and makes external
+//! vs self writes distinguishable by digest.
+//!
+//! Self-write suppression falls out of being content-aware: after our own save
+//! the on-disk digest equals the document's `base`, so the `DiskModified`
+//! transition collapses back to `Clean` instead of spuriously flagging an
+//! external change (and mid-save self-writes are recognised in
+//! [`DocRegistry::on_disk_event`]).
+//!
+//! Switching a slot drops the previous `RecommendedWatcher` (closing its event
+//! channel); the previous worker observes the closed channel and exits, so
+//! stale events cannot fire after a swap.
 
-/// Manages an at-most-one `notify` watcher for the currently active file.
-///
-/// Watching is centralised here so every file-open code path (CLI, dialog,
-/// `request_open_file`, save-as) can call `set_target` and pick up watcher
-/// events for the right file. The previous design only started a watcher
-/// for the initial CLI path, and the UI had no way to swap it on a normal
-/// open, so disk watching was silently broken outside CLI startup.
-///
-/// Watcher events emit the canonical path as the payload so the UI can
-/// confirm the event applies to its `currentFilePath` (race-safe against
-/// rapid switches).
-///
-/// Switching watchers works by dropping the previous `RecommendedWatcher`
-/// (which closes its event channel) before installing a new one. The
-/// previous worker thread observes the closed channel and exits, so stale
-/// events cannot fire after a swap.
-pub struct FileWatcher {
-    inner: Mutex<Option<WatcherSlot>>,
+use notify::{Config, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
+use serde::Serialize;
+use std::collections::HashMap;
+use std::path::{Path, PathBuf};
+use std::sync::mpsc::{channel, RecvTimeoutError};
+use std::sync::Mutex;
+use std::time::Duration;
+use tauri::{AppHandle, Emitter, Manager, Runtime};
+
+use crate::doc::registry::DiskEvent;
+use crate::doc::state::{Digest, DocId, FileState};
+
+/// Coalescing window for inotify bursts (atomic-replace saves fire several
+/// events in quick succession; we only want to hash once).
+const COALESCE_MS: u64 = 40;
+
+/// The `doc_state_changed` event payload.
+#[derive(Clone, Serialize)]
+struct DocStateChanged {
+    doc_id: DocId,
+    state: FileState,
+}
+
+pub struct WatcherSet {
+    slots: Mutex<HashMap<DocId, WatcherSlot>>,
 }
 
 struct WatcherSlot {
@@ -29,61 +50,54 @@ struct WatcherSlot {
     path: PathBuf,
 }
 
-impl Default for FileWatcher {
+impl Default for WatcherSet {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl FileWatcher {
+impl WatcherSet {
     pub fn new() -> Self {
         Self {
-            inner: Mutex::new(None),
+            slots: Mutex::new(HashMap::new()),
         }
     }
 
-    /// Stop watching the previous file (if any) and start watching `path`.
-    ///
-    /// The watcher tracks the parent directory and filters events by file
-    /// name, since `notify`'s recommended backend on Linux is inotify which
-    /// has trouble re-arming on a single file when editors rename-and-replace.
-    pub fn set_target<R: Runtime>(&self, app: AppHandle<R>, path: PathBuf) {
-        // Recover from a poisoned lock — `inner` is a single Option<WatcherSlot>
-        // with no multi-step invariants. Drop the previous slot before building
-        // the new one so the old worker thread can exit cleanly.
-        let mut inner = self
-            .inner
-            .lock()
-            .unwrap_or_else(|poisoned| poisoned.into_inner());
-        *inner = None;
-
-        let Some(slot) = build_slot(app, &path) else {
-            return;
-        };
-        *inner = Some(slot);
+    fn lock(&self) -> std::sync::MutexGuard<'_, HashMap<DocId, WatcherSlot>> {
+        self.slots.lock().unwrap_or_else(|p| p.into_inner())
     }
 
-    /// Stop watching whatever (if anything) is currently active. Called on
-    /// "new file" (untitled buffer) and after a successful close.
-    pub fn clear(&self) {
-        let mut inner = self
-            .inner
-            .lock()
-            .unwrap_or_else(|poisoned| poisoned.into_inner());
-        *inner = None;
+    /// Watch `path` on behalf of `doc`, replacing any previous slot for it.
+    pub fn set_target<R: Runtime>(&self, app: AppHandle<R>, doc: DocId, path: PathBuf) {
+        let mut slots = self.lock();
+        slots.remove(&doc); // drop old watcher first so its worker exits
+        if let Some(slot) = build_slot(app, doc, &path) {
+            slots.insert(doc, slot);
+        }
     }
 
-    /// Path currently being watched, if any. Used by tests and diagnostics.
-    pub fn current(&self) -> Option<PathBuf> {
-        let inner = self
-            .inner
-            .lock()
-            .unwrap_or_else(|poisoned| poisoned.into_inner());
-        inner.as_ref().map(|s| s.path.clone())
+    /// Stop watching for `doc` (e.g. it became untitled or was closed).
+    pub fn clear(&self, doc: DocId) {
+        self.lock().remove(&doc);
+    }
+
+    pub fn clear_all(&self) {
+        self.lock().clear();
+    }
+
+    /// Path currently watched for `doc`, if any. Used by tests/diagnostics.
+    pub fn watched(&self, doc: DocId) -> Option<PathBuf> {
+        self.lock().get(&doc).map(|s| s.path.clone())
     }
 }
 
-fn build_slot<R: Runtime>(app: AppHandle<R>, path: &Path) -> Option<WatcherSlot> {
+/// Read and hash a file. `None` if it cannot be read as UTF-8 right now (e.g.
+/// it vanished mid-rename) — the caller treats that as "no usable digest".
+fn hash_file(path: &Path) -> Option<Digest> {
+    std::fs::read_to_string(path).ok().map(|s| Digest::of(&s))
+}
+
+fn build_slot<R: Runtime>(app: AppHandle<R>, doc: DocId, path: &Path) -> Option<WatcherSlot> {
     let parent = path.parent()?.to_path_buf();
     let file_name = path.file_name()?.to_owned();
     let watched_path = path.to_path_buf();
@@ -103,28 +117,53 @@ fn build_slot<R: Runtime>(app: AppHandle<R>, path: &Path) -> Option<WatcherSlot>
     let worker_path = watched_path.clone();
 
     std::thread::spawn(move || {
-        // When the slot is replaced (or cleared), the `RecommendedWatcher`
-        // owning `tx` drops; `rx.recv()` then returns `Err` and we exit.
+        // Block for the first relevant event, then coalesce the inotify burst
+        // before doing a single read+hash+transition+emit.
         while let Ok(res) = rx.recv() {
             let Ok(event) = res else { continue };
-            let touches_target = event
-                .paths
-                .iter()
-                .any(|p| p.file_name() == Some(&file_name));
-            if !touches_target {
+            if !touches(&event, &file_name) {
                 continue;
             }
-            let payload = worker_path.to_string_lossy().to_string();
-            match event.kind {
-                EventKind::Modify(_) | EventKind::Create(_) => {
-                    if worker_path.exists() {
-                        let _ = worker_app.emit("file_changed_on_disk", payload);
+            let mut saw_create = matches!(event.kind, EventKind::Create(_));
+            let mut saw_remove = matches!(event.kind, EventKind::Remove(_));
+
+            // Drain the rest of the burst.
+            loop {
+                match rx.recv_timeout(Duration::from_millis(COALESCE_MS)) {
+                    Ok(Ok(ev)) if touches(&ev, &file_name) => {
+                        if matches!(ev.kind, EventKind::Create(_)) {
+                            saw_create = true;
+                        }
+                        if matches!(ev.kind, EventKind::Remove(_)) {
+                            saw_remove = true;
+                        }
                     }
+                    Ok(_) => {}
+                    Err(RecvTimeoutError::Timeout) => break,
+                    Err(RecvTimeoutError::Disconnected) => return,
                 }
-                EventKind::Remove(_) => {
-                    let _ = worker_app.emit("file_removed_from_disk", payload);
+            }
+
+            // Decide the actual current state of the file by inspecting it.
+            let disk_event = if worker_path.exists() {
+                match hash_file(&worker_path) {
+                    Some(digest) if saw_create && !saw_remove => DiskEvent::Created(digest),
+                    Some(digest) => DiskEvent::Modified(digest),
+                    None => continue, // unreadable right now; wait for the next event
                 }
-                _ => {}
+            } else {
+                DiskEvent::Removed
+            };
+
+            let state = worker_app.state::<crate::AppState>();
+            if let Some(new_state) = state.docs.on_disk_event(doc, disk_event) {
+                let _ = worker_app.emit(
+                    "doc_state_changed",
+                    DocStateChanged {
+                        doc_id: doc,
+                        state: new_state,
+                    },
+                );
             }
         }
     });
@@ -133,4 +172,8 @@ fn build_slot<R: Runtime>(app: AppHandle<R>, path: &Path) -> Option<WatcherSlot>
         _watcher: watcher,
         path: watched_path,
     })
+}
+
+fn touches(event: &notify::Event, file_name: &std::ffi::OsStr) -> bool {
+    event.paths.iter().any(|p| p.file_name() == Some(file_name))
 }

@@ -9,6 +9,14 @@ import { renderMermaidNodes, setMermaidTheme } from './mermaid_runner.js';
 import { renderMathNodes } from './katex_runner.js';
 import { decorateCodeBlocks } from './code_blocks.js';
 import { openThemePicker, isPickerOpen, closeThemePicker, type ThemeInfo } from './picker.js';
+import { debounce } from './debounce.js';
+import {
+  uiForState,
+  type FileState,
+  type DocStateChanged,
+  type AutosaveMode,
+  type AutoreloadMode,
+} from './doc_state.js';
 
 interface RenderResult {
   html: string;
@@ -22,6 +30,16 @@ interface Settings {
   dark_theme: string | null;
   auto_switch: boolean;
   default_mode: string | null;
+  autosave_mode: AutosaveMode;
+  autoreload_mode: AutoreloadMode;
+}
+
+/** What an open/register command returns. */
+interface OpenedDoc {
+  doc_id: number;
+  path: string;
+  contents: string;
+  state: FileState;
 }
 
 let renderQueue: Array<{ markdown: string; resolve: () => void; reject: (e: unknown) => void }> = [];
@@ -29,10 +47,6 @@ let rendering = false;
 let currentVersion = 0;
 
 const previewPane = document.getElementById('preview-pane') as HTMLElement;
-// `#preview-pane` is the scroll container; `#pmd-content` is the inner reading
-// column that receives all rendered markdown. Content writes (innerHTML, nonce
-// datasets, post-render passes) target the inner wrapper; scroll-sync stays on
-// the scroll container.
 const previewContent = document.getElementById('pmd-content') as HTMLElement;
 const editorPane = document.createElement('div');
 editorPane.id = 'editor-pane';
@@ -131,10 +145,6 @@ document.body.addEventListener('dragover', (e) => {
   e.stopPropagation();
 });
 
-// Markdown extensions we accept on drag/drop. Kept in sync with the backend
-// allowlist in `crates/pmd-app/src/cmd/file.rs::MARKDOWN_EXTENSIONS` so the
-// renderer doesn't reject paths the backend would have accepted. Comparison
-// is case-insensitive on the file's extension.
 const MARKDOWN_EXTENSIONS = ['md', 'markdown', 'mdown', 'mkd'];
 
 function isMarkdownFileName(name: string): boolean {
@@ -144,13 +154,31 @@ function isMarkdownFileName(name: string): boolean {
   return MARKDOWN_EXTENSIONS.includes(ext);
 }
 
+function basename(p: string): string {
+  return p.split('/').pop() || p;
+}
+
 function showError(message: string): void {
-  // Route user-facing open/save failures through the status bar instead of
-  // hijacking the preview pane (the prior behaviour). The preview should
-  // continue showing the last-rendered document; errors live in chrome.
   chrome.setStatus(message);
   console.error(message);
 }
+
+// --- document lifecycle state (replaces the old `isModified` boolean) -------
+
+let editor: Awaited<ReturnType<typeof mountEditor>> | null = null;
+let currentDocId: number | null = null;
+let currentFilePath: string | null = null;
+let currentFileState: FileState | null = null;
+let currentMode: Mode = 'split';
+
+// Lifecycle policy (loaded from settings; updated by the Phase 3 settings menu).
+let autosaveMode: AutosaveMode = 'off';
+let autoreloadMode: AutoreloadMode = 'when_clean';
+
+// When true, a programmatic `editor.setValue` (open / reload / merge) is in
+// flight: the change listener must NOT treat it as a user edit (no `doc_edited`,
+// no dirty mark), though it still re-renders the preview.
+let suppressEdits = false;
 
 document.body.addEventListener('drop', async (e) => {
   e.preventDefault();
@@ -169,37 +197,26 @@ document.body.addEventListener('drop', async (e) => {
   if (path) {
     openFile(path);
   } else {
-    hideWelcomeScreen();
+    // No filesystem path (e.g. dropped from a browser): adopt as an untitled
+    // buffer holding the dropped text.
     const contents = await file.text();
-    currentFilePath = null;
-    isModified = true;
-    chrome.setFilename(file.name);
-    chrome.setModified(true);
-    updateTitle();
-
-    if (!editor) {
-      editor = await mountEditor(editorPane, (md) => {
-        isModified = true;
-        chrome.setModified(true);
-        updateTitle();
-        renderMarkdown(md);
+    try {
+      const reg = await invoke<{ doc_id: number; state: FileState }>('register_doc', {
+        path: null,
+        contents,
       });
-      attachScrollSync(editor.view, previewPane);
+      await adoptDoc(reg.doc_id, null, reg.state, contents);
+      chrome.setFilename(file.name);
+    } catch (err) {
+      showError(`Open failed: ${String(err)}`);
     }
-    editor.setValue(contents);
-    await renderMarkdown(contents);
-    editor.focus();
   }
 });
 
-let editor: Awaited<ReturnType<typeof mountEditor>> | null = null;
-let currentFilePath: string | null = null;
-let isModified = false;
-let currentMode: Mode = 'split';
-
 function updateTitle() {
-  const name = currentFilePath ? currentFilePath.split('/').pop() || currentFilePath : 'Untitled';
-  const title = isModified ? `● ${name} — preview-md` : `${name} — preview-md`;
+  const name = currentFilePath ? basename(currentFilePath) : 'Untitled';
+  const modified = currentFileState ? uiForState(currentFileState).modified : false;
+  const title = modified ? `● ${name} — preview-md` : `${name} — preview-md`;
   invoke('set_window_title', { title }).catch(() => {});
 }
 
@@ -228,9 +245,6 @@ async function showThemePicker(): Promise<void> {
   const themes = await loadThemes();
   openThemePicker(themes, async (slug, mode) => {
     if (mode) {
-      // Only send the slot that's being updated; the Rust merge preserves
-      // any slot whose value is `null`/omitted, so this leaves the opposite
-      // slot intact.
       const payload: Record<string, string> = {};
       if (mode === 'light') payload.light = slug;
       else if (mode === 'dark') payload.dark = slug;
@@ -245,11 +259,10 @@ chrome.onThemePickerClick(() => {
   showThemePicker();
 });
 
-// The Reload button (shown when the active file changes on disk while the
-// buffer is dirty) pulls the on-disk version, discarding local edits.
-chrome.onReloadClick(() => {
-  if (currentFilePath) reloadActiveFromDisk(currentFilePath);
-});
+// Lifecycle button wiring.
+chrome.onReloadClick(() => doReload());
+chrome.onSaveClick(() => saveCurrentDoc());
+chrome.onMergeClick(() => doMerge());
 
 document.addEventListener('keydown', (e: KeyboardEvent) => {
   if (e.ctrlKey && e.key === 't') {
@@ -266,7 +279,7 @@ document.addEventListener('keydown', (e: KeyboardEvent) => {
   }
   if (e.ctrlKey && e.key === 's') {
     e.preventDefault();
-    saveCurrentFile();
+    saveCurrentDoc();
   }
   if (e.altKey && (e.key === 'z' || e.key === 'Z')) {
     e.preventDefault();
@@ -314,16 +327,9 @@ async function applyTheme(slug: string) {
       document.head.appendChild(style);
     }
     style.textContent = bundle.css;
-    // Mirror the theme mode onto <html> so design-system.css selectors
-    // (`[data-theme="dark"]`, `[data-theme="light"]`) pick up the right
-    // variant. CSS cannot set this attribute itself.
     if (bundle.mode === 'light' || bundle.mode === 'dark') {
       document.documentElement.dataset.theme = bundle.mode;
     }
-    // Make the theme's mermaid vars authoritative *synchronously*, before any
-    // diagram is drawn. `bootstrap` awaits `applyTheme` before the first file
-    // render, so the initial mermaid render already uses these colours; the
-    // rAF below only recolours already-rendered diagrams on later switches.
     setMermaidTheme(bundle.mermaid_vars);
     requestAnimationFrame(() => {
       rerenderForThemeChange(previewContent, { vars: bundle.mermaid_vars });
@@ -412,8 +418,6 @@ async function processRenderQueue() {
     markAllNodes(previewContent, result.render_nonce);
     await renderMermaidNodes(previewContent, result.render_nonce);
     await renderMathNodes(previewContent, result.render_nonce);
-    // Post-sanitize decoration: wrap genuine code samples (mermaid/math nodes
-    // have already been converted above) with the language/copy/expand toolbar.
     decorateCodeBlocks(previewContent);
     item.resolve();
   } catch (e) {
@@ -431,56 +435,134 @@ function renderMarkdown(markdown: string): Promise<void> {
   });
 }
 
-async function newFile(): Promise<void> {
-  hideWelcomeScreen();
-  chrome.setReloadVisible(false);
-  currentFilePath = null;
-  isModified = false;
-  chrome.setFilename('Untitled');
-  chrome.setModified(false);
-  updateTitle();
-  // Tell the backend we've left the previous file so its scope-relative
-  // save authority and disk watcher both stop pointing at it.
-  invoke('clear_active_file').catch(() => {});
+function getCurrentMarkdown(): string {
+  return editor ? editor.getValue() : '';
+}
 
-  if (!editor) {
-    editor = await mountEditor(editorPane, (md) => {
-      isModified = true;
-      chrome.setModified(true);
-      updateTitle();
-      renderMarkdown(md);
-    });
-    attachScrollSync(editor.view, previewPane);
+// --- editor mount + programmatic-set suppression ---------------------------
+
+async function ensureEditor(): Promise<void> {
+  if (editor) return;
+  editor = await mountEditor(editorPane, (md) => {
+    // Programmatic sets (open / reload / merge) render explicitly at the call
+    // site exactly once — skip here so we neither double-render nor miss the
+    // empty-buffer case (an empty->empty `setValue` fires no change at all).
+    if (suppressEdits) return;
+    // Preview tracks user edits immediately; backend notify is debounced.
+    renderMarkdown(md);
+    if (currentDocId === null) return;
+    scheduleDocEdited(md);
+    scheduleIdleAutosave();
+  });
+  attachScrollSync(editor.view, previewPane);
+}
+
+/** Set the editor text programmatically without marking the buffer dirty. */
+function setEditorValue(md: string): void {
+  if (!editor) return;
+  suppressEdits = true;
+  try {
+    editor.setValue(md);
+  } finally {
+    suppressEdits = false;
   }
-  editor.setValue('');
-  await renderMarkdown('');
-  editor.focus();
+}
+
+const scheduleDocEdited = debounce((md: string) => {
+  const id = currentDocId;
+  if (id === null) return;
+  invoke<FileState>('doc_edited', { docId: id, contents: md })
+    .then((state) => applyDocState(state))
+    .catch((e) => console.error('doc_edited failed:', e));
+}, 180);
+
+// --- lifecycle state application -------------------------------------------
+
+function applyDocState(state: FileState): void {
+  currentFileState = state;
+  const ui = uiForState(state);
+  chrome.setSaveEnabled(ui.saveEnabled);
+  chrome.setModified(ui.modified);
+  chrome.setReloadVisible(ui.showReload);
+  chrome.setMergeVisible(ui.showMerge);
+  chrome.setStatus(ui.status);
+  updateTitle();
+}
+
+/** Adopt a freshly opened/registered document as the single active document. */
+async function adoptDoc(
+  docId: number,
+  path: string | null,
+  state: FileState,
+  contents: string
+): Promise<void> {
+  // Phase 1 is single-document: drop the previous registry entry + watcher.
+  if (currentDocId !== null && currentDocId !== docId) {
+    invoke('drop_doc', { docId: currentDocId }).catch(() => {});
+  }
+  hideWelcomeScreen();
+  currentDocId = docId;
+  currentFilePath = path;
+  await ensureEditor();
+  setEditorValue(contents);
+  chrome.setFilename(path ? basename(path) : 'Untitled');
+  applyDocState(state);
+  await renderMarkdown(contents);
+  editor?.focus();
+}
+
+// --- autosave / autoreload --------------------------------------------------
+
+const scheduleIdleAutosave = debounce(() => {
+  if (autosaveMode === 'on_idle') maybeAutosave();
+}, 1500);
+
+/** Autosave only a plainly-dirty, file-backed buffer — never an untitled,
+ *  conflicted, removed, or in-flight document. */
+function maybeAutosave(): void {
+  if (!currentFileState || currentFileState.kind !== 'dirty') return;
+  saveCurrentDoc().catch(() => {});
+}
+
+window.addEventListener('blur', () => {
+  if (autosaveMode === 'on_defocus') maybeAutosave();
+});
+
+window.setInterval(() => {
+  if (autosaveMode === 'on_interval') maybeAutosave();
+}, 30_000);
+
+function maybeAutoreload(state: FileState): void {
+  if (currentDocId === null) return;
+  if (state.kind === 'disk_changed_clean') {
+    if (autoreloadMode === 'when_clean' || autoreloadMode === 'always') doReload();
+  } else if (state.kind === 'disk_changed_dirty') {
+    // Only auto-discard local edits under the explicit `always` policy;
+    // otherwise leave the Reload + Merge buttons for the user to decide.
+    if (autoreloadMode === 'always') doReload();
+  }
+}
+
+// --- file operations --------------------------------------------------------
+
+async function newFile(): Promise<void> {
+  try {
+    const reg = await invoke<{ doc_id: number; state: FileState }>('register_doc', {
+      path: null,
+      contents: '',
+    });
+    await adoptDoc(reg.doc_id, null, reg.state, '');
+    chrome.setStatus('Ready');
+  } catch (e) {
+    showError(`New file failed: ${String(e)}`);
+  }
 }
 
 async function openFileDialog(): Promise<void> {
   try {
-    const result = await invoke<{ contents: string; path: string } | null>('open_dialog');
-    if (result) {
-      hideWelcomeScreen();
-      chrome.setReloadVisible(false);
-      currentFilePath = result.path;
-      isModified = false;
-      chrome.setFilename(result.path.split('/').pop() || result.path);
-      chrome.setModified(false);
-      updateTitle();
-
-      if (!editor) {
-        editor = await mountEditor(editorPane, (md) => {
-          isModified = true;
-          chrome.setModified(true);
-          updateTitle();
-          renderMarkdown(md);
-        });
-        attachScrollSync(editor.view, previewPane);
-      }
-      editor.setValue(result.contents);
-      await renderMarkdown(result.contents);
-      editor.focus();
+    const doc = await invoke<OpenedDoc | null>('open_dialog');
+    if (doc) {
+      await adoptDoc(doc.doc_id, doc.path, doc.state, doc.contents);
       loadRecentFiles();
       chrome.setStatus('Ready');
     }
@@ -489,127 +571,97 @@ async function openFileDialog(): Promise<void> {
   }
 }
 
-async function saveCurrentFile(): Promise<void> {
+async function openFile(path: string): Promise<void> {
   try {
-    let path = currentFilePath;
-    if (!path) {
+    const doc = await invoke<OpenedDoc>('request_open_file', { path });
+    await adoptDoc(doc.doc_id, doc.path, doc.state, doc.contents);
+    loadRecentFiles();
+    chrome.setStatus('Ready');
+  } catch (e) {
+    showError(`Open failed: ${String(e)}`);
+  }
+}
+
+async function saveCurrentDoc(): Promise<void> {
+  const id = currentDocId;
+  if (id === null) return;
+  try {
+    let path: string | null = null;
+    if (!currentFilePath) {
       const suggested = editor ? editor.getValue().split('\n')[0].slice(0, 50) || 'Untitled' : 'Untitled';
-      const result = await invoke<string | null>('save_dialog', { suggestedName: suggested + '.md' });
-      if (!result) return;
-      path = result;
-      currentFilePath = path;
-      chrome.setFilename(path.split('/').pop() || path);
+      const picked = await invoke<string | null>('save_dialog', { suggestedName: suggested + '.md' });
+      if (!picked) return;
+      path = picked;
     }
-    const content = getCurrentMarkdown();
-    await invoke('save_file', { path, contents: content });
-    isModified = false;
-    chrome.setModified(false);
-    updateTitle();
-    // Our write supersedes any pending external-change prompt.
-    chrome.setReloadVisible(false);
+    const contents = getCurrentMarkdown();
+    const state = await invoke<FileState>('save_doc', { docId: id, contents, path });
+    if (path) {
+      currentFilePath = path;
+      chrome.setFilename(basename(path));
+    }
+    applyDocState(state);
     chrome.setStatus('Saved');
+    loadRecentFiles();
   } catch (e) {
     showError(`Save failed: ${String(e)}`);
   }
 }
 
-async function openFile(path: string) {
-  hideWelcomeScreen();
-  chrome.setReloadVisible(false);
-
+/** Reload the document from disk (discarding local edits), preserving cursor. */
+async function doReload(): Promise<void> {
+  const id = currentDocId;
+  if (id === null) return;
   try {
-    // `request_open_file` admits the path to the scope before reading; we
-    // use it from every UI entry point (drag/drop, recents, welcome buttons,
-    // the open-file Tauri event). The backend admits only paths that are
-    // already in scope or in the recents list — anything else must come
-    // via `open_dialog`.
-    const file = await invoke<{ contents: string; path: string }>('request_open_file', { path });
-    // Track the canonical path returned by Rust, not the (possibly non-canonical
-    // or symlinked) input. Saving uses currentFilePath, and `save_file` refuses
-    // to write through symlinks, so storing the canonical form here keeps the
-    // save round-trip consistent with the path we just admitted to the scope.
-    const openedPath = file.path || path;
-    currentFilePath = openedPath;
-    isModified = false;
-    chrome.setFilename(openedPath.split('/').pop() || openedPath);
-    chrome.setModified(false);
-    updateTitle();
-
-    // Backend `request_open_file` already pushes to recents on success, so we
-    // don't double-push here — just refresh the dropdown.
-    loadRecentFiles();
-
-    if (!editor) {
-      editor = await mountEditor(editorPane, (md) => {
-        isModified = true;
-        chrome.setModified(true);
-        updateTitle();
-        renderMarkdown(md);
-      });
-      attachScrollSync(editor.view, previewPane);
+    const res = await invoke<{ contents: string; state: FileState }>('pull_from_disk', { docId: id });
+    const cursor = editor ? editor.view.state.selection.main.head : 0;
+    setEditorValue(res.contents);
+    if (editor) {
+      const max = editor.view.state.doc.length;
+      editor.view.dispatch({ selection: { anchor: Math.min(cursor, max) } });
     }
-    editor.setValue(file.contents);
-    await renderMarkdown(file.contents);
-    editor.focus();
-    chrome.setStatus('Ready');
-  } catch (e) {
-    // Route to the status bar instead of hijacking the preview pane. The
-    // backend error string may include user-controlled path text; setStatus
-    // uses textContent under the hood so it's never parsed as HTML.
-    showError(`Open failed: ${String(e)}`);
-  }
-}
-
-function getCurrentMarkdown(): string {
-  return editor ? editor.getValue() : '';
-}
-
-listen<string>('open-file', (event) => {
-  openFile(event.payload);
-}).catch(() => {});
-
-/// Reload the active file from disk into the editor, preserving the cursor
-/// position so the user doesn't get bounced back to the top. The backend
-/// re-pushes to recents inside `open_file`, which is fine here.
-async function reloadActiveFromDisk(path: string): Promise<void> {
-  try {
-    const file = await invoke<{ contents: string; path: string }>('open_file', { path });
-    if (!editor) return;
-    const cursor = editor.view.state.selection.main.head;
-    editor.setValue(file.contents);
-    const max = editor.view.state.doc.length;
-    const clamped = Math.min(cursor, max);
-    editor.view.dispatch({ selection: { anchor: clamped } });
-    await renderMarkdown(file.contents);
-    chrome.setReloadVisible(false);
+    applyDocState(res.state);
+    await renderMarkdown(res.contents);
     chrome.setStatus('Reloaded from disk');
   } catch (e) {
     showError(`Reload failed: ${String(e)}`);
   }
 }
 
-// The backend watcher emits a string payload that is the canonical path of
-// the file that changed. We compare it to `currentFilePath` before doing
-// anything so a stale event from a previously-watched file (during a fast
-// switch) cannot clobber the now-active buffer. If the buffer is clean we
-// auto-reload; if dirty we just surface a status so the user can decide.
-listen<string>('file_changed_on_disk', (event) => {
-  const changed = event.payload;
-  if (!currentFilePath || changed !== currentFilePath) return;
-  if (isModified) {
-    // Can't safely auto-reload over unsaved edits — surface the Reload button
-    // so the user can choose to pull the on-disk version (discarding edits).
-    chrome.setReloadVisible(true);
-    chrome.setStatus('File changed on disk (buffer modified) — use Reload to discard edits');
-    return;
+/** 3-way merge the on-disk changes into the buffer (in memory only). */
+async function doMerge(): Promise<void> {
+  const id = currentDocId;
+  if (id === null || !currentFileState) return;
+  const diskDigestSeen = 'disk' in currentFileState ? currentFileState.disk : '';
+  try {
+    const res = await invoke<{ merged: string; state: FileState; conflicted: boolean }>(
+      'resolve_disk_change',
+      { docId: id, oursText: getCurrentMarkdown(), diskDigestSeen }
+    );
+    setEditorValue(res.merged);
+    applyDocState(res.state);
+    await renderMarkdown(res.merged);
+    chrome.setStatus(
+      res.conflicted
+        ? 'Merged with conflicts — resolve the markers, then save'
+        : 'Merged disk changes into the editor'
+    );
+  } catch (e) {
+    showError(`Merge failed: ${String(e)}`);
   }
-  reloadActiveFromDisk(currentFilePath);
+}
+
+// --- event listeners --------------------------------------------------------
+
+listen<string>('open-file', (event) => {
+  openFile(event.payload);
 }).catch(() => {});
 
-listen<string>('file_removed_from_disk', (event) => {
-  const removed = event.payload;
-  if (!currentFilePath || removed !== currentFilePath) return;
-  chrome.setStatus('File removed from disk');
+// Single structured lifecycle event from the content-aware watcher.
+listen<DocStateChanged>('doc_state_changed', (event) => {
+  const { doc_id, state } = event.payload;
+  if (doc_id !== currentDocId) return;
+  applyDocState(state);
+  maybeAutoreload(state);
 }).catch(() => {});
 
 listen('system_theme_changed', handleSystemThemeChange).catch(() => {});
@@ -656,6 +708,8 @@ async function bootstrap(): Promise<void> {
     if (isMode(settings.default_mode)) {
       applyMode(settings.default_mode);
     }
+    if (settings.autosave_mode) autosaveMode = settings.autosave_mode;
+    if (settings.autoreload_mode) autoreloadMode = settings.autoreload_mode;
     if (settings.active_theme) {
       await applyTheme(settings.active_theme);
     }

@@ -20,6 +20,7 @@
   },
   "include": [
     "src/debounce.ts",
-    "src/editor_insert.ts"
+    "src/editor_insert.ts",
+    "src/doc_state.ts"
   ]
 }
