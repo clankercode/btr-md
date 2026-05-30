@@ -696,7 +696,7 @@ async function openFile(path: string, opts: { background?: boolean } = {}): Prom
     return;
   }
   try {
-    const doc = await invoke<OpenedDoc>('request_open_file', { path });
+    const doc = await invoke<OpenedDoc>('request_open_file', { path, background: background || false });
     const existing2 = store.findDocByPath(doc.path);
     if (existing2) {
       invoke('drop_doc', { docId: doc.doc_id }).catch(() => {});

@@ -103,6 +103,21 @@ pub async fn save_doc(
         ));
     }
 
+    // Guard: refuse a save while the backend knows the disk has changed but
+    // the user has not yet acknowledged the change (reload or merge). The UI
+    // disables the Save button in `disk_changed_clean` state, but Ctrl+S can
+    // bypass that. Without this check, the external change would be silently
+    // overwritten. (For `disk_changed_dirty` the user has local edits they
+    // want to keep, so save is intentional and allowed.)
+    if matches!(
+        state.docs.state_of(doc_id),
+        Some(crate::doc::state::FileState::DiskChangedClean { .. })
+    ) {
+        return Err(
+            "save_doc: disk has changed since last load — reload or merge before saving".into(),
+        );
+    }
+
     // Resolve (and, for save-as, bind) the target path.
     let canon = match path {
         Some(p) => {

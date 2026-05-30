@@ -94,7 +94,10 @@ pub struct DocId(pub u64);
 /// - `SaveInProgress` : a write is in flight; carries the intent to reconcile
 ///   on success/failure (`base` = pre-save base, `None` if it was untitled;
 ///   `target` = digest being written; `edited_during` = a digest the user
-///   typed while the async write was outstanding).
+///   typed while the async write was outstanding; `disk_during` = the digest
+///   of an external disk change observed while the write was in flight, so
+///   that a `SaveFailed` can correctly land in `DiskChangedClean/Dirty`
+///   rather than silently losing the external change).
 #[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum FileState {
@@ -123,6 +126,11 @@ pub enum FileState {
         base: Option<Digest>,
         target: Digest,
         edited_during: Option<Digest>,
+        /// If an external disk change was observed mid-save, its digest is
+        /// recorded here. On `SaveFailed`, this lets us land in
+        /// `DiskChangedClean` / `DiskChangedDirty` rather than losing the
+        /// external change. `None` = no external change seen during the write.
+        disk_during: Option<Digest>,
     },
 }
 
@@ -183,6 +191,7 @@ impl FileState {
                     base: None,
                     target,
                     edited_during: None,
+                    disk_during: None,
                 },
             },
 
@@ -200,6 +209,7 @@ impl FileState {
                     base: Some(base),
                     target,
                     edited_during: None,
+                    disk_during: None,
                 },
                 DocEvent::SaveSucceeded | DocEvent::SaveFailed => FileState::Clean { base },
                 DocEvent::SyncedFromDisk { disk, mem } => synced(disk, mem),
@@ -219,6 +229,7 @@ impl FileState {
                     base: Some(base),
                     target,
                     edited_during: None,
+                    disk_during: None,
                 },
                 DocEvent::SaveSucceeded | DocEvent::SaveFailed => FileState::Dirty { base, mem },
                 DocEvent::SyncedFromDisk { disk, mem: m2 } => synced(disk, m2),
@@ -244,6 +255,8 @@ impl FileState {
                     base: Some(base),
                     target,
                     edited_during: None,
+                    // Preserve the disk change so SaveFailed can recover it.
+                    disk_during: Some(disk),
                 },
                 DocEvent::SaveSucceeded | DocEvent::SaveFailed => {
                     FileState::DiskChangedClean { base, disk }
@@ -279,6 +292,8 @@ impl FileState {
                     base: Some(base),
                     target,
                     edited_during: None,
+                    // Preserve the disk change so SaveFailed can recover it.
+                    disk_during: Some(disk),
                 },
                 DocEvent::SaveSucceeded | DocEvent::SaveFailed => {
                     FileState::DiskChangedDirty { base, mem, disk }
@@ -301,6 +316,7 @@ impl FileState {
                     base: Some(base),
                     target,
                     edited_during: None,
+                    disk_during: None,
                 },
                 DocEvent::SaveSucceeded | DocEvent::SaveFailed => FileState::Removed { base, mem },
                 DocEvent::SyncedFromDisk { disk, mem: m2 } => synced(disk, m2),
@@ -310,6 +326,7 @@ impl FileState {
                 base,
                 target,
                 edited_during,
+                disk_during,
             } => match event {
                 // The user kept typing during the async write — remember the
                 // latest digest so we land in Dirty (not Clean) on success.
@@ -317,31 +334,71 @@ impl FileState {
                     base,
                     target,
                     edited_during: Some(mem),
+                    disk_during,
                 },
-                // Disk events mid-save are routed through the race seam by the
-                // caller (it decides whether to log a self-write vs an external
-                // write). The state itself just waits for the save to resolve.
-                DocEvent::DiskModified { .. }
-                | DocEvent::DiskCreated { .. }
-                | DocEvent::DiskRemoved => FileState::SaveInProgress {
+                // Disk events mid-save: the caller routes them through the race
+                // seam (self-write vs external). Record the latest external disk
+                // digest so SaveFailed can recover the DiskChanged* state.
+                // Self-writes (digest == target) are not external races, but
+                // we still record them in disk_during so we can distinguish on
+                // failure — the self-write case resolves to Clean anyway.
+                DocEvent::DiskModified { disk } | DocEvent::DiskCreated { disk } => {
+                    FileState::SaveInProgress {
+                        base,
+                        target,
+                        edited_during,
+                        disk_during: Some(disk),
+                    }
+                }
+                DocEvent::DiskRemoved => FileState::SaveInProgress {
                     base,
                     target,
                     edited_during,
+                    // Sentinel: disk_during = None with DiskRemoved is handled
+                    // by SaveFailed landing in Removed, but that state is already
+                    // Removed if we came from there. For other origins, losing
+                    // the removal is acceptable — the watcher will re-emit.
+                    disk_during,
                 },
                 // A re-issued save (e.g. save-as picked a new target).
                 DocEvent::SaveStarted { target: t2 } => FileState::SaveInProgress {
                     base,
                     target: t2,
                     edited_during,
+                    disk_during,
                 },
                 DocEvent::SaveSucceeded => {
                     let buffer = edited_during.unwrap_or(target);
-                    if buffer == target {
-                        FileState::Clean { base: target }
-                    } else {
-                        FileState::Dirty {
-                            base: target,
-                            mem: buffer,
+                    // On success, the file was written. If an external change
+                    // also happened during the write and its digest differs
+                    // from what we just wrote, surface it.
+                    let succeeded_base = target;
+                    match disk_during {
+                        Some(d) if d != succeeded_base => {
+                            // External change landed during our write.
+                            if buffer == succeeded_base {
+                                FileState::DiskChangedClean {
+                                    base: succeeded_base,
+                                    disk: d,
+                                }
+                            } else {
+                                FileState::DiskChangedDirty {
+                                    base: succeeded_base,
+                                    mem: buffer,
+                                    disk: d,
+                                }
+                            }
+                        }
+                        _ => {
+                            // Self-write or no mid-save disk event: normal landing.
+                            if buffer == succeeded_base {
+                                FileState::Clean { base: succeeded_base }
+                            } else {
+                                FileState::Dirty {
+                                    base: succeeded_base,
+                                    mem: buffer,
+                                }
+                            }
                         }
                     }
                 }
@@ -349,7 +406,25 @@ impl FileState {
                     let buffer = edited_during.unwrap_or(target);
                     match base {
                         None => FileState::Untitled,
-                        Some(b) => clean_or_dirty(b, buffer),
+                        Some(b) => {
+                            // If an external disk change was observed during the
+                            // (now-failed) write, recover to the appropriate
+                            // DiskChanged* state rather than losing it.
+                            match disk_during {
+                                Some(d) => {
+                                    if buffer == b {
+                                        FileState::DiskChangedClean { base: b, disk: d }
+                                    } else {
+                                        FileState::DiskChangedDirty {
+                                            base: b,
+                                            mem: buffer,
+                                            disk: d,
+                                        }
+                                    }
+                                }
+                                None => clean_or_dirty(b, buffer),
+                            }
+                        }
                     }
                 }
                 DocEvent::SyncedFromDisk { disk, mem } => synced(disk, mem),
