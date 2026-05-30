@@ -718,10 +718,35 @@
 #app-container {
   display: flex;
   height: 100vh;
-  padding-top: 44px;
+  /* Measured by the tab bar (toolbar + tab strip); falls back to the bare
+     toolbar height before the first measure. */
+  padding-top: var(--pmd-chrome-h, 44px);
   padding-bottom: 24px;
   box-sizing: border-box;
   width: 100%;
+}
+
+/* Non-document tab bodies (empty/welcome, file browser) take the full content
+   area; the editor/preview panes are hidden while they are active. */
+#pmd-tab-body {
+  display: none;
+  flex: 1;
+  min-width: 0;
+  overflow: auto;
+}
+
+body[data-tabkind='empty'] #editor-pane,
+body[data-tabkind='empty'] #preview-pane,
+body[data-tabkind='empty'] #split-resizer,
+body[data-tabkind='browser'] #editor-pane,
+body[data-tabkind='browser'] #preview-pane,
+body[data-tabkind='browser'] #split-resizer {
+  display: none !important;
+}
+
+body[data-tabkind='empty'] #pmd-tab-body,
+body[data-tabkind='browser'] #pmd-tab-body {
+  display: block;
 }
 
 #editor-pane {
@@ -1031,4 +1056,185 @@ body[data-state="welcome"] #split-resizer {
   padding-left: var(--pmd-space-3);
   padding-right: var(--pmd-space-3);
   pointer-events: auto;
+}
+
+/* --------------------------------------------
+   17. Tab bar (multi-tab) + file browser
+   -------------------------------------------- */
+
+.pmd-tabbar {
+  display: flex;
+  align-items: stretch;
+  gap: 2px;
+  padding: 0 var(--pmd-space-2);
+  border-top: 1px solid var(--pmd-border);
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+  min-height: 34px;
+}
+
+.pmd-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--pmd-space-2);
+  max-width: 16rem;
+  padding: 0 var(--pmd-space-2) 0 var(--pmd-space-3);
+  border: 1px solid transparent;
+  border-bottom: none;
+  border-radius: var(--pmd-radius-sm) var(--pmd-radius-sm) 0 0;
+  background: transparent;
+  color: var(--pmd-fg-muted);
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+  font-size: 0.85rem;
+}
+
+.pmd-tab:hover {
+  background: var(--pmd-bg-muted);
+  color: var(--pmd-fg);
+}
+
+.pmd-tab[data-active] {
+  background: var(--pmd-bg);
+  color: var(--pmd-fg);
+  border-color: var(--pmd-border);
+}
+
+.pmd-tab-icon {
+  opacity: 0.8;
+  font-size: 0.9em;
+}
+
+.pmd-tab-label {
+  max-width: 11rem;
+}
+
+.pmd-tab-dot {
+  color: var(--pmd-accent);
+  font-size: 0.7em;
+  line-height: 1;
+}
+
+.pmd-tab-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: none;
+  border-radius: var(--pmd-radius-sm);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  opacity: 0.6;
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.pmd-tab-close:hover {
+  background: var(--pmd-border);
+  opacity: 1;
+}
+
+.pmd-newtab-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  flex: 0 0 auto;
+  margin: 4px 0;
+  border: none;
+  border-radius: var(--pmd-radius-sm);
+  background: transparent;
+  color: var(--pmd-fg-muted);
+  cursor: pointer;
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.pmd-newtab-btn:hover {
+  background: var(--pmd-bg-muted);
+  color: var(--pmd-fg);
+}
+
+/* File browser tab body */
+.pmd-browser {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  font-size: 0.85rem;
+  color: var(--pmd-fg);
+}
+
+.pmd-browser-empty {
+  margin: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--pmd-space-3);
+  color: var(--pmd-fg-muted);
+}
+
+.pmd-browser-header {
+  display: flex;
+  align-items: center;
+  gap: var(--pmd-space-2);
+  padding: var(--pmd-space-2) var(--pmd-space-3);
+  border-bottom: 1px solid var(--pmd-border);
+  background: var(--pmd-bg-elevated);
+}
+
+.pmd-browser-base {
+  flex: 1;
+  min-width: 0;
+  color: var(--pmd-fg-muted);
+  font-family: var(--pmd-font-mono, monospace);
+  font-size: 0.8rem;
+}
+
+.pmd-browser-tree {
+  flex: 1;
+  overflow: auto;
+  padding: var(--pmd-space-2) 0;
+}
+
+.pmd-browser-row {
+  display: flex;
+  align-items: center;
+  gap: var(--pmd-space-2);
+  padding: 2px 8px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.pmd-browser-row:hover {
+  background: var(--pmd-bg-muted);
+}
+
+.pmd-browser-row.selected {
+  background: var(--pmd-bg-elevated);
+  outline: 1px solid var(--pmd-accent);
+  outline-offset: -1px;
+}
+
+.pmd-browser-nonmd {
+  opacity: 0.55;
+}
+
+.pmd-browser-twisty {
+  width: 1em;
+  text-align: center;
+  opacity: 0.7;
+}
+
+.pmd-browser-icon {
+  opacity: 0.85;
+}
+
+.pmd-browser-name {
+  flex: 1;
+  min-width: 0;
 }

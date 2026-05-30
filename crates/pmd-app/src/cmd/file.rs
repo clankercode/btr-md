@@ -178,11 +178,14 @@ pub async fn request_open_file(
         ));
     }
 
+    // Admission gates: already-scoped, in recents, OR within a folder the user
+    // admitted via the file-browser picker (Phase 2 third gate).
     let already_scoped = state.scope.check_canonical(&canon);
     let in_recents = crate::state::recents::contains_canonical_eq(&canon);
-    if !already_scoped && !in_recents {
+    let under_allowed_dir = state.scope.is_within_allowed_dir(&canon);
+    if !already_scoped && !in_recents && !under_allowed_dir {
         return Err(format!(
-            "request_open_file: {} is not in scope or recents; use the file dialog to open new paths",
+            "request_open_file: {} is not in scope, recents, or an allowed folder; use the file dialog to open new paths",
             canon.display()
         ));
     }

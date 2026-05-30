@@ -1,6 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
-import { mountEditor } from './editor.js';
+import { mountEditor, type EditorHandle } from './editor.js';
 import { createChrome, type Mode } from './chrome.js';
 import { createHotkeyHandler, createOverlay } from './hotkeys.js';
 import { attachScrollSync } from './scroll_sync.js';
@@ -12,11 +12,15 @@ import { openThemePicker, isPickerOpen, closeThemePicker, type ThemeInfo } from 
 import { debounce } from './debounce.js';
 import {
   uiForState,
+  assertNever,
   type FileState,
   type DocStateChanged,
   type AutosaveMode,
   type AutoreloadMode,
 } from './doc_state.js';
+import { createTabStore, type Tab, type DocTab } from './tabs.js';
+import { createTabBar, type TabBarInstance } from './tabbar.js';
+import { createFileBrowser, type FileBrowserInstance } from './file_browser.js';
 
 interface RenderResult {
   html: string;
@@ -32,9 +36,9 @@ interface Settings {
   default_mode: string | null;
   autosave_mode: AutosaveMode;
   autoreload_mode: AutoreloadMode;
+  browser_base_dir: string | null;
 }
 
-/** What an open/register command returns. */
 interface OpenedDoc {
   doc_id: number;
   path: string;
@@ -42,9 +46,10 @@ interface OpenedDoc {
   state: FileState;
 }
 
-let renderQueue: Array<{ markdown: string; resolve: () => void; reject: (e: unknown) => void }> = [];
-let rendering = false;
-let currentVersion = 0;
+// ---------------------------------------------------------------------------
+// Layout: editor/preview panes for document tabs + a separate body for
+// empty/browser tabs. `body[data-tabkind]` toggles which is visible (CSS).
+// ---------------------------------------------------------------------------
 
 const previewPane = document.getElementById('preview-pane') as HTMLElement;
 const previewContent = document.getElementById('pmd-content') as HTMLElement;
@@ -63,11 +68,15 @@ splitResizer.setAttribute('aria-valuemin', '20');
 splitResizer.setAttribute('aria-valuemax', '80');
 splitResizer.tabIndex = 0;
 
+const tabBodyEl = document.createElement('div');
+tabBodyEl.id = 'pmd-tab-body';
+
 const appContainer = document.createElement('div');
 appContainer.id = 'app-container';
 appContainer.appendChild(editorPane);
 appContainer.appendChild(splitResizer);
 appContainer.appendChild(previewPane);
+appContainer.appendChild(tabBodyEl);
 document.body.appendChild(appContainer);
 
 const SPLIT_RATIO_KEY = 'pmd:split-ratio';
@@ -107,9 +116,7 @@ function endResize(e: PointerEvent) {
   resizing = false;
   splitResizer.releasePointerCapture(e.pointerId);
   document.body.classList.remove('pmd-resizing');
-  const ratio = parseFloat(
-    appContainer.style.getPropertyValue('--pmd-split-ratio') || '0.5'
-  );
+  const ratio = parseFloat(appContainer.style.getPropertyValue('--pmd-split-ratio') || '0.5');
   localStorage.setItem(SPLIT_RATIO_KEY, String(ratio));
 }
 splitResizer.addEventListener('pointerup', endResize);
@@ -135,23 +142,44 @@ splitResizer.addEventListener('keydown', (e) => {
   localStorage.setItem(SPLIT_RATIO_KEY, String(clampRatio(next)));
 });
 
+// ---------------------------------------------------------------------------
+// Chrome + tab bar + tab store.
+// ---------------------------------------------------------------------------
+
 const chrome = createChrome(document.body);
 const hotkeyOverlay = createOverlay();
 hotkeyOverlay.style.display = 'none';
 document.body.appendChild(hotkeyOverlay);
 
-document.body.addEventListener('dragover', (e) => {
-  e.preventDefault();
-  e.stopPropagation();
+const store = createTabStore();
+const tabBar: TabBarInstance = createTabBar(store, {
+  onSelect: (id) => store.setActive(id),
+  onClose: (id) => closeTab(id),
+  onNewTab: (shift) => {
+    if (shift) {
+      const t = store.addEmpty({ background: true });
+      tabBar.triggerHighlight(t.id);
+    } else {
+      store.addEmpty();
+    }
+  },
 });
+// Tab strip lives inside `.pmd-chrome`, below the toolbar.
+chrome.el.appendChild(tabBar.el);
+
+let editor: EditorHandle | null = null;
+let fileBrowser: FileBrowserInstance | null = null;
+let currentMode: Mode = 'split';
+let autosaveMode: AutosaveMode = 'off';
+let autoreloadMode: AutoreloadMode = 'when_clean';
+let browserBaseDir: string | null = null;
 
 const MARKDOWN_EXTENSIONS = ['md', 'markdown', 'mdown', 'mkd'];
 
 function isMarkdownFileName(name: string): boolean {
   const dot = name.lastIndexOf('.');
   if (dot < 0) return false;
-  const ext = name.slice(dot + 1).toLowerCase();
-  return MARKDOWN_EXTENSIONS.includes(ext);
+  return MARKDOWN_EXTENSIONS.includes(name.slice(dot + 1).toLowerCase());
 }
 
 function basename(p: string): string {
@@ -163,69 +191,54 @@ function showError(message: string): void {
   console.error(message);
 }
 
-// --- document lifecycle state (replaces the old `isModified` boolean) -------
+function docTabByDocId(docId: number): DocTab | undefined {
+  return store.list().find((t): t is DocTab => t.kind === 'doc' && t.docId === docId);
+}
 
-let editor: Awaited<ReturnType<typeof mountEditor>> | null = null;
-let currentDocId: number | null = null;
-let currentFilePath: string | null = null;
-let currentFileState: FileState | null = null;
-let currentMode: Mode = 'split';
+// ---------------------------------------------------------------------------
+// Drag & drop.
+// ---------------------------------------------------------------------------
 
-// Lifecycle policy (loaded from settings; updated by the Phase 3 settings menu).
-let autosaveMode: AutosaveMode = 'off';
-let autoreloadMode: AutoreloadMode = 'when_clean';
-
-// When true, a programmatic `editor.setValue` (open / reload / merge) is in
-// flight: the change listener must NOT treat it as a user edit (no `doc_edited`,
-// no dirty mark), though it still re-renders the preview.
-let suppressEdits = false;
+document.body.addEventListener('dragover', (e) => {
+  e.preventDefault();
+  e.stopPropagation();
+});
 
 document.body.addEventListener('drop', async (e) => {
   e.preventDefault();
   e.stopPropagation();
-
   const files = e.dataTransfer?.files;
   if (!files || files.length === 0) return;
-
   const file = files[0];
   if (!isMarkdownFileName(file.name)) {
     showError(`Not a markdown file: ${file.name}`);
     return;
   }
-
   const path = (file as any).path;
   if (path) {
     openFile(path);
   } else {
-    // No filesystem path (e.g. dropped from a browser): adopt as an untitled
-    // buffer holding the dropped text.
     const contents = await file.text();
     try {
       const reg = await invoke<{ doc_id: number; state: FileState }>('register_doc', {
         path: null,
         contents,
       });
-      await adoptDoc(reg.doc_id, null, reg.state, contents);
-      chrome.setFilename(file.name);
+      await addDocTab(
+        { doc_id: reg.doc_id, path: '', contents, state: reg.state },
+        { background: false, title: file.name }
+      );
     } catch (err) {
       showError(`Open failed: ${String(err)}`);
     }
   }
 });
 
-function updateTitle() {
-  const name = currentFilePath ? basename(currentFilePath) : 'Untitled';
-  const modified = currentFileState ? uiForState(currentFileState).modified : false;
-  const title = modified ? `● ${name} — preview-md` : `${name} — preview-md`;
-  invoke('set_window_title', { title }).catch(() => {});
-}
-
-chrome.onModeChange((mode) => {
-  currentMode = mode;
-});
+// ---------------------------------------------------------------------------
+// Theme + recents + hotkeys (largely unchanged from before).
+// ---------------------------------------------------------------------------
 
 let cachedThemes: ThemeInfo[] = [];
-
 async function loadThemes(): Promise<ThemeInfo[]> {
   if (cachedThemes.length > 0) return cachedThemes;
   try {
@@ -255,11 +268,7 @@ async function showThemePicker(): Promise<void> {
   });
 }
 
-chrome.onThemePickerClick(() => {
-  showThemePicker();
-});
-
-// Lifecycle button wiring.
+chrome.onThemePickerClick(() => showThemePicker());
 chrome.onReloadClick(() => doReload());
 chrome.onSaveClick(() => saveCurrentDoc());
 chrome.onMergeClick(() => doMerge());
@@ -281,6 +290,11 @@ document.addEventListener('keydown', (e: KeyboardEvent) => {
     e.preventDefault();
     saveCurrentDoc();
   }
+  if (e.ctrlKey && e.key === 'w') {
+    e.preventDefault();
+    const id = store.activeId();
+    if (id !== null) closeTab(id);
+  }
   if (e.altKey && (e.key === 'z' || e.key === 'Z')) {
     e.preventDefault();
     if (editor) {
@@ -299,11 +313,7 @@ async function loadRecentFiles(): Promise<void> {
   }
 }
 
-loadRecentFiles();
-
-chrome.onRecentFileSelect((path: string) => {
-  openFile(path);
-});
+chrome.onRecentFileSelect((path: string) => openFile(path));
 chrome.onClearRecentFiles(async () => {
   await invoke('clear_recent_files');
   chrome.setRecentFiles([]);
@@ -331,9 +341,7 @@ async function applyTheme(slug: string) {
       document.documentElement.dataset.theme = bundle.mode;
     }
     setMermaidTheme(bundle.mermaid_vars);
-    requestAnimationFrame(() => {
-      rerenderForThemeChange(previewContent, { vars: bundle.mermaid_vars });
-    });
+    requestAnimationFrame(() => rerenderForThemeChange(previewContent, { vars: bundle.mermaid_vars }));
   } catch (e) {
     console.error('applyTheme failed:', e);
   }
@@ -346,6 +354,8 @@ function isMode(value: unknown): value is Mode {
 function applyMode(mode: Mode): void {
   chrome.setMode(mode);
   currentMode = mode;
+  const t = store.activeDoc();
+  if (t) store.updateDoc(t.id, { mode });
 }
 
 const systemColorSchemeQuery = window.matchMedia('(prefers-color-scheme: dark)');
@@ -360,49 +370,69 @@ async function loadSettings(): Promise<Settings | null> {
 }
 
 async function applyAutoSwitchTheme(settings?: Settings): Promise<boolean> {
-  const currentSettings = settings ?? await loadSettings();
+  const currentSettings = settings ?? (await loadSettings());
   if (!currentSettings?.auto_switch) return false;
-
-  const themeSlug = systemColorSchemeQuery.matches
-    ? currentSettings.dark_theme
-    : currentSettings.light_theme;
+  const themeSlug = systemColorSchemeQuery.matches ? currentSettings.dark_theme : currentSettings.light_theme;
   if (!themeSlug) return false;
-
   await applyTheme(themeSlug);
   return true;
 }
 
 function handleSystemThemeChange(): void {
-  applyAutoSwitchTheme().catch((e) => {
-    console.error('Auto-switch failed:', e);
-  });
+  applyAutoSwitchTheme().catch((e) => console.error('Auto-switch failed:', e));
 }
-
 systemColorSchemeQuery.addEventListener('change', handleSystemThemeChange);
-
-function showOverlay() {
-  hotkeyOverlay.style.display = 'flex';
-}
 
 const setupHotkeys = createHotkeyHandler(
   () => currentMode,
-  (mode) => {
-    chrome.setMode(mode);
-    currentMode = mode;
-  },
-  showOverlay
+  (mode) => applyMode(mode),
+  () => {
+    hotkeyOverlay.style.display = 'flex';
+  }
 );
 setupHotkeys();
+
+chrome.onModeChange((mode) => applyMode(mode));
 
 document.body.addEventListener('mode-change', (event) => {
   const mode = (event as CustomEvent<{ mode?: unknown }>).detail?.mode;
   if (!isMode(mode)) return;
-  invoke('set_default_mode', { mode }).catch((e) => {
-    console.error('set_default_mode failed:', e);
-  });
+  invoke('set_default_mode', { mode }).catch((e) => console.error('set_default_mode failed:', e));
 });
 
-async function processRenderQueue() {
+// ---------------------------------------------------------------------------
+// Tab-aware rendering: each render carries {tabId, seq}; a result is painted
+// only if it is still the latest render for the tab that is still active.
+// ---------------------------------------------------------------------------
+
+interface RenderItem {
+  md: string;
+  tabId: number;
+  seq: number;
+  resolve: () => void;
+  reject: (e: unknown) => void;
+}
+
+let renderQueue: RenderItem[] = [];
+let rendering = false;
+let currentVersion = 0;
+
+function scheduleRender(): Promise<void> {
+  const tab = store.activeDoc();
+  if (!tab || !editor) return Promise.resolve();
+  tab.renderSeq++;
+  const item: Omit<RenderItem, 'resolve' | 'reject'> = {
+    md: editor.getValue(),
+    tabId: tab.id,
+    seq: tab.renderSeq,
+  };
+  return new Promise<void>((resolve, reject) => {
+    renderQueue.push({ ...item, resolve, reject });
+    processRenderQueue();
+  });
+}
+
+async function processRenderQueue(): Promise<void> {
   if (rendering || renderQueue.length === 0) return;
   rendering = true;
   const item = renderQueue.shift()!;
@@ -410,15 +440,20 @@ async function processRenderQueue() {
     currentVersion++;
     const result = await invoke<RenderResult>('render_cmd', {
       version: currentVersion,
-      markdown: item.markdown,
+      markdown: item.md,
     });
-    previewContent.innerHTML = result.html;
-    previewContent.dataset.versionApplied = String(result.version);
-    previewContent.dataset.pmdNonce = result.render_nonce;
-    markAllNodes(previewContent, result.render_nonce);
-    await renderMermaidNodes(previewContent, result.render_nonce);
-    await renderMathNodes(previewContent, result.render_nonce);
-    decorateCodeBlocks(previewContent);
+    const tab = store.get(item.tabId);
+    const stillCurrent =
+      tab && tab.kind === 'doc' && tab.renderSeq === item.seq && store.activeId() === item.tabId;
+    if (stillCurrent) {
+      previewContent.innerHTML = result.html;
+      previewContent.dataset.versionApplied = String(result.version);
+      previewContent.dataset.pmdNonce = result.render_nonce;
+      markAllNodes(previewContent, result.render_nonce);
+      await renderMermaidNodes(previewContent, result.render_nonce);
+      await renderMathNodes(previewContent, result.render_nonce);
+      decorateCodeBlocks(previewContent);
+    }
     item.resolve();
   } catch (e) {
     item.reject(e);
@@ -428,58 +463,35 @@ async function processRenderQueue() {
   }
 }
 
-function renderMarkdown(markdown: string): Promise<void> {
-  return new Promise((resolve, reject) => {
-    renderQueue.push({ markdown, resolve, reject });
-    processRenderQueue();
-  });
-}
-
-function getCurrentMarkdown(): string {
-  return editor ? editor.getValue() : '';
-}
-
-// --- editor mount + programmatic-set suppression ---------------------------
+// ---------------------------------------------------------------------------
+// Editor + per-tab edit handling.
+// ---------------------------------------------------------------------------
 
 async function ensureEditor(): Promise<void> {
   if (editor) return;
-  editor = await mountEditor(editorPane, (md) => {
-    // Programmatic sets (open / reload / merge) render explicitly at the call
-    // site exactly once — skip here so we neither double-render nor miss the
-    // empty-buffer case (an empty->empty `setValue` fires no change at all).
-    if (suppressEdits) return;
-    // Preview tracks user edits immediately; backend notify is debounced.
-    renderMarkdown(md);
-    if (currentDocId === null) return;
-    scheduleDocEdited(md);
-    scheduleIdleAutosave();
-  });
+  editor = await mountEditor(editorPane, () => onActiveEdit());
   attachScrollSync(editor.view, previewPane);
 }
 
-/** Set the editor text programmatically without marking the buffer dirty. */
-function setEditorValue(md: string): void {
-  if (!editor) return;
-  suppressEdits = true;
-  try {
-    editor.setValue(md);
-  } finally {
-    suppressEdits = false;
-  }
+function onActiveEdit(): void {
+  const tab = store.activeDoc();
+  if (!tab || !editor) return;
+  scheduleRender();
+  sendDocEdited(tab.docId, editor.getValue());
+  scheduleIdleAutosave();
 }
 
-const scheduleDocEdited = debounce((md: string) => {
-  const id = currentDocId;
-  if (id === null) return;
-  invoke<FileState>('doc_edited', { docId: id, contents: md })
-    .then((state) => applyDocState(state))
+const sendDocEdited = debounce((docId: number, md: string) => {
+  invoke<FileState>('doc_edited', { docId, contents: md })
+    .then((state) => setStateByDocId(docId, state))
     .catch((e) => console.error('doc_edited failed:', e));
 }, 180);
 
-// --- lifecycle state application -------------------------------------------
+// ---------------------------------------------------------------------------
+// Lifecycle-state application (per active doc tab).
+// ---------------------------------------------------------------------------
 
-function applyDocState(state: FileState): void {
-  currentFileState = state;
+function refreshChrome(state: FileState): void {
   const ui = uiForState(state);
   chrome.setSaveEnabled(ui.saveEnabled);
   chrome.setModified(ui.modified);
@@ -489,61 +501,159 @@ function applyDocState(state: FileState): void {
   updateTitle();
 }
 
-/** Adopt a freshly opened/registered document as the single active document. */
-async function adoptDoc(
-  docId: number,
-  path: string | null,
-  state: FileState,
-  contents: string
-): Promise<void> {
-  // Phase 1 is single-document: drop the previous registry entry + watcher.
-  if (currentDocId !== null && currentDocId !== docId) {
-    invoke('drop_doc', { docId: currentDocId }).catch(() => {});
-  }
-  hideWelcomeScreen();
-  currentDocId = docId;
-  currentFilePath = path;
-  await ensureEditor();
-  setEditorValue(contents);
-  chrome.setFilename(path ? basename(path) : 'Untitled');
-  applyDocState(state);
-  await renderMarkdown(contents);
-  editor?.focus();
+function setStateByDocId(docId: number, state: FileState): void {
+  const tab = docTabByDocId(docId);
+  if (!tab) return;
+  store.updateDoc(tab.id, { fileState: state });
+  if (store.activeId() === tab.id) refreshChrome(state);
 }
 
-// --- autosave / autoreload --------------------------------------------------
+function updateTitle(): void {
+  const tab = store.activeDoc();
+  const name = tab ? (tab.filePath ? basename(tab.filePath) : 'Untitled') : 'preview-md';
+  const modified = tab ? uiForState(tab.fileState).modified : false;
+  invoke('set_window_title', {
+    title: modified ? `● ${name} — preview-md` : `${name} — preview-md`,
+  }).catch(() => {});
+}
+
+// ---------------------------------------------------------------------------
+// Autosave / autoreload.
+// ---------------------------------------------------------------------------
 
 const scheduleIdleAutosave = debounce(() => {
   if (autosaveMode === 'on_idle') maybeAutosave();
 }, 1500);
 
-/** Autosave only a plainly-dirty, file-backed buffer — never an untitled,
- *  conflicted, removed, or in-flight document. */
 function maybeAutosave(): void {
-  if (!currentFileState || currentFileState.kind !== 'dirty') return;
+  const tab = store.activeDoc();
+  if (!tab || tab.fileState.kind !== 'dirty') return;
   saveCurrentDoc().catch(() => {});
 }
 
 window.addEventListener('blur', () => {
   if (autosaveMode === 'on_defocus') maybeAutosave();
 });
-
 window.setInterval(() => {
   if (autosaveMode === 'on_interval') maybeAutosave();
 }, 30_000);
 
 function maybeAutoreload(state: FileState): void {
-  if (currentDocId === null) return;
   if (state.kind === 'disk_changed_clean') {
     if (autoreloadMode === 'when_clean' || autoreloadMode === 'always') doReload();
   } else if (state.kind === 'disk_changed_dirty') {
-    // Only auto-discard local edits under the explicit `always` policy;
-    // otherwise leave the Reload + Merge buttons for the user to decide.
     if (autoreloadMode === 'always') doReload();
   }
 }
 
-// --- file operations --------------------------------------------------------
+// ---------------------------------------------------------------------------
+// Tab activation + non-document bodies.
+// ---------------------------------------------------------------------------
+
+store.onActivate((prev, next) => {
+  if (prev && prev.kind === 'doc' && editor) {
+    prev.editorState = editor.snapshot();
+    prev.scrollEditor = editor.view.scrollDOM.scrollTop;
+    prev.scrollPreview = previewPane.scrollTop;
+  }
+  if (!next) {
+    document.body.dataset.tabkind = 'empty';
+    renderEmptyBody();
+    return;
+  }
+  document.body.dataset.tabkind = next.kind;
+  switch (next.kind) {
+    case 'doc':
+      activateDocTab(next);
+      break;
+    case 'empty':
+      renderEmptyBody();
+      break;
+    case 'browser':
+      renderBrowserBody();
+      break;
+    default:
+      assertNever(next);
+  }
+  saveSession();
+});
+
+async function activateDocTab(tab: DocTab): Promise<void> {
+  await ensureEditor();
+  if (!editor) return;
+  if (tab.editorState) editor.activateState(tab.editorState);
+  invoke('set_active_doc', { docId: tab.docId }).catch(() => {});
+  chrome.setFilename(tab.filePath ? basename(tab.filePath) : 'Untitled');
+  applyMode(tab.mode);
+  refreshChrome(tab.fileState);
+  await scheduleRender();
+  editor.view.scrollDOM.scrollTop = tab.scrollEditor;
+  previewPane.scrollTop = tab.scrollPreview;
+  editor.focus();
+}
+
+function renderEmptyBody(): void {
+  tabBodyEl.replaceChildren();
+  const welcome = document.createElement('div');
+  welcome.id = 'pmd-welcome';
+  welcome.className = 'pmd-welcome';
+  welcome.innerHTML = `
+    <h1>preview-md</h1>
+    <p>Best-in-class markdown preview for Linux</p>
+    <div class="pmd-welcome-actions">
+      <button id="pmd-welcome-open" class="pmd-welcome-btn">Open File</button>
+      <button id="pmd-welcome-new" class="pmd-welcome-btn">New File</button>
+      <button id="pmd-welcome-browse" class="pmd-welcome-btn">Browse Files</button>
+    </div>
+    <p class="pmd-welcome-hint">or press Ctrl+O to open, Ctrl+N to create</p>
+  `;
+  tabBodyEl.appendChild(welcome);
+  document.getElementById('pmd-welcome-open')?.addEventListener('click', () => openFileDialog());
+  document.getElementById('pmd-welcome-new')?.addEventListener('click', () => newFile());
+  document.getElementById('pmd-welcome-browse')?.addEventListener('click', () => store.addBrowser());
+}
+
+function renderBrowserBody(): void {
+  if (!fileBrowser) {
+    fileBrowser = createFileBrowser({
+      initialBaseDir: browserBaseDir,
+      listDir: (dir) => invoke('list_dir', { dir }),
+      pickBaseDir: () => invoke<string | null>('pick_base_dir'),
+      onOpenFile: (path, opts) => openFile(path, opts),
+      onBaseDirChange: (dir) => {
+        browserBaseDir = dir;
+        saveSession();
+      },
+    });
+  }
+  tabBodyEl.replaceChildren(fileBrowser.el);
+}
+
+// ---------------------------------------------------------------------------
+// File operations.
+// ---------------------------------------------------------------------------
+
+async function addDocTab(
+  doc: OpenedDoc,
+  opts: { background: boolean; title?: string }
+): Promise<DocTab> {
+  await ensureEditor();
+  const editorState = editor!.createState(doc.contents);
+  const filePath = doc.path || null;
+  const tab = store.addDoc(
+    {
+      docId: doc.doc_id,
+      filePath,
+      title: opts.title ?? (filePath ? basename(filePath) : 'Untitled'),
+      mode: currentMode,
+      fileState: doc.state,
+      editorState,
+    },
+    { background: opts.background }
+  );
+  saveSession();
+  return tab;
+}
 
 async function newFile(): Promise<void> {
   try {
@@ -551,7 +661,7 @@ async function newFile(): Promise<void> {
       path: null,
       contents: '',
     });
-    await adoptDoc(reg.doc_id, null, reg.state, '');
+    await addDocTab({ doc_id: reg.doc_id, path: '', contents: '', state: reg.state }, { background: false });
     chrome.setStatus('Ready');
   } catch (e) {
     showError(`New file failed: ${String(e)}`);
@@ -562,7 +672,13 @@ async function openFileDialog(): Promise<void> {
   try {
     const doc = await invoke<OpenedDoc | null>('open_dialog');
     if (doc) {
-      await adoptDoc(doc.doc_id, doc.path, doc.state, doc.contents);
+      const existing = store.findDocByPath(doc.path);
+      if (existing) {
+        invoke('drop_doc', { docId: doc.doc_id }).catch(() => {});
+        store.setActive(existing.id);
+      } else {
+        await addDocTab(doc, { background: false });
+      }
       loadRecentFiles();
       chrome.setStatus('Ready');
     }
@@ -571,10 +687,25 @@ async function openFileDialog(): Promise<void> {
   }
 }
 
-async function openFile(path: string): Promise<void> {
+async function openFile(path: string, opts: { background?: boolean } = {}): Promise<void> {
+  const background = opts.background ?? false;
+  const existing = store.findDocByPath(path);
+  if (existing) {
+    if (background) tabBar.triggerHighlight(existing.id);
+    else store.setActive(existing.id);
+    return;
+  }
   try {
     const doc = await invoke<OpenedDoc>('request_open_file', { path });
-    await adoptDoc(doc.doc_id, doc.path, doc.state, doc.contents);
+    const existing2 = store.findDocByPath(doc.path);
+    if (existing2) {
+      invoke('drop_doc', { docId: doc.doc_id }).catch(() => {});
+      if (background) tabBar.triggerHighlight(existing2.id);
+      else store.setActive(existing2.id);
+      return;
+    }
+    const tab = await addDocTab(doc, { background });
+    if (background) tabBar.triggerHighlight(tab.id);
     loadRecentFiles();
     chrome.setStatus('Ready');
   } catch (e) {
@@ -583,23 +714,25 @@ async function openFile(path: string): Promise<void> {
 }
 
 async function saveCurrentDoc(): Promise<void> {
-  const id = currentDocId;
-  if (id === null) return;
+  const tab = store.activeDoc();
+  if (!tab || !editor) return;
   try {
     let path: string | null = null;
-    if (!currentFilePath) {
-      const suggested = editor ? editor.getValue().split('\n')[0].slice(0, 50) || 'Untitled' : 'Untitled';
+    if (!tab.filePath) {
+      const suggested = editor.getValue().split('\n')[0].slice(0, 50) || 'Untitled';
       const picked = await invoke<string | null>('save_dialog', { suggestedName: suggested + '.md' });
       if (!picked) return;
       path = picked;
     }
-    const contents = getCurrentMarkdown();
-    const state = await invoke<FileState>('save_doc', { docId: id, contents, path });
+    const contents = editor.getValue();
+    const state = await invoke<FileState>('save_doc', { docId: tab.docId, contents, path });
     if (path) {
-      currentFilePath = path;
+      store.updateDoc(tab.id, { filePath: path, title: basename(path) });
       chrome.setFilename(basename(path));
+      saveSession();
     }
-    applyDocState(state);
+    store.updateDoc(tab.id, { fileState: state });
+    refreshChrome(state);
     chrome.setStatus('Saved');
     loadRecentFiles();
   } catch (e) {
@@ -607,39 +740,39 @@ async function saveCurrentDoc(): Promise<void> {
   }
 }
 
-/** Reload the document from disk (discarding local edits), preserving cursor. */
 async function doReload(): Promise<void> {
-  const id = currentDocId;
-  if (id === null) return;
+  const tab = store.activeDoc();
+  if (!tab || !editor) return;
   try {
-    const res = await invoke<{ contents: string; state: FileState }>('pull_from_disk', { docId: id });
-    const cursor = editor ? editor.view.state.selection.main.head : 0;
-    setEditorValue(res.contents);
-    if (editor) {
-      const max = editor.view.state.doc.length;
-      editor.view.dispatch({ selection: { anchor: Math.min(cursor, max) } });
-    }
-    applyDocState(res.state);
-    await renderMarkdown(res.contents);
+    const res = await invoke<{ contents: string; state: FileState }>('pull_from_disk', {
+      docId: tab.docId,
+    });
+    const cursor = editor.view.state.selection.main.head;
+    editor.setValueProgrammatic(res.contents);
+    const max = editor.view.state.doc.length;
+    editor.view.dispatch({ selection: { anchor: Math.min(cursor, max) } });
+    store.updateDoc(tab.id, { fileState: res.state });
+    refreshChrome(res.state);
+    await scheduleRender();
     chrome.setStatus('Reloaded from disk');
   } catch (e) {
     showError(`Reload failed: ${String(e)}`);
   }
 }
 
-/** 3-way merge the on-disk changes into the buffer (in memory only). */
 async function doMerge(): Promise<void> {
-  const id = currentDocId;
-  if (id === null || !currentFileState) return;
-  const diskDigestSeen = 'disk' in currentFileState ? currentFileState.disk : '';
+  const tab = store.activeDoc();
+  if (!tab || !editor) return;
+  const diskDigestSeen = 'disk' in tab.fileState ? tab.fileState.disk : '';
   try {
     const res = await invoke<{ merged: string; state: FileState; conflicted: boolean }>(
       'resolve_disk_change',
-      { docId: id, oursText: getCurrentMarkdown(), diskDigestSeen }
+      { docId: tab.docId, oursText: editor.getValue(), diskDigestSeen }
     );
-    setEditorValue(res.merged);
-    applyDocState(res.state);
-    await renderMarkdown(res.merged);
+    editor.setValueProgrammatic(res.merged);
+    store.updateDoc(tab.id, { fileState: res.state });
+    refreshChrome(res.state);
+    await scheduleRender();
     chrome.setStatus(
       res.conflicted
         ? 'Merged with conflicts — resolve the markers, then save'
@@ -650,71 +783,126 @@ async function doMerge(): Promise<void> {
   }
 }
 
-// --- event listeners --------------------------------------------------------
+function closeTab(id: number): void {
+  const tab = store.get(id);
+  if (tab && tab.kind === 'doc') {
+    invoke('drop_doc', { docId: tab.docId }).catch(() => {});
+  }
+  store.close(id);
+  if (store.list().length === 0) {
+    store.addEmpty();
+  }
+  saveSession();
+}
 
-listen<string>('open-file', (event) => {
-  openFile(event.payload);
-}).catch(() => {});
+// ---------------------------------------------------------------------------
+// Event listeners.
+// ---------------------------------------------------------------------------
 
-// Single structured lifecycle event from the content-aware watcher.
+listen<string>('open-file', (event) => openFile(event.payload)).catch(() => {});
+
 listen<DocStateChanged>('doc_state_changed', (event) => {
   const { doc_id, state } = event.payload;
-  if (doc_id !== currentDocId) return;
-  applyDocState(state);
-  maybeAutoreload(state);
+  setStateByDocId(doc_id, state);
+  const active = store.activeDoc();
+  if (active && active.docId === doc_id) maybeAutoreload(state);
 }).catch(() => {});
 
 listen('system_theme_changed', handleSystemThemeChange).catch(() => {});
 
 listen<string>('mode-change', (event) => {
   const mode = event.payload as Mode;
-  if (isMode(mode)) {
-    applyMode(mode);
-  }
+  if (isMode(mode)) applyMode(mode);
 }).catch(() => {});
 
-chrome.setStatus('Ready');
+// ---------------------------------------------------------------------------
+// Session persistence (open doc paths + per-tab mode + browser tab).
+// ---------------------------------------------------------------------------
 
-function showWelcomeScreen(): void {
-  hideWelcomeScreen();
-  const welcome = document.createElement('div');
-  welcome.id = 'pmd-welcome';
-  welcome.className = 'pmd-welcome';
-  welcome.innerHTML = `
-    <h1>preview-md</h1>
-    <p>Best-in-class markdown preview for Linux</p>
-    <div class="pmd-welcome-actions">
-      <button id="pmd-welcome-open" class="pmd-welcome-btn">Open File</button>
-      <button id="pmd-welcome-new" class="pmd-welcome-btn">New File</button>
-    </div>
-    <p class="pmd-welcome-hint">or press Ctrl+O to open, Ctrl+N to create</p>
-  `;
-  appContainer.appendChild(welcome);
-  document.body.dataset.state = 'welcome';
-  document.getElementById('pmd-welcome-open')?.addEventListener('click', () => openFileDialog());
-  document.getElementById('pmd-welcome-new')?.addEventListener('click', () => newFile());
+const SESSION_KEY = 'pmd:session';
+
+interface SessionDoc {
+  path: string;
+  mode: Mode;
+}
+interface SessionData {
+  docs: SessionDoc[];
+  browser: boolean;
+  activePath: string | null;
+  activeKind: Tab['kind'] | null;
 }
 
-function hideWelcomeScreen(): void {
-  document.getElementById('pmd-welcome')?.remove();
-  if (document.body.dataset.state === 'welcome') {
-    delete document.body.dataset.state;
+const saveSession = debounce(() => {
+  const docs: SessionDoc[] = [];
+  let browser = false;
+  for (const tab of store.list()) {
+    if (tab.kind === 'doc' && tab.filePath) docs.push({ path: tab.filePath, mode: tab.mode });
+    else if (tab.kind === 'browser') browser = true;
+  }
+  const active = store.active();
+  const data: SessionData = {
+    docs,
+    browser,
+    activePath: active && active.kind === 'doc' ? active.filePath : null,
+    activeKind: active ? active.kind : null,
+  };
+  try {
+    localStorage.setItem(SESSION_KEY, JSON.stringify(data));
+  } catch {
+    /* ignore */
+  }
+}, 300);
+
+function readSession(): SessionData | null {
+  try {
+    const raw = localStorage.getItem(SESSION_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as SessionData;
+  } catch {
+    return null;
   }
 }
+
+async function restoreSession(session: SessionData): Promise<boolean> {
+  let opened = 0;
+  for (const d of session.docs) {
+    try {
+      await openFile(d.path, { background: true });
+      const tab = store.findDocByPath(d.path);
+      if (tab) {
+        store.updateDoc(tab.id, { mode: d.mode });
+        opened++;
+      }
+    } catch {
+      /* path no longer admissible — skip */
+    }
+  }
+  if (session.browser) store.addBrowser({ background: true });
+  // Restore the active tab.
+  if (session.activeKind === 'doc' && session.activePath) {
+    const t = store.findDocByPath(session.activePath);
+    if (t) store.setActive(t.id);
+  } else if (session.activeKind === 'browser') {
+    store.addBrowser();
+  }
+  return opened > 0 || session.browser;
+}
+
+// ---------------------------------------------------------------------------
+// Bootstrap.
+// ---------------------------------------------------------------------------
 
 async function bootstrap(): Promise<void> {
   const settings = await loadSettings();
   if (settings) {
-    if (isMode(settings.default_mode)) {
-      applyMode(settings.default_mode);
-    }
+    if (isMode(settings.default_mode)) currentMode = settings.default_mode;
     if (settings.autosave_mode) autosaveMode = settings.autosave_mode;
     if (settings.autoreload_mode) autoreloadMode = settings.autoreload_mode;
-    if (settings.active_theme) {
-      await applyTheme(settings.active_theme);
-    }
+    if (settings.browser_base_dir) browserBaseDir = settings.browser_base_dir;
+    if (settings.active_theme) await applyTheme(settings.active_theme);
     await applyAutoSwitchTheme(settings);
   }
+  loadRecentFiles();
 
   let openDialogOnStart = false;
   try {
@@ -723,32 +911,40 @@ async function bootstrap(): Promise<void> {
     console.error('Failed to get open-dialog startup flag:', e);
   }
 
+  let initialPath: string | null = null;
   try {
-    const path = await invoke<string | null>('get_initial_path');
-    if (path) {
-      openFile(path);
-    } else {
-      showWelcomeScreen();
-      if (openDialogOnStart) {
-        setTimeout(() => {
-          openFileDialog();
-        }, 0);
-      }
-    }
+    initialPath = await invoke<string | null>('get_initial_path');
   } catch (e) {
     console.error('Failed to get initial path:', e);
-    showWelcomeScreen();
-    if (openDialogOnStart) {
-      setTimeout(() => {
-        openFileDialog();
-      }, 0);
+  }
+
+  if (initialPath) {
+    await openFile(initialPath);
+    return;
+  }
+
+  // No CLI file: try to restore the previous session.
+  const session = readSession();
+  let restored = false;
+  if (session) {
+    try {
+      restored = await restoreSession(session);
+    } catch (e) {
+      console.error('Session restore failed:', e);
     }
+  }
+
+  if (!restored) {
+    // First run / empty session: a single empty (welcome) tab.
+    store.addEmpty();
+    if (openDialogOnStart) setTimeout(() => openFileDialog(), 0);
   }
 }
 
+chrome.setStatus('Ready');
 bootstrap().catch((e) => {
   console.error('Startup failed:', e);
-  showWelcomeScreen();
+  if (store.list().length === 0) store.addEmpty();
 });
 
 export {};

@@ -1,4 +1,8 @@
-use std::{collections::HashSet, path::PathBuf, sync::Mutex};
+use std::{
+    collections::HashSet,
+    path::{Path, PathBuf},
+    sync::Mutex,
+};
 
 /// Tracks the set of paths the renderer is allowed to read or write.
 ///
@@ -8,12 +12,24 @@ use std::{collections::HashSet, path::PathBuf, sync::Mutex};
 /// admit arbitrary paths — see `cmd::file::request_open_file` for the
 /// re-admission rules it applies on renderer-supplied paths.
 ///
-/// Scope is append-only for the process lifetime; `save_file` additionally
-/// requires the path to match the currently-active file (see
-/// `AppState::current_path`), so a stale scope entry from an earlier-opened
+/// Scope is append-only for the process lifetime; `cmd::doc::save_doc`
+/// additionally requires the document to be the active one (see
+/// `crate::doc::DocRegistry`), so a stale scope entry from an earlier-opened
 /// file cannot be used to overwrite that file once the user has moved on.
+///
+/// # Directory allowlist (Phase 2 file browser)
+///
+/// `allowed_dirs` holds *directories* the user has admitted via the OS folder
+/// picker (or a previously-trusted base re-admitted on startup). A path is
+/// "within an allowed dir" when its canonical components are prefixed by the
+/// directory's canonical components — a **component-wise** ancestor match, NOT
+/// a string `starts_with` (so `/base` admits `/base/x` but never `/base_evil`).
+/// Browsing canonicalises every entry and re-checks it, so a symlink that
+/// escapes the base is refused. Directories are never admitted from a
+/// renderer-supplied string and there is no implicit `$HOME` default.
 pub struct PathScope {
     allowed: Mutex<HashSet<PathBuf>>,
+    allowed_dirs: Mutex<HashSet<PathBuf>>,
 }
 
 impl Default for PathScope {
@@ -22,10 +38,32 @@ impl Default for PathScope {
     }
 }
 
+/// Component-wise ancestor test: is `child` equal to, or nested under, `dir`?
+/// Both are expected to be canonical (absolute, symlink-resolved). Compares
+/// path *components* so `/base` does not match `/base_evil`.
+fn is_within(dir: &Path, child: &Path) -> bool {
+    let mut d = dir.components();
+    let mut c = child.components();
+    loop {
+        match (d.next(), c.next()) {
+            (Some(dc), Some(cc)) => {
+                if dc != cc {
+                    return false;
+                }
+            }
+            // `dir` fully consumed → `child` is `dir` or below it.
+            (None, _) => return true,
+            // `child` is shorter than `dir` → it is an ancestor, not a descendant.
+            (Some(_), None) => return false,
+        }
+    }
+}
+
 impl PathScope {
     pub fn new() -> Self {
         Self {
             allowed: Mutex::new(HashSet::new()),
+            allowed_dirs: Mutex::new(HashSet::new()),
         }
     }
 
@@ -74,6 +112,52 @@ impl PathScope {
     /// before deciding whether to admit it.
     pub fn canonicalise(p: &std::path::Path) -> std::io::Result<PathBuf> {
         canonicalise(p)
+    }
+
+    // --- directory allowlist (Phase 2) ---
+
+    /// Admit a directory (and, transitively, its descendants) into the scope.
+    /// Must only be called from trusted entry points: the OS folder picker
+    /// (`cmd::browse::pick_base_dir`) or re-admitting a persisted trusted base
+    /// on startup. Returns the canonical directory path.
+    pub fn allow_dir(&self, p: &Path) -> std::io::Result<PathBuf> {
+        let canon = std::fs::canonicalize(p)?;
+        if !canon.is_dir() {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                "allow_dir target is not a directory",
+            ));
+        }
+        let mut dirs = self.allowed_dirs.lock().unwrap_or_else(|p| p.into_inner());
+        dirs.insert(canon.clone());
+        Ok(canon)
+    }
+
+    /// True if `canon` (already canonical) is equal to, or nested under, any
+    /// admitted directory. Component-wise ancestor match.
+    pub fn is_within_allowed_dir(&self, canon: &Path) -> bool {
+        let dirs = self.allowed_dirs.lock().unwrap_or_else(|p| p.into_inner());
+        dirs.iter().any(|dir| is_within(dir, canon))
+    }
+
+    /// Check that `p` (a directory to browse) is within an admitted base.
+    /// Canonicalises first (resolving symlinks) so an entry that escapes the
+    /// base via a symlink is rejected.
+    pub fn check_dir_access(&self, p: &Path) -> bool {
+        let Ok(canon) = std::fs::canonicalize(p) else {
+            return false;
+        };
+        self.is_within_allowed_dir(&canon)
+    }
+
+    /// Snapshot of the admitted directories (diagnostics / tests).
+    pub fn allowed_dirs(&self) -> Vec<PathBuf> {
+        self.allowed_dirs
+            .lock()
+            .unwrap_or_else(|p| p.into_inner())
+            .iter()
+            .cloned()
+            .collect()
     }
 }
 

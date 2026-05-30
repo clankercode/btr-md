@@ -13,6 +13,7 @@ pub struct Settings {
     pub autosave_mode: AutosaveMode,
     pub autoreload_mode: AutoreloadMode,
     pub merge_strategy: MergeStrategy,
+    pub browser_base_dir: Option<PathBuf>,
 }
 
 impl From<settings::Settings> for Settings {
@@ -26,6 +27,7 @@ impl From<settings::Settings> for Settings {
             autosave_mode: s.autosave_mode,
             autoreload_mode: s.autoreload_mode,
             merge_strategy: s.merge_strategy,
+            browser_base_dir: s.browser_base_dir,
         }
     }
 }

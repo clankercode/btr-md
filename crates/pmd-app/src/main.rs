@@ -1,5 +1,5 @@
 use pmd_app_lib::{cli, cmd, path_scope::PathScope, AppState};
-use tauri::Emitter;
+use tauri::{Emitter, Manager};
 
 fn main() {
     let scope = PathScope::new();
@@ -42,6 +42,8 @@ fn main() {
             cmd::doc::pull_from_disk,
             cmd::doc::resolve_disk_change,
             cmd::doc::drop_doc,
+            cmd::browse::list_dir,
+            cmd::browse::pick_base_dir,
             cmd::theme::list_themes,
             cmd::theme::set_theme,
             cmd::settings::get_settings,
@@ -63,6 +65,16 @@ fn main() {
             // the frontend's open flow; here we only nudge it to open.
             if let Some(ref p) = args.initial_path {
                 let _ = app.emit("open-file", p.to_string_lossy().to_string());
+            }
+            // Re-admit the persisted file-browser base directory (a previously
+            // user-trusted folder) so the browser tab works after a restart.
+            if let Some(base) = pmd_app_lib::state::settings::load().browser_base_dir {
+                if let Err(e) = app.state::<AppState>().scope.allow_dir(&base) {
+                    eprintln!(
+                        "[preview-md] could not re-admit browser base {}: {e}",
+                        base.display()
+                    );
+                }
             }
             Ok(())
         })

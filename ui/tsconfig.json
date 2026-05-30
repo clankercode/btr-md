@@ -21,6 +21,9 @@
   "include": [
     "src/debounce.ts",
     "src/editor_insert.ts",
-    "src/doc_state.ts"
+    "src/doc_state.ts",
+    "src/tabs.ts",
+    "src/tabbar.ts",
+    "src/file_browser.ts"
   ]
 }

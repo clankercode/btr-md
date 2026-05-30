@@ -6,6 +6,10 @@
 // Rust `match`'s no-`_` guarantee. Add a `FileState` variant in Rust → add it
 // here → the compiler points at every switch that must handle it.
 
+/** The editor view mode. Defined here (a typechecked module) so the tab/lifecycle
+ *  modules can share it without importing the untyped legacy `chrome.ts`. */
+export type Mode = 'source' | 'split' | 'preview';
+
 /** A blake3 digest, hex-encoded. Opaque to the UI — only variant identity matters. */
 export type Digest = string;
 

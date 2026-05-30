@@ -23,6 +23,10 @@ pub struct Settings {
     pub autoreload_mode: AutoreloadMode,
     #[serde(default)]
     pub merge_strategy: MergeStrategy,
+    /// The file-browser's trusted base directory (Phase 2). Admitted via the OS
+    /// folder picker; re-admitted to the directory allowlist on startup.
+    #[serde(default)]
+    pub browser_base_dir: Option<PathBuf>,
 }
 
 /// Read the current settings from disk, falling back to defaults if the file is

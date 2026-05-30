@@ -1,4 +1,5 @@
-export type Mode = 'source' | 'split' | 'preview';
+import type { Mode } from './doc_state.js';
+export type { Mode };
 
 export interface ChromeState {
   mode: Mode;

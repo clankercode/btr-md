@@ -1,3 +1,4 @@
+pub mod browse;
 pub mod doc;
 pub mod file;
 pub mod render;

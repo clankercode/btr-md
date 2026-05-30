@@ -9,3 +9,6 @@ tests/screenshots/playwright-results/
 tests/screenshots/playwright/
 .playwright-mcp/
 .review-screens/
+
+# Claude Code agent worktrees (transient)
+.claude/worktrees/
