@@ -1349,3 +1349,42 @@ body[data-state="welcome"] #split-resizer {
 .pmd-fn-backref {
   margin-left: var(--pmd-space-2);
 }
+
+/* --------------------------------------------
+   20. Animated mode selector thumb + status counts (Phase 4)
+   -------------------------------------------- */
+
+.pmd-segmented {
+  position: relative;
+}
+
+.pmd-segmented-btn {
+  position: relative;
+  z-index: 1;
+}
+
+.pmd-segmented-btn.data-active {
+  color: var(--pmd-fg);
+}
+
+.pmd-segmented-thumb {
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  left: 0;
+  width: 0;
+  opacity: 0;
+  background: var(--pmd-bg);
+  border-radius: var(--pmd-radius-md);
+  box-shadow: var(--pmd-shadow-sm);
+  transition: transform var(--pmd-transition-base), width var(--pmd-transition-base);
+  z-index: 0;
+  pointer-events: none;
+}
+
+.pmd-status-counts {
+  margin-left: auto;
+  color: var(--pmd-fg-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}

@@ -1,4 +1,5 @@
 import type { Mode } from './doc_state.js';
+import type { Counts } from './counts.js';
 export type { Mode };
 
 export interface ChromeState {
@@ -13,6 +14,7 @@ export interface ChromeInstance {
   setFilename: (filename: string | null) => void;
   setModified: (modified: boolean) => void;
   setStatus: (text: string) => void;
+  setCounts: (counts: Counts | null) => void;
   setRecentFiles: (files: string[]) => void;
   onModeChange: (handler: (mode: Mode) => void) => void;
   onRecentFileSelect: (handler: (path: string) => void) => void;
@@ -67,6 +69,14 @@ export function createChrome(parent: HTMLElement): ChromeInstance {
   const modeGroup = document.createElement('div');
   modeGroup.className = 'pmd-segmented';
   modeGroup.setAttribute('role', 'tablist');
+
+  // Sliding active-indicator thumb (shadcn style). Positioned/sized to the
+  // active button in `setMode`; the active background lives here, not on the
+  // button, so it animates between options.
+  const modeThumb = document.createElement('div');
+  modeThumb.className = 'pmd-segmented-thumb';
+  modeThumb.setAttribute('aria-hidden', 'true');
+  modeGroup.appendChild(modeThumb);
 
   const modes: { id: Mode; label: string; icon: string }[] = [
     { id: 'source', label: 'Source', icon: '⎔' },
@@ -141,6 +151,10 @@ export function createChrome(parent: HTMLElement): ChromeInstance {
   statusText.className = 'pmd-status-item pmd-status-text';
   statusBar.appendChild(statusText);
 
+  const statusCounts = document.createElement('span');
+  statusCounts.className = 'pmd-status-item pmd-status-counts';
+  statusBar.appendChild(statusCounts);
+
   const statusModeText = document.createElement('span');
   statusModeText.className = 'pmd-status-item pmd-status-mode';
   statusBar.appendChild(statusModeText);
@@ -174,6 +188,15 @@ export function createChrome(parent: HTMLElement): ChromeInstance {
   let recentFileHandlers: ((path: string) => void)[] = [];
   let clearHandlers: (() => void)[] = [];
 
+  function positionThumb(): void {
+    const active = modeButtons.find((b) => b.dataset.mode === currentMode);
+    if (active && active.offsetWidth > 0) {
+      modeThumb.style.transform = `translateX(${active.offsetLeft}px)`;
+      modeThumb.style.width = `${active.offsetWidth}px`;
+      modeThumb.style.opacity = '1';
+    }
+  }
+
   function setMode(mode: Mode) {
     currentMode = mode;
     document.body.dataset.mode = mode;
@@ -183,6 +206,10 @@ export function createChrome(parent: HTMLElement): ChromeInstance {
       btn.setAttribute('aria-selected', String(isActive));
     });
     statusModeText.textContent = mode.charAt(0).toUpperCase() + mode.slice(1);
+    positionThumb();
+    // Re-measure after layout settles (initial call runs before the toolbar
+    // is attached/visible, when offsetWidth is still 0).
+    requestAnimationFrame(positionThumb);
   }
 
   function handleModeClick(e: Event) {
@@ -231,6 +258,16 @@ export function createChrome(parent: HTMLElement): ChromeInstance {
     },
     setStatus: (text: string) => {
       statusText.textContent = text;
+    },
+    setCounts: (counts: Counts | null) => {
+      if (!counts) {
+        statusCounts.textContent = '';
+        return;
+      }
+      const n = (x: number) => x.toLocaleString();
+      statusCounts.textContent =
+        `${n(counts.words)} words · ${n(counts.bytes)} B · ` +
+        `${n(counts.sentences)} sent · ${n(counts.paragraphs)} ¶ · ${n(counts.sections)} §`;
     },
     setRecentFiles: (files: string[]) => {
       fileDropdown.innerHTML = '';

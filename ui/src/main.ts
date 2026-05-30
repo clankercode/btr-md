@@ -22,6 +22,7 @@ import { createTabStore, type Tab, type DocTab } from './tabs.js';
 import { createTabBar, type TabBarInstance } from './tabbar.js';
 import { createFileBrowser, type FileBrowserInstance } from './file_browser.js';
 import { createSettingsMenu, type SettingsSnapshot } from './settings_menu.js';
+import { computeCounts } from './counts.js';
 
 interface RenderResult {
   html: string;
@@ -502,7 +503,13 @@ function onActiveEdit(): void {
   scheduleRender();
   sendDocEdited(tab.docId, editor.getValue());
   scheduleIdleAutosave();
+  scheduleCounts();
 }
+
+const scheduleCounts = debounce(() => {
+  const tab = store.activeDoc();
+  chrome.setCounts(tab && editor ? computeCounts(editor.getValue()) : null);
+}, 200);
 
 const sendDocEdited = debounce((docId: number, md: string) => {
   invoke<FileState>('doc_edited', { docId, contents: md })
@@ -590,9 +597,11 @@ store.onActivate((prev, next) => {
       activateDocTab(next);
       break;
     case 'empty':
+      chrome.setCounts(null);
       renderEmptyBody();
       break;
     case 'browser':
+      chrome.setCounts(null);
       renderBrowserBody();
       break;
     default:
@@ -610,6 +619,7 @@ async function activateDocTab(tab: DocTab): Promise<void> {
   applyMode(tab.mode);
   refreshChrome(tab.fileState);
   await scheduleRender();
+  chrome.setCounts(computeCounts(editor.getValue()));
   editor.view.scrollDOM.scrollTop = tab.scrollEditor;
   previewPane.scrollTop = tab.scrollPreview;
   editor.focus();
