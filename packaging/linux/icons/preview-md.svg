@@ -1,62 +1,12 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
-  <defs>
-    <!-- Background: deep navy to slate, top-to-bottom -->
-    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#1e2d4a"/>
-      <stop offset="100%" stop-color="#0f172a"/>
-    </linearGradient>
-    <!-- Mark gradient: lighter sky blue at top, vivid accent at bottom -->
-    <linearGradient id="mark" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#7dd3fc"/>
-      <stop offset="100%" stop-color="#0ea5e9"/>
-    </linearGradient>
-  </defs>
-
-  <!-- Tile background -->
-  <rect width="1024" height="1024" rx="200" ry="200" fill="url(#bg)"/>
-
-  <!-- Subtle rim: barely-visible border gives depth -->
-  <rect width="1024" height="1024" rx="200" ry="200"
-        fill="none" stroke="rgba(125,211,252,0.12)" stroke-width="4"/>
-
-  <!--
-    Markdown motif: "M" + down-arrow, the canonical Markdown icon.
-
-    Layout (1024×1024 canvas):
-      M glyph:    x from 168 to 856 (width=688), y from 228 to 620 (height=392)
-      Arrow:      centered at x=512, tip at y=848, base at y=660
-
-    The M is drawn as a filled polygon — 10 points:
-      left-leg:    (168,620) → (168,228)
-      left-diag:   (168,228) → (512,490)
-      right-diag:  (512,490) → (856,228)
-      right-leg:   (856,228) → (856,620)
-    ... but we need stroke-width to give it body. Stroke-based is cleaner.
-    Using stroke-width=90, linecap=square to get solid rectangular pillars.
-
-    Arrow: equilateral-ish chevron with rounded join.
-      Left arm:  (300,660) → (512,848)
-      Right arm: (512,848) → (724,660)
-      stroke-width=80, round caps
-  -->
-
-  <!-- M glyph (stroke-based, square caps for pillar solidity) -->
-  <polyline
-    points="168,636  168,228  512,506  856,228  856,636"
-    fill="none"
-    stroke="url(#mark)"
-    stroke-width="92"
-    stroke-linejoin="miter"
-    stroke-linecap="square"
-  />
-
-  <!-- Down-arrow chevron -->
-  <polyline
-    points="296,656  512,852  728,656"
-    fill="none"
-    stroke="url(#mark)"
-    stroke-width="78"
-    stroke-linejoin="round"
-    stroke-linecap="round"
-  />
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" role="img" aria-label="btr.md">
+  <!-- btr.md app icon (peak71c): faceted twin-peak markdown mark — opaque navy outer
+       faces, translucent slate inner faces overlapping into a deeper central seam, a
+       translucent blue down-arrow crossing it, dot in the notch. -->
+  <rect width="1024" height="1024" rx="230" fill="#efe6d3"/>
+  <polygon points="368,300 224,600 368,600" fill="#1f2f56"/>
+  <polygon points="656,300 656,600 800,600" fill="#1f2f56"/>
+  <polygon points="368,300 368,600 536,600" fill="#5b6b82" fill-opacity="0.82"/>
+  <polygon points="656,300 488,600 656,600" fill="#5b6b82" fill-opacity="0.82"/>
+  <polygon points="430,496 594,496 512,786" fill="#2f7fd0" fill-opacity="0.74"/>
+  <circle cx="512" cy="356" r="54" fill="#2f7fd0"/>
 </svg>
