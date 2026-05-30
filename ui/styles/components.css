@@ -1388,3 +1388,39 @@ body[data-state="welcome"] #split-resizer {
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
+
+/* --------------------------------------------
+   21. Table copy + File-menu quick ops (Phase 4)
+   -------------------------------------------- */
+
+.pmd-table-wrap {
+  position: relative;
+  overflow-x: auto;
+}
+
+.pmd-table-copy {
+  position: absolute;
+  top: var(--pmd-space-1);
+  right: var(--pmd-space-1);
+  padding: 2px var(--pmd-space-2);
+  font-size: var(--pmd-text-xs);
+  border: 1px solid var(--pmd-border);
+  border-radius: var(--pmd-radius-sm);
+  background: var(--pmd-bg-elevated);
+  color: var(--pmd-fg-muted);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity var(--pmd-transition-fast);
+}
+
+.pmd-table-wrap:hover .pmd-table-copy,
+.pmd-table-copy:focus-visible {
+  opacity: 1;
+}
+
+.pmd-file-ops,
+.pmd-recents-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}

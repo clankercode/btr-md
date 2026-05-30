@@ -44,6 +44,8 @@ fn main() {
             cmd::doc::drop_doc,
             cmd::browse::list_dir,
             cmd::browse::pick_base_dir,
+            cmd::reveal::open_in_default_app,
+            cmd::reveal::reveal_in_folder,
             cmd::theme::list_themes,
             cmd::theme::set_theme,
             cmd::settings::get_settings,

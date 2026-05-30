@@ -28,6 +28,7 @@
     "src/settings_menu.ts",
     "src/counts.ts",
     "src/footnotes.ts",
-    "src/table_copy.ts"
+    "src/table_copy.ts",
+    "src/insert_menu.ts"
   ]
 }

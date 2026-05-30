@@ -16,6 +16,12 @@ export interface ChromeInstance {
   setStatus: (text: string) => void;
   setCounts: (counts: Counts | null) => void;
   setRecentFiles: (files: string[]) => void;
+  setFileOpsEnabled: (enabled: boolean) => void;
+  onCopyPath: (handler: () => void) => void;
+  onCopyFilename: (handler: () => void) => void;
+  onCopyUrl: (handler: () => void) => void;
+  onRevealInFolder: (handler: () => void) => void;
+  onOpenInApp: (handler: () => void) => void;
   onModeChange: (handler: (mode: Mode) => void) => void;
   onRecentFileSelect: (handler: (path: string) => void) => void;
   onThemePickerClick: (handler: () => void) => void;
@@ -44,13 +50,54 @@ export function createChrome(parent: HTMLElement): ChromeInstance {
   fileMenuBtn.textContent = 'File';
   fileMenuBtn.type = 'button';
 
-  const fileDropdown = document.createElement('ul');
+  const fileDropdown = document.createElement('div');
   fileDropdown.className = 'pmd-dropdown-menu';
   fileDropdown.setAttribute('role', 'menu');
   fileDropdown.style.display = 'none';
 
+  // Fixed quick-file-ops section (persists across recents rebuilds), then a
+  // recents section that `setRecentFiles` rebuilds independently.
+  const fileOpsList = document.createElement('ul');
+  fileOpsList.className = 'pmd-file-ops';
+  const recentsLabel = document.createElement('div');
+  recentsLabel.className = 'pmd-dropdown-label';
+  recentsLabel.textContent = 'Recent files';
+  const recentsList = document.createElement('ul');
+  recentsList.className = 'pmd-recents-list';
+  fileDropdown.appendChild(fileOpsList);
+  fileDropdown.appendChild(recentsLabel);
+  fileDropdown.appendChild(recentsList);
+
   fileMenuWrapper.appendChild(fileMenuBtn);
   fileMenuWrapper.appendChild(fileDropdown);
+
+  // Quick file ops (disabled when there is no file path).
+  const fileOpHandlers: Record<string, (() => void)[]> = {
+    copyPath: [],
+    copyFilename: [],
+    copyUrl: [],
+    reveal: [],
+    openApp: [],
+  };
+  const fileOpItems: HTMLLIElement[] = [];
+  const addFileOp = (key: string, label: string) => {
+    const li = document.createElement('li');
+    li.className = 'pmd-dropdown-item';
+    li.setAttribute('role', 'menuitem');
+    li.textContent = label;
+    li.addEventListener('click', () => {
+      if (li.hasAttribute('data-disabled')) return;
+      closeDropdown();
+      fileOpHandlers[key].forEach((h) => h());
+    });
+    fileOpsList.appendChild(li);
+    fileOpItems.push(li);
+  };
+  addFileOp('copyPath', 'Copy path');
+  addFileOp('copyFilename', 'Copy filename');
+  addFileOp('copyUrl', 'Copy file:// URL');
+  addFileOp('reveal', 'Reveal in folder');
+  addFileOp('openApp', 'Open in default app');
 
   const titleSection = document.createElement('div');
   titleSection.className = 'pmd-title-section';
@@ -270,43 +317,61 @@ export function createChrome(parent: HTMLElement): ChromeInstance {
         `${n(counts.sentences)} sent · ${n(counts.paragraphs)} ¶ · ${n(counts.sections)} §`;
     },
     setRecentFiles: (files: string[]) => {
-      fileDropdown.innerHTML = '';
+      recentsList.innerHTML = '';
       if (files.length === 0) {
         const empty = document.createElement('li');
         empty.className = 'pmd-dropdown-item';
         empty.style.opacity = '0.5';
         empty.style.cursor = 'default';
         empty.textContent = 'No recent files';
-        fileDropdown.appendChild(empty);
-      } else {
-        files.forEach((file) => {
-          const item = document.createElement('li');
-          item.className = 'pmd-dropdown-item';
-          item.setAttribute('role', 'menuitem');
-          item.textContent = file.split('/').pop() || file;
-          item.title = file;
-          item.addEventListener('click', () => {
-            closeDropdown();
-            recentFileHandlers.forEach((h) => h(file));
-          });
-          fileDropdown.appendChild(item);
-        });
-
-        const divider = document.createElement('li');
-        divider.className = 'pmd-dropdown-divider';
-        divider.setAttribute('role', 'separator');
-        fileDropdown.appendChild(divider);
-
-        const clearItem = document.createElement('li');
-        clearItem.className = 'pmd-dropdown-item';
-        clearItem.setAttribute('role', 'menuitem');
-        clearItem.textContent = 'Clear Recent Files';
-        clearItem.addEventListener('click', () => {
-          closeDropdown();
-          clearHandlers.forEach((h) => h());
-        });
-        fileDropdown.appendChild(clearItem);
+        recentsList.appendChild(empty);
+        return;
       }
+      files.forEach((file) => {
+        const item = document.createElement('li');
+        item.className = 'pmd-dropdown-item';
+        item.setAttribute('role', 'menuitem');
+        item.textContent = file.split('/').pop() || file;
+        item.title = file;
+        item.addEventListener('click', () => {
+          closeDropdown();
+          recentFileHandlers.forEach((h) => h(file));
+        });
+        recentsList.appendChild(item);
+      });
+
+      const divider = document.createElement('li');
+      divider.className = 'pmd-dropdown-divider';
+      divider.setAttribute('role', 'separator');
+      recentsList.appendChild(divider);
+
+      const clearItem = document.createElement('li');
+      clearItem.className = 'pmd-dropdown-item';
+      clearItem.setAttribute('role', 'menuitem');
+      clearItem.textContent = 'Clear Recent Files';
+      clearItem.addEventListener('click', () => {
+        closeDropdown();
+        clearHandlers.forEach((h) => h());
+      });
+      recentsList.appendChild(clearItem);
+    },
+    setFileOpsEnabled: (enabled: boolean) => {
+      fileOpItems.forEach((li) => li.toggleAttribute('data-disabled', !enabled));
+    },
+    onCopyPath: (handler: () => void) => {
+      fileOpHandlers.copyPath.push(handler);
+    },
+    onCopyFilename: (handler: () => void) => {
+      fileOpHandlers.copyFilename.push(handler);
+    },
+    onCopyUrl: (handler: () => void) => {
+      fileOpHandlers.copyUrl.push(handler);
+    },
+    onRevealInFolder: (handler: () => void) => {
+      fileOpHandlers.reveal.push(handler);
+    },
+    onOpenInApp: (handler: () => void) => {
+      fileOpHandlers.openApp.push(handler);
     },
     onModeChange: (handler: (mode: Mode) => void) => {
       modeHandlers.push(handler);

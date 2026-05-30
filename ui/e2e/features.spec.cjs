@@ -92,6 +92,24 @@ test('settings menu exposes lifecycle controls and calls their setters', async (
   expect(calledSetter).toBe(true);
 });
 
+test('Insert menu inserts a footnote and a GitHub alert into the editor', async ({ page }) => {
+  await installTauriMock(page);
+  await page.goto(appUrl());
+  await page.locator('#pmd-welcome-new').click();
+  await expect(page.locator('.cm-content')).toBeVisible();
+
+  // Footnote.
+  await page.getByRole('button', { name: 'Insert ▾' }).click();
+  await page.getByText('Footnote', { exact: true }).click();
+  await expect(page.locator('.cm-content')).toContainText('[^1]');
+  await expect(page.locator('.cm-content')).toContainText('TODO');
+
+  // Alert (Note).
+  await page.getByRole('button', { name: 'Insert ▾' }).click();
+  await page.getByText('Alert: Note', { exact: true }).click();
+  await expect(page.locator('.cm-content')).toContainText('[!NOTE]');
+});
+
 test('reload button is hidden until an external change with a dirty buffer', async ({ page }) => {
   await installTauriMock(page);
   await page.goto(appUrl());

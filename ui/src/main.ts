@@ -23,6 +23,10 @@ import { createTabBar, type TabBarInstance } from './tabbar.js';
 import { createFileBrowser, type FileBrowserInstance } from './file_browser.js';
 import { createSettingsMenu, type SettingsSnapshot } from './settings_menu.js';
 import { computeCounts } from './counts.js';
+import { createInsertMenu, type AlertType, type InsertMenuInstance } from './insert_menu.js';
+import { planFootnoteInsertion } from './footnotes.js';
+import { insertAtCursor, dispatchInsert } from './editor_insert.js';
+import { decorateTables } from './table_copy.js';
 
 interface RenderResult {
   html: string;
@@ -169,6 +173,10 @@ const tabBar: TabBarInstance = createTabBar(store, {
 // Tab strip lives inside `.pmd-chrome`, below the toolbar.
 chrome.el.appendChild(tabBar.el);
 
+// Declared before the toolbar block below assigns it (a later `let` would
+// otherwise re-initialise it to null after assignment).
+let insertMenu: InsertMenuInstance | null = null;
+
 // Settings dropdown: appends its own trigger into the toolbar.
 const toolbarEl = chrome.el.querySelector('.pmd-toolbar');
 if (toolbarEl instanceof HTMLElement) {
@@ -189,6 +197,11 @@ if (toolbarEl instanceof HTMLElement) {
       saveSession();
     },
   });
+  insertMenu = createInsertMenu(toolbarEl, {
+    insertAlert,
+    insertFootnote,
+  });
+  insertMenu.setEnabled(false);
 }
 
 let editor: EditorHandle | null = null;
@@ -296,6 +309,44 @@ chrome.onThemePickerClick(() => showThemePicker());
 chrome.onReloadClick(() => doReload());
 chrome.onSaveClick(() => saveCurrentDoc());
 chrome.onMergeClick(() => doMerge());
+
+// Quick file ops (File menu). Operate on the active document's path.
+function activeFilePath(): string | null {
+  const t = store.activeDoc();
+  return t ? t.filePath : null;
+}
+async function copyToClipboard(text: string, label: string): Promise<void> {
+  try {
+    await navigator.clipboard.writeText(text);
+    chrome.setStatus(`Copied ${label}`);
+  } catch {
+    showError('Clipboard unavailable');
+  }
+}
+function updateFileOps(): void {
+  chrome.setFileOpsEnabled(activeFilePath() !== null);
+}
+chrome.onCopyPath(() => {
+  const p = activeFilePath();
+  if (p) copyToClipboard(p, 'path');
+});
+chrome.onCopyFilename(() => {
+  const p = activeFilePath();
+  if (p) copyToClipboard(basename(p), 'filename');
+});
+chrome.onCopyUrl(() => {
+  const p = activeFilePath();
+  if (p) copyToClipboard(`file://${p}`, 'file URL');
+});
+chrome.onRevealInFolder(() => {
+  const p = activeFilePath();
+  if (p) invoke('reveal_in_folder', { path: p }).catch((e) => showError(`Reveal failed: ${String(e)}`));
+});
+chrome.onOpenInApp(() => {
+  const p = activeFilePath();
+  if (p) invoke('open_in_default_app', { path: p }).catch((e) => showError(`Open failed: ${String(e)}`));
+});
+chrome.setFileOpsEnabled(false);
 
 document.addEventListener('keydown', (e: KeyboardEvent) => {
   if (e.ctrlKey && e.key === 't') {
@@ -477,6 +528,7 @@ async function processRenderQueue(): Promise<void> {
       await renderMermaidNodes(previewContent, result.render_nonce);
       await renderMathNodes(previewContent, result.render_nonce);
       decorateCodeBlocks(previewContent);
+      decorateTables(previewContent, () => editor?.getValue() ?? '');
     }
     item.resolve();
   } catch (e) {
@@ -592,6 +644,8 @@ store.onActivate((prev, next) => {
     return;
   }
   document.body.dataset.tabkind = next.kind;
+  insertMenu?.setEnabled(next.kind === 'doc');
+  updateFileOps();
   switch (next.kind) {
     case 'doc':
       activateDocTab(next);
@@ -762,6 +816,7 @@ async function saveCurrentDoc(): Promise<void> {
     if (path) {
       store.updateDoc(tab.id, { filePath: path, title: basename(path) });
       chrome.setFilename(basename(path));
+      updateFileOps();
       saveSession();
     }
     store.updateDoc(tab.id, { fileState: state });
@@ -814,6 +869,54 @@ async function doMerge(): Promise<void> {
   } catch (e) {
     showError(`Merge failed: ${String(e)}`);
   }
+}
+
+/** Insert a GitHub alert blockquote at the cursor, body placeholder selected. */
+function insertAlert(type: AlertType): void {
+  if (!editor || !store.activeDoc()) return;
+  const view = editor.view;
+  const sel = view.state.selection.main;
+  const atLineStart = sel.from === 0 || view.state.doc.sliceString(sel.from - 1, sel.from) === '\n';
+  const prefix = atLineStart ? '' : '\n';
+  const body = 'Your text here';
+  const text = `${prefix}> [!${type.toUpperCase()}]\n> ${body}\n`;
+  const start = text.indexOf(body);
+  insertAtCursor(view, text, { start, end: start + body.length });
+}
+
+/** Insert a footnote: a `[^N]` ref at the cursor + a `[^N]: TODO` definition
+ *  appended at the end, with the TODO placeholder selected. */
+function insertFootnote(): void {
+  if (!editor || !store.activeDoc()) return;
+  const view = editor.view;
+  const plan = planFootnoteInsertion(view.state.doc.toString());
+  const sel = view.state.selection.main;
+  const docLen = view.state.doc.length;
+
+  if (sel.to >= docLen) {
+    // Cursor at the document end: the def would append right where the ref goes
+    // (two changes at the same position overlap), so emit one combined insert.
+    const combined = plan.refText + plan.defText;
+    const base = plan.refText.length;
+    insertAtCursor(view, combined, {
+      start: base + plan.placeholder.start,
+      end: base + plan.placeholder.end,
+    });
+    return;
+  }
+
+  // Ref at the cursor, definition appended at the end (non-overlapping changes).
+  const shift = plan.refText.length - (sel.to - sel.from);
+  const anchor = docLen + shift + plan.placeholder.start;
+  const head = docLen + shift + plan.placeholder.end;
+  dispatchInsert(
+    view,
+    [
+      { from: sel.from, to: sel.to, insert: plan.refText },
+      { from: docLen, insert: plan.defText },
+    ],
+    { anchor, head }
+  );
 }
 
 function closeTab(id: number): void {
