@@ -16,8 +16,7 @@ use crate::facts::{
 };
 use crate::source_map::LineIndex;
 
-pub struct FactBuilder<'a> {
-    source: &'a str,
+pub struct FactBuilder {
     line_index: LineIndex,
     facts: CoreDocumentFacts,
     slugger: Slugger,
@@ -27,23 +26,34 @@ pub struct FactBuilder<'a> {
     image: Option<ImageCapture>,
     code_block: Option<CodeBlockCapture>,
     link_facts: Vec<(usize, LinkFact)>,
+    unresolved_link_starts: Vec<usize>,
+    unresolved_link_facts: Vec<(usize, LinkFact)>,
     reference_definitions: BTreeMap<String, ReferenceDefinitionFact>,
     math_block_start_line: Option<u32>,
     in_code_block: u32,
 }
 
-impl<'a> FactBuilder<'a> {
-    pub fn new(source: &'a str) -> Self {
+impl FactBuilder {
+    pub fn new(source: &str) -> Self {
         let line_index = LineIndex::new(source);
         let scanned_definitions = scan_reference_definitions(source);
         let reference_definitions = first_definition_lookup(&scanned_definitions);
+        let unresolved_links =
+            scan_unresolved_reference_links(source, &line_index, &reference_definitions);
+        let unresolved_link_starts = unresolved_links
+            .iter()
+            .map(|link| link.byte_start)
+            .collect();
+        let unresolved_link_facts = unresolved_links
+            .into_iter()
+            .map(|link| (link.byte_start, link.fact))
+            .collect();
         let mut facts = CoreDocumentFacts::empty();
         facts.counts.bytes = source.len().try_into().unwrap_or(u32::MAX);
         facts.frontmatter = parse_frontmatter(source);
         facts.reference_definitions = scanned_definitions;
 
         Self {
-            source,
             line_index,
             facts,
             slugger: Slugger::default(),
@@ -53,6 +63,8 @@ impl<'a> FactBuilder<'a> {
             image: None,
             code_block: None,
             link_facts: Vec::new(),
+            unresolved_link_starts,
+            unresolved_link_facts,
             reference_definitions,
             math_block_start_line: None,
             in_code_block: 0,
@@ -61,6 +73,13 @@ impl<'a> FactBuilder<'a> {
 
     pub fn line_index(&self) -> &LineIndex {
         &self.line_index
+    }
+
+    pub fn rendered_link_marker_id(&self, byte_start: usize, rendered_link_count: usize) -> usize {
+        rendered_link_count
+            + self
+                .unresolved_link_starts
+                .partition_point(|start| *start < byte_start)
     }
 
     pub fn observe_event(&mut self, event: &Event<'_>, range: Range<usize>) {
@@ -78,16 +97,7 @@ impl<'a> FactBuilder<'a> {
     }
 
     pub fn finish(mut self) -> CoreDocumentFacts {
-        let unresolved = scan_unresolved_reference_links(
-            self.source,
-            &self.line_index,
-            &self.reference_definitions,
-        );
-        self.link_facts.extend(
-            unresolved
-                .into_iter()
-                .map(|link| (link.byte_start, link.fact)),
-        );
+        self.link_facts.extend(self.unresolved_link_facts);
         self.link_facts.sort_by_key(|(byte_start, _)| *byte_start);
         self.facts.links = self.link_facts.into_iter().map(|(_, fact)| fact).collect();
         finalize_counts(&mut self.facts);

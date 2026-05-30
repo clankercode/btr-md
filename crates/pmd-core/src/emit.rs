@@ -31,21 +31,39 @@ pub(crate) fn byte_to_line(md: &str) -> impl Fn(usize) -> u32 + '_ {
 }
 
 struct ImageState {
-    dest_url: String,
+    id: usize,
     title: String,
     alt: String,
 }
 
-fn emit_image(html: &mut String, state: &ImageState) {
+fn emit_link_open(html: &mut String, title: &str, link_id: usize, render_nonce: &str) {
     html.push_str(&format!(
-        "<img src=\"{}\" alt=\"{}\"",
-        escape_html(&state.dest_url),
-        escape_html(&state.alt)
+        "<a data-pmd-link-id=\"link-{}\" role=\"link\" tabindex=\"0\" data-pmd-nonce=\"{}\"",
+        link_id,
+        escape_html(render_nonce)
     ));
-    if !state.title.is_empty() {
-        html.push_str(&format!(" title=\"{}\"", escape_html(&state.title)));
+    if !title.is_empty() {
+        html.push_str(&format!(" title=\"{}\"", escape_html(title)));
     }
     html.push('>');
+}
+
+fn emit_image(html: &mut String, state: &ImageState, render_nonce: &str) {
+    let label = if state.alt.is_empty() {
+        state.title.as_str()
+    } else {
+        state.alt.as_str()
+    };
+    html.push_str(&format!(
+        "<span data-pmd-image-id=\"image-{}\" class=\"pmd-image-placeholder\" data-pmd-nonce=\"{}\"",
+        state.id,
+        escape_html(render_nonce)
+    ));
+    html.push('>');
+    if !label.is_empty() {
+        html.push_str(&escape_html(label));
+    }
+    html.push_str("</span>");
 }
 
 pub(crate) fn generate_render_nonce() -> String {
@@ -70,6 +88,7 @@ fn emit_open_tag(
     in_table_head: bool,
     cell_alignment: Option<Alignment>,
     render_nonce: &str,
+    link_id: Option<usize>,
 ) {
     match tag {
         Tag::Paragraph => html.push_str(&format!(
@@ -155,14 +174,11 @@ fn emit_open_tag(
         Tag::Emphasis => html.push_str("<em>"),
         Tag::Strong => html.push_str("<strong>"),
         Tag::Strikethrough => html.push_str("<s>"),
-        Tag::Link {
-            dest_url, title, ..
-        } => {
-            html.push_str(&format!("<a href=\"{}\"", escape_html(dest_url)));
-            if !title.is_empty() {
-                html.push_str(&format!(" title=\"{}\"", escape_html(title)));
-            }
-            html.push('>');
+        Tag::Link { title, .. } => {
+            let Some(link_id) = link_id else {
+                return;
+            };
+            emit_link_open(html, title, link_id, render_nonce);
         }
         Tag::Image { .. } => {
             // Image markup is emitted on Tag::Image close after we have
@@ -399,6 +415,7 @@ fn emit_footnotes_section(
     html: &mut String,
     mut footnotes: Vec<(usize, String)>,
     fn_ref_counts: &std::collections::HashMap<usize, usize>,
+    render_nonce: &str,
 ) {
     if footnotes.is_empty() {
         return;
@@ -411,7 +428,8 @@ fn emit_footnotes_section(
         let count = fn_ref_counts.get(&n).copied().unwrap_or(1);
         if count == 1 {
             html.push_str(&format!(
-                "<a href=\"#fnref-{n}\" class=\"pmd-fn-backref\" aria-label=\"Back to content\">↩</a>"
+                "<a href=\"#fnref-{n}\" class=\"pmd-fn-backref\" aria-label=\"Back to content\" data-pmd-nonce=\"{}\">↩</a>",
+                escape_html(render_nonce)
             ));
         } else {
             // Emit one backref per in-text occurrence: fnref-N (first), fnref-N-2, fnref-N-3 …
@@ -422,7 +440,8 @@ fn emit_footnotes_section(
                     format!("fnref-{n}-{k}")
                 };
                 html.push_str(&format!(
-                    "<a href=\"#{id}\" class=\"pmd-fn-backref\" aria-label=\"Back to content {k}\">↩<sup>{k}</sup></a>"
+                    "<a href=\"#{id}\" class=\"pmd-fn-backref\" aria-label=\"Back to content {k}\" data-pmd-nonce=\"{}\">↩<sup>{k}</sup></a>",
+                    escape_html(render_nonce)
                 ));
             }
         }
@@ -478,6 +497,8 @@ pub fn render_fragment(md: &str, render_nonce: &str) -> FragmentRender {
     // so emit_footnotes_section can generate the correct number of backrefs.
     let mut fn_ref_counts: std::collections::HashMap<usize, usize> =
         std::collections::HashMap::new();
+    let mut rendered_link_count = 0usize;
+    let mut next_image_id = 0usize;
 
     for (event, range) in parser {
         fact_builder.observe_event(&event, range.clone());
@@ -517,12 +538,18 @@ pub fn render_fragment(md: &str, render_nonce: &str) -> FragmentRender {
                 if matches!(tag, Tag::CodeBlock(_)) {
                     in_code_block += 1;
                 }
-                if let Tag::Image {
-                    dest_url, title, ..
-                } = &tag
-                {
+                let link_id = if matches!(tag, Tag::Link { .. }) {
+                    let id = fact_builder.rendered_link_marker_id(range.start, rendered_link_count);
+                    rendered_link_count += 1;
+                    Some(id)
+                } else {
+                    None
+                };
+                if let Tag::Image { title, .. } = &tag {
+                    let id = next_image_id;
+                    next_image_id += 1;
                     image_state = Some(ImageState {
-                        dest_url: dest_url.to_string(),
+                        id,
                         title: title.to_string(),
                         alt: String::new(),
                     });
@@ -543,6 +570,7 @@ pub fn render_fragment(md: &str, render_nonce: &str) -> FragmentRender {
                     in_table_head,
                     cell_alignment,
                     render_nonce,
+                    link_id,
                 );
                 block_stack.push((line, open_pos));
 
@@ -635,7 +663,7 @@ pub fn render_fragment(md: &str, render_nonce: &str) -> FragmentRender {
                 }
                 if matches!(tag_end, TagEnd::Image) {
                     if let Some(state) = image_state.take() {
-                        emit_image(&mut html, &state);
+                        emit_image(&mut html, &state, &render_nonce);
                     }
                 }
                 if matches!(tag_end, TagEnd::Table) {
@@ -768,7 +796,8 @@ pub fn render_fragment(md: &str, render_nonce: &str) -> FragmentRender {
                     format!("fnref-{n}-{occ}")
                 };
                 html.push_str(&format!(
-                    "<sup class=\"pmd-fnref\" id=\"{ref_id}\"><a href=\"#fn-{n}\">{n}</a></sup>"
+                    "<sup class=\"pmd-fnref\" id=\"{ref_id}\"><a href=\"#fn-{n}\" class=\"pmd-fnref-link\" data-pmd-nonce=\"{}\">{n}</a></sup>",
+                    escape_html(&render_nonce)
                 ));
             }
             Event::Rule => {
@@ -788,7 +817,7 @@ pub fn render_fragment(md: &str, render_nonce: &str) -> FragmentRender {
         html.push_str("$$");
         html.push_str(&escape_html(&math));
     }
-    emit_footnotes_section(&mut html, footnotes, &fn_ref_counts);
+    emit_footnotes_section(&mut html, footnotes, &fn_ref_counts, &render_nonce);
     FragmentRender {
         html,
         source_map,
