@@ -32,6 +32,15 @@ Observed result on 2026-05-30:
 
 Implementation workers should use `just check` for the default non-WebDriver gate. Security sentinel tests in `crates/pmd-e2e/tests/navigation_policy.rs` are release-blocking once Block 12 exists; start the repo e2e harness with `just e2e` or the documented WebDriver setup before claiming final PASS.
 
+## Execution Status
+
+Updated 2026-05-30 after rebasing onto `master` at `e7a8b47`:
+
+- Blocks 1-3, `dit-core-facts`: merged into `feat/large-expansion` as `d062d9c`, `a7cf6db`, and `5d87966`.
+- Block 4, app preview authority shell: merged as `2451545` with implementation commit `d66162f`; `ccc --yolo @cx-reviewer` returned `PASS` after the rebase.
+- Post-rebase rustfmt cleanup from `master` landed as `d2c10fc` so worker baselines start with `cargo fmt --check` clean.
+- Next active block: Block 5, synchronous resource policy, continuing in `.worktrees/dit-app-authority` on `work/dit-app-authority`.
+
 ## Operating Contract
 
 ### Worktrees
