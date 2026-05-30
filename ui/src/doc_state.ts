@@ -37,6 +37,7 @@ export type MergeStrategy =
   | 'auto_merge_munge'
   | 'ignore_disk'
   | 'take_disk';
+export type DiffMode = 'none' | 'gutter' | 'line_by_line' | 'word_by_word';
 
 /** Compile-time exhaustiveness guard. */
 export function assertNever(x: never): never {

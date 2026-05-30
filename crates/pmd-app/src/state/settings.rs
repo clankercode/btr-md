@@ -1,4 +1,4 @@
-use crate::doc::modes::{AutoreloadMode, AutosaveMode, MergeStrategy};
+use crate::doc::modes::{AutoreloadMode, AutosaveMode, DiffMode, MergeStrategy};
 use anyhow::Result;
 use fs2::FileExt;
 use serde::{Deserialize, Serialize};
@@ -27,6 +27,16 @@ pub struct Settings {
     /// folder picker; re-admitted to the directory allowlist on startup.
     #[serde(default)]
     pub browser_base_dir: Option<PathBuf>,
+    // Phase 5 settings.
+    #[serde(default)]
+    pub gist_enabled: bool,
+    #[serde(default)]
+    pub diff_mode: DiffMode,
+    #[serde(default)]
+    pub dont_ask_default_handler: bool,
+    /// Selected mono/editor font (a downloaded Nerd Font family name), if any.
+    #[serde(default)]
+    pub mono_font: Option<String>,
 }
 
 /// Read the current settings from disk, falling back to defaults if the file is

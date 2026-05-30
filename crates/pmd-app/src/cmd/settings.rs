@@ -1,4 +1,4 @@
-use crate::doc::modes::{AutoreloadMode, AutosaveMode, MergeStrategy};
+use crate::doc::modes::{AutoreloadMode, AutosaveMode, DiffMode, MergeStrategy};
 use crate::state::{recents, settings};
 use serde::Serialize;
 use std::path::PathBuf;
@@ -14,6 +14,10 @@ pub struct Settings {
     pub autoreload_mode: AutoreloadMode,
     pub merge_strategy: MergeStrategy,
     pub browser_base_dir: Option<PathBuf>,
+    pub gist_enabled: bool,
+    pub diff_mode: DiffMode,
+    pub dont_ask_default_handler: bool,
+    pub mono_font: Option<String>,
 }
 
 impl From<settings::Settings> for Settings {
@@ -28,6 +32,10 @@ impl From<settings::Settings> for Settings {
             autoreload_mode: s.autoreload_mode,
             merge_strategy: s.merge_strategy,
             browser_base_dir: s.browser_base_dir,
+            gist_enabled: s.gist_enabled,
+            diff_mode: s.diff_mode,
+            dont_ask_default_handler: s.dont_ask_default_handler,
+            mono_font: s.mono_font,
         }
     }
 }
@@ -105,6 +113,42 @@ pub fn set_autoreload_mode(mode: AutoreloadMode) -> Result<(), String> {
 pub fn set_merge_strategy(strategy: MergeStrategy) -> Result<(), String> {
     settings::rmw(|s| settings::Settings {
         merge_strategy: strategy,
+        ..s
+    })
+    .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn set_gist_enabled(enabled: bool) -> Result<(), String> {
+    settings::rmw(|s| settings::Settings {
+        gist_enabled: enabled,
+        ..s
+    })
+    .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn set_diff_mode(mode: DiffMode) -> Result<(), String> {
+    settings::rmw(|s| settings::Settings {
+        diff_mode: mode,
+        ..s
+    })
+    .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn set_dont_ask_default_handler(value: bool) -> Result<(), String> {
+    settings::rmw(|s| settings::Settings {
+        dont_ask_default_handler: value,
+        ..s
+    })
+    .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn set_mono_font(font: Option<String>) -> Result<(), String> {
+    settings::rmw(|s| settings::Settings {
+        mono_font: font,
         ..s
     })
     .map_err(|e| e.to_string())

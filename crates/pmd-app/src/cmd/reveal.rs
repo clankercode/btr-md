@@ -44,6 +44,44 @@ fn spawn(mut cmd: Command) -> Result<(), String> {
     cmd.spawn().map(|_| ()).map_err(|e| e.to_string())
 }
 
+/// Open an external URL in the system browser. Restricted to http(s) so a
+/// compromised renderer can't launch `file:`/`javascript:`/custom schemes.
+/// Used by the "Copy + Open Gist" flow (Phase 5).
+#[tauri::command]
+pub fn open_url(url: String) -> Result<(), String> {
+    let lower = url.trim().to_ascii_lowercase();
+    if !(lower.starts_with("https://") || lower.starts_with("http://")) {
+        return Err("open_url: only http(s) URLs are allowed".into());
+    }
+    open_external(&url)
+}
+
+#[cfg(target_os = "linux")]
+fn open_external(s: &str) -> Result<(), String> {
+    let mut c = Command::new("xdg-open");
+    c.arg(s);
+    spawn(c)
+}
+
+#[cfg(target_os = "macos")]
+fn open_external(s: &str) -> Result<(), String> {
+    let mut c = Command::new("open");
+    c.arg(s);
+    spawn(c)
+}
+
+#[cfg(target_os = "windows")]
+fn open_external(s: &str) -> Result<(), String> {
+    let mut c = Command::new("cmd");
+    c.args(["/C", "start", ""]).arg(s);
+    spawn(c)
+}
+
+#[cfg(not(any(target_os = "linux", target_os = "macos", target_os = "windows")))]
+fn open_external(_s: &str) -> Result<(), String> {
+    Err("open_url is not supported on this platform".into())
+}
+
 #[cfg(target_os = "linux")]
 fn open_path(p: &Path) -> Result<(), String> {
     let mut c = Command::new("xdg-open");

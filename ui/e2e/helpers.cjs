@@ -140,8 +140,13 @@ async function installTauriMock(page, options = {}) {
             autoreload_mode: 'when_clean',
             merge_strategy: 'raise_conflict',
             browser_base_dir: null,
+            gist_enabled: false,
+            diff_mode: 'none',
+            dont_ask_default_handler: true,
+            mono_font: null,
           };
         }
+        if (cmd === 'default_handler_status') return { status: 'unknown', platform: 'linux' };
         if (cmd === 'get_initial_path') return initialPath ?? null;
         if (cmd === 'get_open_dialog_on_start') return false;
         if (cmd === 'list_themes') return themes;

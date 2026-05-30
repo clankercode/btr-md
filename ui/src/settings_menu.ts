@@ -6,24 +6,35 @@
 // file-browser base dir. It is structured so later phases (diff mode, gist,
 // fonts, default-handler) can add sections without restructuring.
 
-import type { AutoreloadMode, AutosaveMode, MergeStrategy } from './doc_state.js';
+import type { AutoreloadMode, AutosaveMode, DiffMode, MergeStrategy } from './doc_state.js';
 
 export interface SettingsSnapshot {
   autosave_mode: AutosaveMode;
   autoreload_mode: AutoreloadMode;
   merge_strategy: MergeStrategy;
   browser_base_dir: string | null;
+  gist_enabled: boolean;
+  diff_mode: DiffMode;
 }
+
+/** Default-handler status mirrored from the backend `HandlerStatus`. */
+export type HandlerStatus = 'default' | 'not_default' | 'unknown';
 
 export interface SettingsMenuDeps {
   getSettings: () => Promise<SettingsSnapshot>;
   setAutosaveMode: (m: AutosaveMode) => Promise<void>;
   setAutoreloadMode: (m: AutoreloadMode) => Promise<void>;
   setMergeStrategy: (m: MergeStrategy) => Promise<void>;
+  setGistEnabled: (enabled: boolean) => Promise<void>;
+  setDiffMode: (m: DiffMode) => Promise<void>;
   pickBaseDir: () => Promise<string | null>;
+  getDefaultHandlerStatus: () => Promise<HandlerStatus>;
+  setAsDefaultHandler: () => Promise<void>;
   onAutosaveChange: (m: AutosaveMode) => void;
   onAutoreloadChange: (m: AutoreloadMode) => void;
   onBaseDirChange: (dir: string) => void;
+  onGistChange: (enabled: boolean) => void;
+  onDiffModeChange: (m: DiffMode) => void;
 }
 
 export interface SettingsMenuInstance {
@@ -57,6 +68,13 @@ const MERGE_CHOICES: Choice<MergeStrategy>[] = [
   { value: 'take_disk', label: 'Take disk' },
 ];
 
+const DIFF_CHOICES: Choice<DiffMode>[] = [
+  { value: 'none', label: 'Off' },
+  { value: 'gutter', label: 'Gutter markers' },
+  { value: 'line_by_line', label: 'Line by line' },
+  { value: 'word_by_word', label: 'Word by word' },
+];
+
 function makeSelect<T extends string>(
   id: string,
   labelText: string,
@@ -85,6 +103,27 @@ function makeSelect<T extends string>(
   row.appendChild(select);
 
   return { row, select };
+}
+
+function makeToggle(
+  id: string,
+  labelText: string,
+  onChange: (checked: boolean) => void
+): { row: HTMLElement; input: HTMLInputElement } {
+  const row = document.createElement('div');
+  row.className = 'pmd-settings-row';
+  const label = document.createElement('label');
+  label.className = 'pmd-settings-label';
+  label.htmlFor = id;
+  label.textContent = labelText;
+  row.appendChild(label);
+  const input = document.createElement('input');
+  input.type = 'checkbox';
+  input.id = id;
+  input.className = 'pmd-settings-toggle';
+  input.addEventListener('change', () => onChange(input.checked));
+  row.appendChild(input);
+  return { row, input };
 }
 
 export function createSettingsMenu(
@@ -159,9 +198,64 @@ export function createSettingsMenu(
   baseRow.appendChild(baseBtn);
   menu.appendChild(baseRow);
 
+  const divider2 = document.createElement('div');
+  divider2.className = 'pmd-dropdown-divider';
+  menu.appendChild(divider2);
+  const exportHeading = document.createElement('div');
+  exportHeading.className = 'pmd-dropdown-label';
+  exportHeading.textContent = 'Editing & integration';
+  menu.appendChild(exportHeading);
+
+  const diff = makeSelect<DiffMode>('pmd-set-diff', 'Diff view', DIFF_CHOICES, (v) => {
+    deps.setDiffMode(v).catch((e) => console.error('set_diff_mode failed:', e));
+    deps.onDiffModeChange(v);
+  });
+  menu.appendChild(diff.row);
+
+  const gist = makeToggle('pmd-set-gist', 'Gist export button', (checked) => {
+    deps.setGistEnabled(checked).catch((e) => console.error('set_gist_enabled failed:', e));
+    deps.onGistChange(checked);
+  });
+  menu.appendChild(gist.row);
+
+  const handlerRow = document.createElement('div');
+  handlerRow.className = 'pmd-settings-row pmd-settings-row-col';
+  const handlerStatus = document.createElement('span');
+  handlerStatus.className = 'pmd-settings-base';
+  const handlerBtn = document.createElement('button');
+  handlerBtn.className = 'pmd-btn pmd-btn-outline pmd-btn-sm';
+  handlerBtn.type = 'button';
+  handlerBtn.textContent = 'Set as default markdown app';
+  handlerBtn.addEventListener('click', async () => {
+    try {
+      await deps.setAsDefaultHandler();
+      void refreshHandler();
+    } catch (e) {
+      handlerStatus.textContent = `Default app: ${String(e)}`;
+    }
+  });
+  handlerRow.appendChild(handlerStatus);
+  handlerRow.appendChild(handlerBtn);
+  menu.appendChild(handlerRow);
+
   wrapper.appendChild(btn);
   wrapper.appendChild(menu);
   toolbar.appendChild(wrapper);
+
+  async function refreshHandler(): Promise<void> {
+    try {
+      const status = await deps.getDefaultHandlerStatus();
+      handlerStatus.textContent =
+        status === 'default'
+          ? 'Default markdown app: yes'
+          : status === 'not_default'
+            ? 'Default markdown app: no'
+            : 'Default markdown app: unknown';
+      handlerBtn.disabled = status === 'default';
+    } catch {
+      handlerStatus.textContent = 'Default markdown app: unknown';
+    }
+  }
 
   async function refresh(): Promise<void> {
     try {
@@ -171,9 +265,12 @@ export function createSettingsMenu(
       merge.select.value = s.merge_strategy;
       basePath.textContent = s.browser_base_dir ?? '(none)';
       basePath.title = s.browser_base_dir ?? '';
+      diff.select.value = s.diff_mode;
+      gist.input.checked = s.gist_enabled;
     } catch (e) {
       console.error('getSettings failed:', e);
     }
+    void refreshHandler();
   }
 
   function close(): void {

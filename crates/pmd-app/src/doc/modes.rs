@@ -64,6 +64,21 @@ pub enum MergeStrategy {
     TakeDisk,
 }
 
+/// Diff-view rendering mode (Phase 5). Baseline = last-saved content.
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Default, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum DiffMode {
+    /// No diff overlay (the default).
+    #[default]
+    None,
+    /// Change markers in the gutter only.
+    Gutter,
+    /// Inline line-by-line diff (unified merge view).
+    LineByLine,
+    /// Inline word-by-word diff.
+    WordByWord,
+}
+
 /// Policy for resolving save/disk races. Only [`RacePolicy::Defer`] exists in
 /// v1; the enum is the seam that keeps future race handling type-routed.
 #[derive(Clone, Copy, PartialEq, Eq, Debug, Default, Serialize, Deserialize)]

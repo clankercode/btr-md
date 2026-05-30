@@ -1,4 +1,5 @@
 pub mod browse;
+pub mod default_handler;
 pub mod doc;
 pub mod file;
 pub mod render;

@@ -1424,3 +1424,34 @@ body[data-state="welcome"] #split-resizer {
   margin: 0;
   padding: 0;
 }
+
+/* --------------------------------------------
+   22. Default-handler banner + gist (Phase 5)
+   -------------------------------------------- */
+
+.pmd-banner {
+  position: fixed;
+  top: var(--pmd-chrome-h, 44px);
+  left: 0;
+  right: 0;
+  z-index: 35;
+  display: flex;
+  align-items: center;
+  gap: var(--pmd-space-3);
+  padding: var(--pmd-space-2) var(--pmd-space-4);
+  background: var(--pmd-bg-elevated);
+  border-bottom: 1px solid var(--pmd-border);
+  box-shadow: var(--pmd-shadow-sm);
+  font-size: var(--pmd-text-sm);
+}
+
+.pmd-banner-msg {
+  flex: 1;
+  color: var(--pmd-fg);
+}
+
+.pmd-settings-toggle {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--pmd-accent);
+}

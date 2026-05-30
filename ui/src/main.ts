@@ -17,11 +17,12 @@ import {
   type DocStateChanged,
   type AutosaveMode,
   type AutoreloadMode,
+  type DiffMode,
 } from './doc_state.js';
 import { createTabStore, type Tab, type DocTab } from './tabs.js';
 import { createTabBar, type TabBarInstance } from './tabbar.js';
 import { createFileBrowser, type FileBrowserInstance } from './file_browser.js';
-import { createSettingsMenu, type SettingsSnapshot } from './settings_menu.js';
+import { createSettingsMenu, type SettingsSnapshot, type HandlerStatus } from './settings_menu.js';
 import { computeCounts } from './counts.js';
 import { createInsertMenu, type AlertType, type InsertMenuInstance } from './insert_menu.js';
 import { planFootnoteInsertion } from './footnotes.js';
@@ -43,6 +44,10 @@ interface Settings {
   autosave_mode: AutosaveMode;
   autoreload_mode: AutoreloadMode;
   browser_base_dir: string | null;
+  gist_enabled: boolean;
+  diff_mode: DiffMode;
+  dont_ask_default_handler: boolean;
+  mono_font: string | null;
 }
 
 interface OpenedDoc {
@@ -185,7 +190,14 @@ if (toolbarEl instanceof HTMLElement) {
     setAutosaveMode: (m) => invoke('set_autosave_mode', { mode: m }).then(() => {}),
     setAutoreloadMode: (m) => invoke('set_autoreload_mode', { mode: m }).then(() => {}),
     setMergeStrategy: (m) => invoke('set_merge_strategy', { strategy: m }).then(() => {}),
+    setGistEnabled: (e) => invoke('set_gist_enabled', { enabled: e }).then(() => {}),
+    setDiffMode: (m) => invoke('set_diff_mode', { mode: m }).then(() => {}),
     pickBaseDir: () => invoke<string | null>('pick_base_dir'),
+    getDefaultHandlerStatus: () =>
+      invoke<{ status: HandlerStatus; platform: string }>('default_handler_status').then(
+        (r) => r.status
+      ),
+    setAsDefaultHandler: () => invoke('set_as_default_handler').then(() => {}),
     onAutosaveChange: (m) => {
       autosaveMode = m;
     },
@@ -196,12 +208,55 @@ if (toolbarEl instanceof HTMLElement) {
       browserBaseDir = dir;
       saveSession();
     },
+    onGistChange: (e) => {
+      gistEnabled = e;
+      applyGistVisibility();
+    },
+    onDiffModeChange: (m) => {
+      diffMode = m;
+      applyDiffMode();
+    },
   });
   insertMenu = createInsertMenu(toolbarEl, {
     insertAlert,
     insertFootnote,
   });
   insertMenu.setEnabled(false);
+
+  // "Copy + Open Gist": GitHub exposes no URL param to prefill gist content, so
+  // we copy the document to the clipboard and open the new-gist page.
+  gistBtn = document.createElement('button');
+  gistBtn.className = 'pmd-btn pmd-btn-ghost pmd-btn-sm';
+  gistBtn.type = 'button';
+  gistBtn.textContent = 'Gist';
+  gistBtn.title = 'Copy the document and open gist.github.com to paste it';
+  gistBtn.style.display = 'none';
+  gistBtn.addEventListener('click', () => openGist());
+  toolbarEl.appendChild(gistBtn);
+}
+
+function applyGistVisibility(): void {
+  if (gistBtn) gistBtn.style.display = gistEnabled ? '' : 'none';
+}
+
+async function openGist(): Promise<void> {
+  const content = editor && store.activeDoc() ? editor.getValue() : '';
+  try {
+    await navigator.clipboard.writeText(content);
+    await invoke('open_url', { url: 'https://gist.github.com/' });
+    chrome.setStatus('Copied — paste the document into the new gist');
+  } catch (e) {
+    showError(`Gist failed: ${String(e)}`);
+  }
+}
+
+/** Apply the current diff mode to the editor (no-op until the editor's diff
+ *  support is present; the setting still persists). */
+function applyDiffMode(): void {
+  const tab = store.activeDoc();
+  const setDiff = (editor as unknown as { setDiff?: (m: DiffMode, base: string) => void } | null)
+    ?.setDiff;
+  if (setDiff) setDiff(diffMode, tab && 'baseContent' in tab ? (tab as any).baseContent ?? '' : '');
 }
 
 let editor: EditorHandle | null = null;
@@ -210,6 +265,9 @@ let currentMode: Mode = 'split';
 let autosaveMode: AutosaveMode = 'off';
 let autoreloadMode: AutoreloadMode = 'when_clean';
 let browserBaseDir: string | null = null;
+let gistEnabled = false;
+let diffMode: DiffMode = 'none';
+let gistBtn: HTMLButtonElement | null = null;
 
 const MARKDOWN_EXTENSIONS = ['md', 'markdown', 'mdown', 'mkd'];
 
@@ -1028,6 +1086,45 @@ async function restoreSession(session: SessionData): Promise<boolean> {
 // Bootstrap.
 // ---------------------------------------------------------------------------
 
+function showDefaultHandlerBanner(): void {
+  if (document.getElementById('pmd-default-banner')) return;
+  const banner = document.createElement('div');
+  banner.id = 'pmd-default-banner';
+  banner.className = 'pmd-banner';
+  const msg = document.createElement('span');
+  msg.className = 'pmd-banner-msg';
+  msg.textContent = 'Make preview-md your default markdown app?';
+  const setBtn = document.createElement('button');
+  setBtn.className = 'pmd-btn pmd-btn-primary pmd-btn-sm';
+  setBtn.type = 'button';
+  setBtn.textContent = 'Set as default';
+  setBtn.addEventListener('click', async () => {
+    try {
+      await invoke('set_as_default_handler');
+      chrome.setStatus('Set as default markdown app');
+    } catch (e) {
+      showError(`Set default failed: ${String(e)}`);
+    }
+    banner.remove();
+  });
+  const noBtn = document.createElement('button');
+  noBtn.className = 'pmd-btn pmd-btn-ghost pmd-btn-sm';
+  noBtn.type = 'button';
+  noBtn.textContent = "Don't ask again";
+  noBtn.addEventListener('click', () => {
+    invoke('set_dont_ask_default_handler', { value: true }).catch(() => {});
+    banner.remove();
+  });
+  const dismiss = document.createElement('button');
+  dismiss.className = 'pmd-btn pmd-btn-ghost pmd-btn-sm';
+  dismiss.type = 'button';
+  dismiss.textContent = '×';
+  dismiss.title = 'Dismiss';
+  dismiss.addEventListener('click', () => banner.remove());
+  banner.append(msg, setBtn, noBtn, dismiss);
+  document.body.appendChild(banner);
+}
+
 async function bootstrap(): Promise<void> {
   const settings = await loadSettings();
   if (settings) {
@@ -1035,8 +1132,19 @@ async function bootstrap(): Promise<void> {
     if (settings.autosave_mode) autosaveMode = settings.autosave_mode;
     if (settings.autoreload_mode) autoreloadMode = settings.autoreload_mode;
     if (settings.browser_base_dir) browserBaseDir = settings.browser_base_dir;
+    gistEnabled = settings.gist_enabled === true;
+    if (settings.diff_mode) diffMode = settings.diff_mode;
+    applyGistVisibility();
     if (settings.active_theme) await applyTheme(settings.active_theme);
     await applyAutoSwitchTheme(settings);
+    // Offer to become the default markdown handler (once, unless silenced).
+    if (!settings.dont_ask_default_handler) {
+      invoke<{ status: HandlerStatus }>('default_handler_status')
+        .then((r) => {
+          if (r.status === 'not_default') showDefaultHandlerBanner();
+        })
+        .catch(() => {});
+    }
   }
   loadRecentFiles();
 
