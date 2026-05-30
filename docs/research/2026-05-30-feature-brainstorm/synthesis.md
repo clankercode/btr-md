@@ -14,7 +14,7 @@ Inputs:
 
 Checked after recent branch movement on 2026-05-30:
 
-- Dirty source changes in `crates/pmd-app/src/{cmd/doc.rs,doc/registry.rs,doc/state.rs}`, `crates/pmd-app/tests/doc_state.rs`, `crates/pmd-core/src/emit.rs`, and `crates/pmd-core/tests/alerts_footnotes.rs` are formatting-only in the current worktree and do not change this roadmap.
+- Commit `c6e2bb4` formatted merged review/feature code in `crates/pmd-app/src/{cmd/doc.rs,doc/registry.rs,doc/state.rs}`, `crates/pmd-app/tests/doc_state.rs`, `crates/pmd-core/src/emit.rs`, and `crates/pmd-core/tests/alerts_footnotes.rs`; those formatting-only code changes do not change this roadmap.
 - Recent commits added or advanced diff/merge conflict UI, atomic save guarding, disk-context recovery, Gist/open-with commands, settings for diff/Gist/fonts, editor mono font selection, a feature-ideas backlog, and the app icon/raster set.
 - These changes do not displace the top five recommendation. They do affect roadmap wording: file-change/save-conflict UX is now mostly an implementation polish/completeness item, and packaging/commercial polish should focus on the remaining AppStream/Flatpak/portal/screenshot pieces rather than the icon itself.
 - `docs/feature-ideas.md` is a useful backlog input, but this synthesis remains the ordering source for the document-intelligence/visible-trust push.

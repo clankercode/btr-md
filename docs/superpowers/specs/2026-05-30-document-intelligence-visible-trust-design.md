@@ -576,6 +576,7 @@ Initial action inventory:
 | `view.zoomOut` | Zoom out | `Ctrl+-` |
 | `view.zoomReset` | Reset zoom | `Ctrl+0` |
 | `view.cycleMode` | Cycle mode | `Ctrl+\` |
+| `view.toggleWordWrap` | Toggle word wrap | `Alt+Z` |
 | `navigate.commandOverlay` | Command overlay | `Ctrl+P` |
 | `navigate.outline` | Show outline | `Ctrl+Shift+O` |
 | `diagnostics.togglePanel` | Toggle diagnostics | `Ctrl+Shift+M` |
@@ -596,7 +597,6 @@ Existing no-default actions that must be migrated into the registry:
 | `file.clearRecent` | Clear recent files | File |
 | `document.reloadFromDisk` | Reload from disk | Document |
 | `document.mergeDiskChanges` | Merge disk changes | Document |
-| `view.toggleWordWrap` | Toggle word wrap | View |
 | `view.setDiffMode` | Set diff mode | View |
 | `navigate.fileBrowser` | File browser | Navigate |
 | `share.openGist` | Open Gist | Share |
@@ -605,7 +605,7 @@ Existing no-default actions that must be migrated into the registry:
 | `settings.selectMonoFont` | Select editor font | Settings |
 | `settings.setDefaultHandler` | Set as Markdown default | Settings |
 
-These actions begin without new default shortcuts unless listed in the default shortcut table. Any existing legacy shortcut, such as word-wrap toggling, must be imported deliberately into the registry and made visible/rebindable rather than remaining as an unregistered document-level listener.
+These actions begin without new default shortcuts unless listed in the default shortcut table. Any existing legacy operation with a shortcut must be imported deliberately into the registry and made visible/rebindable rather than remaining as an unregistered document-level listener.
 
 Shortcut conflict behavior:
 
@@ -614,7 +614,7 @@ Shortcut conflict behavior:
 - Saving an override that conflicts with another enabled action shows a blocking conflict warning.
 - A shortcut can be deliberately moved by removing it from the old action and assigning it to the new action.
 - The implementation should avoid Alt/Super shortcuts and reserved browser/system shortcuts unless explicitly approved.
-- Approved reserved-style defaults in this slice are `Ctrl+P` for command overlay and the existing `Ctrl+T` for theme picker. Do not add more reserved-style defaults without an explicit design decision.
+- Approved reserved-style or legacy defaults in this slice are `Ctrl+P` for command overlay, the existing `Ctrl+T` for theme picker, and the existing `Alt+Z` word-wrap toggle. Do not add more reserved-style or Alt/Super defaults without an explicit design decision.
 - When a command overlay shortcut conflicts with a future print command, the action registry owns the conflict; this slice keeps `Ctrl+P` for command overlay because that was the approved direction.
 
 ### Keybinding Editor
