@@ -11,9 +11,10 @@ export function markdownForTable(
   endAttr: string | null | undefined
 ): string | null {
   if (startAttr == null || endAttr == null) return null;
-  const start = parseInt(startAttr, 10);
-  const end = parseInt(endAttr, 10);
-  if (!Number.isInteger(start) || !Number.isInteger(end)) return null;
+  // Require strictly numeric strings so partial parses like "2junk" are rejected.
+  if (!/^\d+$/.test(startAttr) || !/^\d+$/.test(endAttr)) return null;
+  const start = Number(startAttr);
+  const end = Number(endAttr);
   if (start < 1 || end < start) return null;
   const lines = source.split('\n');
   if (end > lines.length) return null;

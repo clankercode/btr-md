@@ -123,6 +123,18 @@ fn footnotes_are_numbered_by_reference_order() {
 }
 
 #[test]
+fn multiple_refs_to_same_footnote_have_unique_ids() {
+    // Citing the same footnote twice must not produce duplicate id="fnref-1".
+    let html = render("First[^1] and again[^1].\n\n[^1]: Body.\n");
+    // Both in-text anchors must be present with distinct ids.
+    assert!(html.contains("id=\"fnref-1\""), "first ref id missing: {html}");
+    assert!(html.contains("id=\"fnref-1-2\""), "second ref id missing: {html}");
+    // The definition section must link back to both.
+    assert!(html.contains("href=\"#fnref-1\""), "first backref missing: {html}");
+    assert!(html.contains("href=\"#fnref-1-2\""), "second backref missing: {html}");
+}
+
+#[test]
 fn footnote_definition_is_not_emitted_inline() {
     // The definition body must live only in the section, not where it appeared.
     let html = render("Body paragraph.\n\n[^1]: hidden inline?\n\nText[^1].\n");

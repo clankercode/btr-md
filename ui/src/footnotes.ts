@@ -8,12 +8,15 @@ export interface FootnoteInsertion {
 /** Strip fenced code blocks and inline code spans from text, replacing with spaces
  *  of the same length so that offsets remain valid (not needed here, but simpler). */
 function stripCode(doc: string): string {
-  // Replace fenced blocks first (multiline)
-  let result = doc.replace(/(`{3,}|~{3,})[^\n]*\n[\s\S]*?\n\1[^\n]*/g, (m) =>
+  // Replace fenced blocks first (multiline).
+  // CommonMark allows up to 3 leading spaces before the fence marker.
+  let result = doc.replace(/^ {0,3}(`{3,}|~{3,})[^\n]*\n[\s\S]*?\n {0,3}\1[^\n]*/gm, (m) =>
     ' '.repeat(m.length)
   );
-  // Replace inline code spans (backtick strings, non-greedy)
-  result = result.replace(/`[^`\n]*`/g, (m) => ' '.repeat(m.length));
+  // Replace inline code spans. CommonMark allows any number of backticks as the
+  // delimiter (e.g. ``[^1]`` uses a 2-backtick opener/closer), so we match the
+  // opener run, then consume everything up to the matching run of the same length.
+  result = result.replace(/(`+)([^`]|`(?!\1))*?\1/g, (m) => ' '.repeat(m.length));
   return result;
 }
 

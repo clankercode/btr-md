@@ -381,7 +381,13 @@ fn apply_alert(
 }
 
 /// Emit the collected footnote definitions as a back-linked section.
-fn emit_footnotes_section(html: &mut String, mut footnotes: Vec<(usize, String)>) {
+/// `fn_ref_counts` maps footnote number → total number of in-text references,
+/// so that multiple backrefs can be emitted when a footnote is cited more than once.
+fn emit_footnotes_section(
+    html: &mut String,
+    mut footnotes: Vec<(usize, String)>,
+    fn_ref_counts: &std::collections::HashMap<usize, usize>,
+) {
     if footnotes.is_empty() {
         return;
     }
@@ -390,9 +396,25 @@ fn emit_footnotes_section(html: &mut String, mut footnotes: Vec<(usize, String)>
     for (n, body) in footnotes {
         html.push_str(&format!("<li id=\"fn-{n}\">"));
         html.push_str(&body);
-        html.push_str(&format!(
-            "<a href=\"#fnref-{n}\" class=\"pmd-fn-backref\" aria-label=\"Back to content\">↩</a></li>"
-        ));
+        let count = fn_ref_counts.get(&n).copied().unwrap_or(1);
+        if count == 1 {
+            html.push_str(&format!(
+                "<a href=\"#fnref-{n}\" class=\"pmd-fn-backref\" aria-label=\"Back to content\">↩</a>"
+            ));
+        } else {
+            // Emit one backref per in-text occurrence: fnref-N (first), fnref-N-2, fnref-N-3 …
+            for k in 1..=count {
+                let id = if k == 1 {
+                    format!("fnref-{n}")
+                } else {
+                    format!("fnref-{n}-{k}")
+                };
+                html.push_str(&format!(
+                    "<a href=\"#{id}\" class=\"pmd-fn-backref\" aria-label=\"Back to content {k}\">↩<sup>{k}</sup></a>"
+                ));
+            }
+        }
+        html.push_str("</li>");
     }
     html.push_str("</ol></section>");
 }
@@ -435,6 +457,9 @@ pub fn render_string(md: &str) -> RenderResult {
     let mut next_fn_number = 1usize;
     let mut footnotes: Vec<(usize, String)> = Vec::new();
     let mut fn_def_start: Option<(String, usize)> = None;
+    // Track how many times each footnote *number* has been referenced in the text,
+    // so emit_footnotes_section can generate the correct number of backrefs.
+    let mut fn_ref_counts: std::collections::HashMap<usize, usize> = std::collections::HashMap::new();
 
     for (event, range) in parser {
         match event {
@@ -713,8 +738,16 @@ pub fn render_string(md: &str) -> RenderResult {
                     next_fn_number += 1;
                     n
                 });
+                // Count occurrences so we can emit unique ref IDs for repeated citations.
+                let occ = fn_ref_counts.entry(n).or_insert(0);
+                *occ += 1;
+                let ref_id = if *occ == 1 {
+                    format!("fnref-{n}")
+                } else {
+                    format!("fnref-{n}-{occ}")
+                };
                 html.push_str(&format!(
-                    "<sup class=\"pmd-fnref\" id=\"fnref-{n}\"><a href=\"#fn-{n}\">{n}</a></sup>"
+                    "<sup class=\"pmd-fnref\" id=\"{ref_id}\"><a href=\"#fn-{n}\">{n}</a></sup>"
                 ));
             }
             Event::Rule => {
@@ -734,7 +767,7 @@ pub fn render_string(md: &str) -> RenderResult {
         html.push_str("$$");
         html.push_str(&escape_html(&math));
     }
-    emit_footnotes_section(&mut html, footnotes);
+    emit_footnotes_section(&mut html, footnotes, &fn_ref_counts);
     let html = crate::sanitize::clean_with_render_nonce(&html, &render_nonce);
     RenderResult {
         version: 0,
