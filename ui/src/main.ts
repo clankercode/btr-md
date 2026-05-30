@@ -31,21 +31,38 @@ import { decorateTables } from './table_copy.js';
 import { reconcileBlocks, type BlockRef } from './block_reconcile.js';
 
 interface RenderResult {
+  doc_id: number;
   html: string;
   version: number;
+  source_map: Array<[number, number]>;
   render_nonce: string;
   blocks?: BlockRef[];
   facts: {
+    doc_id: number;
+    version: number;
     headings: unknown[];
+    anchors: unknown[];
     links: unknown[];
+    reference_definitions: unknown[];
     images: unknown[];
+    frontmatter: unknown | null;
     blocks: unknown[];
+    embedded: unknown;
     counts: {
       words: number;
+      bytes: number;
+      sentences: number;
       paragraphs: number;
+      headings: number;
+      links: number;
+      images: number;
+      code_blocks: number;
+      mermaid_blocks: number;
+      math_spans: number;
+      math_blocks: number;
     };
   };
-  diagnostics?: null;
+  diagnostics: unknown;
 }
 
 interface Settings {
@@ -562,7 +579,9 @@ document.body.addEventListener('mode-change', (event) => {
 interface RenderItem {
   md: string;
   tabId: number;
+  docId: number;
   seq: number;
+  version: number;
   resolve: () => void;
   reject: (e: unknown) => void;
 }
@@ -578,10 +597,13 @@ function scheduleRender(): Promise<void> {
   const tab = store.activeDoc();
   if (!tab || !editor) return Promise.resolve();
   tab.renderSeq++;
+  const version = ++currentVersion;
   const item: Omit<RenderItem, 'resolve' | 'reject'> = {
     md: editor.getValue(),
     tabId: tab.id,
+    docId: tab.docId,
     seq: tab.renderSeq,
+    version,
   };
   return new Promise<void>((resolve, reject) => {
     renderQueue.push({ ...item, resolve, reject });
@@ -594,14 +616,19 @@ async function processRenderQueue(): Promise<void> {
   rendering = true;
   const item = renderQueue.shift()!;
   try {
-    currentVersion++;
     const result = await invoke<RenderResult>('render_cmd', {
-      version: currentVersion,
+      docId: item.docId,
+      version: item.version,
       markdown: item.md,
     });
     const tab = store.get(item.tabId);
     const stillCurrent =
-      tab && tab.kind === 'doc' && tab.renderSeq === item.seq && store.activeId() === item.tabId;
+      tab &&
+      tab.kind === 'doc' &&
+      tab.renderSeq === item.seq &&
+      tab.docId === result.doc_id &&
+      result.version === item.version &&
+      store.activeId() === item.tabId;
     if (stillCurrent) {
       previewContent.dataset.versionApplied = String(result.version);
       previewContent.dataset.pmdNonce = result.render_nonce;

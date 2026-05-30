@@ -89,7 +89,7 @@ function screenshotPath(name) {
 }
 
 async function installTauriMock(page, options = {}) {
-  await page.addInitScript(({ initialPath, themes, renderHtml }) => {
+  await page.addInitScript(({ initialPath, themes, renderHtml, renderDocId, renderVersion }) => {
     let callbackId = 1;
     let nextDocId = 1;
     const callbacks = new Map();
@@ -160,13 +160,67 @@ async function installTauriMock(page, options = {}) {
             warnings: [],
           };
         }
-        if (cmd === 'render_cmd') return {
-          // Tests can pin a fixed HTML payload (e.g. a real code block) via the
-          // `renderHtml` option; otherwise fall back to the escaped echo render.
-          html: renderHtml ?? renderMarkdown(args.markdown ?? ''),
-          version: args.version ?? 0,
-          render_nonce: '',
-        };
+        if (cmd === 'render_cmd') {
+          const version = renderVersion ?? args.version ?? 0;
+          const docId = renderDocId ?? args.docId ?? 0;
+          return {
+            doc_id: docId,
+            html: renderHtml ?? renderMarkdown(args.markdown ?? ''),
+            version,
+            source_map: [],
+            render_nonce: '',
+            facts: {
+              doc_id: docId,
+              version,
+              headings: [],
+              anchors: [],
+              links: [],
+              reference_definitions: [],
+              images: [],
+              frontmatter: null,
+              blocks: [],
+              embedded: {
+                code_blocks: [],
+                mermaid_blocks: [],
+                math_spans: [],
+                math_blocks: [],
+              },
+              counts: {
+                words: 0,
+                bytes: 0,
+                sentences: 0,
+                paragraphs: 0,
+                headings: 0,
+                links: 0,
+                images: 0,
+                code_blocks: 0,
+                mermaid_blocks: 0,
+                math_spans: 0,
+                math_blocks: 0,
+              },
+            },
+            diagnostics: {
+              doc_id: docId,
+              version,
+              phase: 'initial',
+              issues: [],
+              resources: {
+                doc_id: docId,
+                version,
+                allowed_roots: [],
+                loaded_resources: [],
+                decisions: [],
+              },
+              link_summary: {
+                checked: 0,
+                errors: 0,
+                warnings: 0,
+                unchecked_external: 0,
+                pending_async: 0,
+              },
+            },
+          };
+        }
         if (cmd === 'open_file' || cmd === 'request_open_file') {
           return {
             doc_id: nextDocId++,
@@ -202,6 +256,8 @@ async function installTauriMock(page, options = {}) {
     initialPath: options.initialPath ?? null,
     themes: options.themes ?? themes,
     renderHtml: options.renderHtml ?? null,
+    renderDocId: options.renderDocId ?? null,
+    renderVersion: options.renderVersion ?? null,
   });
 }
 

@@ -14,6 +14,13 @@ test('code block gains a toolbar with language label, Copy and Expand', async ({
   // New File mounts the editor and renders once; render_cmd returns the fixture.
   await page.locator('#pmd-welcome-new').click();
 
+  const renderCall = await page.waitForFunction(() =>
+    window.__pmdInvocations.find((item) => item.cmd === 'render_cmd')
+  );
+  const invocation = await renderCall.jsonValue();
+  expect(invocation.args.docId).toBe(1);
+  expect(invocation.args.doc_id).toBeUndefined();
+
   const figure = page.locator('.pmd-code-block');
   await expect(figure).toBeVisible();
 
@@ -126,4 +133,17 @@ test('reload button is hidden until an external change with a dirty buffer', asy
     document.querySelector('.pmd-reload-btn')?.toggleAttribute('data-visible', true);
   });
   await expect(reloadBtn).toHaveAttribute('data-visible', '');
+});
+
+test('stale render result for another document is not applied', async ({ page }) => {
+  await installTauriMock(page, {
+    renderDocId: 999,
+    renderHtml: '<p data-test-render="wrong-doc">Wrong doc</p>',
+  });
+  await page.goto(appUrl());
+
+  await page.locator('#pmd-welcome-new').click();
+
+  await expect(page.locator('[data-test-render="wrong-doc"]')).toHaveCount(0);
+  await expect(page.locator('#pmd-content')).not.toContainText('Wrong doc');
 });

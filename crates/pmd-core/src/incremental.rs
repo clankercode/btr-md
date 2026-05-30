@@ -126,7 +126,12 @@ struct BlockCache {
 
 impl BlockCache {
     fn new() -> Self {
-        Self { map: HashMap::new(), order: VecDeque::new(), bytes: 0, hits: 0 }
+        Self {
+            map: HashMap::new(),
+            order: VecDeque::new(),
+            bytes: 0,
+            hits: 0,
+        }
     }
     fn get(&mut self, key: &[u8; 32]) -> Option<Arc<CachedBlock>> {
         let v = self.map.get(key).cloned();
@@ -166,7 +171,10 @@ pub(crate) fn render_block_cached(src: &str) -> Arc<CachedBlock> {
     }
     let frag = crate::emit::render_fragment(src, placeholder_nonce());
     let html = crate::sanitize::clean_with_render_nonce(&frag.html, placeholder_nonce());
-    let block = Arc::new(CachedBlock { html, source_map: frag.source_map });
+    let block = Arc::new(CachedBlock {
+        html,
+        source_map: frag.source_map,
+    });
     cache().lock().unwrap().put(key, block.clone());
     block
 }
@@ -241,17 +249,33 @@ pub fn render_incremental(md: &str) -> crate::emit::RenderResult {
     for b in &blocks {
         let cb = render_block_cached(&md[b.start..b.end]);
         let base = b.start_line - 1;
-        let key = blake3::hash(&md.as_bytes()[b.start..b.end]).to_hex().to_string();
+        let key = blake3::hash(&md.as_bytes()[b.start..b.end])
+            .to_hex()
+            .to_string();
         let mut offset_html = String::new();
         append_with_line_offset(&mut offset_html, &cb.html, base);
         inject_block_key(&mut html, &offset_html, &key);
         for &(s, e) in &cb.source_map {
             source_map.push((s + base, e + base));
         }
-        blocks_manifest.push(crate::emit::BlockRef { key, base_line: b.start_line });
+        blocks_manifest.push(crate::emit::BlockRef {
+            key,
+            base_line: b.start_line,
+        });
     }
     let html = html.replace(placeholder_nonce(), &render_nonce);
-    crate::emit::RenderResult { version: 0, html, source_map, render_nonce, blocks: blocks_manifest }
+    let mut fact_builder = crate::facts::builder::FactBuilder::new(md);
+    for (event, range) in Parser::new_ext(md, crate::emit::parser_options()).into_offset_iter() {
+        fact_builder.observe_event(&event, range);
+    }
+    crate::emit::RenderResult {
+        version: 0,
+        html,
+        source_map,
+        render_nonce,
+        blocks: blocks_manifest,
+        facts: fact_builder.finish(),
+    }
 }
 
 #[doc(hidden)]

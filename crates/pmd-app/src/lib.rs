@@ -2,6 +2,7 @@ pub mod cli;
 pub mod cmd;
 pub mod doc;
 pub mod path_scope;
+pub mod preview;
 pub mod state;
 pub mod watcher;
 
