@@ -24,7 +24,7 @@ fn test_welcome_screen_shows_on_launch_without_args() {
         .expect("execute script");
     let welcome_html = welcome.as_str().unwrap_or("");
     assert!(
-        welcome_html.contains("preview-md")
+        welcome_html.contains("btr.md")
             || welcome_html.contains("Open File")
             || welcome_html.contains("New File"),
         "welcome screen not found or missing content: {}",

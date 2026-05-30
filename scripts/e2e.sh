@@ -27,8 +27,8 @@ case "$NETWORK_MODE" in
         ;;
 esac
 
-echo "[e2e] building Docker image preview-md-e2e:dev (includes release app)"
-docker build -f docker/e2e/Dockerfile -t preview-md-e2e:dev .
+echo "[e2e] building Docker image btr-md-e2e:dev (includes release app)"
+docker build -f docker/e2e/Dockerfile -t btr-md-e2e:dev .
 
 mkdir -p tests/screenshots/run-smoke
 
@@ -43,7 +43,7 @@ if [[ -d themes ]]; then
 fi
 
 echo "[e2e] starting container (network=$NETWORK_MODE)"
-CID=$(docker run -d --rm "${RUN_ARGS[@]}" preview-md-e2e:dev)
+CID=$(docker run -d --rm "${RUN_ARGS[@]}" btr-md-e2e:dev)
 
 cleanup() {
     echo "[e2e] stopping container $CID"

@@ -65,7 +65,7 @@ package-all:
 package-smoke:
     bash -n scripts/package-appimage.sh
     bash -n scripts/package-flatpak.sh
-    test -f packaging/linux/preview-md.1
+    test -f packaging/linux/btr-md.1
     test -d themes
 
 # install (local desktop integration)
@@ -90,5 +90,5 @@ check:
     cd ui && npm test
     just theme-validate
     just package-smoke
-    if command -v appstreamcli >/dev/null 2>&1; then appstreamcli validate --no-net packaging/linux/dev.previewmd.App.metainfo.xml; else echo "appstreamcli skipped (not installed)"; fi
-    if command -v desktop-file-validate >/dev/null 2>&1; then desktop-file-validate packaging/linux/dev.previewmd.App.desktop; else echo "desktop-file-validate skipped (not installed)"; fi
+    if command -v appstreamcli >/dev/null 2>&1; then appstreamcli validate --no-net packaging/linux/md.btr.app.metainfo.xml; else echo "appstreamcli skipped (not installed)"; fi
+    if command -v desktop-file-validate >/dev/null 2>&1; then desktop-file-validate packaging/linux/md.btr.app.desktop; else echo "desktop-file-validate skipped (not installed)"; fi

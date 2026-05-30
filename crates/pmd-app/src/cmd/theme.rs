@@ -68,12 +68,12 @@ fn push_existing_dir(dirs: &mut Vec<PathBuf>, dir: PathBuf) {
 
 fn user_theme_dir() -> Option<PathBuf> {
     if let Some(config_home) = std::env::var_os("XDG_CONFIG_HOME") {
-        return Some(PathBuf::from(config_home).join("preview-md").join("themes"));
+        return Some(PathBuf::from(config_home).join("btr-md").join("themes"));
     }
     std::env::var_os("HOME").map(|home| {
         PathBuf::from(home)
             .join(".config")
-            .join("preview-md")
+            .join("btr-md")
             .join("themes")
     })
 }
@@ -83,7 +83,7 @@ fn appdir_theme_dir() -> Option<PathBuf> {
         PathBuf::from(appdir)
             .join("usr")
             .join("share")
-            .join("preview-md")
+            .join("btr-md")
             .join("themes")
     })
 }
@@ -107,9 +107,9 @@ pub fn find_theme_roots(resource_dir: Option<&Path>) -> Vec<PathBuf> {
     }
 
     for system_dir in [
-        PathBuf::from("/app/share/preview-md/themes"),
-        PathBuf::from("/usr/local/share/preview-md/themes"),
-        PathBuf::from("/usr/share/preview-md/themes"),
+        PathBuf::from("/app/share/btr-md/themes"),
+        PathBuf::from("/usr/local/share/btr-md/themes"),
+        PathBuf::from("/usr/share/btr-md/themes"),
     ] {
         push_existing_dir(&mut dirs, system_dir);
     }
@@ -119,7 +119,7 @@ pub fn find_theme_roots(resource_dir: Option<&Path>) -> Vec<PathBuf> {
     }
 
     #[cfg(debug_assertions)]
-    if let Ok(dev_root) = std::env::var("PREVIEW_MD_THEME_ROOT") {
+    if let Ok(dev_root) = std::env::var("BTR_MD_THEME_ROOT") {
         push_existing_dir(&mut dirs, PathBuf::from(dev_root));
     }
 

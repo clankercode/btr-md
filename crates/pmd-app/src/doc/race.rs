@@ -35,14 +35,14 @@ pub fn handle(policy: RacePolicy, event: RaceEvent) -> RaceResolution {
             match event {
                 RaceEvent::ExternalWriteDuringSave { doc, disk } => {
                     eprintln!(
-                        "[preview-md] race(defer): external write to doc {} during save (disk {}); our save wins",
+                        "[btr-md] race(defer): external write to doc {} during save (disk {}); our save wins",
                         doc.0,
                         disk.to_hex()
                     );
                 }
                 RaceEvent::ExternalRemoveDuringSave { doc } => {
                     eprintln!(
-                        "[preview-md] race(defer): doc {} removed on disk during save; our save wins",
+                        "[btr-md] race(defer): doc {} removed on disk during save; our save wins",
                         doc.0
                     );
                 }

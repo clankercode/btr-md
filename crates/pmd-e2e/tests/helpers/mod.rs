@@ -9,7 +9,7 @@ use std::process::Command;
 use std::time::{Duration, Instant};
 
 const WEBDRIVER_ADDR: &str = "127.0.0.1:4444";
-const APPLICATION_PATH: &str = "/work/target/release/preview-md";
+const APPLICATION_PATH: &str = "/work/target/release/btr-md";
 
 #[allow(dead_code)]
 pub struct WebDriverSession {

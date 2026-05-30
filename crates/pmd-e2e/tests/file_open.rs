@@ -13,7 +13,7 @@ fn file_open_app_launches_with_cli_argv() {
     assert_eq!(url, "tauri://localhost", "unexpected app URL");
 
     let title = session.title().expect("read page title");
-    assert_eq!(title, "preview-md", "unexpected page title");
+    assert_eq!(title, "btr.md", "unexpected page title");
 
     session
         .screenshot_to(FILE_OPEN_SCREENSHOT)

@@ -82,8 +82,8 @@ fn path_scope_rejects_unallowed_sibling_file() {
 #[test]
 fn recents_push_preserves_existing_entries() {
     with_config_home(|| {
-        let first = Path::new("/tmp/preview-md-first.md").to_path_buf();
-        let second = Path::new("/tmp/preview-md-second.md").to_path_buf();
+        let first = Path::new("/tmp/btr-md-first.md").to_path_buf();
+        let second = Path::new("/tmp/btr-md-second.md").to_path_buf();
 
         recents::push(&first).expect("push first recent");
         recents::push(&second).expect("push second recent");

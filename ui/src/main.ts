@@ -469,7 +469,7 @@ async function applyTheme(slug: string) {
       console.error('set_active_theme failed:', e);
     }
     if (bundle.warnings && bundle.warnings.length > 0) {
-      bundle.warnings.forEach((w: string) => console.warn(`[preview-md] Theme "${slug}": ${w}`));
+      bundle.warnings.forEach((w: string) => console.warn(`[btr-md] Theme "${slug}": ${w}`));
     }
     let style = document.getElementById('pmd-theme-styles') as HTMLStyleElement;
     if (!style) {
@@ -658,10 +658,11 @@ function setStateByDocId(docId: number, state: FileState): void {
 
 function updateTitle(): void {
   const tab = store.activeDoc();
-  const name = tab ? (tab.filePath ? basename(tab.filePath) : 'Untitled') : 'preview-md';
+  // "btr-md — <filename>" when a doc is open, "btr-md — better markdown" otherwise.
+  const suffix = tab ? (tab.filePath ? basename(tab.filePath) : 'Untitled') : 'better markdown';
   const modified = tab ? uiForState(tab.fileState).modified : false;
   invoke('set_window_title', {
-    title: modified ? `● ${name} — preview-md` : `${name} — preview-md`,
+    title: modified ? `btr-md — ● ${suffix}` : `btr-md — ${suffix}`,
   }).catch(() => {});
 }
 
@@ -752,8 +753,8 @@ function renderEmptyBody(): void {
   welcome.id = 'pmd-welcome';
   welcome.className = 'pmd-welcome';
   welcome.innerHTML = `
-    <h1>preview-md</h1>
-    <p>Best-in-class markdown preview for Linux</p>
+    <h1>btr.md</h1>
+    <p>better markdown — best-in-class markdown for Linux</p>
     <div class="pmd-welcome-actions">
       <button id="pmd-welcome-open" class="pmd-welcome-btn">Open File</button>
       <button id="pmd-welcome-new" class="pmd-welcome-btn">New File</button>
@@ -1104,7 +1105,7 @@ function showDefaultHandlerBanner(): void {
   banner.className = 'pmd-banner';
   const msg = document.createElement('span');
   msg.className = 'pmd-banner-msg';
-  msg.textContent = 'Make preview-md your default markdown app?';
+  msg.textContent = 'Make btr.md your default markdown app?';
   const setBtn = document.createElement('button');
   setBtn.className = 'pmd-btn pmd-btn-primary pmd-btn-sm';
   setBtn.type = 'button';

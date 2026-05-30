@@ -3,12 +3,12 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DEPS_DIR="$ROOT_DIR/build-deps"
-APPDIR="$ROOT_DIR/build-appimage/PreviewMd.AppDir"
+APPDIR="$ROOT_DIR/build-appimage/BtrMd.AppDir"
 APPRUN="$ROOT_DIR/build-appimage/AppRun"
 DIST_DIR="$ROOT_DIR/dist"
 LINUXDEPLOY="$DEPS_DIR/linuxdeploy-x86_64.AppImage"
 APPIMAGE_PLUGIN="$DEPS_DIR/linuxdeploy-plugin-appimage-x86_64.AppImage"
-OUT="$DIST_DIR/PreviewMd-x86_64.AppImage"
+OUT="$DIST_DIR/BtrMd-x86_64.AppImage"
 
 LINUXDEPLOY_URL="${LINUXDEPLOY_URL:-https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage}"
 APPIMAGE_PLUGIN_URL="${APPIMAGE_PLUGIN_URL:-https://github.com/linuxdeploy/linuxdeploy-plugin-appimage/releases/download/continuous/linuxdeploy-plugin-appimage-x86_64.AppImage}"
@@ -48,10 +48,10 @@ install_icons() {
         [[ -f "$icon" ]] || continue
         local size
         size="$(basename "$icon" .png)"
-        install -Dm644 "$icon" "$APPDIR/usr/share/icons/hicolor/$size/apps/dev.previewmd.App.png"
+        install -Dm644 "$icon" "$APPDIR/usr/share/icons/hicolor/$size/apps/md.btr.app.png"
     done
-    install -Dm644 "$ROOT_DIR/packaging/linux/icons/preview-md.svg" \
-        "$APPDIR/usr/share/icons/hicolor/scalable/apps/dev.previewmd.App.svg"
+    install -Dm644 "$ROOT_DIR/packaging/linux/icons/btr-md.svg" \
+        "$APPDIR/usr/share/icons/hicolor/scalable/apps/md.btr.app.svg"
     install -Dm644 "$ROOT_DIR/packaging/linux/icons/256x256.png" "$APPDIR/.DirIcon"
 }
 
@@ -63,27 +63,27 @@ echo "[appimage] building release binary"
 cargo build --release -j 2 -p pmd-app
 
 rm -rf "$APPDIR"
-mkdir -p "$APPDIR/usr/bin" "$APPDIR/usr/share/preview-md"
+mkdir -p "$APPDIR/usr/bin" "$APPDIR/usr/share/btr-md"
 cat > "$APPRUN" <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
 HERE="$(dirname "$(readlink -f "$0")")"
 export APPDIR="$HERE"
-exec "$HERE/usr/bin/preview-md" "$@"
+exec "$HERE/usr/bin/btr-md" "$@"
 EOF
 chmod +x "$APPRUN"
-install -Dm644 "$ROOT_DIR/packaging/linux/dev.previewmd.App.desktop" \
-    "$APPDIR/usr/share/applications/dev.previewmd.App.desktop"
-install -Dm644 "$ROOT_DIR/packaging/linux/dev.previewmd.App.metainfo.xml" \
-    "$APPDIR/usr/share/metainfo/dev.previewmd.App.metainfo.xml"
-install -Dm644 "$ROOT_DIR/packaging/linux/dev.previewmd.App.mime.xml" \
-    "$APPDIR/usr/share/mime/packages/dev.previewmd.App.mime.xml"
-install -Dm644 "$ROOT_DIR/packaging/linux/preview-md.1" \
-    "$APPDIR/usr/share/man/man1/preview-md.1"
-cp -a "$ROOT_DIR/themes" "$APPDIR/usr/share/preview-md/themes"
+install -Dm644 "$ROOT_DIR/packaging/linux/md.btr.app.desktop" \
+    "$APPDIR/usr/share/applications/md.btr.app.desktop"
+install -Dm644 "$ROOT_DIR/packaging/linux/md.btr.app.metainfo.xml" \
+    "$APPDIR/usr/share/metainfo/md.btr.app.metainfo.xml"
+install -Dm644 "$ROOT_DIR/packaging/linux/md.btr.app.mime.xml" \
+    "$APPDIR/usr/share/mime/packages/md.btr.app.mime.xml"
+install -Dm644 "$ROOT_DIR/packaging/linux/btr-md.1" \
+    "$APPDIR/usr/share/man/man1/btr-md.1"
+cp -a "$ROOT_DIR/themes" "$APPDIR/usr/share/btr-md/themes"
 install_icons
 
-install -Dm755 "$ROOT_DIR/target/release/preview-md" "$APPDIR/usr/bin/preview-md"
+install -Dm755 "$ROOT_DIR/target/release/btr-md" "$APPDIR/usr/bin/btr-md"
 
 mkdir -p "$DIST_DIR"
 rm -f "$OUT"
@@ -91,9 +91,9 @@ echo "[appimage] preparing AppDir with linuxdeploy"
 APPIMAGE_EXTRACT_AND_RUN=1 \
 "$LINUXDEPLOY" \
     --appdir "$APPDIR" \
-    --executable "$APPDIR/usr/bin/preview-md" \
-    --desktop-file "$APPDIR/usr/share/applications/dev.previewmd.App.desktop" \
-    --icon-file "$APPDIR/usr/share/icons/hicolor/scalable/apps/dev.previewmd.App.svg" \
+    --executable "$APPDIR/usr/bin/btr-md" \
+    --desktop-file "$APPDIR/usr/share/applications/md.btr.app.desktop" \
+    --icon-file "$APPDIR/usr/share/icons/hicolor/scalable/apps/md.btr.app.svg" \
     --custom-apprun "$APPRUN"
 
 echo "[appimage] running linuxdeploy appimage plugin"

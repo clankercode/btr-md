@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>md.btr.app</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>MIT</project_license>
+  <name>btr.md</name>
+  <summary>better markdown — fast, secure markdown editor for Linux</summary>
+  <description>
+    <p>btr.md (better markdown) is a fast, secure markdown editor built with Tauri. It offers:</p>
+    <ul>
+      <li>Live preview with split or unified view</li>
+      <li>Multiple bundled themes with WCAG-compliant color choices</li>
+      <li>Syntax highlighting for code blocks</li>
+      <li>Mermaid diagram rendering</li>
+      <li>KaTeX math support</li>
+      <li>Keyboard-driven workflow</li>
+    </ul>
+  </description>
+  <launchable type="desktop-id">md.btr.app.desktop</launchable>
+  <!-- TODO(pre-release): add a real screenshot image before AppStream submission. -->
+  <url type="homepage">https://btr.md</url>
+  <provides>
+    <binary>btr-md</binary>
+  </provides>
+  <releases>
+    <release version="0.1.0" date="2026-05-24">
+      <description>
+        <p>Initial release with theme picker, Mermaid support, and KaTeX math.</p>
+      </description>
+    </release>
+  </releases>
+  <categories>
+    <category>Utility</category>
+    <category>TextEditor</category>
+  </categories>
+  <keywords>
+    <keyword>markdown</keyword>
+    <keyword>editor</keyword>
+    <keyword>preview</keyword>
+  </keywords>
+</component>

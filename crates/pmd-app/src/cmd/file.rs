@@ -107,7 +107,7 @@ pub struct OpenedDoc {
 fn try_push_recent(path: &PathBuf) {
     if let Err(e) = crate::state::recents::push(path) {
         eprintln!(
-            "[preview-md] could not record {} in recents: {}",
+            "[btr-md] could not record {} in recents: {}",
             path.display(),
             e
         );

@@ -1,7 +1,7 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "Default capability for the main preview-md window. Phase 1 ships the minimum surface (window show + asset protocol) required for the smoke e2e; IPC commands are added per phase as they land.",
+  "description": "Default capability for the main btr-md window. Phase 1 ships the minimum surface (window show + asset protocol) required for the smoke e2e; IPC commands are added per phase as they land.",
   "windows": ["main"],
   "permissions": [
     "core:default",

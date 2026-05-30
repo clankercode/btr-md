@@ -55,7 +55,7 @@ pub fn load() -> Settings {
 pub fn path() -> PathBuf {
     // See [`crate::state::recents::recents_path`] for the same fallback
     // rationale: missing HOME / unable-to-create config dir must not panic.
-    xdg::BaseDirectories::with_prefix("preview-md")
+    xdg::BaseDirectories::with_prefix("btr-md")
         .ok()
         .and_then(|b| b.place_config_file("state.toml").ok())
         .unwrap_or_else(|| PathBuf::from("state.toml"))
@@ -69,7 +69,7 @@ pub fn parse_or_default(body: &str) -> Settings {
         Ok(settings) => settings,
         Err(e) => {
             eprintln!(
-                "[preview-md] state.toml is malformed ({}); treating settings as defaults",
+                "[btr-md] state.toml is malformed ({}); treating settings as defaults",
                 e
             );
             Settings::default()

@@ -205,7 +205,7 @@ pub fn resolve_disk_change(
 
     if Digest::of(&disk).to_hex() != disk_digest_seen {
         eprintln!(
-            "[preview-md] resolve_disk_change: disk moved since the UI observed it (doc {}); \
+            "[btr-md] resolve_disk_change: disk moved since the UI observed it (doc {}); \
              merging against current disk (race: defer)",
             doc_id.0
         );

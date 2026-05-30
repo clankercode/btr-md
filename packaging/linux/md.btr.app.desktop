@@ -1,0 +1,21 @@
+[Desktop Entry]
+Type=Application
+Name=btr.md
+GenericName=Markdown Editor
+Comment=better markdown — fast, secure markdown editor for Linux
+Exec=btr-md %F
+Icon=md.btr.app
+Terminal=false
+Categories=Utility;TextEditor;
+MimeType=text/markdown;text/x-markdown;
+StartupNotify=true
+StartupWMClass=md.btr.app
+Actions=NewWindow;OpenFile;
+
+[Desktop Action NewWindow]
+Name=New Window
+Exec=btr-md
+
+[Desktop Action OpenFile]
+Name=Open File...
+Exec=btr-md --open-dialog

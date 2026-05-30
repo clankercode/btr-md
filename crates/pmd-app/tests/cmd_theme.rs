@@ -36,7 +36,7 @@ fn write_theme(root: &std::path::Path, slug: &str, name: &str, extra_css: &str) 
 fn find_theme_roots_includes_appimage_appdir_share_path() {
     let _guard = process_env_lock();
     let temp = tempfile::tempdir().expect("appdir");
-    let appdir_theme_root = temp.path().join("usr/share/preview-md/themes");
+    let appdir_theme_root = temp.path().join("usr/share/btr-md/themes");
     std::fs::create_dir_all(&appdir_theme_root).expect("create appdir theme root");
     let previous = std::env::var_os("APPDIR");
     std::env::set_var("APPDIR", temp.path());
@@ -58,15 +58,15 @@ fn find_theme_roots_includes_appimage_appdir_share_path() {
 fn find_theme_roots_discovers_workspace_themes_from_crate_dir() {
     let _guard = process_env_lock();
     let previous_cwd = std::env::current_dir().expect("current dir");
-    let previous_theme_root = std::env::var_os("PREVIEW_MD_THEME_ROOT");
-    std::env::remove_var("PREVIEW_MD_THEME_ROOT");
+    let previous_theme_root = std::env::var_os("BTR_MD_THEME_ROOT");
+    std::env::remove_var("BTR_MD_THEME_ROOT");
     std::env::set_current_dir(env!("CARGO_MANIFEST_DIR")).expect("enter app crate dir");
 
     let roots = find_theme_roots(None);
 
     std::env::set_current_dir(previous_cwd).expect("restore cwd");
     if let Some(previous_theme_root) = previous_theme_root {
-        std::env::set_var("PREVIEW_MD_THEME_ROOT", previous_theme_root);
+        std::env::set_var("BTR_MD_THEME_ROOT", previous_theme_root);
     }
     let workspace_themes = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("../..")

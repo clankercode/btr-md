@@ -111,7 +111,7 @@ pub async fn pick_base_dir(
             browser_base_dir: Some(canon.clone()),
             ..s
         }) {
-            eprintln!("[preview-md] could not persist browser base dir: {e}");
+            eprintln!("[btr-md] could not persist browser base dir: {e}");
         }
         Ok(Some(canon))
     } else {

@@ -35,7 +35,7 @@ ENV PATH=/usr/local/cargo/bin:$PATH \
     WLR_BACKENDS=headless \
     WLR_RENDERER=pixman \
     WLR_LIBINPUT_NO_DEVICES=1 \
-    XDG_RUNTIME_DIR=/tmp/preview-md-xdg-runtime
+    XDG_RUNTIME_DIR=/tmp/btr-md-xdg-runtime
 
 USER pmd
 

@@ -63,7 +63,7 @@ fn smoke_window_opens_renders_app_text_and_emits_required_csp() {
     assert_eq!(url, "tauri://localhost", "unexpected app URL");
 
     let title = session.title().expect("read page title");
-    assert_eq!(title, "preview-md", "unexpected page title");
+    assert_eq!(title, "btr.md", "unexpected page title");
 
     let source = session.source().expect("read page source");
     assert!(

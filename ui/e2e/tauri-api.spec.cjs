@@ -12,7 +12,7 @@ test('initializes through @tauri-apps/api without requiring window.__TAURI__', a
   await installTauriMock(page);
   await page.goto(appUrl());
 
-  await expect(page.locator('.pmd-welcome')).toContainText('preview-md');
+  await expect(page.locator('.pmd-welcome')).toContainText('btr.md');
 
   const state = await page.evaluate(() => ({
     hasGlobalTauri: typeof window.__TAURI__ !== 'undefined',

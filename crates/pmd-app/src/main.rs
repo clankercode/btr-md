@@ -80,7 +80,7 @@ fn main() {
             if let Some(base) = pmd_app_lib::state::settings::load().browser_base_dir {
                 if let Err(e) = app.state::<AppState>().scope.allow_dir(&base) {
                     eprintln!(
-                        "[preview-md] could not re-admit browser base {}: {e}",
+                        "[btr-md] could not re-admit browser base {}: {e}",
                         base.display()
                     );
                 }
@@ -88,5 +88,5 @@ fn main() {
             Ok(())
         })
         .run(tauri::generate_context!())
-        .expect("error while running preview-md");
+        .expect("error while running btr-md");
 }

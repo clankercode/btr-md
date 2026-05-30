@@ -11,7 +11,7 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 path = "src/lib.rs"
 
 [[bin]]
-name = "preview-md"
+name = "btr-md"
 path = "src/main.rs"
 
 [build-dependencies]

@@ -34,7 +34,7 @@ pub fn recents_path() -> PathBuf {
     // dir cannot be created. Fall back to a relative path in both cases so
     // a missing home directory becomes a recoverable I/O error in the
     // calling rmw/get/clear, not a process-wide panic.
-    xdg::BaseDirectories::with_prefix("preview-md")
+    xdg::BaseDirectories::with_prefix("btr-md")
         .ok()
         .and_then(|b| b.place_config_file("recents.toml").ok())
         .unwrap_or_else(|| PathBuf::from("recents.toml"))
@@ -54,7 +54,7 @@ fn parse_or_empty(body: &str) -> Recents {
         Ok(r) => r,
         Err(e) => {
             eprintln!(
-                "[preview-md] recents.toml is malformed ({}); treating as empty",
+                "[btr-md] recents.toml is malformed ({}); treating as empty",
                 e
             );
             Recents::default()
@@ -141,7 +141,7 @@ pub fn get_existing() -> Result<Vec<PathBuf>> {
         // Best-effort rewrite — if writing fails (e.g. config dir read-only),
         // we still return the in-memory cleaned list.
         if let Err(e) = rewrite(&alive) {
-            eprintln!("[preview-md] could not prune recents.toml: {}", e);
+            eprintln!("[btr-md] could not prune recents.toml: {}", e);
         }
     }
     Ok(alive)

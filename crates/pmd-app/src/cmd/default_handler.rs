@@ -1,4 +1,4 @@
-//! "Set preview-md as the default markdown handler" (Phase 5).
+//! "Set btr-md as the default markdown handler" (Phase 5).
 //!
 //! Linux-first via `xdg-mime` against the installed `.desktop` id. macOS
 //! (Launch Services) and Windows (per-user ProgID / `ms-settings:defaultapps`)
@@ -8,8 +8,8 @@
 
 use serde::Serialize;
 
-/// The installed desktop-entry id (see packaging/linux/dev.previewmd.App.desktop).
-const DESKTOP_ID: &str = "dev.previewmd.App.desktop";
+/// The installed desktop-entry id (see packaging/linux/md.btr.app.desktop).
+const DESKTOP_ID: &str = "md.btr.app.desktop";
 /// MIME types we want to own.
 const MARKDOWN_MIMES: &[&str] = &["text/markdown", "text/x-markdown"];
 
