@@ -32,6 +32,8 @@ tauri.workspace = true
 notify.workspace = true
 fs2.workspace = true
 xdg.workspace = true
+blake3.workspace = true
+diffy.workspace = true
 tauri-plugin-dialog.workspace = true
 
 [target.'cfg(unix)'.dependencies]

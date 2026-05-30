@@ -23,6 +23,8 @@ tree-sitter-highlight = "0.22"
 notify = "6"
 fs2 = "0.4"
 xdg = "2.5"
+blake3 = "1"
+diffy = "0.4"
 proptest = "1"
 tauri = { version = "2", features = ["protocol-asset", "custom-protocol"] }
 tauri-build = "2"

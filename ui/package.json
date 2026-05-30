@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "build": "node vendor/build-app.mjs",
+    "typecheck": "tsc -p tsconfig.json",
     "test:e2e:playwright": "NODE_PATH=${NODE_PATH:-$HOME/.bun/install/global/node_modules} playwright test -c playwright.config.cjs",
     "visual-review": "NODE_PATH=${NODE_PATH:-$HOME/.bun/install/global/node_modules} playwright test -c playwright.config.cjs --grep @visual",
     "test": "npm run test:e2e:playwright"
@@ -26,6 +27,7 @@
     "mermaid": "^11.15.0"
   },
   "devDependencies": {
-    "esbuild": "^0.28.0"
+    "esbuild": "^0.28.0",
+    "typescript": "^5.9.3"
   }
 }
