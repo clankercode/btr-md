@@ -15,6 +15,7 @@ export interface SettingsSnapshot {
   browser_base_dir: string | null;
   gist_enabled: boolean;
   diff_mode: DiffMode;
+  mono_font: string | null;
 }
 
 /** Default-handler status mirrored from the backend `HandlerStatus`. */
@@ -30,11 +31,13 @@ export interface SettingsMenuDeps {
   pickBaseDir: () => Promise<string | null>;
   getDefaultHandlerStatus: () => Promise<HandlerStatus>;
   setAsDefaultHandler: () => Promise<void>;
+  setMonoFont: (font: string | null) => Promise<void>;
   onAutosaveChange: (m: AutosaveMode) => void;
   onAutoreloadChange: (m: AutoreloadMode) => void;
   onBaseDirChange: (dir: string) => void;
   onGistChange: (enabled: boolean) => void;
   onDiffModeChange: (m: DiffMode) => void;
+  onMonoFontChange: (font: string | null) => void;
 }
 
 export interface SettingsMenuInstance {
@@ -238,6 +241,27 @@ export function createSettingsMenu(
   handlerRow.appendChild(handlerBtn);
   menu.appendChild(handlerRow);
 
+  const fontRow = document.createElement('div');
+  fontRow.className = 'pmd-settings-row';
+  const fontLabel = document.createElement('label');
+  fontLabel.className = 'pmd-settings-label';
+  fontLabel.htmlFor = 'pmd-set-font';
+  fontLabel.textContent = 'Editor font';
+  const fontInput = document.createElement('input');
+  fontInput.type = 'text';
+  fontInput.id = 'pmd-set-font';
+  fontInput.className = 'pmd-input pmd-settings-font';
+  fontInput.placeholder = 'JetBrains Mono';
+  fontInput.title = 'A monospace font family installed on your system (e.g. a Nerd Font)';
+  fontInput.addEventListener('change', () => {
+    const v = fontInput.value.trim() || null;
+    deps.setMonoFont(v).catch((e) => console.error('set_mono_font failed:', e));
+    deps.onMonoFontChange(v);
+  });
+  fontRow.appendChild(fontLabel);
+  fontRow.appendChild(fontInput);
+  menu.appendChild(fontRow);
+
   wrapper.appendChild(btn);
   wrapper.appendChild(menu);
   toolbar.appendChild(wrapper);
@@ -267,6 +291,7 @@ export function createSettingsMenu(
       basePath.title = s.browser_base_dir ?? '';
       diff.select.value = s.diff_mode;
       gist.input.checked = s.gist_enabled;
+      fontInput.value = s.mono_font ?? '';
     } catch (e) {
       console.error('getSettings failed:', e);
     }

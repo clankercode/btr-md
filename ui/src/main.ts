@@ -198,6 +198,7 @@ if (toolbarEl instanceof HTMLElement) {
         (r) => r.status
       ),
     setAsDefaultHandler: () => invoke('set_as_default_handler').then(() => {}),
+    setMonoFont: (f) => invoke('set_mono_font', { font: f }).then(() => {}),
     onAutosaveChange: (m) => {
       autosaveMode = m;
     },
@@ -216,6 +217,7 @@ if (toolbarEl instanceof HTMLElement) {
       diffMode = m;
       applyDiffMode();
     },
+    onMonoFontChange: (f) => applyMonoFont(f),
   });
   insertMenu = createInsertMenu(toolbarEl, {
     insertAlert,
@@ -237,6 +239,13 @@ if (toolbarEl instanceof HTMLElement) {
 
 function applyGistVisibility(): void {
   if (gistBtn) gistBtn.style.display = gistEnabled ? '' : 'none';
+}
+
+/** Drive the editor/mono font CSS var from a chosen family (any installed font,
+ *  e.g. a system-installed Nerd Font). */
+function applyMonoFont(font: string | null): void {
+  const value = font ? `"${font}", "JetBrains Mono", monospace` : '"JetBrains Mono", monospace';
+  document.documentElement.style.setProperty('--pmd-font-mono', value);
 }
 
 async function openGist(): Promise<void> {
@@ -1137,6 +1146,7 @@ async function bootstrap(): Promise<void> {
     gistEnabled = settings.gist_enabled === true;
     if (settings.diff_mode) diffMode = settings.diff_mode;
     applyGistVisibility();
+    if (settings.mono_font) applyMonoFont(settings.mono_font);
     if (settings.active_theme) await applyTheme(settings.active_theme);
     await applyAutoSwitchTheme(settings);
     // Offer to become the default markdown handler (once, unless silenced).
