@@ -1,6 +1,12 @@
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
+pub mod builder;
+pub mod counts;
+pub mod frontmatter;
+pub mod links;
+pub mod slug;
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct CoreDocumentFacts {
     pub headings: Vec<HeadingFact>,
@@ -169,6 +175,25 @@ pub enum BlockKind {
     HtmlBlock,
     FootnoteDefinition,
     Rule,
+}
+
+impl BlockKind {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Paragraph => "paragraph",
+            Self::Heading => "heading",
+            Self::Blockquote => "blockquote",
+            Self::List => "list",
+            Self::ListItem => "list_item",
+            Self::Table => "table",
+            Self::TableRow => "table_row",
+            Self::TableCell => "table_cell",
+            Self::CodeBlock => "code_block",
+            Self::HtmlBlock => "html_block",
+            Self::FootnoteDefinition => "footnote_definition",
+            Self::Rule => "rule",
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]

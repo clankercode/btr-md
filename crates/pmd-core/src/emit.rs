@@ -2,7 +2,9 @@ use pulldown_cmark::{Alignment, Event, Parser, Tag, TagEnd};
 use serde::{Deserialize, Serialize};
 
 use crate::escape::escape_html;
+use crate::facts::builder::FactBuilder;
 use crate::facts::CoreDocumentFacts;
+use crate::parse::markdown_options;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct BlockRef {
@@ -59,11 +61,6 @@ fn alignment_value(alignment: Alignment) -> Option<&'static str> {
         Alignment::Center => Some("center"),
         Alignment::Right => Some("right"),
     }
-}
-
-fn add_word_count(facts: &mut CoreDocumentFacts, text: &str) {
-    let words = text.split_whitespace().count();
-    facts.counts.words = facts.counts.words.saturating_add(words as u32);
 }
 
 fn emit_open_tag(
@@ -435,14 +432,7 @@ fn emit_footnotes_section(
 }
 
 pub(crate) fn parser_options() -> pulldown_cmark::Options {
-    let mut opts = pulldown_cmark::Options::empty();
-    opts.insert(
-        pulldown_cmark::Options::ENABLE_TABLES
-            | pulldown_cmark::Options::ENABLE_TASKLISTS
-            | pulldown_cmark::Options::ENABLE_STRIKETHROUGH
-            | pulldown_cmark::Options::ENABLE_FOOTNOTES,
-    );
-    opts
+    markdown_options()
 }
 
 /// Raw (pre-sanitize) emit of a markdown fragment. `data-src-*` line numbers are
@@ -450,6 +440,7 @@ pub(crate) fn parser_options() -> pulldown_cmark::Options {
 pub struct FragmentRender {
     pub html: String,
     pub source_map: Vec<(u32, u32)>,
+    pub facts: CoreDocumentFacts,
 }
 
 pub fn render_fragment(md: &str, render_nonce: &str) -> FragmentRender {
@@ -458,8 +449,7 @@ pub fn render_fragment(md: &str, render_nonce: &str) -> FragmentRender {
     let parser = Parser::new_ext(md, opts).into_offset_iter();
 
     let mut html = String::new();
-    let mut facts = CoreDocumentFacts::empty();
-    facts.counts.bytes = md.len().try_into().unwrap_or(u32::MAX);
+    let mut fact_builder = FactBuilder::new(md);
     let mut source_map = Vec::<(u32, u32)>::new();
     let mut block_stack: Vec<(u32, usize)> = Vec::new();
     let mut in_table_head = false;
@@ -490,6 +480,7 @@ pub fn render_fragment(md: &str, render_nonce: &str) -> FragmentRender {
         std::collections::HashMap::new();
 
     for (event, range) in parser {
+        fact_builder.observe_event(&event, range.clone());
         match event {
             Event::Start(tag) => {
                 let starts_image = matches!(tag, Tag::Image { .. });
@@ -526,9 +517,6 @@ pub fn render_fragment(md: &str, render_nonce: &str) -> FragmentRender {
                 if matches!(tag, Tag::CodeBlock(_)) {
                     in_code_block += 1;
                 }
-                if matches!(tag, Tag::Paragraph) {
-                    facts.counts.paragraphs = facts.counts.paragraphs.saturating_add(1);
-                }
                 if let Tag::Image {
                     dest_url, title, ..
                 } = &tag
@@ -546,7 +534,7 @@ pub fn render_fragment(md: &str, render_nonce: &str) -> FragmentRender {
                 } else {
                     None
                 };
-                let line = to_line(range.start);
+                let line = fact_builder.line_index().byte_to_line(range.start);
                 let open_pos = html.len();
                 emit_open_tag(
                     &mut html,
@@ -634,7 +622,9 @@ pub fn render_fragment(md: &str, render_nonce: &str) -> FragmentRender {
                     in_code_block -= 1;
                 }
                 if let Some((start_line, open_pos)) = block_stack.pop() {
-                    let end_line = to_line(range.end.saturating_sub(1));
+                    let end_line = fact_builder
+                        .line_index()
+                        .byte_to_line(range.end.saturating_sub(1));
                     let placeholder = "data-src-end=\"\"";
                     if let Some(idx) = html[open_pos..].find(placeholder) {
                         let abs = open_pos + idx + "data-src-end=\"".len();
@@ -654,7 +644,6 @@ pub fn render_fragment(md: &str, render_nonce: &str) -> FragmentRender {
                 }
             }
             Event::Text(t) => {
-                add_word_count(&mut facts, &t);
                 // While scanning a blockquote's first line, buffer its text so
                 // the (multi-token) `[!TYPE]` marker can be reassembled.
                 if matches!(alert_state, AlertScan::ScanningMarker { .. }) {
@@ -670,7 +659,6 @@ pub fn render_fragment(md: &str, render_nonce: &str) -> FragmentRender {
                 }
             }
             Event::Code(t) => {
-                add_word_count(&mut facts, &t);
                 flush_alert_marker(
                     &mut html,
                     &mut alert_state,
@@ -801,7 +789,11 @@ pub fn render_fragment(md: &str, render_nonce: &str) -> FragmentRender {
         html.push_str(&escape_html(&math));
     }
     emit_footnotes_section(&mut html, footnotes, &fn_ref_counts);
-    FragmentRender { html, source_map }
+    FragmentRender {
+        html,
+        source_map,
+        facts: fact_builder.finish(),
+    }
 }
 
 pub fn render_string(md: &str) -> RenderResult {
@@ -814,6 +806,6 @@ pub fn render_string(md: &str) -> RenderResult {
         source_map: frag.source_map,
         render_nonce,
         blocks: Vec::new(),
-        facts,
+        facts: frag.facts,
     }
 }
