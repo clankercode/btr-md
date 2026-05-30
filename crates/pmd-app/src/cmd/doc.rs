@@ -136,8 +136,7 @@ pub async fn save_doc(
         .begin_save_if_permitted(doc_id, &contents)
         .ok_or_else(|| format!("save_doc: doc {} vanished", doc_id.0))?
         .map_err(|_| {
-            "save_doc: disk has changed since last load — reload or merge before saving"
-                .to_string()
+            "save_doc: disk has changed since last load — reload or merge before saving".to_string()
         })?;
 
     match crate::cmd::file::write_no_follow(&canon, contents.as_bytes()) {

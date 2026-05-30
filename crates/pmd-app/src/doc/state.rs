@@ -447,7 +447,10 @@ impl FileState {
                         Some(b) => {
                             // Disk removal mid-save takes precedence.
                             if removed_during {
-                                return FileState::Removed { base: b, mem: buffer };
+                                return FileState::Removed {
+                                    base: b,
+                                    mem: buffer,
+                                };
                             }
                             // A new external disk write mid-save takes precedence
                             // over the pre-save disk state.

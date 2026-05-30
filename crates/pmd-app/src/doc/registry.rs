@@ -130,7 +130,10 @@ impl DocRegistry {
         let target = Digest::of(contents);
         let mut docs = self.lock();
         let entry = docs.get_mut(&doc)?;
-        if matches!(entry.state, crate::doc::state::FileState::DiskChangedClean { .. }) {
+        if matches!(
+            entry.state,
+            crate::doc::state::FileState::DiskChangedClean { .. }
+        ) {
             return Some(Err(entry.state.clone()));
         }
         entry.state = entry.state.clone().apply(DocEvent::SaveStarted { target });

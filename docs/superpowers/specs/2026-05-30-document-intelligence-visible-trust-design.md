@@ -546,6 +546,7 @@ Every user-visible operation should register an action:
 Initial categories:
 
 - File
+- Document
 - Edit
 - View
 - Navigate
@@ -553,6 +554,7 @@ Initial categories:
 - Diagnostics
 - Trust
 - Assets
+- Share
 - Settings
 
 The command overlay indexes registered actions and opens with `Ctrl+P`. The shortcut help dialog is generated from the same registry.
@@ -581,6 +583,29 @@ Initial action inventory:
 | `settings.open` | Settings | `Ctrl+,` |
 | `help.shortcuts` | Keyboard shortcuts | `Ctrl+?` |
 | `menu.focus` | Focus menu | `F10` |
+
+Existing no-default actions that must be migrated into the registry:
+
+| Action id | Label | Category |
+| --- | --- | --- |
+| `file.revealInFolder` | Reveal in folder | File |
+| `file.openDefaultApp` | Open in default app | File |
+| `file.copyPath` | Copy path | File |
+| `file.copyFilename` | Copy filename | File |
+| `file.copyFileUrl` | Copy file URL | File |
+| `file.clearRecent` | Clear recent files | File |
+| `document.reloadFromDisk` | Reload from disk | Document |
+| `document.mergeDiskChanges` | Merge disk changes | Document |
+| `view.toggleWordWrap` | Toggle word wrap | View |
+| `view.setDiffMode` | Set diff mode | View |
+| `navigate.fileBrowser` | File browser | Navigate |
+| `share.openGist` | Open Gist | Share |
+| `share.copyGistMarkdown` | Copy Gist Markdown | Share |
+| `settings.pickBaseFolder` | Pick file-browser folder | Settings |
+| `settings.selectMonoFont` | Select editor font | Settings |
+| `settings.setDefaultHandler` | Set as Markdown default | Settings |
+
+These actions begin without new default shortcuts unless listed in the default shortcut table. Any existing legacy shortcut, such as word-wrap toggling, must be imported deliberately into the registry and made visible/rebindable rather than remaining as an unregistered document-level listener.
 
 Shortcut conflict behavior:
 
@@ -647,6 +672,7 @@ Required coverage:
 - `pmd-app` tests for path canonicalization, allowed roots, blocked resources, local file existence, and cross-file anchor validation.
 - TypeScript unit tests for action registry, keybinding conflicts, diagnostics grouping, and panel state rules.
 - TypeScript or e2e tests that every default shortcut in the initial action inventory is registered and conflict-free.
+- TypeScript tests that existing no-default actions are registered, searchable in the command overlay, and omitted from conflict checks unless the user binds shortcuts to them.
 - WebView fetch/navigation sentinel tests proving blocked remote/local loads and document-originated navigation do not happen, not only that blocked UI appears.
 - E2E tests for:
   - outline opens, filters, and jumps.

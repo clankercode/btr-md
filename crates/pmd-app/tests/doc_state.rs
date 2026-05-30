@@ -330,8 +330,12 @@ fn save_failed_from_disk_changed_dirty_with_new_disk_event_preserves_latest_disk
     let disk_v1 = d("disk-v1"); // the disk change that created DiskChangedDirty
     let disk_v2 = d("disk-v2"); // a second external change mid-save
 
-    let sip = FileState::DiskChangedDirty { base, mem, disk: disk_v1 }
-        .apply(DocEvent::SaveStarted { target: mem });
+    let sip = FileState::DiskChangedDirty {
+        base,
+        mem,
+        disk: disk_v1,
+    }
+    .apply(DocEvent::SaveStarted { target: mem });
     // A second disk event arrives mid-save.
     let sip = sip.apply(DocEvent::DiskModified { disk: disk_v2 });
     let recovered = sip.apply(DocEvent::SaveFailed);
@@ -355,9 +359,13 @@ fn disk_changed_dirty_save_success_is_clean_not_disk_changed() {
     let mem = d("my-edits");
     let disk_v1 = d("disk-v1");
 
-    let succeeded = FileState::DiskChangedDirty { base, mem, disk: disk_v1 }
-        .apply(DocEvent::SaveStarted { target: mem })
-        .apply(DocEvent::SaveSucceeded);
+    let succeeded = FileState::DiskChangedDirty {
+        base,
+        mem,
+        disk: disk_v1,
+    }
+    .apply(DocEvent::SaveStarted { target: mem })
+    .apply(DocEvent::SaveSucceeded);
     assert_eq!(
         succeeded,
         FileState::Clean { base: mem },

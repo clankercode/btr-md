@@ -459,7 +459,8 @@ pub fn render_string(md: &str) -> RenderResult {
     let mut fn_def_start: Option<(String, usize)> = None;
     // Track how many times each footnote *number* has been referenced in the text,
     // so emit_footnotes_section can generate the correct number of backrefs.
-    let mut fn_ref_counts: std::collections::HashMap<usize, usize> = std::collections::HashMap::new();
+    let mut fn_ref_counts: std::collections::HashMap<usize, usize> =
+        std::collections::HashMap::new();
 
     for (event, range) in parser {
         match event {

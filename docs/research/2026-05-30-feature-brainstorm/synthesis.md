@@ -8,7 +8,16 @@ Inputs:
 - `agent-authoring-workflows.md`
 - `agent-linux-desktop-ux.md`
 - `agent-security-trust.md`
-- Local project context: Rust/Tauri markdown previewer with source/split/preview modes, GFM, Mermaid, KaTeX, themes, tabs/file browser/settings work in progress, strict sanitization/resource policy, Linux packaging.
+- Local project context: Rust/Tauri markdown previewer with source/split/preview modes, GFM, Mermaid, KaTeX, themes, multi-tab documents, file browser, settings, diff/merge conflict tooling, Gist/open-with conveniences, custom mono font selection, strict sanitization/resource policy, file watching/save-conflict guards, Linux packaging, and current icon assets.
+
+## Current Repo Drift Check
+
+Checked after recent branch movement on 2026-05-30:
+
+- Dirty source changes in `crates/pmd-app/src/{cmd/doc.rs,doc/registry.rs,doc/state.rs}`, `crates/pmd-app/tests/doc_state.rs`, `crates/pmd-core/src/emit.rs`, and `crates/pmd-core/tests/alerts_footnotes.rs` are formatting-only in the current worktree and do not change this roadmap.
+- Recent commits added or advanced diff/merge conflict UI, atomic save guarding, disk-context recovery, Gist/open-with commands, settings for diff/Gist/fonts, editor mono font selection, a feature-ideas backlog, and the app icon/raster set.
+- These changes do not displace the top five recommendation. They do affect roadmap wording: file-change/save-conflict UX is now mostly an implementation polish/completeness item, and packaging/commercial polish should focus on the remaining AppStream/Flatpak/portal/screenshot pieces rather than the icon itself.
+- `docs/feature-ideas.md` is a useful backlog input, but this synthesis remains the ordering source for the document-intelligence/visible-trust push.
 
 ## Executive Recommendation
 
@@ -105,15 +114,15 @@ Shape:
 
 Classification: Necessary
 
-Recommended release: v1
+Recommended release: v1 polish/completion; core machinery has already landed.
 
 Why: A markdown preview/editor will often sit beside Git, static-site generators, other editors, and formatters. Silent stale content or edit loss would hurt trust more than almost any missing renderer flourish.
 
 Shape:
 
-- Clean buffer plus external change: reload with a small notice.
-- Dirty buffer plus external change: offer keep mine, reload from disk, save as, or copy buffer.
-- Test atomic-save patterns from common editors.
+- Treat this as partly covered by the current per-document registry/watcher, `DiskChangedClean`/`DiskChangedDirty` states, reload/merge affordances, CodeMirror diff view, atomic save guard, and disk-context recovery.
+- Finish the user-facing polish: ensure clean external updates reload or prompt exactly as intended, dirty external updates never overwrite local edits without confirmation, and merge/reload/status language is obvious.
+- Keep or add coverage for atomic-save patterns from common editors.
 - Surface non-local filesystem watcher limitations clearly.
 
 ### 7. GitHub Parity Mode and Compatibility Notes
@@ -172,7 +181,7 @@ Shape:
 
 - Portal-first open/save in Flatpak.
 - Tighten Flatpak filesystem permissions where possible.
-- Validate desktop file, MIME XML, AppStream, and icons.
+- Validate desktop file, MIME XML, AppStream, and installed icons; the core icon/raster set is now landed, so focus on integration and release metadata.
 - Add real screenshots with captions showing Markdown, Mermaid, KaTeX, code, and themes.
 
 ### 11. Find in Source and Rendered Preview
@@ -210,8 +219,8 @@ Shape:
 
 1. Visible trust/resource policy UI.
 2. Linux accessibility, keyboard, and host preference audit.
-3. File-change and save-conflict UX.
-4. AppStream/Flatpak/portal/software-center completeness.
+3. Finish file-change and save-conflict UX polish around the landed registry/watcher/diff/merge core.
+4. AppStream/Flatpak/portal/software-center completeness; app icon assets are already landed.
 5. Local asset blocked-state recovery.
 6. Security regression corpus and WebView fetch sentinel.
 
@@ -261,7 +270,9 @@ Make v1.1 "document intelligence and authoring ergonomics":
 
 The strongest positioning is:
 
-> The fast, beautiful, trustworthy Linux app for opening any Markdown file or docs folder and seeing what is rendered, what is broken, and what was blocked.
+> The fast, beautiful, trustworthy Linux app for opening any Markdown file and seeing what is rendered, what is broken, and what was blocked.
+
+The docs-folder promise should remain a later extension until folder semantics, folder-tree behavior, and project navigation are designed explicitly.
 
 That is sharper than "a prettier Typora" or "a smaller Obsidian". It also gives the project a coherent feature filter: add features that improve rendering fidelity, document navigation, local correctness, or visible trust; reject features that turn Markdown preview into a cloud note platform or execution environment.
 
