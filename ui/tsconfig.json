@@ -25,6 +25,9 @@
     "src/tabs.ts",
     "src/tabbar.ts",
     "src/file_browser.ts",
-    "src/settings_menu.ts"
+    "src/settings_menu.ts",
+    "src/counts.ts",
+    "src/footnotes.ts",
+    "src/table_copy.ts"
   ]
 }
