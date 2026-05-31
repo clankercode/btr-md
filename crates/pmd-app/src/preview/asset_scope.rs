@@ -18,12 +18,13 @@ impl ProductionAssetScopeMirror {
 
 impl AssetScopeMirror for ProductionAssetScopeMirror {
     fn allow_directory(&self, canonical_root: &Path) -> Result<(), String> {
-        let _ = (&self.scope, canonical_root);
-        Ok(())
+        self.scope
+            .allow_directory(canonical_root, true)
+            .map_err(|err| err.to_string())
     }
 
     fn revoke_directory(&self, canonical_root: &Path) -> Result<(), String> {
-        let _ = (&self.scope, canonical_root);
+        let _ = canonical_root;
         Ok(())
     }
 }

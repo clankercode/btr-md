@@ -69,21 +69,95 @@ impl ProbedApp {
         read_string_array(&self.session, "window.__pmdExternalOpenLog").unwrap_or_default()
     }
 
+    pub async fn new_window_log(&self) -> Vec<String> {
+        read_string_array(&self.session, "window.__pmdNewWindowLog").unwrap_or_default()
+    }
+
+    pub async fn download_log(&self) -> Vec<String> {
+        read_string_array(&self.session, "window.__pmdDownloadLog").unwrap_or_default()
+    }
+
+    pub async fn link_activation_log(&self) -> Vec<String> {
+        read_string_array(&self.session, "window.__pmdLinkActivationLog").unwrap_or_default()
+    }
+
     pub async fn click_preview_link(&self, label: &str) -> Result<()> {
+        self.dispatch_preview_link(label, "click").await
+    }
+
+    pub async fn focus_preview_link(&self, label: &str) -> Result<()> {
+        self.dispatch_preview_link(label, "focus").await
+    }
+
+    pub async fn middle_click_preview_link(&self, label: &str) -> Result<()> {
+        self.dispatch_preview_link(label, "auxclick").await
+    }
+
+    pub async fn context_menu_preview_link(&self, label: &str) -> Result<()> {
+        self.dispatch_preview_link(label, "contextmenu").await
+    }
+
+    pub async fn drag_preview_link(&self, label: &str) -> Result<()> {
+        self.dispatch_preview_link(label, "dragstart").await
+    }
+
+    async fn dispatch_preview_link(&self, label: &str, event_name: &str) -> Result<()> {
         let script = r#"
             const label = arguments[0];
+            const eventName = arguments[1];
             const done = arguments[arguments.length - 1];
-            const links = Array.from(document.querySelectorAll('#preview-pane a, .pmd-preview a'));
+            const links = Array.from(document.querySelectorAll(
+                '[data-pmd-link-id], #preview-pane a, .pmd-preview a'
+            ));
             const link = links.find((node) => node.textContent?.trim() === label);
             if (!link) { done({ ok: false, error: 'missing-link' }); return; }
-            link.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, button: 0 }));
+            if (eventName === 'focus') {
+                link.focus();
+            } else if (eventName === 'dragstart') {
+                const dataTransfer = typeof DataTransfer === 'function' ? new DataTransfer() : {
+                    types: [],
+                    setData(type, value) { this.types.push(type); this[type] = String(value); },
+                    getData(type) { return this[type] || ''; },
+                };
+                const event = typeof DragEvent === 'function'
+                    ? new DragEvent('dragstart', { bubbles: true, cancelable: true, dataTransfer })
+                    : new Event('dragstart', { bubbles: true, cancelable: true });
+                if (!event.dataTransfer) {
+                    Object.defineProperty(event, 'dataTransfer', { value: dataTransfer });
+                }
+                link.dispatchEvent(event);
+            } else {
+                const button = eventName === 'auxclick' ? 1 : eventName === 'contextmenu' ? 2 : 0;
+                link.dispatchEvent(new MouseEvent(eventName, { bubbles: true, cancelable: true, button }));
+            }
             setTimeout(() => done({ ok: true }), 100);
         "#;
-        let value = self.session.js_object(script, &[json!(label)])?;
+        let value = self
+            .session
+            .js_object(script, &[json!(label), json!(event_name)])?;
         if value.get("ok").and_then(Value::as_bool).unwrap_or(false) {
             Ok(())
         } else {
-            Err(anyhow!("click preview link failed: {value}"))
+            Err(anyhow!("dispatch preview link failed: {value}"))
+        }
+    }
+
+    pub async fn press_key(&self, key: &str) -> Result<()> {
+        let script = r#"
+            const key = arguments[0];
+            const done = arguments[arguments.length - 1];
+            const target = document.activeElement?.matches?.('[data-pmd-link-id]')
+                ? document.activeElement
+                : document.querySelector('[data-pmd-link-id]');
+            if (!target) { done({ ok: false, error: 'missing-link' }); return; }
+            target.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }));
+            setTimeout(() => done({ ok: true }), 100);
+        "#;
+        let value = self.session.js_object(script, &[json!(key)])?;
+        if value.get("ok").and_then(Value::as_bool).unwrap_or(false) {
+            Ok(())
+        } else {
+            Err(anyhow!("press key failed: {value}"))
         }
     }
 
@@ -108,6 +182,73 @@ impl ProbedApp {
         self.session.url()
     }
 
+    pub async fn force_document_navigation_attempt_for_test(&self, url: &str) -> Result<()> {
+        let script = r#"
+            const url = arguments[0];
+            const done = arguments[arguments.length - 1];
+            window.location.assign(url);
+            setTimeout(() => done({ ok: true }), 150);
+        "#;
+        let value = self.session.js_object(script, &[json!(url)])?;
+        if value.get("ok").and_then(Value::as_bool).unwrap_or(false) {
+            Ok(())
+        } else {
+            Err(anyhow!("force navigation failed: {value}"))
+        }
+    }
+
+    pub async fn force_new_window_attempt_for_test(&self, url: &str) -> Result<bool> {
+        let handles_before = self.session.window_handles()?;
+        let script = r#"
+            const url = arguments[0];
+            const done = arguments[arguments.length - 1];
+            const opened = window.open(url, '_blank', 'noopener');
+            setTimeout(() => done({ ok: true, opened: Boolean(opened && !opened.closed) }), 150);
+        "#;
+        let value = self.session.js_object(script, &[json!(url)])?;
+        if !value.get("ok").and_then(Value::as_bool).unwrap_or(false) {
+            return Err(anyhow!("force new window failed: {value}"));
+        }
+        let handles_after = self.session.window_handles()?;
+        Ok(value
+            .get("opened")
+            .and_then(Value::as_bool)
+            .unwrap_or(false)
+            || handles_after.len() > handles_before.len())
+    }
+
+    pub async fn force_download_attempt_for_test(&self, url: &str) -> Result<bool> {
+        let before = self.current_webview_url().await?;
+        let script = r#"
+            const url = arguments[0];
+            const done = arguments[arguments.length - 1];
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'payload.txt';
+            link.textContent = 'download';
+            document.body.append(link);
+            link.click();
+            link.remove();
+            setTimeout(() => done({ ok: true, href: window.location.href }), 150);
+        "#;
+        let value = self.session.js_object(script, &[json!(url)])?;
+        if !value.get("ok").and_then(Value::as_bool).unwrap_or(false) {
+            return Err(anyhow!("force download failed: {value}"));
+        }
+        Ok(value.get("href").and_then(Value::as_str) != Some(before.as_str()))
+    }
+
+    pub async fn wait_for_download_denied(&self, url: &str) -> Result<()> {
+        let needle = url.to_owned();
+        self.session
+            .wait_for_condition("download deny event", Duration::from_secs(5), || {
+                Ok(read_string_array(&self.session, "window.__pmdDownloadLog")
+                    .unwrap_or_default()
+                    .iter()
+                    .any(|entry| entry == &needle))
+            })
+    }
+
     pub fn app_url(&self) -> String {
         self.app_url.clone()
     }
@@ -124,9 +265,13 @@ fn install_network_probe(session: &WebDriverSession) -> Result<()> {
         const done = arguments[arguments.length - 1];
         if (window.__pmdProbeInstalled) { done(true); return; }
         window.__pmdProbeInstalled = true;
+        window.__pmdE2e = true;
         window.__pmdNetworkRequests = [];
         window.__pmdImageLoadAttempts = [];
         window.__pmdExternalOpenLog = [];
+        window.__pmdNewWindowLog = [];
+        window.__pmdDownloadLog = [];
+        window.__pmdLinkActivationLog = [];
 
         const originalFetch = window.fetch?.bind(window);
         if (originalFetch) {
@@ -173,9 +318,27 @@ fn install_network_probe(session: &WebDriverSession) -> Result<()> {
         });
         observer.observe(document.documentElement, { childList: true, subtree: true });
 
+        const originalOpen = window.open?.bind(window);
+        if (originalOpen) {
+            window.open = (url, target, features) => {
+                if (url) window.__pmdNewWindowLog.push(String(url));
+                return originalOpen(url, target, features);
+            };
+        }
+
+        document.addEventListener('pmd-link-activation', (event) => {
+            const kind = event.detail?.activationKind;
+            if (kind) window.__pmdLinkActivationLog.push(String(kind));
+        });
+
         document.addEventListener('pmd-external-open', (event) => {
             const url = event.detail?.url;
             if (url) window.__pmdExternalOpenLog.push(String(url));
+        });
+
+        document.addEventListener('pmd-download-denied', (event) => {
+            const url = event.detail?.url;
+            if (url) window.__pmdDownloadLog.push(String(url));
         });
         done(true);
     "#;
@@ -255,6 +418,19 @@ impl WebDriverSession {
 
     pub fn title(&self) -> Result<String> {
         self.string_value("GET", "title", None)
+    }
+
+    pub fn window_handles(&self) -> Result<Vec<String>> {
+        let response = webdriver_request("GET", &self.path("window/handles"), None)?;
+        let value = response
+            .get("value")
+            .and_then(Value::as_array)
+            .ok_or_else(|| anyhow!("window handles response missing array value: {response}"))?;
+        Ok(value
+            .iter()
+            .filter_map(Value::as_str)
+            .map(ToOwned::to_owned)
+            .collect())
     }
 
     pub fn screenshot_to(&self, path: &str) -> Result<()> {

@@ -2,7 +2,7 @@ use pmd_app_lib::preview::link_activation::LinkActivationStore;
 use pmd_app_lib::preview::render_pipeline::ValidationWorker;
 use pmd_app_lib::{cli, cmd, navigation_policy::NavigationGate, path_scope::PathScope, AppState};
 use std::sync::Arc;
-use tauri::webview::NewWindowResponse;
+use tauri::webview::{DownloadEvent, NewWindowResponse};
 use tauri::{Emitter, Manager, WebviewUrl, WebviewWindowBuilder};
 
 fn main() {
@@ -100,6 +100,13 @@ fn main() {
                 .decorations(true)
                 .on_navigation(move |url| navigation_gate_for_callback.should_allow_navigation(url))
                 .on_new_window(|_, _| NewWindowResponse::Deny)
+                .on_download(|webview, event| {
+                    if let DownloadEvent::Requested { url, .. } = event {
+                        let _ = webview.emit("pmd://download-denied", url.to_string());
+                        return false;
+                    }
+                    false
+                })
                 .build()?;
 
             pmd_app_lib::preview::grants::init_grant_store(app.asset_protocol_scope());

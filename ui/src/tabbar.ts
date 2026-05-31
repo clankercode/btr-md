@@ -66,6 +66,19 @@ export function createTabBar(store: TabStore, handlers: TabBarHandlers): TabBarI
     }
   };
 
+  function focusTabByOffset(currentId: TabId, offset: number): void {
+    const tabs = store.list();
+    const currentIndex = tabs.findIndex((tab) => tab.id === currentId);
+    if (currentIndex < 0 || tabs.length === 0) return;
+    const next = tabs[(currentIndex + offset + tabs.length) % tabs.length];
+    focusTab(next.id);
+  }
+
+  function focusTab(id: TabId): void {
+    const tabEl = el.querySelector<HTMLElement>(`.pmd-tab[data-tab-id="${id}"]`);
+    tabEl?.focus();
+  }
+
   function makeTab(tab: Tab, active: boolean): HTMLElement {
     const tabEl = document.createElement('div');
     tabEl.className = 'pmd-tab';
@@ -73,6 +86,7 @@ export function createTabBar(store: TabStore, handlers: TabBarHandlers): TabBarI
     tabEl.dataset.kind = tab.kind;
     tabEl.setAttribute('role', 'tab');
     tabEl.setAttribute('aria-selected', String(active));
+    tabEl.tabIndex = active ? 0 : -1;
     if (active) tabEl.toggleAttribute('data-active', true);
 
     const icon = document.createElement('span');
@@ -108,6 +122,28 @@ export function createTabBar(store: TabStore, handlers: TabBarHandlers): TabBarI
     tabEl.appendChild(close);
 
     tabEl.addEventListener('click', () => handlers.onSelect(tab.id));
+    tabEl.addEventListener('keydown', (event) => {
+      if (event.key === 'ArrowRight') {
+        event.preventDefault();
+        focusTabByOffset(tab.id, 1);
+      } else if (event.key === 'ArrowLeft') {
+        event.preventDefault();
+        focusTabByOffset(tab.id, -1);
+      } else if (event.key === 'Home') {
+        event.preventDefault();
+        const first = store.list()[0];
+        if (first) focusTab(first.id);
+      } else if (event.key === 'End') {
+        event.preventDefault();
+        const tabs = store.list();
+        const last = tabs[tabs.length - 1];
+        if (last) focusTab(last.id);
+      } else if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        handlers.onSelect(tab.id);
+        requestAnimationFrame(() => focusTab(tab.id));
+      }
+    });
     return tabEl;
   }
 

@@ -166,3 +166,30 @@ fn stale_trust_root_decisions_load_and_can_be_forgotten() {
     loaded.forget(&stale).unwrap();
     assert_eq!(loaded.decision_for(&stale), None);
 }
+
+#[cfg(unix)]
+#[test]
+fn persisted_trust_root_replaced_by_symlink_is_dropped_on_load() {
+    use std::os::unix::fs::symlink;
+
+    let temp = tempfile::tempdir().unwrap();
+    let settings_path = temp.path().join("state/trust-roots.json");
+    let trusted = temp.path().join("trusted");
+    let target = temp.path().join("target");
+    std::fs::create_dir_all(settings_path.parent().unwrap()).unwrap();
+    std::fs::create_dir(&trusted).unwrap();
+    std::fs::create_dir(&target).unwrap();
+    let trusted_canonical = trusted.canonicalize().unwrap();
+
+    let mut trust =
+        pmd_app_lib::preview::trust_roots::TrustRootStore::empty_at(settings_path.clone());
+    trust.remember_trusted_for_test(&trusted).unwrap();
+
+    std::fs::remove_dir(&trusted).unwrap();
+    symlink(&target, &trusted).unwrap();
+
+    let loaded = pmd_app_lib::preview::trust_roots::TrustRootStore::load(settings_path).unwrap();
+
+    assert_eq!(loaded.decision_for(&trusted_canonical), None);
+    assert_eq!(loaded.decision_for(&target.canonicalize().unwrap()), None);
+}

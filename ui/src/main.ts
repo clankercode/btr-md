@@ -1790,6 +1790,12 @@ listen<DocumentDiagnostics>('pmd://diagnostics-enriched', (event) => {
     console.error('Failed to listen for enriched diagnostics', error);
   });
 
+listen<string>('pmd://download-denied', (event) => {
+  document.dispatchEvent(new CustomEvent('pmd-download-denied', {
+    detail: { url: event.payload },
+  }));
+}).catch(() => {});
+
 window.addEventListener('beforeunload', () => {
   unlistenDiagnostics?.();
 });

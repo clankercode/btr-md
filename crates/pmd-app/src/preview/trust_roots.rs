@@ -69,11 +69,9 @@ impl TrustRootStore {
         let mut store = Self::empty_at(settings_path);
         for decision in persisted.roots {
             if decision.state != TrustRootState::Unknown {
-                let canonical = decision
-                    .canonical_root
-                    .canonicalize()
-                    .unwrap_or(decision.canonical_root);
-                store.decisions.insert(canonical, decision.state);
+                if let Some(canonical) = persisted_authority_root(decision.canonical_root) {
+                    store.decisions.insert(canonical, decision.state);
+                }
             }
         }
         Ok(store)
@@ -270,6 +268,17 @@ fn canonical_directory(root: &Path) -> Result<PathBuf, String> {
         ));
     }
     Ok(canonical)
+}
+
+fn persisted_authority_root(root: PathBuf) -> Option<PathBuf> {
+    if !root.is_absolute() {
+        return None;
+    }
+    match root.canonicalize() {
+        Ok(canonical) if canonical == root => Some(root),
+        Ok(_) => None,
+        Err(_) => Some(root),
+    }
 }
 
 #[tauri::command]
