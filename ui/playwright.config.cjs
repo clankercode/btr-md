@@ -20,6 +20,11 @@ module.exports = {
     '{arg}{ext}'
   ),
   reporter: [['list']],
+  // Cap parallel workers: all specs share one python http.server (webServer
+  // below), which returns connection-refused under heavier concurrency (the
+  // default ~half-the-cores picks 4 on this box and the suite goes flaky).
+  // Serial on CI for full reliability; 2 locally for some speed.
+  workers: process.env.CI ? 1 : 2,
   webServer: {
     command: `python3 -m http.server ${PORT} --bind 127.0.0.1`,
     cwd: __dirname,
