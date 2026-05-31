@@ -11,6 +11,52 @@ async function installBlockRenderMock(page) {
       for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; }
       return ('00000000' + h.toString(16)).slice(-8);
     };
+    const resultFor = (args, md, html, blocks) => {
+      const docId = args.docId ?? args.doc_id ?? 1;
+      const version = args.version ?? 0;
+      const facts = {
+        doc_id: docId,
+        version,
+        headings: [],
+        anchors: [],
+        links: [],
+        reference_definitions: [],
+        images: [],
+        frontmatter: null,
+        blocks: [],
+        embedded: { code_blocks: [], mermaid_blocks: [], math_spans: [], math_blocks: [] },
+        counts: {
+          words: md.trim().split(/\s+/).filter(Boolean).length,
+          bytes: md.length,
+          sentences: 0,
+          paragraphs: blocks.length,
+          headings: 0,
+          links: 0,
+          images: 0,
+          code_blocks: 0,
+          mermaid_blocks: 0,
+          math_spans: 0,
+          math_blocks: 0,
+        },
+      };
+      return {
+        doc_id: docId,
+        html,
+        version,
+        render_nonce: `n-${version}`,
+        source_map: [],
+        blocks,
+        facts,
+        diagnostics: {
+          doc_id: docId,
+          version,
+          phase: 'initial',
+          issues: [],
+          resources: { doc_id: docId, version, allowed_roots: [], loaded_resources: [], decisions: [] },
+          link_summary: { checked: 0, errors: 0, warnings: 0, unchecked_external: 0, pending_async: 0 },
+        },
+      };
+    };
     internals.invoke = async (cmd, args) => {
       if (cmd !== 'render_cmd') return orig(cmd, args);
       const md = String(args.markdown ?? '');
@@ -26,7 +72,7 @@ async function installBlockRenderMock(page) {
         blocks.push({ key, base_line: start });
         line = end + 1;
       }
-      return { html, version: args.version ?? 0, render_nonce: 'n', source_map: [], blocks };
+      return resultFor(args, md, html, blocks);
     };
   });
 }
@@ -71,10 +117,57 @@ test('inserted top-level code block is decorated with pmd-code-toolbar', async (
       for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; }
       return ('00000000' + h.toString(16)).slice(-8);
     };
+    const resultFor = (args, md, html, blocks, codeBlockCount) => {
+      const docId = args.docId ?? args.doc_id ?? 1;
+      const version = args.version ?? 0;
+      const facts = {
+        doc_id: docId,
+        version,
+        headings: [],
+        anchors: [],
+        links: [],
+        reference_definitions: [],
+        images: [],
+        frontmatter: null,
+        blocks: [],
+        embedded: { code_blocks: [], mermaid_blocks: [], math_spans: [], math_blocks: [] },
+        counts: {
+          words: md.trim().split(/\s+/).filter(Boolean).length,
+          bytes: md.length,
+          sentences: 0,
+          paragraphs: blocks.length,
+          headings: 0,
+          links: 0,
+          images: 0,
+          code_blocks: codeBlockCount,
+          mermaid_blocks: 0,
+          math_spans: 0,
+          math_blocks: 0,
+        },
+      };
+      return {
+        doc_id: docId,
+        html,
+        version,
+        render_nonce: `n-${version}`,
+        source_map: [],
+        blocks,
+        facts,
+        diagnostics: {
+          doc_id: docId,
+          version,
+          phase: 'initial',
+          issues: [],
+          resources: { doc_id: docId, version, allowed_roots: [], loaded_resources: [], decisions: [] },
+          link_summary: { checked: 0, errors: 0, warnings: 0, unchecked_external: 0, pending_async: 0 },
+        },
+      };
+    };
     internals.invoke = async (cmd, args) => {
       if (cmd !== 'render_cmd') return orig(cmd, args);
       const md = String(args.markdown ?? '');
       let line = 1, html = '', blocks = [];
+      let codeBlockCount = 0;
       for (const raw of md.split(/(\n{2,})/)) {
         if (/^\n{2,}$/.test(raw)) { line += (raw.match(/\n/g) || []).length; continue; }
         if (!raw.trim()) { continue; }
@@ -87,6 +180,7 @@ test('inserted top-level code block is decorated with pmd-code-toolbar', async (
           const lang = fenceMatch[1] || 'text';
           const body = (fenceMatch[2] || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
           html += `<pre data-pmd-block="${key}" data-src-start="${start}" data-src-end="${end}"><code class="language-${lang}">${body}</code></pre>`;
+          codeBlockCount += 1;
         } else {
           const text = raw.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
           html += `<p data-pmd-block="${key}" data-src-start="${start}" data-src-end="${end}">${text}</p>`;
@@ -94,7 +188,7 @@ test('inserted top-level code block is decorated with pmd-code-toolbar', async (
         blocks.push({ key, base_line: start });
         line = end + 1;
       }
-      return { html, version: args.version ?? 0, render_nonce: 'n', source_map: [], blocks };
+      return resultFor(args, md, html, blocks, codeBlockCount);
     };
   });
 

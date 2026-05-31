@@ -1,3 +1,5 @@
+use pmd_app_lib::preview::link_activation::LinkActivationStore;
+use pmd_app_lib::preview::render_pipeline::ValidationWorker;
 use pmd_app_lib::{cli, cmd, path_scope::PathScope, AppState};
 use tauri::{Emitter, Manager};
 
@@ -29,8 +31,12 @@ fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .manage(state)
+        .manage(LinkActivationStore::default())
+        .manage(ValidationWorker::new())
         .invoke_handler(tauri::generate_handler![
             cmd::render::render_cmd,
+            pmd_app_lib::preview::link_activation::prepare_link_activation,
+            pmd_app_lib::preview::link_activation::confirm_external_open,
             cmd::file::open_file,
             cmd::file::request_open_file,
             cmd::file::open_dialog,
@@ -63,6 +69,7 @@ fn main() {
             cmd::settings::set_diff_mode,
             cmd::settings::set_dont_ask_default_handler,
             cmd::settings::set_mono_font,
+            cmd::settings::set_shortcut_overrides,
             cmd::settings::get_recent_files,
             cmd::settings::clear_recent_files,
             cmd::file::get_initial_path,

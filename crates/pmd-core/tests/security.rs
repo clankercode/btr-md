@@ -6,6 +6,104 @@ fn render(md: &str) -> String {
 }
 
 #[test]
+fn raw_html_cannot_spoof_backend_link_or_resource_ids() {
+    let out = render(
+        r#"<a href="https://evil.test" data-pmd-link-id="link-1" target="_blank" ping="https://evil.test/p">x</a>"#,
+    );
+    assert!(
+        !out.contains("data-pmd-link-id"),
+        "raw data-pmd link id survived: {out}"
+    );
+    assert!(
+        !out.contains("target="),
+        "raw target attribute survived: {out}"
+    );
+    assert!(!out.contains("ping="), "raw ping attribute survived: {out}");
+}
+
+#[test]
+fn markdown_links_are_inert_backend_markers() {
+    let out = render("[site](https://example.com)");
+    assert!(
+        out.contains("data-pmd-link-id="),
+        "markdown link marker missing: {out}"
+    );
+    assert!(
+        !out.contains(r#"href="https://example.com""#),
+        "markdown link target remained navigable: {out}"
+    );
+}
+
+#[test]
+fn markdown_markers_survive_but_raw_html_markers_do_not() {
+    let out = render("[site](https://example.com)\n\n<a data-pmd-link-id=\"link-0\">spoof</a>");
+    assert!(
+        out.contains(r#"<a data-pmd-link-id="link-0" role="link" tabindex="0">site</a>"#),
+        "markdown link marker missing: {out}"
+    );
+    assert_eq!(
+        out.matches("data-pmd-link-id=").count(),
+        1,
+        "raw spoofed link marker survived: {out}"
+    );
+}
+
+#[test]
+fn raw_html_nonce_looking_pmd_markers_are_stripped() {
+    let out = render(
+        r#"<span data-pmd-link-id="link-0" data-pmd-image-id="image-0" data-pmd-resource-id="resource-0" data-render-nonce="looks-real">x</span>"#,
+    );
+    assert!(
+        !out.contains("data-pmd-link-id"),
+        "raw link marker survived: {out}"
+    );
+    assert!(
+        !out.contains("data-pmd-image-id"),
+        "raw image marker survived: {out}"
+    );
+    assert!(
+        !out.contains("data-pmd-resource-id"),
+        "raw resource marker survived: {out}"
+    );
+    assert!(
+        !out.contains("data-render-nonce"),
+        "raw render nonce marker survived: {out}"
+    );
+}
+
+#[test]
+fn mixed_trusted_and_untrusted_shapes_do_not_preserve_pmd_markers() {
+    let out = render(
+        r#"<code class="language-mermaid pmd-image-placeholder" data-pmd-nonce="looks-real" data-pmd-link-id="link-0">x</code>"#,
+    );
+    assert!(
+        !out.contains("data-pmd-link-id"),
+        "raw trusted-looking pmd marker survived: {out}"
+    );
+}
+
+#[test]
+fn markdown_images_are_inert_backend_markers() {
+    let out = render(r#"![alt](./img.png "Logo")"#);
+    assert!(
+        out.contains("data-pmd-image-id="),
+        "markdown image marker missing: {out}"
+    );
+    assert!(
+        out.contains("pmd-image-placeholder"),
+        "markdown image placeholder class missing: {out}"
+    );
+    assert!(
+        out.contains("alt") || out.contains("Logo"),
+        "readable image label missing: {out}"
+    );
+    assert!(
+        !out.contains(r#"src="./img.png""#),
+        "markdown image target remained loadable: {out}"
+    );
+}
+
+#[test]
 fn javascript_url_stripped_from_anchor() {
     let out = render("[click](javascript:alert(1))");
     assert!(
@@ -50,10 +148,11 @@ fn data_text_html_stripped_from_image() {
 }
 
 #[test]
-fn safe_data_image_png_preserved_on_image() {
+fn safe_data_image_png_stripped_from_raw_image() {
     let pixel = "data:image/png;base64,iVBORw0KGgo=";
-    let out = render(&format!("![x]({pixel})"));
-    assert!(out.contains(pixel), "safe data:image/png stripped: {out}");
+    let out = clean(&format!(r#"<img src="{pixel}" alt="x">"#));
+    assert!(!out.contains("src="), "raw image src survived: {out}");
+    assert!(!out.contains(pixel), "raw image data URL survived: {out}");
 }
 
 #[test]
@@ -157,9 +256,10 @@ fn image_html_in_alt_rendered_as_attribute_text() {
         !out.to_ascii_lowercase().contains("<script"),
         "alt-text HTML survived as live DOM: {out}"
     );
-    // The escaped alt text should appear inside an alt="..." attribute, not
-    // as a body child of the document.
-    assert!(out.contains("alt="), "img alt attribute missing: {out}");
+    assert!(
+        out.contains("data-pmd-image-id="),
+        "image placeholder marker missing: {out}"
+    );
 }
 
 #[test]
@@ -174,8 +274,8 @@ fn formatted_image_alt_does_not_emit_empty_inline_nodes() {
         "empty em leaked from formatted alt text: {out}"
     );
     assert!(
-        out.contains(r#"alt="bold em""#),
-        "formatted alt text was not collected into img alt: {out}"
+        out.contains(r#"aria-label="bold em""#) || out.contains(">bold em</span>"),
+        "formatted alt text was not collected into image label: {out}"
     );
 }
 
@@ -346,11 +446,54 @@ fn raw_math_display_does_not_carry_renderer_attrs() {
 }
 
 #[test]
-fn safe_anchor_schemes_preserved() {
-    let out = render("[a](https://example.com) [b](mailto:x@y) [c](relative.md)");
-    assert!(out.contains("https://example.com"), "https stripped: {out}");
-    assert!(out.contains("mailto:x@y"), "mailto stripped: {out}");
-    assert!(out.contains("relative.md"), "relative stripped: {out}");
+fn safe_anchor_schemes_stripped_from_raw_anchors() {
+    let out = clean(
+        r#"<a href="https://example.com">a</a> <a href="mailto:x@y">b</a> <a href="relative.md">c</a>"#,
+    );
+    assert!(!out.contains("href="), "raw anchor href survived: {out}");
+    assert!(
+        !out.contains("https://example.com"),
+        "raw https link survived: {out}"
+    );
+    assert!(
+        !out.contains("mailto:x@y"),
+        "raw mailto link survived: {out}"
+    );
+    assert!(
+        !out.contains("relative.md"),
+        "raw relative link survived: {out}"
+    );
+}
+
+#[test]
+fn raw_fragment_anchor_href_is_stripped() {
+    let out = render(r##"<a href="#fn-1">raw fragment</a>"##);
+    assert!(
+        !out.contains("href="),
+        "raw fragment anchor href survived: {out}"
+    );
+}
+
+#[test]
+fn unresolved_reference_before_real_link_does_not_steal_dom_marker_id() {
+    let result = render_string("[missing][nope]\n\n[real](https://example.com)");
+
+    assert_eq!(result.facts.links.len(), 2);
+    assert_eq!(result.facts.links[0].target, None);
+    assert_eq!(
+        result.facts.links[1].target.as_deref(),
+        Some("https://example.com")
+    );
+    assert!(
+        !result.html.contains(r#"data-pmd-link-id="link-0""#),
+        "non-rendered unresolved reference received a DOM marker: {}",
+        result.html
+    );
+    assert!(
+        result.html.contains(r#"data-pmd-link-id="link-1""#),
+        "rendered link marker did not align with facts index 1: {}",
+        result.html
+    );
 }
 
 #[test]

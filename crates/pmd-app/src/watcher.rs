@@ -155,6 +155,12 @@ fn build_slot<R: Runtime>(app: AppHandle<R>, doc: DocId, path: &Path) -> Option<
                 DiskEvent::Removed
             };
 
+            if let Some(validation) =
+                worker_app.try_state::<crate::preview::render_pipeline::ValidationWorker>()
+            {
+                validation.invalidate_for_watcher_change(worker_path.clone());
+            }
+
             let state = worker_app.state::<crate::AppState>();
             if let Some(new_state) = state.docs.on_disk_event(doc, disk_event) {
                 let _ = worker_app.emit(

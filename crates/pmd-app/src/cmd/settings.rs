@@ -1,7 +1,7 @@
 use crate::doc::modes::{AutoreloadMode, AutosaveMode, DiffMode, MergeStrategy};
 use crate::state::{recents, settings};
 use serde::Serialize;
-use std::path::PathBuf;
+use std::{collections::BTreeMap, path::PathBuf};
 
 #[derive(Debug, Clone, Serialize)]
 pub struct Settings {
@@ -18,6 +18,7 @@ pub struct Settings {
     pub diff_mode: DiffMode,
     pub dont_ask_default_handler: bool,
     pub mono_font: Option<String>,
+    pub shortcut_overrides: BTreeMap<String, Vec<String>>,
 }
 
 impl From<settings::Settings> for Settings {
@@ -36,6 +37,7 @@ impl From<settings::Settings> for Settings {
             diff_mode: s.diff_mode,
             dont_ask_default_handler: s.dont_ask_default_handler,
             mono_font: s.mono_font,
+            shortcut_overrides: s.shortcut_overrides,
         }
     }
 }
@@ -152,6 +154,24 @@ pub fn set_mono_font(font: Option<String>) -> Result<(), String> {
         ..s
     })
     .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn set_shortcut_overrides(
+    overrides: BTreeMap<String, Vec<String>>,
+) -> Result<Settings, String> {
+    settings::rmw(|s| settings::Settings {
+        shortcut_overrides: overrides,
+        ..s
+    })
+    .map_err(|e| e.to_string())?;
+    get_settings()
+}
+
+pub fn set_shortcut_overrides_for_test(
+    overrides: Vec<(String, Vec<String>)>,
+) -> Result<Settings, String> {
+    set_shortcut_overrides(overrides.into_iter().collect())
 }
 
 #[tauri::command]

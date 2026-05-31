@@ -32,6 +32,24 @@ Observed result on 2026-05-30:
 
 Implementation workers should use `just check` for the default non-WebDriver gate. Security sentinel tests in `crates/pmd-e2e/tests/navigation_policy.rs` are release-blocking once Block 12 exists; start the repo e2e harness with `just e2e` or the documented WebDriver setup before claiming final PASS.
 
+## Execution Status
+
+Updated 2026-05-31 after merging `dit-outline` into `feat/large-expansion`:
+
+- Blocks 1-3, `dit-core-facts`: merged into `feat/large-expansion` as `d062d9c`, `a7cf6db`, and `5d87966`.
+- Block 4, app preview authority shell: merged as `2451545` with implementation commit `d66162f`; `ccc --yolo @cx-reviewer` returned `PASS` after the rebase.
+- Post-rebase rustfmt cleanup from `master` landed as `d2c10fc` so worker baselines start with `cargo fmt --check` clean.
+- Block 5, synchronous resource policy: implemented as `85d5736`; focused verification and `ccc --yolo @cx-reviewer` returned `PASS`.
+- Block 6, backend-mediated link activation: implemented as `6109dad`; fixed the reviewer-found stale external-confirmation token case, reran verification, and `ccc --yolo @cx-reviewer` returned `PASS` with WebView navigation sentinel coverage still provisional until Block 12.
+- Blocks 4-6, `dit-app-authority`: merged back into `feat/large-expansion` as `6d22101`; root `just check` passed after merge.
+- Block 7, async local validation: implemented as `35f5cf5`; `ccc --yolo @cx-reviewer` returned `PASS`; root `just test-ipc`, `cargo check -p pmd-e2e --tests -j 2`, and `npm run typecheck` passed after merge.
+- Block 7, `dit-validation`: merged back into `feat/large-expansion` as `2f8553c`.
+- Block 8, action registry and keybinding persistence: implemented as `9960503`; rebased onto Block 7; fixed the ccc-found stale tracked UI bundle artifact; final `ccc --yolo @cx-reviewer` returned `PASS`.
+- Block 8, `dit-actions-keybindings`: merged back into `feat/large-expansion` as `8d47a6d`; root `just check` passed after merge, including 19 Playwright tests.
+- Block 9, UI facts store and outline panel: implemented as `ee87b8b`; `ccc --yolo @cx-reviewer` returned `PASS`.
+- Block 9, `dit-outline`: merged back into `feat/large-expansion`; root `just check` passed after merge, including 20 Playwright tests.
+- Next active workstream: Block 10, `dit-diagnostics-trust`, after the shared fact/action/validation/outline foundation.
+
 ## Operating Contract
 
 ### Worktrees

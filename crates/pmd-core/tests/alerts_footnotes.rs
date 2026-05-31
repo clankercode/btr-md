@@ -80,8 +80,7 @@ fn alert_body_is_still_sanitized() {
 #[test]
 fn footnote_reference_and_definition_render_as_section() {
     let html = render("Text with a note[^1].\n\n[^1]: The footnote body.\n");
-    // Reference: numbered superscript linking to the definition. (ammonia
-    // injects rel="noopener noreferrer" on anchors, so assert pieces.)
+    // Reference: numbered superscript linking to the definition.
     assert!(
         html.contains("class=\"pmd-fnref\""),
         "missing fnref class: {html}"
