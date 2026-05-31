@@ -13,6 +13,22 @@ export type DragValidity = 'valid' | 'reject';
 // available during dragover (only on drop), so detection is by `kind`/`type`.
 const MARKDOWN_MIME = new Set(['text/markdown', 'text/x-markdown', 'text/plain']);
 
+// Image detection kept self-contained here (drag-overlay is unit-tested in
+// isolation, so it must not import sibling source modules). The richer embed
+// helpers live in `image_embed.ts` and are used by the wiring in main.ts.
+const IMAGE_FILE_EXTENSIONS = new Set(['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp']);
+
+function isImageMime(type: string | null | undefined): boolean {
+  if (!type) return false;
+  const lower = type.toLowerCase();
+  return lower.startsWith('image/') && lower !== 'image/svg+xml';
+}
+
+function isImageFileName(name: string): boolean {
+  const dot = name.lastIndexOf('.');
+  return dot >= 0 && IMAGE_FILE_EXTENSIONS.has(name.slice(dot + 1).toLowerCase());
+}
+
 /**
  * Compute drag validity from a DataTransfer's items during `dragover`.
  *
@@ -38,7 +54,8 @@ export function computeValidity(
       if (!it || it.kind !== 'file') continue;
       sawFile = true;
       const type = (it.type || '').toLowerCase();
-      if (type === '' || MARKDOWN_MIME.has(type)) {
+      // Markdown-ish or an image we can embed → a valid drop target.
+      if (type === '' || MARKDOWN_MIME.has(type) || isImageMime(type)) {
         sawMarkdown = true;
       }
     }
@@ -80,6 +97,10 @@ export interface DragOverlayCallbacks {
   onOpenFiles: (paths: string[]) => void;
   // Open a webview-provided blob (no `.path`): register it as an in-memory doc.
   onOpenBlob: (name: string, contents: string) => Promise<void> | void;
+  // Embed a dropped image file into the active (saved) document. The handler
+  // reads the bytes, copies them beside the document and inserts a relative
+  // Markdown image. Distinct from opening a .md file.
+  onEmbedImage?: (file: File) => Promise<void> | void;
   // Surface an error to the user (status/toast).
   showError: (message: string) => void;
 }
@@ -179,12 +200,17 @@ async function handleDrop(e: DragEvent, cbs: DragOverlayCallbacks): Promise<void
 
   const pathsToOpen: string[] = [];
   const blobs: File[] = [];
-  let sawNonMarkdown = false;
+  const imagesToEmbed: File[] = [];
+  let sawUnsupported = false;
 
   for (let i = 0; i < files.length; i++) {
     const file = files[i];
+    if (isImageMime(file.type) || isImageFileName(file.name)) {
+      imagesToEmbed.push(file);
+      continue;
+    }
     if (!isMarkdownFileName(file.name)) {
-      sawNonMarkdown = true;
+      sawUnsupported = true;
       continue;
     }
     const path = (file as unknown as { path?: string }).path;
@@ -205,7 +231,24 @@ async function handleDrop(e: DragEvent, cbs: DragOverlayCallbacks): Promise<void
     }
   }
 
-  if (sawNonMarkdown && pathsToOpen.length === 0 && blobs.length === 0) {
-    cbs.showError('Not a markdown file');
+  for (const file of imagesToEmbed) {
+    if (!cbs.onEmbedImage) {
+      cbs.showError('Image embedding is unavailable');
+      continue;
+    }
+    try {
+      await cbs.onEmbedImage(file);
+    } catch (err) {
+      cbs.showError(`Embed failed: ${String(err)}`);
+    }
+  }
+
+  if (
+    sawUnsupported &&
+    pathsToOpen.length === 0 &&
+    blobs.length === 0 &&
+    imagesToEmbed.length === 0
+  ) {
+    cbs.showError('Not a markdown or image file');
   }
 }

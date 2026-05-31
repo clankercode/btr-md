@@ -55,6 +55,7 @@
     "src/editor_format.ts",
     "src/editor_list.ts",
     "src/find_replace.ts",
-    "src/export_document.ts"
+    "src/export_document.ts",
+    "src/image_embed.ts"
   ]
 }

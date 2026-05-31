@@ -22,8 +22,12 @@ test('computeValidity: text/markdown MIME -> valid', () => {
   assert.equal(computeValidity(items(item('file', 'text/plain'))), 'valid');
 });
 
-test('computeValidity: image-only -> reject', () => {
-  assert.equal(computeValidity(items(item('file', 'image/png'))), 'reject');
+test('computeValidity: image-only -> valid (images embed into the document)', () => {
+  assert.equal(computeValidity(items(item('file', 'image/png'))), 'valid');
+});
+
+test('computeValidity: svg image -> reject', () => {
+  assert.equal(computeValidity(items(item('file', 'image/svg+xml'))), 'reject');
 });
 
 test('computeValidity: pdf-only -> reject', () => {

@@ -61,6 +61,8 @@ fn main() {
             cmd::file::open_dialog,
             cmd::file::save_dialog,
             cmd::export::export_html,
+            cmd::asset::import_image_asset,
+            cmd::asset::paste_html_as_markdown,
             cmd::doc::register_doc,
             cmd::doc::set_active_doc,
             cmd::doc::doc_edited,

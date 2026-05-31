@@ -26,3 +26,36 @@ export function revokeAssetGrantForDocument(input: {
     grantId: input.grantId,
   });
 }
+
+/** What `import_image_asset` returns when bytes were written. */
+export interface ImportedImage {
+  /** Document-relative path to embed (e.g. `images/Notes/x.png`). */
+  relative_path: string;
+  /** Absolute canonical path on disk. */
+  absolute_path: string;
+}
+
+/**
+ * Copy pasted/dropped image bytes into `images/<doc-stem>/` beside the saved
+ * document and extend its asset grant. Returns `null` when the per-document
+ * image folder does not yet exist and `confirmNewFolder` was false — the caller
+ * should then confirm the first write and retry with `confirmNewFolder: true`.
+ */
+export function importImageAsset(input: {
+  docId: number;
+  fileName: string;
+  bytes: number[] | Uint8Array;
+  confirmNewFolder: boolean;
+}): Promise<ImportedImage | null> {
+  return invoke<ImportedImage | null>('import_image_asset', {
+    docId: input.docId,
+    fileName: input.fileName,
+    bytes: Array.from(input.bytes),
+    confirmNewFolder: input.confirmNewFolder,
+  });
+}
+
+/** Convert untrusted clipboard HTML to Markdown (sanitized backend-side). */
+export function pasteHtmlAsMarkdown(html: string): Promise<string> {
+  return invoke<string>('paste_html_as_markdown', { html });
+}

@@ -1,3 +1,4 @@
+pub mod asset;
 pub mod browse;
 pub mod default_handler;
 pub mod doc;

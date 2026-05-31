@@ -83,9 +83,17 @@ import { deriveTrustStatus } from './resource_policy.js';
 import { createTrustPolicyPanel } from './trust_policy_panel.js';
 import {
   grantAssetFolderForBlockedImage,
+  importImageAsset,
   listAssetGrants,
+  pasteHtmlAsMarkdown,
   revokeAssetGrantForDocument,
 } from './local_asset_grants.js';
+import {
+  buildImageMarkdown,
+  classifyDroppedFile,
+  clipboardImageName,
+  isImageMime,
+} from './image_embed.js';
 import {
   forgetTrustRoot,
   grantRecommendedRoot,
@@ -656,6 +664,9 @@ async function runAction(id: ActionId): Promise<void> {
     case 'edit.replace':
       findController.openReplace();
       return;
+    case 'edit.pasteAsMarkdown':
+      await pasteHtmlAsMarkdownAtCursor();
+      return;
     case 'edit.findNext':
       findController.next();
       return;
@@ -1153,6 +1164,72 @@ attachPreviewLinkActivation(previewContent, {
 });
 
 // ---------------------------------------------------------------------------
+// Image paste / drag-and-drop embed (#5).
+// ---------------------------------------------------------------------------
+
+// Per-session counter to disambiguate clipboard-image names (pasted-1, …).
+let pastedImageCounter = 0;
+
+/**
+ * Embed `bytes` (a pasted/dropped image named `fileName`) into the active saved
+ * document: copy them into `images/<doc-stem>/` via the backend, extend the
+ * asset grant, and insert a relative `![](…)` at the cursor.
+ *
+ * An UNSAVED buffer (no path) is refused with a prompt to save first. The first
+ * write into a not-yet-created image folder asks for confirmation; subsequent
+ * writes into an already-granted folder proceed silently.
+ */
+async function embedImageBytes(fileName: string, bytes: Uint8Array): Promise<void> {
+  const active = store.activeDoc();
+  if (!active) return;
+  if (!active.filePath) {
+    showError('Save the document before embedding images');
+    return;
+  }
+  try {
+    // First attempt without confirming a new folder; the backend returns null
+    // if the per-document image folder does not exist yet.
+    let result = await importImageAsset({
+      docId: active.docId,
+      fileName,
+      bytes,
+      confirmNewFolder: false,
+    });
+    if (!result) {
+      const ok = window.confirm(
+        `Create an images folder next to “${basename(active.filePath)}” and copy this image into it?`
+      );
+      if (!ok) {
+        chrome.setStatus('Image embed cancelled');
+        return;
+      }
+      result = await importImageAsset({
+        docId: active.docId,
+        fileName,
+        bytes,
+        confirmNewFolder: true,
+      });
+    }
+    if (!result) return;
+    if (editor) {
+      insertAtCursor(editor.view, buildImageMarkdown(result.relative_path));
+    }
+    chrome.setStatus(`Embedded ${basename(result.relative_path)}`);
+  } catch (err) {
+    showError(`Embed failed: ${String(err)}`);
+  }
+}
+
+async function embedImageFile(file: File): Promise<void> {
+  const buf = new Uint8Array(await file.arrayBuffer());
+  const name =
+    file.name && classifyDroppedFile(file.name, file.type) === 'embed'
+      ? file.name
+      : clipboardImageName(file.type || 'image/png', ++pastedImageCounter);
+  await embedImageBytes(name, buf);
+}
+
+// ---------------------------------------------------------------------------
 // Drag & drop.
 // ---------------------------------------------------------------------------
 
@@ -1172,6 +1249,7 @@ installDragOverlay({
       { background: false, title: name }
     );
   },
+  onEmbedImage: embedImageFile,
   showError,
 });
 
@@ -1545,6 +1623,59 @@ async function ensureEditor(): Promise<void> {
   setMermaidGotoLine((line) => editor?.gotoEditorLine(line));
   attachScrollSync(editor.view, previewPane);
   installOutlineCaretListeners();
+  installEditorPasteHandlers(editor.view.dom);
+}
+
+// Clipboard handling on the editor: an image on the clipboard is embedded into
+// the saved document (#5); Ctrl+Shift+V converts clipboard HTML to Markdown
+// (#6). Both pre-empt CodeMirror's default paste when they apply.
+function installEditorPasteHandlers(dom: HTMLElement): void {
+  // Plain image paste → embed. (Ctrl+Shift+V HTML→Markdown is a separate
+  // keydown handler so it does not interfere with normal image paste.)
+  dom.addEventListener('paste', (event) => {
+    const e = event as ClipboardEvent;
+    const items = e.clipboardData?.items;
+    if (!items) return;
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      if (item.kind === 'file' && isImageMime(item.type)) {
+        const file = item.getAsFile();
+        if (file) {
+          e.preventDefault();
+          void embedImageFile(file);
+          return;
+        }
+      }
+    }
+  });
+}
+
+// Ctrl+Shift+V: convert clipboard HTML to Markdown (sanitized backend-side) and
+// insert at the cursor; plain-text clipboard falls through to a normal paste.
+// We read the clipboard via the async API on keydown because a synthetic paste
+// of the same key would otherwise loop.
+async function pasteHtmlAsMarkdownAtCursor(): Promise<void> {
+  if (!editor) return;
+  try {
+    const items = await navigator.clipboard.read();
+    let html: string | null = null;
+    for (const item of items) {
+      if (item.types.includes('text/html')) {
+        html = await (await item.getType('text/html')).text();
+        break;
+      }
+    }
+    if (html) {
+      const markdown = await pasteHtmlAsMarkdown(html);
+      insertAtCursor(editor.view, markdown);
+      return;
+    }
+    // No HTML on the clipboard → plain-text paste.
+    const text = await navigator.clipboard.readText();
+    if (text) insertAtCursor(editor.view, text);
+  } catch (err) {
+    showError(`Paste failed: ${String(err)}`);
+  }
 }
 
 // Coalesce keystroke bursts into a single render. Each render re-parses the

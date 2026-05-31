@@ -20,6 +20,7 @@ export type ActionId =
   | "app.quit"
   | "edit.find"
   | "edit.replace"
+  | "edit.pasteAsMarkdown"
   | "edit.findNext"
   | "edit.findPrevious"
   | "view.zoomIn"
@@ -85,6 +86,7 @@ export const DEFAULT_ACTION_SHORTCUTS: Record<string, string[]> = {
   "app.quit": ["Ctrl+Q"],
   "edit.find": ["Ctrl+F"],
   "edit.replace": ["Ctrl+H"],
+  "edit.pasteAsMarkdown": ["Ctrl+Shift+V"],
   "edit.findNext": ["Ctrl+G"],
   "edit.findPrevious": ["Shift+Ctrl+G"],
   "view.zoomIn": ["Ctrl++"],
@@ -156,6 +158,7 @@ export const defaultActionSpecs: ActionSpec[] = [
   spec("app.quit", "Quit", "File", "Quit preview-md"),
   spec("edit.find", "Find", "Edit", "Find text in the editor"),
   spec("edit.replace", "Find and replace", "Edit", "Find and replace text in the source editor"),
+  spec("edit.pasteAsMarkdown", "Paste as Markdown", "Edit", "Convert clipboard HTML to Markdown and insert it"),
   spec("edit.findNext", "Find next", "Edit", "Move to the next search result"),
   spec("edit.findPrevious", "Find previous", "Edit", "Move to the previous search result"),
   spec("view.zoomIn", "Zoom in", "View", "Increase preview zoom"),
