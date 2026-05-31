@@ -1,4 +1,5 @@
-use pmd_core::incremental::{plan_blocks_for_test, render_block_for_test, BlockSliceView};
+use pmd_core::incremental::{plan_blocks_for_test, render_block_for_test, render_incremental, BlockSliceView};
+use pmd_core::emit::render_string;
 
 #[test]
 fn segments_top_level_blocks_with_lines() {
@@ -54,4 +55,30 @@ fn cache_eviction_does_not_corrupt() {
     }
     let again = pmd_core::incremental::render_block_for_test("para number 0").0;
     assert_eq!(first, again);
+}
+
+fn assert_equiv(md: &str) {
+    let inc = render_incremental(md);
+    let full = render_string(md);
+    // Normalize per-render nonces before comparing — nonces are intentionally
+    // unique per render call; structural equivalence is what matters.
+    let inc_html = inc.html.replace(&inc.render_nonce, "NONCE");
+    let full_html = full.html.replace(&full.render_nonce, "NONCE");
+    assert_eq!(inc_html, full_html, "html mismatch for:\n{md}");
+    assert_eq!(inc.source_map, full.source_map, "source_map mismatch for:\n{md}");
+}
+
+#[test]
+fn incremental_equals_full_basic() {
+    assert_equiv("# Title\n\nPara **one** with `code`.\n\n- a\n- b\n\n| x | y |\n|---|---|\n| 1 | 2 |\n");
+}
+
+#[test]
+fn incremental_equals_full_with_math_and_code() {
+    assert_equiv("Euler $e^{i\\pi}+1=0$ here.\n\n```rust\nfn main() {}\n```\n\n$$\n\\int_0^1 x\\,dx\n$$\n");
+}
+
+#[test]
+fn incremental_falls_back_and_equals_full_on_footnotes() {
+    assert_equiv("text[^1]\n\n[^1]: a note\n");
 }

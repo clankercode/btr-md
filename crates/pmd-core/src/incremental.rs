@@ -145,6 +145,62 @@ pub(crate) fn render_block_cached(src: &str) -> Arc<CachedBlock> {
     block
 }
 
+/// Append `block_html` to `out`, adding `base` to every `data-src-start` and
+/// `data-src-end` numeric value. `base = block.start_line - 1`. Pure string
+/// scan — no HTML parsing.
+fn append_with_line_offset(out: &mut String, block_html: &str, base: u32) {
+    const KEYS: [&str; 2] = ["data-src-start=\"", "data-src-end=\""];
+    let bytes = block_html.as_bytes();
+    let mut i = 0usize;
+    while i < block_html.len() {
+        let mut matched = None;
+        for k in KEYS {
+            if block_html[i..].starts_with(k) {
+                matched = Some(k);
+                break;
+            }
+        }
+        match matched {
+            Some(k) => {
+                out.push_str(k);
+                i += k.len();
+                let num_start = i;
+                while i < block_html.len() && bytes[i].is_ascii_digit() {
+                    i += 1;
+                }
+                if i > num_start {
+                    let n: u32 = block_html[num_start..i].parse().unwrap_or(0);
+                    out.push_str(&(n + base).to_string());
+                }
+            }
+            None => {
+                let ch = block_html[i..].chars().next().unwrap();
+                out.push(ch);
+                i += ch.len_utf8();
+            }
+        }
+    }
+}
+
+pub fn render_incremental(md: &str) -> crate::emit::RenderResult {
+    let Some(blocks) = plan_blocks(md) else {
+        return crate::emit::render_string(md);
+    };
+    let render_nonce = crate::emit::generate_render_nonce();
+    let mut html = String::new();
+    let mut source_map = Vec::<(u32, u32)>::new();
+    for b in &blocks {
+        let cb = render_block_cached(&md[b.start..b.end]);
+        let base = b.start_line - 1;
+        append_with_line_offset(&mut html, &cb.html, base);
+        for &(s, e) in &cb.source_map {
+            source_map.push((s + base, e + base));
+        }
+    }
+    let html = html.replace(placeholder_nonce(), &render_nonce);
+    crate::emit::RenderResult { version: 0, html, source_map, render_nonce }
+}
+
 pub fn render_block_for_test(src: &str) -> (String, u64) {
     let b = render_block_cached(src);
     let hits = cache().lock().unwrap().hits;
