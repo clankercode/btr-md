@@ -146,7 +146,10 @@ export function createExternalConfirmationDialog(): ExternalConfirmationDialog {
       `;
       const message = dialog.querySelector('p');
       if (message) {
-        message.textContent = `Open ${response.host ?? response.scheme ?? 'external link'} outside the app?`;
+        const destination = response.normalized_url ?? response.host ?? response.scheme ?? 'external link';
+        const label = response.label_text ? ` from "${response.label_text}"` : '';
+        const scheme = response.scheme ? ` (${response.scheme})` : '';
+        message.textContent = `Open ${destination}${scheme}${label} outside the app?`;
       }
       const close = () => dialog.remove();
       dialog.querySelector('[data-action="cancel"]')?.addEventListener('click', close);

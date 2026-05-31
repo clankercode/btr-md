@@ -53,6 +53,11 @@ import {
 } from './document_contracts.js';
 import { createDocumentFactsStore } from './document_facts_store.js';
 import { createOutlinePanel } from './outline_panel.js';
+import { deriveDiagnosticsPresentation, type DiagnosticsSettings } from './diagnostics.js';
+import { createDiagnosticsPanel } from './diagnostics_panel.js';
+import { renderInlineIssues } from './inline_issues.js';
+import { deriveTrustStatus } from './resource_policy.js';
+import { createTrustPolicyPanel } from './trust_policy_panel.js';
 
 interface Settings {
   active_theme: string | null;
@@ -222,6 +227,23 @@ let outlineObserver: IntersectionObserver | null = null;
 let outlineScrollFrame = 0;
 let outlineTrackingInterval = 0;
 
+const diagnosticsSettings: DiagnosticsSettings = {
+  inlineDetail: true,
+  panelExpanded: false,
+};
+
+const diagnosticsPanel = createDiagnosticsPanel({
+  onToggleExpanded: () => {
+    toggleDiagnosticsPanel();
+  },
+  onToggleInlineDetail: () => {
+    diagnosticsSettings.inlineDetail = !diagnosticsSettings.inlineDetail;
+    rerenderCurrentDiagnostics();
+  },
+});
+const trustPolicyPanel = createTrustPolicyPanel();
+document.body.append(diagnosticsPanel.element, trustPolicyPanel.element);
+
 // Declared before the toolbar block below assigns it (a later `let` would
 // otherwise re-initialise it to null after assignment).
 let insertMenu: InsertMenuInstance | null = null;
@@ -343,6 +365,7 @@ function recordActionForE2e(actionId: ActionId): boolean {
 async function runAction(id: ActionId): Promise<void> {
   if (recordActionForE2e(id)) return;
   if (runOutlineAction(id)) return;
+  if (runDiagnosticsAction(id)) return;
   switch (id) {
     case 'file.new':
       await newFile();
@@ -500,12 +523,51 @@ function showError(message: string): void {
   console.error(message);
 }
 
-const latestEnrichedDiagnostics = new Map<number, DocumentDiagnostics>();
 let unlistenDiagnostics: (() => void) | null = null;
 
-function renderDiagnostics(diagnostics: DocumentDiagnostics): void {
-  latestEnrichedDiagnostics.set(diagnostics.doc_id, diagnostics);
-  factsStore.acceptDiagnostics(diagnostics);
+function activeDiagnostics(): DocumentDiagnostics | null {
+  const active = store.activeDoc();
+  if (!active) return null;
+  return factsStore.current(active.docId)?.diagnostics ?? null;
+}
+
+function rerenderCurrentDiagnostics(): void {
+  const diagnostics = activeDiagnostics();
+  if (!diagnostics) {
+    diagnosticsPanel.clear();
+    trustPolicyPanel.clear();
+    renderInlineIssues(previewContent, []);
+    return;
+  }
+  applyDocumentDiagnostics(diagnostics);
+}
+
+function toggleDiagnosticsPanel(): void {
+  diagnosticsSettings.panelExpanded = !diagnosticsSettings.panelExpanded;
+  rerenderCurrentDiagnostics();
+}
+
+function runDiagnosticsAction(id: ActionId): boolean {
+  if (id !== 'diagnostics.togglePanel') return false;
+  toggleDiagnosticsPanel();
+  return true;
+}
+
+function applyDocumentDiagnostics(diagnostics: DocumentDiagnostics): void {
+  const presentation = deriveDiagnosticsPresentation(diagnostics, diagnosticsSettings);
+  diagnosticsPanel.render(presentation);
+  renderInlineIssues(previewContent, presentation.inlineIssues);
+  trustPolicyPanel.render({
+    status: deriveTrustStatus(diagnostics.resources, diagnostics.issues),
+    report: diagnostics.resources,
+    issues: diagnostics.issues,
+  });
+}
+
+function clearDocumentIntelligenceUi(): void {
+  diagnosticsPanel.clear();
+  trustPolicyPanel.clear();
+  renderInlineIssues(previewContent, []);
 }
 
 function docTabByDocId(docId: number): DocTab | undefined {
@@ -547,7 +609,7 @@ function jumpEditorToBlock(blockId: string): void {
   });
 }
 
-function applyOutlineRender(result: RenderResult): void {
+function applyOutlineRender(result: RenderResult): boolean {
   if (!factsStore.accept({
     doc_id: result.doc_id,
     version: result.version,
@@ -555,11 +617,13 @@ function applyOutlineRender(result: RenderResult): void {
     facts: result.facts,
     diagnostics: result.diagnostics,
   })) {
-    return;
+    return false;
   }
   outlinePanel.setHeadings(result.facts.headings);
   observePreviewHeadings(result.facts.headings);
   updateOutlineFromEditorCaret();
+  applyDocumentDiagnostics(result.diagnostics);
+  return true;
 }
 
 function observePreviewHeadings(headings: HeadingFact[]): void {
@@ -1123,6 +1187,7 @@ store.onActivate((prev, next) => {
     factsStore.setActiveDoc(null);
     outlinePanel.setHeadings([]);
     outlinePanel.setMode('collapsed');
+    clearDocumentIntelligenceUi();
     renderEmptyBody();
     return;
   }
@@ -1138,6 +1203,7 @@ store.onActivate((prev, next) => {
       factsStore.setActiveDoc(null);
       outlinePanel.setHeadings([]);
       outlinePanel.setMode('collapsed');
+      clearDocumentIntelligenceUi();
       renderEmptyBody();
       break;
     case 'browser':
@@ -1145,6 +1211,7 @@ store.onActivate((prev, next) => {
       factsStore.setActiveDoc(null);
       outlinePanel.setHeadings([]);
       outlinePanel.setMode('collapsed');
+      clearDocumentIntelligenceUi();
       renderBrowserBody();
       break;
     default:
@@ -1158,6 +1225,7 @@ async function activateDocTab(tab: DocTab): Promise<void> {
   if (!editor) return;
   if (tab.editorState) editor.activateState(tab.editorState);
   factsStore.setActiveDoc(tab.docId);
+  clearDocumentIntelligenceUi();
   invoke('set_active_doc', { docId: tab.docId }).catch(() => {});
   chrome.setFilename(tab.filePath ? basename(tab.filePath) : 'Untitled');
   applyMode(tab.mode);
@@ -1442,12 +1510,8 @@ listen<DocStateChanged>('doc_state_changed', (event) => {
 }).catch(() => {});
 
 listen<DocumentDiagnostics>('pmd://diagnostics-enriched', (event) => {
-  const active = store.activeDoc();
-  const appliedVersion = Number(previewContent.dataset.versionApplied || '0');
-  if (!active || active.docId !== event.payload.doc_id || appliedVersion !== event.payload.version) {
-    return;
-  }
-  renderDiagnostics(event.payload);
+  if (!factsStore.acceptDiagnostics(event.payload)) return;
+  applyDocumentDiagnostics(event.payload);
 })
   .then((unlisten) => {
     unlistenDiagnostics = unlisten;
