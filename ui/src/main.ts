@@ -389,6 +389,16 @@ if (toolbarEl instanceof HTMLElement) {
   gistBtn.style.display = 'none';
   gistBtn.addEventListener('click', () => openGist());
   toolbarEl.appendChild(gistBtn);
+
+  const sidebarToggleBtn = document.createElement('button');
+  sidebarToggleBtn.className = 'pmd-btn pmd-btn-ghost pmd-btn-sm';
+  sidebarToggleBtn.type = 'button';
+  sidebarToggleBtn.textContent = '▌';
+  sidebarToggleBtn.title = 'Toggle sidebar (Ctrl+B)';
+  sidebarToggleBtn.addEventListener('click', () => {
+    void actionRegistry.runAction('view.toggleSidebar');
+  });
+  toolbarEl.appendChild(sidebarToggleBtn);
 }
 
 function applyGistVisibility(): void {
@@ -489,6 +499,12 @@ async function runAction(id: ActionId): Promise<void> {
     case 'view.toggleWordWrap':
       toggleWordWrap();
       return;
+    case 'view.toggleSidebar': {
+      const next = document.body.dataset.sidebar !== 'on';
+      applySidebarVisible(next);
+      localStorage.setItem(SIDEBAR_VISIBLE_KEY, next ? '1' : '0');
+      return;
+    }
     case 'navigate.commandOverlay':
       commandOverlay.open();
       return;
