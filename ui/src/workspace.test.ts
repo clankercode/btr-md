@@ -77,6 +77,30 @@ test("select and setActiveFile are independent highlights", () => {
   assert.equal(model.activeFile(), "/r/b.md");
 });
 
+test("revealFile sets activeFile for a file under the root", async () => {
+  const model = createWorkspaceModel({ listDir: async (d) => fakeListing(d, ["a/", "x.md"]) });
+  await model.setRoot("/r");
+  await model.revealFile("/r/x.md");
+  assert.equal(model.activeFile(), "/r/x.md");
+});
+
+test("revealFile clears a stale activeFile when the file is outside the root", async () => {
+  const model = createWorkspaceModel({ listDir: async (d) => fakeListing(d, ["x.md"]) });
+  await model.setRoot("/r");
+  await model.revealFile("/r/x.md");
+  assert.equal(model.activeFile(), "/r/x.md");
+  // Switching to a doc outside the workspace must not leave the old file active.
+  await model.revealFile("/other/y.md");
+  assert.equal(model.activeFile(), null);
+});
+
+test("revealFile with no root clears activeFile", async () => {
+  const model = createWorkspaceModel({ listDir: async (d) => fakeListing(d, []) });
+  model.setActiveFile("/r/old.md");
+  await model.revealFile("/r/new.md");
+  assert.equal(model.activeFile(), null);
+});
+
 test("onChange fires on mutations", async () => {
   let n = 0;
   const model = createWorkspaceModel({ listDir: async (d) => fakeListing(d, ["a/"]) });

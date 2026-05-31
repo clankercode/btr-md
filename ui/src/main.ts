@@ -192,6 +192,18 @@ async function setWorkspaceRoot(path: string): Promise<boolean> {
   }
 }
 
+// Keep the workspace's active-file highlight mirroring the active document.
+// Cold-start only: when no sticky root exists yet, default it to the file's
+// parent folder. Once a root exists it is sticky — opening files never moves
+// it; we just reveal/clear the active-file highlight against the current root.
+async function revealActiveFile(filePath: string): Promise<void> {
+  if (!workspace.root()) {
+    const parent = parentOf(filePath);
+    if (parent) await setWorkspaceRoot(parent);
+  }
+  await workspace.revealFile(filePath);
+}
+
 const browserDeps = {
   model: workspace,
   pickBaseDir: () => invoke<string | null>('pick_base_dir'),
@@ -362,6 +374,10 @@ if (toolbarEl instanceof HTMLElement) {
     onBaseDirChange: (dir) => {
       browserBaseDir = dir;
       saveSession();
+      // Single source of truth: the picker just granted+persisted this folder,
+      // so re-root the shared workspace model. The sidebar and folder tab both
+      // render from it and update immediately (no restart needed).
+      void setWorkspaceRoot(dir);
     },
     onGistChange: (e) => {
       gistEnabled = e;
@@ -1313,14 +1329,7 @@ store.onActivate((prev, next) => {
   switch (next.kind) {
     case 'doc':
       activateDocTab(next);
-      if (next.filePath) {
-        if (!workspace.root()) {
-          const parent = parentOf(next.filePath);
-          if (parent) void setWorkspaceRoot(parent);
-        } else {
-          void workspace.revealFile(next.filePath);
-        }
-      }
+      if (next.filePath) void revealActiveFile(next.filePath);
       break;
     case 'empty':
       chrome.setCounts(null);
@@ -1497,6 +1506,8 @@ async function saveCurrentDoc(forceSaveAs = false): Promise<void> {
       chrome.setFilename(basename(path));
       updateFileOps();
       saveSession();
+      // Keep the workspace active-file highlight in sync with the new path.
+      void revealActiveFile(path);
     }
     store.updateDoc(tab.id, { fileState: state, baseContent: contents });
     refreshChrome(state);
@@ -1770,7 +1781,11 @@ async function bootstrap(): Promise<void> {
     if (settings.autoreload_mode) autoreloadMode = settings.autoreload_mode;
     if (settings.browser_base_dir) {
       browserBaseDir = settings.browser_base_dir;
-      void setWorkspaceRoot(settings.browser_base_dir);
+      // Await so the sticky root is established BEFORE bootstrap opens the
+      // initial file/session. Otherwise the doc-activate handler would see a
+      // null root and re-root to the opened file's parent, silently moving the
+      // persisted workspace root.
+      await setWorkspaceRoot(settings.browser_base_dir);
     }
     gistEnabled = settings.gist_enabled === true;
     if (settings.diff_mode) diffMode = settings.diff_mode;

@@ -149,7 +149,15 @@ export function createWorkspaceModel(deps: WorkspaceDeps): WorkspaceModel {
     setActiveFile: (path) => { activeFile = path; emit(); },
 
     revealFile: async (path) => {
-      if (!root || !isUnder(root, path)) return;
+      // A file outside the current root can never be the workspace's active
+      // file; clear any stale highlight rather than leaving the previous one.
+      if (!root || !isUnder(root, path)) {
+        if (activeFile !== null) {
+          activeFile = null;
+          emit();
+        }
+        return;
+      }
       // Expand each ancestor between root and the file's directory.
       let cur = parentOf(path);
       const toOpen: string[] = [];
