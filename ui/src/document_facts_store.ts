@@ -29,6 +29,7 @@ export function createDocumentFactsStore() {
     },
     acceptDiagnostics(diagnostics: DocumentDiagnostics) {
       const current = byDoc.get(diagnostics.doc_id);
+      if (activeDocId !== null && diagnostics.doc_id !== activeDocId) return false;
       if (!current || current.version !== diagnostics.version) return false;
       byDoc.set(diagnostics.doc_id, { ...current, diagnostics });
       return true;
