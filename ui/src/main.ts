@@ -44,6 +44,14 @@ import {
 } from './keybindings.js';
 import { createCommandOverlay } from './command_overlay.js';
 import { createFindController } from './find_controller.js';
+import { openFrontmatterPanel } from './frontmatter_panel.js';
+import {
+  addEntryChange,
+  editValueChange,
+  hasOpeningFence,
+  insertBlockChange,
+  type FmChange,
+} from './frontmatter_edit.js';
 import { createShortcutEditor } from './shortcut_editor.js';
 import {
   attachPreviewLinkActivation,
@@ -55,6 +63,7 @@ import {
   type DocumentDiagnostics,
   type AssetGrant,
   type DocumentTrustContext,
+  type FrontmatterFact,
   type HeadingFact,
   type RenderResult,
 } from './document_contracts.js';
@@ -610,6 +619,11 @@ async function runAction(id: ActionId): Promise<void> {
     case 'document.mergeDiskChanges':
       await doMerge();
       return;
+    case 'document.editFrontmatter': {
+      const rect = document.querySelector('.pmd-status-frontmatter')?.getBoundingClientRect();
+      openFrontmatterInspector(rect?.left ?? 80, rect?.top ?? 80);
+      return;
+    }
     case 'navigate.fileBrowser':
       store.addBrowser();
       return;
@@ -719,6 +733,10 @@ function runDiagnosticsAction(id: ActionId): boolean {
 }
 
 async function runDiagnosticPrimaryAction(action: string): Promise<void> {
+  if (action === 'Edit frontmatter') {
+    await runAction('document.editFrontmatter');
+    return;
+  }
   const spec = defaultActionSpecs.find((item) => item.id === action);
   if (!spec || !isImplementedDiagnosticAction(action)) {
     chrome.setStatus(action);
@@ -728,6 +746,7 @@ async function runDiagnosticPrimaryAction(action: string): Promise<void> {
 }
 
 function isImplementedDiagnosticAction(action: string): boolean {
+  if (action === 'Edit frontmatter') return true;
   return defaultActionSpecs.some((item) => item.id === action);
 }
 
@@ -745,6 +764,7 @@ function applyDocumentDiagnostics(diagnostics: DocumentDiagnostics): void {
 function clearDocumentIntelligenceUi(): void {
   diagnosticsPanel.clear();
   trustPolicyPanel.clear();
+  chrome.setFrontmatterState({ present: false, malformed: false });
   renderInlineIssues(previewContent, []);
 }
 
@@ -896,6 +916,39 @@ function jumpEditorToBlock(blockId: string): void {
   });
 }
 
+function applyFrontmatterChange(change: FmChange | null): void {
+  if (!change || !editor) return;
+  const max = editor.view.state.doc.length;
+  if (change.from > max || change.to > max) return;
+  editor.view.dispatch({
+    changes: { from: change.from, to: change.to, insert: change.insert },
+  });
+}
+
+function activeFrontmatter(): FrontmatterFact | null {
+  const active = store.activeDoc();
+  if (!active) return null;
+  return factsStore.current(active.docId)?.facts?.frontmatter ?? null;
+}
+
+function openFrontmatterInspector(x: number, y: number): void {
+  if (!editor) return;
+  const doc = editor.getValue();
+  if (!hasOpeningFence(doc)) {
+    applyFrontmatterChange(insertBlockChange(doc, 'title', ''));
+  }
+  openFrontmatterPanel(x, y, activeFrontmatter(), {
+    onEditValue: (key, value) => {
+      if (!editor) return;
+      applyFrontmatterChange(editValueChange(editor.getValue(), key, value));
+    },
+    onAddEntry: (key, value) => {
+      if (!editor) return;
+      applyFrontmatterChange(addEntryChange(editor.getValue(), key, value));
+    },
+  });
+}
+
 function applyOutlineRender(result: RenderResult): boolean {
   if (!factsStore.accept({
     doc_id: result.doc_id,
@@ -907,6 +960,8 @@ function applyOutlineRender(result: RenderResult): boolean {
     return false;
   }
   outlinePanel.setHeadings(result.facts.headings);
+  const fm = result.facts.frontmatter;
+  chrome.setFrontmatterState({ present: fm !== null, malformed: fm?.syntax === 'malformed' });
   observePreviewHeadings(result.facts.headings);
   updateOutlineFromEditorCaret();
   applyDocumentDiagnostics(result.diagnostics);
@@ -1108,6 +1163,10 @@ chrome.onThemePickerClick(() => showThemePicker());
 chrome.onReloadClick(() => doReload());
 chrome.onSaveClick(() => saveCurrentDoc());
 chrome.onMergeClick(() => doMerge());
+chrome.onFrontmatterClick(() => {
+  const rect = document.querySelector('.pmd-status-frontmatter')?.getBoundingClientRect();
+  openFrontmatterInspector(rect?.left ?? 80, rect?.top ?? 80);
+});
 
 // Quick file ops (File menu). Operate on the active document's path.
 function activeFilePath(): string | null {
