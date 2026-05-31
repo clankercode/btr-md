@@ -557,10 +557,11 @@
   left: 0;
   right: 0;
   bottom: 0;
-  height: 24px;
+  min-height: 24px;
   display: flex;
   align-items: center;
-  padding: 0 var(--pmd-space-3);
+  padding: 2px var(--pmd-space-3);
+  box-sizing: border-box;
   font-size: var(--pmd-text-xs);
   color: var(--pmd-fg-muted);
   gap: var(--pmd-space-4);
