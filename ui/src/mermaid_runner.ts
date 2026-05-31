@@ -1,9 +1,14 @@
 import mermaid from 'mermaid';
-import { addMermaidExpandButton } from './mermaid_zoom.js';
+import { addMermaidExpandButton, makeCopySourceButton } from './mermaid_zoom.js';
 import { selfAndDescendants } from './dom_scope.js';
 
 let initialised = false;
 let currentThemeVars: Record<string, string> = {};
+let gotoLine: (line: number) => void = () => {};
+
+export function setMermaidGotoLine(fn: (line: number) => void): void {
+  gotoLine = fn;
+}
 
 // Rendered-SVG cache keyed by diagram source. The preview is rebuilt wholesale
 // on every render, which would otherwise re-run mermaid.render (tens of ms each)
@@ -117,7 +122,7 @@ export async function renderMermaidNode(target: HTMLElement, renderNonce?: strin
     addMermaidExpandButton(container);
   } catch (e) {
     container.classList.add("pmd-mermaid-error");
-    container.textContent = source;
+    renderMermaidError(container, source, e);
   }
 }
 
@@ -157,4 +162,30 @@ function copySourceRange(from: HTMLElement, to: HTMLElement) {
   if (from.dataset.srcEnd) {
     to.dataset.srcEnd = from.dataset.srcEnd;
   }
+}
+
+function renderMermaidError(container: HTMLElement, source: string, error: unknown): void {
+  container.replaceChildren();
+
+  const message = document.createElement("p");
+  message.className = "pmd-mermaid-error-message";
+  message.textContent = error instanceof Error ? error.message : String(error);
+  container.append(message);
+
+  const startRaw = container.dataset.srcStart;
+  if (startRaw) {
+    const link = document.createElement("button");
+    link.type = "button";
+    link.className = "pmd-mermaid-error-goto";
+    link.textContent = "Go to source";
+    link.addEventListener("click", () => gotoLine(Number(startRaw)));
+    container.append(link);
+  }
+
+  container.append(makeCopySourceButton(source));
+
+  const pre = document.createElement("pre");
+  pre.className = "pmd-mermaid-error-source";
+  pre.textContent = source;
+  container.append(pre);
 }

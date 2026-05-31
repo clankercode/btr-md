@@ -15,6 +15,9 @@ export interface ChromeInstance {
   setModified: (modified: boolean) => void;
   setStatus: (text: string) => void;
   setCounts: (counts: Counts | null) => void;
+  onCountsClick: (handler: () => void) => void;
+  onFrontmatterClick: (handler: () => void) => void;
+  setFrontmatterState: (state: { present: boolean; malformed: boolean }) => void;
   setRecentFiles: (files: string[]) => void;
   setFileOpsEnabled: (enabled: boolean) => void;
   focusMenu: () => void;
@@ -203,9 +206,18 @@ export function createChrome(parent: HTMLElement): ChromeInstance {
   statusText.className = 'pmd-status-item pmd-status-text';
   statusBar.appendChild(statusText);
 
-  const statusCounts = document.createElement('span');
+  const statusCounts = document.createElement('button');
+  statusCounts.type = 'button';
   statusCounts.className = 'pmd-status-item pmd-status-counts';
+  statusCounts.setAttribute('aria-label', 'Document statistics');
   statusBar.appendChild(statusCounts);
+
+  const statusFrontmatter = document.createElement('button');
+  statusFrontmatter.type = 'button';
+  statusFrontmatter.className = 'pmd-status-item pmd-status-frontmatter';
+  statusFrontmatter.setAttribute('aria-label', 'Frontmatter');
+  statusFrontmatter.textContent = '+ frontmatter';
+  statusBar.appendChild(statusFrontmatter);
 
   const statusModeText = document.createElement('span');
   statusModeText.className = 'pmd-status-item pmd-status-mode';
@@ -291,12 +303,22 @@ export function createChrome(parent: HTMLElement): ChromeInstance {
     mergeHandlers.forEach((h) => h());
   });
 
+  statusCounts.addEventListener('click', () => {
+    countsClickHandlers.forEach((h) => h());
+  });
+
+  statusFrontmatter.addEventListener('click', () => {
+    frontmatterClickHandlers.forEach((h) => h());
+  });
+
   setMode(currentMode);
 
   let themePickerHandlers: (() => void)[] = [];
   let reloadHandlers: (() => void)[] = [];
   let saveHandlers: (() => void)[] = [];
   let mergeHandlers: (() => void)[] = [];
+  let countsClickHandlers: (() => void)[] = [];
+  let frontmatterClickHandlers: (() => void)[] = [];
 
   return {
     el: container,
@@ -320,6 +342,17 @@ export function createChrome(parent: HTMLElement): ChromeInstance {
       statusCounts.textContent =
         `${n(counts.words)} words · ${n(counts.bytes)} B · ` +
         `${n(counts.sentences)} sent · ${n(counts.paragraphs)} ¶ · ${n(counts.sections)} §`;
+    },
+    onCountsClick: (handler: () => void) => {
+      countsClickHandlers.push(handler);
+    },
+    onFrontmatterClick: (handler: () => void) => {
+      frontmatterClickHandlers.push(handler);
+    },
+    setFrontmatterState: (state: { present: boolean; malformed: boolean }) => {
+      statusFrontmatter.textContent = state.present ? 'frontmatter' : '+ frontmatter';
+      statusFrontmatter.classList.toggle('pmd-status-frontmatter-present', state.present);
+      statusFrontmatter.classList.toggle('pmd-status-frontmatter-malformed', state.malformed);
     },
     setRecentFiles: (files: string[]) => {
       recentsList.innerHTML = '';

@@ -45,6 +45,12 @@
     "src/actions.ts",
     "src/keybindings.ts",
     "src/command_overlay.ts",
-    "src/shortcut_editor.ts"
+    "src/shortcut_editor.ts",
+    "src/context_menu.ts",
+    "src/find_query.ts",
+    "src/find_preview.ts",
+    "src/frontmatter_edit.ts",
+    "src/frontmatter_panel.ts",
+    "src/stats_popover.ts"
   ]
 }

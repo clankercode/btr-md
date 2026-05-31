@@ -8,18 +8,13 @@ use crate::doc::state::DocId;
 use crate::preview::git_root::{discover_document_trust_context, DocumentTrustContext};
 use crate::preview::grants::{grant_remembered_root, GrantStore};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum TrustRootState {
+    #[default]
     Unknown,
     Trusted,
     Declined,
-}
-
-impl Default for TrustRootState {
-    fn default() -> Self {
-        Self::Unknown
-    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

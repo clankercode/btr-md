@@ -5,7 +5,7 @@ import { mountEditor, type EditorHandle } from './editor.js';
 import { createChrome, type Mode } from './chrome.js';
 import { attachScrollSync } from './scroll_sync.js';
 import { markAllNodes, rerenderForThemeChange } from './theme_apply.js';
-import { renderMermaidNodes, setMermaidTheme } from './mermaid_runner.js';
+import { renderMermaidNodes, setMermaidGotoLine, setMermaidTheme } from './mermaid_runner.js';
 import { renderMathNodes } from './katex_runner.js';
 import { decorateCodeBlocks } from './code_blocks.js';
 import { openThemePicker, isPickerOpen, closeThemePicker, type ThemeInfo } from './picker.js';
@@ -43,6 +43,16 @@ import {
   type ShortcutOverrides,
 } from './keybindings.js';
 import { createCommandOverlay } from './command_overlay.js';
+import { createFindController } from './find_controller.js';
+import { openFrontmatterPanel } from './frontmatter_panel.js';
+import { openStatsPopover } from './stats_popover.js';
+import {
+  addEntryChange,
+  editValueChange,
+  hasOpeningFence,
+  insertBlockChange,
+  type FmChange,
+} from './frontmatter_edit.js';
 import { createShortcutEditor } from './shortcut_editor.js';
 import {
   attachPreviewLinkActivation,
@@ -54,8 +64,10 @@ import {
   type DocumentDiagnostics,
   type AssetGrant,
   type DocumentTrustContext,
+  type FrontmatterFact,
   type HeadingFact,
   type RenderResult,
+  type StructureCounts,
 } from './document_contracts.js';
 import { createDocumentFactsStore } from './document_facts_store.js';
 import { createOutlinePanel } from './outline_panel.js';
@@ -308,6 +320,13 @@ splitResizer.addEventListener('keydown', (e) => {
 // ---------------------------------------------------------------------------
 
 const chrome = createChrome(document.body);
+
+const findController = createFindController({
+  getEditor: () => editor,
+  previewContent,
+  getMode: () => currentMode,
+});
+mainRegion.appendChild(findController.element);
 
 const store = createTabStore();
 const tabBar: TabBarInstance = createTabBar(store, {
@@ -608,6 +627,11 @@ async function runAction(id: ActionId): Promise<void> {
     case 'document.mergeDiskChanges':
       await doMerge();
       return;
+    case 'document.editFrontmatter': {
+      const rect = document.querySelector('.pmd-status-frontmatter')?.getBoundingClientRect();
+      openFrontmatterInspector(rect?.left ?? 80, rect?.top ?? 80);
+      return;
+    }
     case 'navigate.fileBrowser':
       store.addBrowser();
       return;
@@ -616,9 +640,13 @@ async function runAction(id: ActionId): Promise<void> {
       await openGist();
       return;
     case 'edit.find':
+      findController.open();
+      return;
     case 'edit.findNext':
+      findController.next();
+      return;
     case 'edit.findPrevious':
-      editor?.focus();
+      findController.previous();
       return;
     case 'view.setDiffMode':
     case 'settings.pickBaseFolder':
@@ -713,6 +741,10 @@ function runDiagnosticsAction(id: ActionId): boolean {
 }
 
 async function runDiagnosticPrimaryAction(action: string): Promise<void> {
+  if (action === 'Edit frontmatter') {
+    await runAction('document.editFrontmatter');
+    return;
+  }
   const spec = defaultActionSpecs.find((item) => item.id === action);
   if (!spec || !isImplementedDiagnosticAction(action)) {
     chrome.setStatus(action);
@@ -722,6 +754,7 @@ async function runDiagnosticPrimaryAction(action: string): Promise<void> {
 }
 
 function isImplementedDiagnosticAction(action: string): boolean {
+  if (action === 'Edit frontmatter') return true;
   return defaultActionSpecs.some((item) => item.id === action);
 }
 
@@ -739,6 +772,7 @@ function applyDocumentDiagnostics(diagnostics: DocumentDiagnostics): void {
 function clearDocumentIntelligenceUi(): void {
   diagnosticsPanel.clear();
   trustPolicyPanel.clear();
+  chrome.setFrontmatterState({ present: false, malformed: false });
   renderInlineIssues(previewContent, []);
 }
 
@@ -890,6 +924,67 @@ function jumpEditorToBlock(blockId: string): void {
   });
 }
 
+function applyFrontmatterChange(change: FmChange | null): void {
+  if (!change || !editor) return;
+  const max = editor.view.state.doc.length;
+  if (change.from > max || change.to > max) return;
+  editor.view.dispatch({
+    changes: { from: change.from, to: change.to, insert: change.insert },
+  });
+}
+
+function activeFrontmatter(): FrontmatterFact | null {
+  const active = store.activeDoc();
+  if (!active) return null;
+  return factsStore.current(active.docId)?.facts?.frontmatter ?? null;
+}
+
+function starterFrontmatterFact(): FrontmatterFact {
+  return {
+    format: 'yaml',
+    line_start: 1,
+    line_end: 2,
+    raw: '---\ntitle: \n---\n',
+    syntax: 'valid',
+    metadata: {
+      title: '',
+      description: null,
+      slug: null,
+      sidebar_label: null,
+      sidebar_position: null,
+      tags: [],
+      draft: null,
+      unknown: {},
+    },
+  };
+}
+
+function activeStructureCounts(): StructureCounts | null {
+  const active = store.activeDoc();
+  if (!active) return null;
+  return factsStore.current(active.docId)?.facts?.counts ?? null;
+}
+
+function openFrontmatterInspector(x: number, y: number): void {
+  if (!editor) return;
+  const doc = editor.getValue();
+  let insertedStarter = false;
+  if (!hasOpeningFence(doc)) {
+    applyFrontmatterChange(insertBlockChange(doc, 'title', ''));
+    insertedStarter = true;
+  }
+  openFrontmatterPanel(x, y, activeFrontmatter() ?? (insertedStarter ? starterFrontmatterFact() : null), {
+    onEditValue: (key, value) => {
+      if (!editor) return;
+      applyFrontmatterChange(editValueChange(editor.getValue(), key, value));
+    },
+    onAddEntry: (key, value) => {
+      if (!editor) return;
+      applyFrontmatterChange(addEntryChange(editor.getValue(), key, value));
+    },
+  });
+}
+
 function applyOutlineRender(result: RenderResult): boolean {
   if (!factsStore.accept({
     doc_id: result.doc_id,
@@ -901,6 +996,8 @@ function applyOutlineRender(result: RenderResult): boolean {
     return false;
   }
   outlinePanel.setHeadings(result.facts.headings);
+  const fm = result.facts.frontmatter;
+  chrome.setFrontmatterState({ present: fm !== null, malformed: fm?.syntax === 'malformed' });
   observePreviewHeadings(result.facts.headings);
   updateOutlineFromEditorCaret();
   applyDocumentDiagnostics(result.diagnostics);
@@ -1102,6 +1199,14 @@ chrome.onThemePickerClick(() => showThemePicker());
 chrome.onReloadClick(() => doReload());
 chrome.onSaveClick(() => saveCurrentDoc());
 chrome.onMergeClick(() => doMerge());
+chrome.onFrontmatterClick(() => {
+  const rect = document.querySelector('.pmd-status-frontmatter')?.getBoundingClientRect();
+  openFrontmatterInspector(rect?.left ?? 80, rect?.top ?? 80);
+});
+chrome.onCountsClick(() => {
+  const rect = document.querySelector('.pmd-status-counts')?.getBoundingClientRect();
+  openStatsPopover(rect?.left ?? 80, (rect?.top ?? 80) - 8, activeStructureCounts());
+});
 
 // Quick file ops (File menu). Operate on the active document's path.
 function activeFilePath(): string | null {
@@ -1327,6 +1432,10 @@ async function processRenderQueue(): Promise<void> {
         decorateCodeBlocks(previewContent);
         decorateTables(previewContent, () => editor?.getValue() ?? '');
       }
+      // Single post-render hook covering both reconcile and full-replace
+      // branches: refresh the preview-find overlay against the new DOM. Wrapped
+      // implicitly — refreshPreview never throws on stale ranges.
+      findController.refreshPreview();
       applyOutlineRender(result);
       void refreshActiveAssetGrants();
     }
@@ -1346,6 +1455,7 @@ async function processRenderQueue(): Promise<void> {
 async function ensureEditor(): Promise<void> {
   if (editor) return;
   editor = await mountEditor(editorPane, () => onActiveEdit());
+  setMermaidGotoLine((line) => editor?.gotoEditorLine(line));
   attachScrollSync(editor.view, previewPane);
   installOutlineCaretListeners();
 }

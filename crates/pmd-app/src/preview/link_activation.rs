@@ -315,6 +315,7 @@ pub fn test_state() -> LinkActivationStore {
 }
 
 #[tauri::command]
+#[allow(clippy::too_many_arguments)]
 pub fn prepare_link_activation(
     app: tauri::AppHandle,
     window: tauri::Window,

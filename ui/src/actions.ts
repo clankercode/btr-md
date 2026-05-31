@@ -42,6 +42,7 @@ export type ActionId =
   | "file.clearRecent"
   | "document.reloadFromDisk"
   | "document.mergeDiskChanges"
+  | "document.editFrontmatter"
   | "view.setDiffMode"
   | "navigate.fileBrowser"
   | "share.openGist"
@@ -106,6 +107,7 @@ export const NO_DEFAULT_ACTION_IDS: ActionId[] = [
   "file.clearRecent",
   "document.reloadFromDisk",
   "document.mergeDiskChanges",
+  "document.editFrontmatter",
   "view.setDiffMode",
   "navigate.fileBrowser",
   "share.openGist",
@@ -170,6 +172,7 @@ export const defaultActionSpecs: ActionSpec[] = [
   spec("file.clearRecent", "Clear recent files", "File", "Clear the recent file list"),
   spec("document.reloadFromDisk", "Reload from disk", "Document", "Reload the active document"),
   spec("document.mergeDiskChanges", "Merge disk changes", "Document", "Merge disk changes into the active document"),
+  spec("document.editFrontmatter", "Edit frontmatter", "Document", "Inspect and edit document frontmatter", []),
   spec("view.setDiffMode", "Set diff mode", "View", "Select the diff mode"),
   spec("navigate.fileBrowser", "File browser", "Navigate", "Open the file browser tab"),
   spec("share.openGist", "Open Gist", "Share", "Open the document Gist"),

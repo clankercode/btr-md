@@ -9,7 +9,23 @@ const SCALE_MIN = 0.05;
 const SCALE_MAX = 40;
 const FIT_MARGIN = 0.9;
 
+export function makeCopySourceButton(source: string): HTMLButtonElement {
+  const copyBtn = document.createElement("button");
+  copyBtn.type = "button";
+  copyBtn.className = "pmd-mermaid-copy";
+  copyBtn.textContent = "Copy source";
+  copyBtn.title = "Copy this diagram's source to the clipboard";
+  copyBtn.addEventListener("click", () => {
+    void navigator.clipboard.writeText(source);
+  });
+  return copyBtn;
+}
+
 export function addMermaidExpandButton(container: HTMLElement): void {
+  if (!container.querySelector(":scope > button.pmd-mermaid-copy")) {
+    container.appendChild(makeCopySourceButton(container.dataset.mermaidSource ?? ""));
+  }
+
   // Idempotent: a single expand button per container.
   if (container.querySelector(":scope > button.pmd-mermaid-expand")) return;
 
