@@ -2,7 +2,8 @@
 //! keyed by block source text, falling back to whole-document render_string for
 //! cross-block constructs. Output is byte-identical to render_string.
 
-use std::sync::OnceLock;
+use std::collections::{HashMap, VecDeque};
+use std::sync::{Arc, Mutex, OnceLock};
 
 use pulldown_cmark::{Event, Parser, Tag};
 
@@ -84,6 +85,70 @@ fn has_reference_definition(md: &str) -> bool {
             false
         }
     })
+}
+
+pub(crate) struct CachedBlock {
+    /// Sanitized HTML; `data-src-*` are 1-based relative to the block; trusted
+    /// nodes carry the placeholder nonce.
+    pub html: String,
+    pub source_map: Vec<(u32, u32)>,
+}
+
+const BLOCK_CACHE_CAP: usize = 4096;
+
+struct BlockCache {
+    map: HashMap<[u8; 32], Arc<CachedBlock>>,
+    order: VecDeque<[u8; 32]>,
+    hits: u64,
+}
+
+impl BlockCache {
+    fn new() -> Self {
+        Self { map: HashMap::new(), order: VecDeque::new(), hits: 0 }
+    }
+    fn get(&mut self, key: &[u8; 32]) -> Option<Arc<CachedBlock>> {
+        let v = self.map.get(key).cloned();
+        if v.is_some() {
+            self.hits += 1;
+        }
+        v
+    }
+    fn put(&mut self, key: [u8; 32], block: Arc<CachedBlock>) {
+        if self.map.insert(key, block).is_none() {
+            self.order.push_back(key);
+            while self.order.len() > BLOCK_CACHE_CAP {
+                if let Some(old) = self.order.pop_front() {
+                    self.map.remove(&old);
+                }
+            }
+        }
+    }
+}
+
+fn cache() -> &'static Mutex<BlockCache> {
+    static C: OnceLock<Mutex<BlockCache>> = OnceLock::new();
+    C.get_or_init(|| Mutex::new(BlockCache::new()))
+}
+
+/// Render+sanitize one block's source with the placeholder nonce, memoized by
+/// blake3(source). Returns shared cached HTML (relative line numbers).
+#[allow(dead_code)]
+pub(crate) fn render_block_cached(src: &str) -> Arc<CachedBlock> {
+    let key: [u8; 32] = *blake3::hash(src.as_bytes()).as_bytes();
+    if let Some(hit) = cache().lock().unwrap().get(&key) {
+        return hit;
+    }
+    let frag = crate::emit::render_fragment(src, placeholder_nonce());
+    let html = crate::sanitize::clean_with_render_nonce(&frag.html, placeholder_nonce());
+    let block = Arc::new(CachedBlock { html, source_map: frag.source_map });
+    cache().lock().unwrap().put(key, block.clone());
+    block
+}
+
+pub fn render_block_for_test(src: &str) -> (String, u64) {
+    let b = render_block_cached(src);
+    let hits = cache().lock().unwrap().hits;
+    (b.html.clone(), hits)
 }
 
 // Test-only view (stable shape for the integration test).
