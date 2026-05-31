@@ -58,9 +58,11 @@ frontend `localStorage` session store.
   `base`/`mem`/`disk` are `Digest`s. Untitled edits stay `Untitled`
   (`:189-199`); the UI renders untitled as *not modified*
   (`ui/src/doc_state.ts:61-65`).
-- **Admission/security**: `request_open_file` only admits paths already in scope
-  or present in recents; `cmd::file` opens with `O_NOFOLLOW` on Unix. The
-  session store must not become a path-admission bypass (see Security below).
+- **Admission/security**: `request_open_file` admits a path via **three gates**
+  (`cmd/file.rs:195-200`): already-scoped, present in recents, **or** under a
+  folder the user admitted via the file-browser picker; `cmd::file` opens with
+  `O_NOFOLLOW` on Unix. The session store must not become a path-admission
+  bypass (see Security below).
 
 ## Feature 1 — Drag-to-open visual indicator
 
@@ -124,10 +126,12 @@ A drag state machine on `document` events:
 Persists the full session as **JSON** to `session.json` under the btr-md XDG
 **config dir** (`BaseDirectories::with_prefix("btr-md").place_config_file(
 "session.json")`, with the same graceful fallback `recents.rs`/`settings.rs` use
-if XDG resolution fails — return an empty session, never panic). Uses `fs2`
-advisory locking and atomic write (write `session.json.tmp`, then `rename`),
-mirroring the `recents.rs` IO pattern (recents serialises TOML; session uses
-`serde_json`).
+if XDG resolution fails — return an empty session, never panic). Reuses the
+`recents.rs`/`settings.rs` config-dir + `fs2` advisory-locking pattern, but
+serialises **JSON** via `serde_json` and **adds atomic temp+rename** (write
+`session.json.tmp`, then `rename`) rather than the truncate-in-place rewrite
+those files use (`recents.rs:69`, `settings.rs:84`) — the session payload is
+larger, so atomic replace avoids a torn file on a crash mid-write.
 
 ### On-disk schema (serde)
 
@@ -176,26 +180,38 @@ Notes:
 The registry **does not hold live buffer text**, and the frontend **does not
 hold the merge baseline**. So `save_session` is split by ownership:
 
-- **Frontend supplies** (per open doc): the backend `doc_id`, `mode`, and — for
-  untitled/dirty docs — the **live buffer** snapshot (`content`); plus tab order,
-  active tab, browser flag. See Feature 3 for how buffers are snapshotted.
-- **Backend fills in** (in `save_session`, by `doc_id` lookup in the registry):
-  `path` and, for dirty saved docs, `baseline_content` (= `DocEntry.base_content`).
-  The backend derives dirty-ness from the registry `FileState`, so the frontend
-  cannot desync it.
+- **Frontend supplies** (per open doc): the backend `doc_id`, `mode`, and the
+  **live buffer** snapshot (`content`) for **every** doc (not only the ones it
+  thinks are dirty); plus tab order, active tab, browser flag. See Feature 3 for
+  how buffers are snapshotted.
+- **Backend decides dirtiness by content comparison** (in `save_session`, by
+  `doc_id` lookup): it reads `path`, `FileState`, and `base_content` from the
+  registry, then compares the **supplied live `content`** against `base_content`:
+  - untitled (no path) → always persist `content` (no `baseline_content`).
+  - saved, `content == base_content` → **clean**: persist `path` + `mode` only,
+    omit `unsaved` (reopened from disk on restore).
+  - saved, `content != base_content` → **dirty**: persist `content` +
+    `baseline_content = base_content`.
+
+  Comparing supplied content to `base_content` — rather than reading the registry
+  `FileState` — is deliberate: `FileState` becomes `Dirty` only after the
+  **debounced** `doc_edited` IPC lands (`main.ts:618-632`), so an edit made inside
+  that window would otherwise be serialised as clean. Content comparison has no
+  such race (`base_content` only changes on load/save, which are not debounced).
 
 `save_session` payload (Tauri command input), one entry per open doc:
-`{ doc_id: u64, mode: String, content: Option<String> }` + `active`,
-`browser_tab`. The backend assembles `Session` and writes it.
+`{ doc_id: u64, mode: String, content: String }` + `active`, `browser_tab`. The
+backend assembles `Session` and writes it.
 
 ### Tauri commands
 
 - `save_session(docs: Vec<SaveDocInput>, active: ActiveTab, browser_tab: bool)
-  -> Result<(), String>` — for each input, looks up the registry entry by
-  `doc_id` to get `path` + `FileState` + `base_content`; assembles `SessionDoc`
-  (omitting `unsaved` for clean saved docs); writes atomically under lock.
-  Unknown `doc_id` entries are skipped (tab closed mid-flush). Registered in
-  `main.rs`.
+  -> Result<(), String>` where `SaveDocInput = { doc_id, mode, content }` — for
+  each input, looks up the registry entry by `doc_id` for `path` + `base_content`,
+  then decides clean/dirty by comparing the supplied `content` to `base_content`
+  (see "Building the payload"); assembles `SessionDoc` (omitting `unsaved` for
+  clean saved docs); writes atomically under lock. Unknown `doc_id` entries are
+  skipped (tab closed mid-flush). Registered in `main.rs`.
 - `load_session() -> Session` — reads + parses; missing/corrupt/unparseable →
   `Session::default()` (empty), warn-logs, never panics, does not delete the file.
 - `restore_dirty_doc(app, state, path: PathBuf, content: String,
@@ -262,9 +278,10 @@ helper returns the live text:
 - active doc → `editor.getValue()`;
 - inactive doc → `tab.editorState.doc.toString()`.
 
-`unsaved` content is sent only for docs the frontend knows carry edits — untitled
-tabs, and saved tabs whose `fileState.kind` is `dirty` or `disk_changed_dirty`
-(`ui/src/doc_state.ts`). Clean saved docs send `content: null`.
+The live `content` is sent for **every** open doc (browser tab excluded). The
+backend — not the frontend — decides clean vs dirty by comparing `content` to the
+registry `base_content` (see Feature 2), which avoids the debounced-`doc_edited`
+race. Document buffers are small, so sending clean content too is acceptable.
 
 ### Save
 
@@ -275,11 +292,10 @@ handler** (`main.ts:618-625`), which currently does *not* trigger a session save
 — a `saveSession()` call is added there so dirty buffers are captured as they
 change.
 
-Payload per open doc: `{ doc_id, mode, content }` where `content =
-tabBuffer(tab)` for untitled/dirty docs else `null`; plus `active`
-(`{Doc:index}` or `Browser`) and `browser_tab`. Persist via
-`invoke('save_session', { docs, active, browserTab })`. The backend fills `path`
-and `baseline_content` (see Feature 2).
+Payload per open doc: `{ doc_id, mode, content: tabBuffer(tab) }` (content for
+every doc); plus `active` (`{Doc:index}` or `Browser`) and `browser_tab`. Persist
+via `invoke('save_session', { docs, active, browserTab })`. The backend fills
+`path`, decides dirtiness, and stores `baseline_content` (see Feature 2).
 
 A **flush on window close** is added so edits inside the debounce window are not
 lost:
@@ -419,9 +435,10 @@ allows). Per repo norms, builds/tests limited to 2 threads.
   untitled/dirty docs. No `draft_id` (untitled restored positionally).
 - **Ownership split**: the registry holds the merge baseline but not live text;
   the frontend holds live text but not the baseline. So `save_session` takes
-  `{doc_id, mode, content}` from the frontend and the backend enriches each entry
-  with `path` + `baseline_content` by `doc_id` lookup, deriving dirtiness from the
-  registry `FileState` (frontend can't desync it).
+  `{doc_id, mode, content}` (content for every doc) from the frontend; the backend
+  looks up `path` + `base_content` by `doc_id` and decides clean/dirty by
+  **comparing the supplied content to `base_content`** (not by reading the
+  debounced `FileState`, which would race the edit pipeline).
 - **Authoritative dirty restore**: a new `restore_dirty_doc` command rebuilds a
   saved-dirty doc in the registry with the correct `base_content` text and the
   right `FileState` (`Dirty` if disk == baseline, else `DiskChangedDirty`), via a
