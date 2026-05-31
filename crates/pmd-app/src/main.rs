@@ -68,6 +68,9 @@ fn main() {
             cmd::file::get_initial_path,
             cmd::file::get_open_dialog_on_start,
             cmd::window::set_window_title,
+            cmd::session::save_session,
+            cmd::session::load_session,
+            cmd::session::restore_dirty_doc,
         ])
         .setup(move |app| {
             // The watcher + registry entry for the initial file are created by

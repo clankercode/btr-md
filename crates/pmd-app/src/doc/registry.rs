@@ -88,6 +88,28 @@ impl DocRegistry {
         (id, state)
     }
 
+    /// Register a document being restored from a persisted session with an
+    /// **explicit** state and merge-ancestor text. Unlike [`register`] (which
+    /// only ever yields `Clean`/`Untitled`), this admits a doc already in a
+    /// `Dirty` / `DiskChangedDirty` state so a saved-dirty session entry can be
+    /// reconstructed authoritatively — `base_content` is the ancestor text the
+    /// 3-way merge needs, not a hash. The only restore-specific registry API.
+    pub fn register_restored(
+        &self,
+        path: PathBuf,
+        base_content: String,
+        state: FileState,
+    ) -> DocId {
+        let id = self.mint_id();
+        let entry = DocEntry {
+            state,
+            base_content,
+            path: Some(path),
+        };
+        self.lock().insert(id, entry);
+        id
+    }
+
     /// Mutate one document's state via `f`, returning the new state (cloned).
     /// `None` if the document is not registered.
     fn transition<F>(&self, doc: DocId, f: F) -> Option<FileState>

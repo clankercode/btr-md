@@ -1461,3 +1461,52 @@ body[data-state="welcome"] #split-resizer {
   max-height: min(70vh, 540px);
   overflow-y: auto;
 }
+
+/* ---------------------------------------------------------------------------
+   Drag-to-open overlay (drag_overlay.ts).
+   A single fixed full-window element shown while a drag is over the window.
+   Content uses pointer-events: none so it never eats drag/drop events.
+   --------------------------------------------------------------------------- */
+.pmd-drag-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(2px);
+  pointer-events: none;
+}
+
+.pmd-drag-overlay--visible {
+  display: flex;
+}
+
+.pmd-drag-overlay--reject {
+  background: color-mix(in srgb, var(--pmd-error) 28%, rgba(0, 0, 0, 0.55));
+}
+
+.pmd-drag-zone {
+  pointer-events: none;
+  padding: var(--pmd-space-8) var(--pmd-space-12);
+  border: 2px dashed var(--pmd-accent);
+  border-radius: var(--pmd-radius-lg, 12px);
+  background: var(--pmd-bg-elevated);
+  box-shadow: var(--pmd-shadow-lg, 0 10px 30px rgba(0, 0, 0, 0.35));
+}
+
+.pmd-drag-overlay--reject .pmd-drag-zone {
+  border-color: var(--pmd-error);
+}
+
+.pmd-drag-label {
+  font-size: var(--pmd-text-xl);
+  font-weight: 600;
+  color: var(--pmd-fg);
+  text-align: center;
+}
+
+.pmd-drag-overlay--reject .pmd-drag-label {
+  color: var(--pmd-error);
+}

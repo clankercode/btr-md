@@ -1,5 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
+import { getCurrentWindow } from '@tauri-apps/api/window';
 import { mountEditor, type EditorHandle } from './editor.js';
 import { createChrome, type Mode } from './chrome.js';
 import { createHotkeyHandler, createOverlay } from './hotkeys.js';
@@ -19,7 +20,7 @@ import {
   type AutoreloadMode,
   type DiffMode,
 } from './doc_state.js';
-import { createTabStore, type Tab, type DocTab } from './tabs.js';
+import { createTabStore, type DocTab } from './tabs.js';
 import { createTabBar, type TabBarInstance } from './tabbar.js';
 import { createFileBrowser, type FileBrowserInstance } from './file_browser.js';
 import { createSettingsMenu, type SettingsSnapshot, type HandlerStatus } from './settings_menu.js';
@@ -28,6 +29,13 @@ import { createInsertMenu, type AlertType, type InsertMenuInstance } from './ins
 import { planFootnoteInsertion } from './footnotes.js';
 import { insertAtCursor, dispatchInsert } from './editor_insert.js';
 import { decorateTables } from './table_copy.js';
+import { installDragOverlay } from './drag_overlay.js';
+import {
+  buildSavePayload,
+  classifyRestore,
+  type TabSnapshot,
+  type LoadedSession,
+} from './session.js';
 
 interface RenderResult {
   html: string;
@@ -277,14 +285,6 @@ let gistEnabled = false;
 let diffMode: DiffMode = 'none';
 let gistBtn: HTMLButtonElement | null = null;
 
-const MARKDOWN_EXTENSIONS = ['md', 'markdown', 'mdown', 'mkd'];
-
-function isMarkdownFileName(name: string): boolean {
-  const dot = name.lastIndexOf('.');
-  if (dot < 0) return false;
-  return MARKDOWN_EXTENSIONS.includes(name.slice(dot + 1).toLowerCase());
-}
-
 function basename(p: string): string {
   return p.split('/').pop() || p;
 }
@@ -298,43 +298,34 @@ function docTabByDocId(docId: number): DocTab | undefined {
   return store.list().find((t): t is DocTab => t.kind === 'doc' && t.docId === docId);
 }
 
+/** Live buffer text for a doc tab: the mounted editor for the active tab, or
+ *  the tab's stashed CodeMirror state for an inactive tab. */
+function tabBuffer(tab: DocTab): string {
+  if (editor && store.activeId() === tab.id) return editor.getValue();
+  return tab.editorState ? tab.editorState.doc.toString() : tab.baseContent;
+}
+
 // ---------------------------------------------------------------------------
 // Drag & drop.
 // ---------------------------------------------------------------------------
 
-document.body.addEventListener('dragover', (e) => {
-  e.preventDefault();
-  e.stopPropagation();
-});
-
-document.body.addEventListener('drop', async (e) => {
-  e.preventDefault();
-  e.stopPropagation();
-  const files = e.dataTransfer?.files;
-  if (!files || files.length === 0) return;
-  const file = files[0];
-  if (!isMarkdownFileName(file.name)) {
-    showError(`Not a markdown file: ${file.name}`);
-    return;
-  }
-  const path = (file as any).path;
-  if (path) {
-    openFile(path);
-  } else {
-    const contents = await file.text();
-    try {
-      const reg = await invoke<{ doc_id: number; state: FileState }>('register_doc', {
-        path: null,
-        contents,
-      });
-      await addDocTab(
-        { doc_id: reg.doc_id, path: '', contents, state: reg.state },
-        { background: false, title: file.name }
-      );
-    } catch (err) {
-      showError(`Open failed: ${String(err)}`);
-    }
-  }
+installDragOverlay({
+  onOpenFiles: (paths) => {
+    paths.forEach((path, i) => {
+      void openFile(path, { background: i > 0 });
+    });
+  },
+  onOpenBlob: async (name, contents) => {
+    const reg = await invoke<{ doc_id: number; state: FileState }>('register_doc', {
+      path: null,
+      contents,
+    });
+    await addDocTab(
+      { doc_id: reg.doc_id, path: '', contents, state: reg.state },
+      { background: false, title: name }
+    );
+  },
+  showError,
 });
 
 // ---------------------------------------------------------------------------
@@ -622,6 +613,8 @@ function onActiveEdit(): void {
   sendDocEdited(tab.docId, editor.getValue());
   scheduleIdleAutosave();
   scheduleCounts();
+  // Capture dirty buffers as they change (debounced) so unsaved edits persist.
+  saveSession();
 }
 
 const scheduleCounts = debounce(() => {
@@ -790,7 +783,7 @@ function renderBrowserBody(): void {
 
 async function addDocTab(
   doc: OpenedDoc,
-  opts: { background: boolean; title?: string }
+  opts: { background: boolean; title?: string; baseContent?: string }
 ): Promise<DocTab> {
   await ensureEditor();
   const editorState = editor!.createState(doc.contents);
@@ -802,7 +795,9 @@ async function addDocTab(
       title: opts.title ?? (filePath ? basename(filePath) : 'Untitled'),
       mode: currentMode,
       fileState: doc.state,
-      baseContent: doc.contents,
+      // Diff-view baseline: the merge ancestor. Defaults to the loaded contents
+      // (clean opens), but a restored dirty doc passes the real baseline.
+      baseContent: opts.baseContent ?? doc.contents,
       editorState,
     },
     { background: opts.background }
@@ -1025,73 +1020,119 @@ listen<string>('mode-change', (event) => {
 // Session persistence (open doc paths + per-tab mode + browser tab).
 // ---------------------------------------------------------------------------
 
-const SESSION_KEY = 'pmd:session';
+// The backend (state/session.rs) is the source of truth: `save_session` takes
+// the live buffer of every open doc and decides clean/dirty by comparing to its
+// stored base_content; `load_session` returns the full Session to restore.
 
-interface SessionDoc {
-  path: string;
-  mode: Mode;
-}
-interface SessionData {
-  docs: SessionDoc[];
-  browser: boolean;
-  activePath: string | null;
-  activeKind: Tab['kind'] | null;
+const STALE_LOCALSTORAGE_KEY = 'pmd:session';
+
+/** Snapshot the open tabs into the `save_session` payload + the active index. */
+function buildSessionPayloadFromStore() {
+  const tabs = store.list();
+  const snapshots: TabSnapshot[] = tabs.map((tab) =>
+    tab.kind === 'doc'
+      ? { kind: 'doc', docId: tab.docId, mode: tab.mode, buffer: tabBuffer(tab) }
+      : { kind: tab.kind }
+  );
+  const activeId = store.activeId();
+  const activeIndex = activeId === null ? -1 : tabs.findIndex((t) => t.id === activeId);
+  return buildSavePayload(snapshots, activeIndex);
 }
 
-const saveSession = debounce(() => {
-  const docs: SessionDoc[] = [];
-  let browser = false;
-  for (const tab of store.list()) {
-    if (tab.kind === 'doc' && tab.filePath) docs.push({ path: tab.filePath, mode: tab.mode });
-    else if (tab.kind === 'browser') browser = true;
-  }
-  const active = store.active();
-  const data: SessionData = {
-    docs,
-    browser,
-    activePath: active && active.kind === 'doc' ? active.filePath : null,
-    activeKind: active ? active.kind : null,
-  };
+async function doSaveSession(): Promise<void> {
+  const { docs, active, browserTab } = buildSessionPayloadFromStore();
   try {
-    localStorage.setItem(SESSION_KEY, JSON.stringify(data));
-  } catch {
-    /* ignore */
-  }
-}, 300);
-
-function readSession(): SessionData | null {
-  try {
-    const raw = localStorage.getItem(SESSION_KEY);
-    if (!raw) return null;
-    return JSON.parse(raw) as SessionData;
-  } catch {
-    return null;
+    await invoke('save_session', { docs, active, browserTab });
+  } catch (e) {
+    // Same fault-tolerance as the old localStorage catch: never block the UI.
+    console.error('save_session failed:', e);
   }
 }
 
-async function restoreSession(session: SessionData): Promise<boolean> {
+const saveSession = debounce(doSaveSession, 300);
+
+/** Force the pending session save to complete now (used on window close). */
+async function flushSessionNow(): Promise<void> {
+  // Run the debounced call if one is pending; otherwise save the current state.
+  await (saveSession.flush() ?? doSaveSession());
+}
+
+async function restoreSession(session: LoadedSession): Promise<boolean> {
   let opened = 0;
+  // Track which docs landed as tabs so we can resolve the active index after.
   for (const d of session.docs) {
     try {
-      await openFile(d.path, { background: true });
-      const tab = store.findDocByPath(d.path);
-      if (tab) {
-        store.updateDoc(tab.id, { mode: d.mode });
+      const action = classifyRestore(d);
+      if (action.kind === 'untitled') {
+        const reg = await invoke<{ doc_id: number; state: FileState }>('register_doc', {
+          path: null,
+          contents: action.content,
+        });
+        const tab = await addDocTab(
+          { doc_id: reg.doc_id, path: '', contents: action.content, state: reg.state },
+          { background: true }
+        );
+        store.updateDoc(tab.id, { mode: action.mode });
         opened++;
+      } else if (action.kind === 'clean') {
+        await openFile(action.path, { background: true });
+        const tab = store.findDocByPath(action.path);
+        if (tab) {
+          store.updateDoc(tab.id, { mode: action.mode });
+          opened++;
+        }
+      } else {
+        // Dirty saved doc: reconstruct the authoritative FileState via the
+        // backend, seeding the editor with the returned live buffer.
+        try {
+          const doc = await invoke<OpenedDoc>('restore_dirty_doc', {
+            path: action.path,
+            content: action.content,
+            baselineContent: action.baselineContent,
+            background: true,
+          });
+          const tab = await addDocTab(doc, {
+            background: true,
+            baseContent: action.baselineContent,
+          });
+          store.updateDoc(tab.id, { mode: action.mode });
+          opened++;
+        } catch (e) {
+          // File gone / non-admissible: never drop unsaved work — fall back to
+          // an untitled buffer holding the unsaved content.
+          console.error('restore_dirty_doc failed, falling back to untitled:', e);
+          const reg = await invoke<{ doc_id: number; state: FileState }>('register_doc', {
+            path: null,
+            contents: action.content,
+          });
+          const tab = await addDocTab(
+            { doc_id: reg.doc_id, path: '', contents: action.content, state: reg.state },
+            { background: true }
+          );
+          store.updateDoc(tab.id, { mode: action.mode });
+          opened++;
+        }
       }
-    } catch {
-      /* path no longer admissible — skip */
+    } catch (e) {
+      // One bad entry never aborts the whole restore.
+      console.error('Skipping un-restorable session doc:', e);
     }
   }
-  if (session.browser) store.addBrowser({ background: true });
-  // Restore the active tab.
-  if (session.activeKind === 'doc' && session.activePath) {
-    const t = store.findDocByPath(session.activePath);
-    if (t) store.setActive(t.id);
-  } else if (session.activeKind === 'browser') {
+
+  if (session.browser_tab) store.addBrowser({ background: true });
+
+  // Restore the focused tab. `active.doc` indexes into the restored docs, but
+  // some docs may have been skipped, so resolve positionally over doc tabs.
+  const active = session.active;
+  if (active === 'browser') {
     store.addBrowser();
+  } else if (active && typeof active === 'object') {
+    const docTabs = store.list().filter((t): t is DocTab => t.kind === 'doc');
+    const target = docTabs[active.doc];
+    if (target) store.setActive(target.id);
   }
-  return opened > 0 || session.browser;
+
+  return opened > 0 || session.browser_tab;
 }
 
 // ---------------------------------------------------------------------------
@@ -1138,6 +1179,28 @@ function showDefaultHandlerBanner(): void {
 }
 
 async function bootstrap(): Promise<void> {
+  // Migration: the old localStorage session store is gone (backend is now the
+  // source of truth). Drop any stale key on first run after upgrade.
+  try {
+    localStorage.removeItem(STALE_LOCALSTORAGE_KEY);
+  } catch {
+    /* ignore */
+  }
+
+  // Flush the (debounced) session save before the window actually closes —
+  // beforeunload cannot await async IPC, so onCloseRequested is required.
+  getCurrentWindow()
+    .onCloseRequested(async (event) => {
+      event.preventDefault();
+      try {
+        await flushSessionNow();
+      } catch (e) {
+        console.error('Session flush on close failed:', e);
+      }
+      void getCurrentWindow().destroy();
+    })
+    .catch((e) => console.error('onCloseRequested setup failed:', e));
+
   const settings = await loadSettings();
   if (settings) {
     if (isMode(settings.default_mode)) currentMode = settings.default_mode;
@@ -1180,15 +1243,13 @@ async function bootstrap(): Promise<void> {
     return;
   }
 
-  // No CLI file: try to restore the previous session.
-  const session = readSession();
+  // No CLI file: try to restore the previous session from the backend.
   let restored = false;
-  if (session) {
-    try {
-      restored = await restoreSession(session);
-    } catch (e) {
-      console.error('Session restore failed:', e);
-    }
+  try {
+    const session = await invoke<LoadedSession>('load_session');
+    restored = await restoreSession(session);
+  } catch (e) {
+    console.error('Session restore failed:', e);
   }
 
   if (!restored) {

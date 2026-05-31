@@ -104,7 +104,7 @@ pub struct OpenedDoc {
 }
 
 /// Push to recents, treating I/O / parse failures as non-fatal.
-fn try_push_recent(path: &PathBuf) {
+pub(crate) fn try_push_recent(path: &PathBuf) {
     if let Err(e) = crate::state::recents::push(path) {
         eprintln!(
             "[btr-md] could not record {} in recents: {}",
@@ -164,14 +164,20 @@ pub async fn open_file(
 /// Authority is transferred only when the user activates the tab
 /// (`set_active_doc` IPC). Foreground opens (the default) transfer authority
 /// immediately, matching `open_dialog` behaviour.
-#[tauri::command]
-pub async fn request_open_file(
-    app: tauri::AppHandle,
-    state: tauri::State<'_, crate::AppState>,
-    path: PathBuf,
-    background: Option<bool>,
-) -> Result<OpenedDoc, String> {
-    if !is_markdown_path(&path) {
+/// Run the user-open admission gates on `path` and return the **admitted
+/// canonical path** (now permanently in scope) on success.
+///
+/// Shared by `request_open_file` and `restore_dirty_doc` so both apply the
+/// identical security policy: a markdown-extension check (before and after
+/// canonicalisation, to defeat symlink-to-non-markdown swaps), file existence,
+/// then the three admission gates — already-scoped, present in recents, OR
+/// within a folder the user admitted via the file-browser picker. Anything else
+/// is rejected; new paths must go through the OS-mediated `open_dialog`.
+pub(crate) fn admit_open_path(
+    state: &crate::AppState,
+    path: &Path,
+) -> Result<PathBuf, String> {
+    if !is_markdown_path(path) {
         return Err(format!(
             "request_open_file refuses non-markdown extension: {}",
             path.display()
@@ -184,7 +190,7 @@ pub async fn request_open_file(
         ));
     }
 
-    let canon = crate::path_scope::PathScope::canonicalise(&path).map_err(|e| e.to_string())?;
+    let canon = crate::path_scope::PathScope::canonicalise(path).map_err(|e| e.to_string())?;
     if !is_markdown_path(&canon) {
         return Err(format!(
             "request_open_file refuses canonical non-markdown target: {}",
@@ -204,7 +210,17 @@ pub async fn request_open_file(
         ));
     }
 
-    let canon = state.scope.allow_canonical(&canon);
+    Ok(state.scope.allow_canonical(&canon))
+}
+
+#[tauri::command]
+pub async fn request_open_file(
+    app: tauri::AppHandle,
+    state: tauri::State<'_, crate::AppState>,
+    path: PathBuf,
+    background: Option<bool>,
+) -> Result<OpenedDoc, String> {
+    let canon = admit_open_path(&state, &path)?;
     let contents = std::fs::read_to_string(&canon).map_err(|e| e.to_string())?;
     try_push_recent(&canon);
     let foreground = !background.unwrap_or(false);

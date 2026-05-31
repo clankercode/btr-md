@@ -186,11 +186,8 @@ pub fn contains_canonical_eq(canon: &std::path::Path) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::{
-        env,
-        ffi::OsString,
-        sync::{Mutex, OnceLock},
-    };
+    use crate::state::config_env_lock;
+    use std::{env, ffi::OsString};
 
     struct ConfigHomeGuard {
         previous: Option<OsString>,
@@ -217,11 +214,6 @@ mod tests {
                 env::remove_var("XDG_CONFIG_HOME");
             }
         }
-    }
-
-    fn config_env_lock() -> std::sync::MutexGuard<'static, ()> {
-        static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
-        LOCK.get_or_init(|| Mutex::new(())).lock().unwrap()
     }
 
     #[test]
