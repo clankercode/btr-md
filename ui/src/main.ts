@@ -21,7 +21,8 @@ import {
 } from './doc_state.js';
 import { createTabStore, type Tab, type DocTab } from './tabs.js';
 import { createTabBar, type TabBarInstance } from './tabbar.js';
-import { createFileBrowser, type FileBrowserInstance } from './file_browser.js';
+import { createFileBrowser, type FileBrowserInstance, type DirListing } from './file_browser.js';
+import { createWorkspaceModel, parentOf } from './workspace.js';
 import { createSettingsMenu, type SettingsSnapshot, type HandlerStatus } from './settings_menu.js';
 import { computeCounts } from './counts.js';
 import { createInsertMenu, type AlertType, type InsertMenuInstance } from './insert_menu.js';
@@ -175,6 +176,35 @@ appContainer.appendChild(sidebarEl);
 appContainer.appendChild(sidebarResizer);
 appContainer.appendChild(mainRegion);
 document.body.appendChild(appContainer);
+
+const workspace = createWorkspaceModel({
+  listDir: (dir) => invoke<DirListing>('list_dir', { dir }),
+});
+
+async function setWorkspaceRoot(path: string): Promise<boolean> {
+  try {
+    const canon = await invoke<string>('set_workspace_root', { path });
+    await workspace.setRoot(canon);
+    return true;
+  } catch (e) {
+    console.warn('set_workspace_root rejected:', e);
+    return false;
+  }
+}
+
+const browserDeps = {
+  model: workspace,
+  pickBaseDir: () => invoke<string | null>('pick_base_dir'),
+  onOpenFile: (path: string, opts: { background: boolean }) =>
+    openFile(path, { background: opts.background }),
+  setRoot: setWorkspaceRoot,
+  revealInFolder: (path: string) => {
+    void invoke('reveal_in_folder', { path });
+  },
+};
+
+const sidebarBrowser = createFileBrowser(browserDeps);
+sidebarEl.appendChild(sidebarBrowser.el);
 
 const SPLIT_RATIO_KEY = 'pmd:split-ratio';
 const MIN_RATIO = 0.2;
@@ -1331,16 +1361,7 @@ function renderEmptyBody(): void {
 
 function renderBrowserBody(): void {
   if (!fileBrowser) {
-    fileBrowser = createFileBrowser({
-      initialBaseDir: browserBaseDir,
-      listDir: (dir) => invoke('list_dir', { dir }),
-      pickBaseDir: () => invoke<string | null>('pick_base_dir'),
-      onOpenFile: (path, opts) => openFile(path, opts),
-      onBaseDirChange: (dir) => {
-        browserBaseDir = dir;
-        saveSession();
-      },
-    });
+    fileBrowser = createFileBrowser(browserDeps);
   }
   tabBodyEl.replaceChildren(fileBrowser.el);
 }
