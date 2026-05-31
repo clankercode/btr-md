@@ -34,7 +34,7 @@ Implementation workers should use `just check` for the default non-WebDriver gat
 
 ## Execution Status
 
-Updated 2026-05-31 after merging `dit-validation` into `feat/large-expansion`:
+Updated 2026-05-31 after merging `dit-actions-keybindings` into `feat/large-expansion`:
 
 - Blocks 1-3, `dit-core-facts`: merged into `feat/large-expansion` as `d062d9c`, `a7cf6db`, and `5d87966`.
 - Block 4, app preview authority shell: merged as `2451545` with implementation commit `d66162f`; `ccc --yolo @cx-reviewer` returned `PASS` after the rebase.
@@ -44,7 +44,9 @@ Updated 2026-05-31 after merging `dit-validation` into `feat/large-expansion`:
 - Blocks 4-6, `dit-app-authority`: merged back into `feat/large-expansion` as `6d22101`; root `just check` passed after merge.
 - Block 7, async local validation: implemented as `35f5cf5`; `ccc --yolo @cx-reviewer` returned `PASS`; root `just test-ipc`, `cargo check -p pmd-e2e --tests -j 2`, and `npm run typecheck` passed after merge.
 - Block 7, `dit-validation`: merged back into `feat/large-expansion` as `2f8553c`.
-- Next active workstream: Block 8, `dit-actions-keybindings`, after `dit-app-authority` and `dit-validation`.
+- Block 8, action registry and keybinding persistence: implemented as `9960503`; rebased onto Block 7; fixed the ccc-found stale tracked UI bundle artifact; final `ccc --yolo @cx-reviewer` returned `PASS`.
+- Block 8, `dit-actions-keybindings`: merged back into `feat/large-expansion` as `8d47a6d`; root `just check` passed after merge, including 19 Playwright tests.
+- Next active workstreams: Block 9, `dit-outline`, and Block 10, `dit-diagnostics-ui`, both after the shared fact/action/validation foundation.
 
 ## Operating Contract
 
