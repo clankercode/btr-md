@@ -1297,6 +1297,14 @@ store.onActivate((prev, next) => {
   switch (next.kind) {
     case 'doc':
       activateDocTab(next);
+      if (next.filePath) {
+        if (!workspace.root()) {
+          const parent = parentOf(next.filePath);
+          if (parent) void setWorkspaceRoot(parent);
+        } else {
+          void workspace.revealFile(next.filePath);
+        }
+      }
       break;
     case 'empty':
       chrome.setCounts(null);
@@ -1744,7 +1752,10 @@ async function bootstrap(): Promise<void> {
     if (isMode(settings.default_mode)) currentMode = settings.default_mode;
     if (settings.autosave_mode) autosaveMode = settings.autosave_mode;
     if (settings.autoreload_mode) autoreloadMode = settings.autoreload_mode;
-    if (settings.browser_base_dir) browserBaseDir = settings.browser_base_dir;
+    if (settings.browser_base_dir) {
+      browserBaseDir = settings.browser_base_dir;
+      void setWorkspaceRoot(settings.browser_base_dir);
+    }
     gistEnabled = settings.gist_enabled === true;
     if (settings.diff_mode) diffMode = settings.diff_mode;
     shortcutOverrides = settings.shortcut_overrides ?? {};
