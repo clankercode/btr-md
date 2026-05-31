@@ -44,9 +44,7 @@ export function createTrustPolicyPanel(): TrustPolicyPanel {
       list.append(item);
     }
 
-    const blocked = input.issues.filter(
-      (issue) => issue.severity === "blocked" && issue.category === "resource_policy"
-    );
+    const blocked = input.issues.filter((issue) => issue.severity === "blocked");
     for (const issue of blocked) {
       const item = document.createElement("li");
       item.textContent = issue.message;

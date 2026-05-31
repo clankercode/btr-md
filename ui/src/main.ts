@@ -243,6 +243,7 @@ const diagnosticsPanel = createDiagnosticsPanel({
   onPrimaryAction: (action) => {
     void runDiagnosticPrimaryAction(action);
   },
+  canRunPrimaryAction: (action) => isImplementedDiagnosticAction(action),
 });
 const trustPolicyPanel = createTrustPolicyPanel();
 document.body.append(diagnosticsPanel.element, trustPolicyPanel.element);
@@ -558,11 +559,15 @@ function runDiagnosticsAction(id: ActionId): boolean {
 
 async function runDiagnosticPrimaryAction(action: string): Promise<void> {
   const spec = defaultActionSpecs.find((item) => item.id === action);
-  if (!spec) {
+  if (!spec || !isImplementedDiagnosticAction(action)) {
     chrome.setStatus(action);
     return;
   }
   await runAction(spec.id);
+}
+
+function isImplementedDiagnosticAction(action: string): boolean {
+  return action !== 'asset.grantFolder' && action !== 'asset.revokeGrant';
 }
 
 function applyDocumentDiagnostics(diagnostics: DocumentDiagnostics): void {

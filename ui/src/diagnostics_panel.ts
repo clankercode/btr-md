@@ -13,6 +13,7 @@ export function createDiagnosticsPanel(options: {
   onToggleExpanded(): void;
   onToggleInlineDetail(): void;
   onPrimaryAction(action: string, issue: DocumentIssue): void;
+  canRunPrimaryAction(action: string): boolean;
 }): DiagnosticsPanel {
   const element = document.createElement("section");
   element.className = "pmd-diagnostics-shell";
@@ -97,12 +98,18 @@ export function createDiagnosticsPanel(options: {
           row.append(detail);
         }
         if (issue.primary_action) {
-          const action = document.createElement("button");
-          action.type = "button";
-          action.className = "pmd-btn pmd-btn-ghost pmd-btn-sm";
-          action.textContent = actionLabel(issue.primary_action);
-          action.addEventListener("click", () => options.onPrimaryAction(issue.primary_action!, issue));
-          row.append(action);
+          if (options.canRunPrimaryAction(issue.primary_action)) {
+            const action = document.createElement("button");
+            action.type = "button";
+            action.className = "pmd-btn pmd-btn-ghost pmd-btn-sm";
+            action.textContent = actionLabel(issue.primary_action);
+            action.addEventListener("click", () => options.onPrimaryAction(issue.primary_action!, issue));
+            row.append(action);
+          } else {
+            const action = document.createElement("small");
+            action.textContent = `Action: ${actionLabel(issue.primary_action)}`;
+            row.append(action);
+          }
         }
         groupEl.append(row);
       }

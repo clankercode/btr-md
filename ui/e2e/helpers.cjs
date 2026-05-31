@@ -237,7 +237,7 @@ async function installTauriMock(page, options = {}) {
         issues.push(issue(
           'remote-image:1',
           'blocked',
-          'resource_policy',
+          'image',
           'Remote image blocked: use a local file or open the URL outside the preview.'
         ));
         decisions.push({
@@ -287,7 +287,7 @@ async function installTauriMock(page, options = {}) {
         issues.push(issue(
           'blocked-image:1',
           'blocked',
-          'resource_policy',
+          'image',
           'Image blocked: grant the containing folder or move it under the document folder.',
           null,
           'asset.grantFolder'
