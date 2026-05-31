@@ -115,12 +115,17 @@ splitResizer.tabIndex = 0;
 const tabBodyEl = document.createElement('div');
 tabBodyEl.id = 'pmd-tab-body';
 
+const mainRegion = document.createElement('div');
+mainRegion.id = 'main-region';
+mainRegion.appendChild(editorPane);
+mainRegion.appendChild(splitResizer);
+mainRegion.appendChild(previewPane);
+mainRegion.appendChild(tabBodyEl);
+
 const appContainer = document.createElement('div');
 appContainer.id = 'app-container';
-appContainer.appendChild(editorPane);
-appContainer.appendChild(splitResizer);
-appContainer.appendChild(previewPane);
-appContainer.appendChild(tabBodyEl);
+// Sidebar + its resizer are inserted before main-region in Task E2.
+appContainer.appendChild(mainRegion);
 document.body.appendChild(appContainer);
 
 const SPLIT_RATIO_KEY = 'pmd:split-ratio';
@@ -134,7 +139,7 @@ function clampRatio(r: number): number {
 
 function applySplitRatio(ratio: number): void {
   const clamped = clampRatio(ratio);
-  appContainer.style.setProperty('--pmd-split-ratio', String(clamped));
+  mainRegion.style.setProperty('--pmd-split-ratio', String(clamped));
   splitResizer.setAttribute('aria-valuenow', String(Math.round(clamped * 100)));
 }
 
@@ -151,7 +156,7 @@ splitResizer.addEventListener('pointerdown', (e) => {
 });
 splitResizer.addEventListener('pointermove', (e) => {
   if (!resizing) return;
-  const rect = appContainer.getBoundingClientRect();
+  const rect = mainRegion.getBoundingClientRect();
   const ratio = (e.clientX - rect.left) / rect.width;
   applySplitRatio(ratio);
 });
@@ -160,7 +165,7 @@ function endResize(e: PointerEvent) {
   resizing = false;
   splitResizer.releasePointerCapture(e.pointerId);
   document.body.classList.remove('pmd-resizing');
-  const ratio = parseFloat(appContainer.style.getPropertyValue('--pmd-split-ratio') || '0.5');
+  const ratio = parseFloat(mainRegion.style.getPropertyValue('--pmd-split-ratio') || '0.5');
   localStorage.setItem(SPLIT_RATIO_KEY, String(ratio));
 }
 splitResizer.addEventListener('pointerup', endResize);
@@ -172,7 +177,7 @@ splitResizer.addEventListener('dblclick', () => {
 splitResizer.addEventListener('keydown', (e) => {
   if (currentMode !== 'split') return;
   const current = parseFloat(
-    appContainer.style.getPropertyValue('--pmd-split-ratio') || String(DEFAULT_RATIO)
+    mainRegion.style.getPropertyValue('--pmd-split-ratio') || String(DEFAULT_RATIO)
   );
   let next = current;
   if (e.key === 'ArrowLeft') next = current - 0.02;

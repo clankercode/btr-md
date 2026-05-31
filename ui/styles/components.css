@@ -726,6 +726,13 @@
   width: 100%;
 }
 
+#main-region {
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 100%;
+}
+
 /* Non-document tab bodies (empty/welcome, file browser) take the full content
    area; the editor/preview panes are hidden while they are active. */
 #pmd-tab-body {
