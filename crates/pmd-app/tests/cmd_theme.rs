@@ -299,6 +299,8 @@ fn every_bundled_theme_has_readable_mermaid_nodes() {
         ("secondaryColor", "secondaryTextColor"),
         ("tertiaryColor", "tertiaryTextColor"),
         ("noteBkgColor", "noteTextColor"),
+        ("actorBkg", "actorTextColor"),
+        ("labelBoxBkgColor", "labelTextColor"),
     ];
     for theme in &themes {
         let bundle = set_theme_from_roots(&theme.slug, &roots)

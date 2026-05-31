@@ -537,18 +537,35 @@ pub fn set_theme_from_roots(slug: &str, roots: &[PathBuf]) -> Result<ThemeBundle
     if let Some(v) = get_or_derive_str("mermaid_note_border", accent.as_ref().map(|s| s.as_str())) {
         mermaid_vars.insert("noteBorderColor".to_string(), v);
     }
-    if let Some(v) = colours.get("mermaid_actor_bg") {
-        mermaid_vars.insert("actorBkg".to_string(), v.clone());
+    // Actors (sequence diagrams) are drawn like nodes: an elevated surface
+    // with `fg` text, distinguished by an accent *border* rather than an
+    // accent fill. An accent-coloured fill paired with Mermaid's default
+    // `actorTextColor` (which falls back to `primaryTextColor` = `fg`) drops
+    // below AA on many themes, so keep the colour on the border and the text
+    // on a surface that contrasts with `fg`.
+    if let Some(v) =
+        get_or_derive_str("mermaid_actor_bg", bg_elevated.as_ref().map(|s| s.as_str()))
+    {
+        mermaid_vars.insert("actorBkg".to_string(), v);
     }
-    if !mermaid_vars.contains_key("actorBkg") {
-        if let (Some(accent), Some(bg)) = (accent, bg) {
-            if let (Some(accent_rgb), Some(bg_rgb)) = (
-                pmd_core::theme::mix::parse_hex(accent),
-                pmd_core::theme::mix::parse_hex(bg),
-            ) {
-                let mixed = pmd_core::theme::mix::mix(accent_rgb, bg_rgb, 0.30);
-                mermaid_vars.insert("actorBkg".to_string(), pmd_core::theme::mix::to_hex(mixed));
-            }
+    if let Some(accent) = accent {
+        mermaid_vars.insert("actorBorder".to_string(), accent.clone());
+    }
+    // Sequence label boxes default their fill to `actorBkg`; pin them to the
+    // elevated surface so the label text below stays readable.
+    if let Some(bg_elevated) = bg_elevated {
+        mermaid_vars.insert("labelBoxBkgColor".to_string(), bg_elevated.clone());
+    }
+    // Actor, label-box, signal and loop text sit on a surface or on the
+    // diagram background, both of which clear AA against `fg`.
+    if let Some(fg) = fg {
+        for key in [
+            "actorTextColor",
+            "labelTextColor",
+            "loopTextColor",
+            "signalTextColor",
+        ] {
+            mermaid_vars.insert(key.to_string(), fg.clone());
         }
     }
     if let Some(v) = get_or_derive_str("mermaid_error", Some("#e77878")) {
