@@ -38,10 +38,19 @@ Good defaults derived from the core palette, still overridable per theme.
     (the `bg_elevated`↔`bg` axis stays clear of `fg`, so the derived fills are
     guaranteed to clear AA against `fg` text — mixing toward `accent`/`fg`
     instead can fall below AA on low-contrast themes)
-  - cluster/note/actor/error/edge-label derivations unchanged.
+  - the same principle is applied across every diagram type whose labels sit
+    on a deterministic fill: notes, sequence actors/label-boxes (accent moves
+    to the border, not the fill), subgraph clusters, gantt task/section bars
+    (status moves to borders, overwriting mermaid's literal `lightgrey`/`red`
+    defaults), and quadrant-chart regions. The parse-error graphic keeps its
+    fixed red fill with a fixed near-black text so it is readable on every
+    theme. Edge-label background unchanged.
 
-  Fill comes from a surface token and text from `fg`, so they sit at opposite
-  ends of the palette and always contrast.
+  Fill comes from a surface token (on the `bg_elevated`↔`bg` axis, which is
+  always clear of `fg`) and text from `fg`, so they always contrast.
+  Auto-generated multi-hue palettes (pie slices, git branches, colour scales)
+  are left to mermaid; their seeds (`primary`/`secondary`/`tertiary`) are now
+  theme-appropriate surfaces.
 
 - **Schema** (`crates/pmd-core/src/theme/schema.rs`): the five basic
   `mermaid_*` keys move from *required* to *optional* (plus new optional
@@ -66,7 +75,7 @@ defaults for free.
 ## Regression guard
 
 `crates/pmd-app/tests/cmd_theme.rs::every_bundled_theme_has_readable_mermaid_nodes`
-asserts that, for every bundled theme, each label-bearing fill/text pair —
-`primaryColor`/`primaryTextColor`, `secondaryColor`/`secondaryTextColor`,
-`tertiaryColor`/`tertiaryTextColor`, and `noteBkgColor`/`noteTextColor` —
-clears WCAG AA (4.5:1).
+asserts that, for every bundled theme, each label-bearing fill/text pair
+clears WCAG AA (4.5:1): the three node tiers, notes, sequence actor and
+label-box, the error graphic, gantt task/active/done/crit/section bars,
+subgraph clusters, and the four quadrant-chart regions.

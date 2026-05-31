@@ -438,10 +438,13 @@ pub fn set_theme_from_roots(slug: &str, roots: &[PathBuf]) -> Result<ThemeBundle
     // but unparseable, and to `None` when `a` is absent.
     let mix_toward = |a: Option<&String>, b: Option<&String>, t: f64| -> Option<String> {
         let a = a?;
-        match (b.and_then(|b| pmd_core::theme::mix::parse_hex(b)), pmd_core::theme::mix::parse_hex(a)) {
-            (Some(rb), Some(ra)) => Some(pmd_core::theme::mix::to_hex(
-                pmd_core::theme::mix::mix(ra, rb, t),
-            )),
+        match (
+            b.and_then(|b| pmd_core::theme::mix::parse_hex(b)),
+            pmd_core::theme::mix::parse_hex(a),
+        ) {
+            (Some(rb), Some(ra)) => Some(pmd_core::theme::mix::to_hex(pmd_core::theme::mix::mix(
+                ra, rb, t,
+            ))),
             _ => Some(a.clone()),
         }
     };
@@ -454,7 +457,10 @@ pub fn set_theme_from_roots(slug: &str, roots: &[PathBuf]) -> Result<ThemeBundle
     let node_fill = pick("mermaid_primary", bg_elevated.cloned());
     let node_text = pick("mermaid_primary_text", fg.cloned());
     let node_border = pick("mermaid_primary_border", border.cloned());
-    let line_color = pick("mermaid_line", fg_muted.cloned().or_else(|| border.cloned()));
+    let line_color = pick(
+        "mermaid_line",
+        fg_muted.cloned().or_else(|| border.cloned()),
+    );
     // Secondary/tertiary fills, when not given, slide from the elevated
     // surface toward the base background. That axis stays on the far side of
     // `fg` from the surface, so the fills keep visible hierarchy in
@@ -541,8 +547,7 @@ pub fn set_theme_from_roots(slug: &str, roots: &[PathBuf]) -> Result<ThemeBundle
     // `actorTextColor` (which falls back to `primaryTextColor` = `fg`) drops
     // below AA on many themes, so keep the colour on the border and the text
     // on a surface that contrasts with `fg`.
-    if let Some(v) =
-        get_or_derive_str("mermaid_actor_bg", bg_elevated.as_ref().map(|s| s.as_str()))
+    if let Some(v) = get_or_derive_str("mermaid_actor_bg", bg_elevated.as_ref().map(|s| s.as_str()))
     {
         mermaid_vars.insert("actorBkg".to_string(), v);
     }
