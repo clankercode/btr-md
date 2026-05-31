@@ -243,6 +243,17 @@ export function createChrome(parent: HTMLElement): ChromeInstance {
   statusFrontmatter.textContent = '+ frontmatter';
   statusBar.appendChild(statusFrontmatter);
 
+  // Render-profile indicator: purely informational, static label noting that
+  // btr.md renders with a GitHub-flavored (GFM) profile. See docs/github-parity.md
+  // for the known, intentional differences from GitHub.
+  const statusProfile = document.createElement('span');
+  statusProfile.className = 'pmd-status-item pmd-status-profile';
+  statusProfile.textContent = 'GitHub-flavored';
+  statusProfile.title =
+    'Render profile: GitHub-flavored Markdown (GFM). Raw HTML is sanitized and remote images blocked — see docs/github-parity.md.';
+  statusProfile.setAttribute('aria-label', 'Render profile: GitHub-flavored Markdown (GFM)');
+  statusBar.appendChild(statusProfile);
+
   const statusModeText = document.createElement('span');
   statusModeText.className = 'pmd-status-item pmd-status-mode';
   statusBar.appendChild(statusModeText);

@@ -2099,6 +2099,16 @@ mark.pmd-find {
   cursor: pointer;
 }
 
+.pmd-status-profile {
+  margin-left: var(--pmd-space-3);
+  padding: 0 var(--pmd-space-2);
+  color: var(--pmd-fg-muted);
+  font-size: var(--pmd-text-xs);
+  border: 1px solid transparent;
+  border-radius: var(--pmd-radius-sm);
+  cursor: default;
+}
+
 .pmd-status-frontmatter-present {
   color: var(--pmd-fg);
   background: var(--pmd-bg-elevated);
