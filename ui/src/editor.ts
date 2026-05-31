@@ -11,6 +11,7 @@ import {
   GFM,
   unifiedMergeView,
 } from '../vendor/codemirror-6/codemirror.bundle.js';
+import { searchExtension, openSourceFind, sourceFindNext, sourceFindPrevious } from './find_source.js';
 
 // One EditorView is reused across all document tabs; each tab owns a live
 // `EditorState` (held in memory by the tab store, never serialized). Switching
@@ -33,6 +34,14 @@ export interface EditorHandle {
   toggleWrap: () => boolean;
   /** Show/hide a unified diff of the buffer against `baseline` (last saved). */
   setDiff: (mode: string, baseline: string) => void;
+  /** Open CodeMirror's source find panel. */
+  openSearch: () => void;
+  /** Advance to the next source search match. */
+  searchNext: () => void;
+  /** Advance to the previous source search match. */
+  searchPrevious: () => void;
+  /** Move the selection+viewport to 1-based `line` (clamped); no-op if out of range. */
+  gotoEditorLine: (line: number) => void;
   destroy: () => void;
 }
 
@@ -102,6 +111,7 @@ let wrapEnabled = true;
 let userEditCb: (doc: string) => void = () => {};
 const wrapCompartment = new Compartment();
 const diffCompartment = new Compartment();
+const searchCompartment = new Compartment();
 
 const editorTheme = EditorView.theme({
   '&': {
@@ -154,6 +164,7 @@ function buildExtensions() {
     markdown({ base: markdownLanguage, extensions: [GFM] }),
     wrapCompartment.of(wrapEnabled ? EditorView.lineWrapping : []),
     diffCompartment.of([]),
+    searchCompartment.of(searchExtension()),
     markdownDecorations,
     EditorView.updateListener.of((update: any) => {
       // Fire only for genuine user edits — never for programmatic sets
@@ -235,6 +246,15 @@ export async function mountEditor(
       }
       // Effects-only dispatch (no docChanged) so the edit callback never fires.
       view.dispatch({ effects: diffCompartment.reconfigure(ext) });
+    },
+    openSearch: () => openSourceFind(view),
+    searchNext: () => sourceFindNext(view),
+    searchPrevious: () => sourceFindPrevious(view),
+    gotoEditorLine: (line: number) => {
+      const total = view.state.doc.lines;
+      const n = Math.max(1, Math.min(total, line));
+      const pos = view.state.doc.line(n).from;
+      view.dispatch({ selection: { anchor: pos }, scrollIntoView: true });
     },
     destroy: () => view.destroy(),
   };
