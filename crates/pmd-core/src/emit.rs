@@ -463,7 +463,6 @@ pub struct FragmentRender {
 }
 
 pub fn render_fragment(md: &str, render_nonce: &str) -> FragmentRender {
-    let to_line = byte_to_line(md);
     let opts = parser_options();
     let parser = Parser::new_ext(md, opts).into_offset_iter();
 

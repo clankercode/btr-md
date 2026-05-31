@@ -2,7 +2,7 @@
 // with `data-src-start`/`data-src-end` = 1-based, inclusive LINE numbers (from
 // the source map), so we slice the document by lines. Falls back to TSV when
 // the source map is unavailable. The DOM decoration is idempotent.
-import { selfAndDescendants } from './dom_scope.js';
+import { selfAndDescendants } from './dom_scope.ts';
 
 /** Extract the verbatim markdown for a table from its 1-based, inclusive line
  *  range (`data-src-start`/`data-src-end`). Returns null if absent/invalid. */
