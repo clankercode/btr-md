@@ -517,18 +517,16 @@ pub fn set_theme_from_roots(slug: &str, roots: &[PathBuf]) -> Result<ThemeBundle
         mermaid_vars.insert("clusterBkg".to_string(), v.clone());
     }
     if !mermaid_vars.contains_key("clusterBkg") {
-        if let (Some(bg_elevated), Some(fg)) = (bg_elevated, fg) {
-            if let (Some(bg_rgb), Some(fg_rgb)) = (
-                pmd_core::theme::mix::parse_hex(bg_elevated),
-                pmd_core::theme::mix::parse_hex(fg),
-            ) {
-                let mixed = pmd_core::theme::mix::mix(bg_rgb, fg_rgb, 0.04);
-                mermaid_vars.insert(
-                    "clusterBkg".to_string(),
-                    pmd_core::theme::mix::to_hex(mixed),
-                );
-            }
+        // Subgraph/cluster labels are drawn with `titleColor` (= `fg`) on this
+        // fill, so it must sit on the bg_elevated↔bg axis (clear of `fg`).
+        // Recede it toward the canvas so a cluster reads as a container behind
+        // its nodes. Mixing toward `fg` instead dropped sepia to 4.37:1.
+        if let Some(v) = mix_toward(bg_elevated, bg, 0.50) {
+            mermaid_vars.insert("clusterBkg".to_string(), v);
         }
+    }
+    if let Some(border) = border {
+        mermaid_vars.insert("clusterBorder".to_string(), border.clone());
     }
     if let Some(v) = get_or_derive_str("mermaid_note_bg", bg_elevated.as_ref().map(|s| s.as_str()))
     {
@@ -625,6 +623,53 @@ pub fn set_theme_from_roots(slug: &str, roots: &[PathBuf]) -> Result<ThemeBundle
             "taskTextLightColor",
             "taskTextOutsideColor",
             "sectionTextColor",
+        ] {
+            mermaid_vars.insert(key.to_string(), fg.clone());
+        }
+    }
+
+    // --- Quadrant charts -------------------------------------------------
+    //
+    // Mermaid derives the four quadrant fills by brightening `primaryColor`
+    // and their label colours by darkening `primaryTextColor`, which drifts
+    // below AA (solarized-dark quadrant4 ≈ 3.25:1). Labels are drawn directly
+    // on the quadrant fill, so give each quadrant a distinct surface on the
+    // bg_elevated↔bg axis (guaranteed AA against `fg`) and pin every quadrant
+    // label/axis/title colour to `fg`.
+    if let Some(bg_elevated) = bg_elevated {
+        let fills = [
+            ("quadrant1Fill", 0.0),
+            ("quadrant2Fill", 0.30),
+            ("quadrant3Fill", 0.60),
+            ("quadrant4Fill", 0.85),
+        ];
+        for (key, t) in fills {
+            if let Some(v) = mix_toward(Some(bg_elevated), bg, t) {
+                mermaid_vars.insert(key.to_string(), v);
+            }
+        }
+    }
+    if let Some(accent) = accent {
+        mermaid_vars.insert("quadrantPointFill".to_string(), accent.clone());
+    }
+    if let Some(border) = border {
+        for key in [
+            "quadrantInternalBorderStrokeFill",
+            "quadrantExternalBorderStrokeFill",
+        ] {
+            mermaid_vars.insert(key.to_string(), border.clone());
+        }
+    }
+    if let Some(fg) = fg {
+        for key in [
+            "quadrant1TextFill",
+            "quadrant2TextFill",
+            "quadrant3TextFill",
+            "quadrant4TextFill",
+            "quadrantPointTextFill",
+            "quadrantTitleFill",
+            "quadrantXAxisTextFill",
+            "quadrantYAxisTextFill",
         ] {
             mermaid_vars.insert(key.to_string(), fg.clone());
         }

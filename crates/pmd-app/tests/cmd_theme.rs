@@ -307,6 +307,11 @@ fn every_bundled_theme_has_readable_mermaid_nodes() {
         ("doneTaskBkgColor", "taskTextColor"),
         ("critBkgColor", "taskTextColor"),
         ("sectionBkgColor", "sectionTextColor"),
+        ("clusterBkg", "titleColor"),
+        ("quadrant1Fill", "quadrant1TextFill"),
+        ("quadrant2Fill", "quadrant2TextFill"),
+        ("quadrant3Fill", "quadrant3TextFill"),
+        ("quadrant4Fill", "quadrant4TextFill"),
     ];
     for theme in &themes {
         let bundle = set_theme_from_roots(&theme.slug, &roots)
