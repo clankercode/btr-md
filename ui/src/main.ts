@@ -605,6 +605,11 @@ async function processRenderQueue(): Promise<void> {
           decorateCodeBlocks(node);
           decorateTables(node, () => editor?.getValue() ?? '');
         }
+        // Refresh the nonce on all kept (unchanged) nodes so that a later
+        // theme change (rerenderForThemeChange) does not skip them — it
+        // filters by the current root nonce.
+        previewContent.querySelectorAll<HTMLElement>('[data-pmd-nonce]')
+          .forEach((el) => { el.dataset.pmdNonce = result.render_nonce; });
       } else {
         previewContent.innerHTML = result.html;
         markAllNodes(previewContent, result.render_nonce);

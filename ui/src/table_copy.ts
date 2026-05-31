@@ -2,6 +2,7 @@
 // with `data-src-start`/`data-src-end` = 1-based, inclusive LINE numbers (from
 // the source map), so we slice the document by lines. Falls back to TSV when
 // the source map is unavailable. The DOM decoration is idempotent.
+import { selfAndDescendants } from './dom_scope.js';
 
 /** Extract the verbatim markdown for a table from its 1-based, inclusive line
  *  range (`data-src-start`/`data-src-end`). Returns null if absent/invalid. */
@@ -39,7 +40,7 @@ const COPIED_REVERT_MS = 1200;
 /** Wrap each table with a "Copy" button that yields its markdown source (or a
  *  TSV fallback). `getSource` returns the current editor document. Idempotent. */
 export function decorateTables(root: HTMLElement, getSource: () => string): void {
-  root.querySelectorAll('table').forEach((table) => {
+  selfAndDescendants<HTMLTableElement>(root, 'table').forEach((table) => {
     const parent = table.parentElement;
     if (parent && parent.classList.contains('pmd-table-wrap')) return; // already decorated
 

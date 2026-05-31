@@ -13,10 +13,14 @@ export function reconcileBlocks(
   fragment: HTMLElement,
   blocks: BlockRef[],
 ): HTMLElement[] {
-  const liveByKey = new Map<string, HTMLElement>();
+  const liveByKey = new Map<string, HTMLElement[]>();
   for (const child of Array.from(live.children)) {
     const k = (child as HTMLElement).dataset.pmdBlock;
-    if (k) liveByKey.set(k, child as HTMLElement);
+    if (k) {
+      const queue = liveByKey.get(k);
+      if (queue) queue.push(child as HTMLElement);
+      else liveByKey.set(k, [child as HTMLElement]);
+    }
   }
 
   const fragChildren = Array.from(fragment.children) as HTMLElement[];
@@ -25,7 +29,8 @@ export function reconcileBlocks(
 
   for (let i = 0; i < blocks.length; i++) {
     const { key, base_line } = blocks[i];
-    const existing = liveByKey.get(key);
+    const queue = liveByKey.get(key);
+    const existing = queue && queue.length ? queue.shift() : undefined;
     const fresh = fragChildren[i];
     if (existing && existing.dataset.pmdBlock === key) {
       const prevBase = Number(existing.dataset.pmdBase ?? base_line);
@@ -34,7 +39,7 @@ export function reconcileBlocks(
       }
       existing.dataset.pmdBase = String(base_line);
       desired.push(existing);
-      liveByKey.delete(key);
+      // queue is mutated in-place (shift); empty queues are harmless
     } else {
       fresh.dataset.pmdBase = String(base_line);
       desired.push(fresh);

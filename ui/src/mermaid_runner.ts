@@ -1,5 +1,6 @@
 import mermaid from 'mermaid';
 import { addMermaidExpandButton } from './mermaid_zoom.js';
+import { selfAndDescendants } from './dom_scope.js';
 
 let initialised = false;
 let currentThemeVars: Record<string, string> = {};
@@ -124,7 +125,7 @@ export async function renderMermaidNode(target: HTMLElement, renderNonce?: strin
 // render nonce. Raw HTML can preserve syntax classes, but it cannot pre-seed
 // the JS-added renderer source/class pair with the matching nonce.
 function collectMermaidTargets(root: HTMLElement, renderNonce: string): HTMLElement[] {
-  return Array.from(root.querySelectorAll<HTMLElement>(".pmd-mermaid[data-mermaid-source][data-pmd-nonce]"))
+  return selfAndDescendants<HTMLElement>(root, ".pmd-mermaid[data-mermaid-source][data-pmd-nonce]")
     .filter((target) => target.dataset.pmdNonce === renderNonce);
 }
 
