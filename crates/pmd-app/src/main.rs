@@ -9,6 +9,16 @@ fn main() {
     let scope = PathScope::new();
     let args = cli::parse_argv(&scope);
 
+    if let Some(ref input) = args.render_input {
+        if let Err(e) =
+            cli::run_headless_render(input, args.render_output.as_deref(), args.standalone)
+        {
+            eprintln!("{e}");
+            std::process::exit(1);
+        }
+        return;
+    }
+
     if args.list_themes {
         if let Err(e) = cli::print_theme_list() {
             eprintln!("failed to list themes: {e}");
