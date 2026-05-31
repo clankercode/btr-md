@@ -6,6 +6,15 @@ import { syntaxTree } from '@codemirror/language';
 import { GFM } from '@lezer/markdown';
 import { oneDark } from '@codemirror/theme-one-dark';
 import { unifiedMergeView } from '@codemirror/merge';
+import {
+  search,
+  searchKeymap,
+  openSearchPanel,
+  findNext,
+  findPrevious,
+  setSearchQuery,
+  SearchQuery,
+} from '@codemirror/search';
 
 export {
   EditorState,
@@ -20,4 +29,11 @@ export {
   GFM,
   oneDark,
   unifiedMergeView,
+  search,
+  searchKeymap,
+  openSearchPanel,
+  findNext,
+  findPrevious,
+  setSearchQuery,
+  SearchQuery,
 };
