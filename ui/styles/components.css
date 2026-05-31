@@ -727,6 +727,7 @@
 }
 
 #main-region {
+  position: relative;
   display: flex;
   flex: 1 1 auto;
   min-width: 0;
@@ -1883,4 +1884,87 @@ body[data-state="welcome"] #split-resizer {
 
 .pmd-inline-issue-warning {
   border-left-color: var(--pmd-warning, #b7791f);
+}
+
+/* --------------------------------------------
+   Find bar (source + preview)
+   -------------------------------------------- */
+.pmd-find-bar {
+  position: absolute;
+  top: var(--pmd-space-2);
+  right: var(--pmd-space-3);
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: var(--pmd-space-2);
+  padding: var(--pmd-space-1) var(--pmd-space-2);
+  background: var(--pmd-bg-elevated);
+  border: 1px solid var(--pmd-border);
+  border-radius: var(--pmd-radius-md);
+  box-shadow: var(--pmd-shadow-md);
+}
+
+.pmd-find-bar[hidden] {
+  display: none;
+}
+
+.pmd-find-input {
+  min-width: 12rem;
+  padding: 2px var(--pmd-space-2);
+  font-family: inherit;
+  font-size: var(--pmd-text-sm);
+  color: var(--pmd-fg);
+  background: var(--pmd-bg);
+  border: 1px solid var(--pmd-border);
+  border-radius: var(--pmd-radius-sm);
+}
+
+.pmd-find-count {
+  min-width: 2.5rem;
+  color: var(--pmd-fg-muted);
+  font-size: var(--pmd-text-xs);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.pmd-find-scope {
+  display: flex;
+  gap: 2px;
+}
+
+.pmd-find-scope[hidden] {
+  display: none;
+}
+
+.pmd-find-scope-btn,
+.pmd-find-btn {
+  min-width: 1.75rem;
+  padding: 2px var(--pmd-space-2);
+  font-family: inherit;
+  font-size: var(--pmd-text-xs);
+  color: var(--pmd-fg);
+  background: var(--pmd-bg);
+  border: 1px solid var(--pmd-border);
+  border-radius: var(--pmd-radius-sm);
+  cursor: pointer;
+}
+
+.pmd-find-scope-btn.data-active {
+  background: var(--pmd-bg-muted);
+  border-color: var(--pmd-border-strong);
+}
+
+.pmd-find-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+::highlight(pmd-find) {
+  color: var(--pmd-bg);
+  background: var(--pmd-warning, #ffd54f);
+}
+
+mark.pmd-find {
+  color: var(--pmd-bg);
+  background: var(--pmd-warning, #ffd54f);
 }
