@@ -71,6 +71,15 @@ interface RenderResult {
   diagnostics: unknown;
 }
 
+type AsyncDocumentDiagnostics = {
+  doc_id: number;
+  version: number;
+  phase: 'initial' | 'enriched';
+  issues: unknown[];
+  resources: unknown;
+  link_summary: unknown;
+};
+
 interface Settings {
   active_theme: string | null;
   light_theme: string | null;
@@ -329,6 +338,13 @@ function basename(p: string): string {
 function showError(message: string): void {
   chrome.setStatus(message);
   console.error(message);
+}
+
+const latestEnrichedDiagnostics = new Map<number, AsyncDocumentDiagnostics>();
+let unlistenDiagnostics: (() => void) | null = null;
+
+function renderDiagnostics(diagnostics: AsyncDocumentDiagnostics): void {
+  latestEnrichedDiagnostics.set(diagnostics.doc_id, diagnostics);
 }
 
 function docTabByDocId(docId: number): DocTab | undefined {
@@ -1137,6 +1153,25 @@ listen<DocStateChanged>('doc_state_changed', (event) => {
   const active = store.activeDoc();
   if (active && active.docId === doc_id) maybeAutoreload(state);
 }).catch(() => {});
+
+listen<AsyncDocumentDiagnostics>('pmd://diagnostics-enriched', (event) => {
+  const active = store.activeDoc();
+  const appliedVersion = Number(previewContent.dataset.versionApplied || '0');
+  if (!active || active.docId !== event.payload.doc_id || appliedVersion !== event.payload.version) {
+    return;
+  }
+  renderDiagnostics(event.payload);
+})
+  .then((unlisten) => {
+    unlistenDiagnostics = unlisten;
+  })
+  .catch((error) => {
+    console.error('Failed to listen for enriched diagnostics', error);
+  });
+
+window.addEventListener('beforeunload', () => {
+  unlistenDiagnostics?.();
+});
 
 listen('system_theme_changed', handleSystemThemeChange).catch(() => {});
 

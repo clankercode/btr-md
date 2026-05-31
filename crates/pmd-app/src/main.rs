@@ -1,4 +1,5 @@
 use pmd_app_lib::preview::link_activation::LinkActivationStore;
+use pmd_app_lib::preview::render_pipeline::ValidationWorker;
 use pmd_app_lib::{cli, cmd, path_scope::PathScope, AppState};
 use tauri::{Emitter, Manager};
 
@@ -31,6 +32,7 @@ fn main() {
         .plugin(tauri_plugin_dialog::init())
         .manage(state)
         .manage(LinkActivationStore::default())
+        .manage(ValidationWorker::new())
         .invoke_handler(tauri::generate_handler![
             cmd::render::render_cmd,
             pmd_app_lib::preview::link_activation::prepare_link_activation,

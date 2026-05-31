@@ -3,11 +3,14 @@ use std::path::Path;
 use crate::preview::contracts::RenderResult;
 use crate::preview::render_pipeline::render_preview;
 use crate::AppState;
+use tauri::Emitter;
 
 #[tauri::command]
 pub async fn render_cmd(
+    window: tauri::Window,
     state: tauri::State<'_, AppState>,
     links: tauri::State<'_, crate::preview::link_activation::LinkActivationStore>,
+    validation: tauri::State<'_, crate::preview::render_pipeline::ValidationWorker>,
     doc_id: u64,
     version: u64,
     markdown: String,
@@ -26,6 +29,28 @@ pub async fn render_cmd(
         snapshot.path.as_deref(),
         &result.facts,
     );
+    validation.observe_render(doc_id, version);
+    if let Some(doc_path) = snapshot.path {
+        let worker = validation.inner().clone();
+        let window_for_emit = window.clone();
+        let initial_diagnostics = result.diagnostics.clone();
+        tauri::async_runtime::spawn(async move {
+            match worker
+                .validate_current(doc_id, version, doc_path, markdown, initial_diagnostics)
+                .await
+            {
+                Ok(Some(diagnostics)) => {
+                    let _ = window_for_emit.emit("pmd://diagnostics-enriched", diagnostics);
+                }
+                Ok(None) => {}
+                Err(error) => {
+                    eprintln!(
+                        "[btr-md] async validation failed for doc {doc_id} v{version}: {error}"
+                    );
+                }
+            }
+        });
+    }
     Ok(result)
 }
 

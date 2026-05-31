@@ -91,6 +91,7 @@ pub fn doc_edited(
 pub async fn save_doc(
     app: tauri::AppHandle,
     state: tauri::State<'_, crate::AppState>,
+    validation: tauri::State<'_, crate::preview::render_pipeline::ValidationWorker>,
     doc_id: DocId,
     contents: String,
     path: Option<PathBuf>,
@@ -146,7 +147,8 @@ pub async fn save_doc(
                 .save_succeeded(doc_id, contents)
                 .ok_or_else(|| format!("save_doc: doc {} vanished mid-save", doc_id.0))?;
             // Ensure we're watching the (possibly newly-bound) target.
-            state.watcher.set_target(app.clone(), doc_id, canon);
+            state.watcher.set_target(app.clone(), doc_id, canon.clone());
+            validation.invalidate_for_save(&canon).await;
             Ok(new_state)
         }
         Err(e) => {
@@ -165,8 +167,9 @@ pub struct PullResult {
 /// Reload the document from disk (Reload button / take-disk). Discards local
 /// edits: buffer := disk, base := disk -> Clean.
 #[tauri::command]
-pub fn pull_from_disk(
+pub async fn pull_from_disk(
     state: tauri::State<'_, crate::AppState>,
+    validation: tauri::State<'_, crate::preview::render_pipeline::ValidationWorker>,
     doc_id: DocId,
 ) -> Result<PullResult, String> {
     let canon = doc_path_in_scope(&state, doc_id)?;
@@ -175,6 +178,7 @@ pub fn pull_from_disk(
         .docs
         .synced_from_disk(doc_id, disk.clone(), &disk)
         .ok_or_else(|| format!("pull_from_disk: unknown doc {}", doc_id.0))?;
+    validation.invalidate_for_reload(doc_id.0).await;
     Ok(PullResult {
         contents: disk,
         state: new_state,

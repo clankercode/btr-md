@@ -68,6 +68,35 @@ pub struct DocumentDiagnostics {
     pub link_summary: LinkValidationSummary,
 }
 
+impl DocumentDiagnostics {
+    pub fn empty_initial(doc_id: u64, version: u64) -> Self {
+        Self {
+            doc_id,
+            version,
+            phase: DiagnosticPhase::Initial,
+            issues: Vec::new(),
+            resources: ResourcePolicyReport::empty(doc_id, version),
+            link_summary: LinkValidationSummary::default(),
+        }
+    }
+
+    pub fn enriched(
+        doc_id: u64,
+        version: u64,
+        issues: Vec<DocumentIssue>,
+        resources: ResourcePolicyReport,
+    ) -> Self {
+        Self {
+            doc_id,
+            version,
+            phase: DiagnosticPhase::Enriched,
+            issues,
+            resources,
+            link_summary: LinkValidationSummary::default(),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct DocumentIssue {
     pub id: String,
