@@ -85,7 +85,7 @@ fn looks_like_ref_def(line: &str) -> bool {
             continue;
         }
         if let Some(rest) = t.strip_prefix(['-', '+', '*']) {
-            if rest.is_empty() || rest.starts_with(' ') {
+            if rest.is_empty() || rest.starts_with([' ', '\t']) {
                 s = rest;
                 continue;
             }
@@ -94,7 +94,7 @@ fn looks_like_ref_def(line: &str) -> bool {
         if digits > 0 {
             let after = &t[digits..];
             if let Some(rest) = after.strip_prefix(['.', ')']) {
-                if rest.is_empty() || rest.starts_with(' ') {
+                if rest.is_empty() || rest.starts_with([' ', '\t']) {
                     s = rest;
                     continue;
                 }

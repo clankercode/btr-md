@@ -133,3 +133,14 @@ fn falls_back_on_list_reference_definition() {
 fn incremental_equals_full_blockquote_ref_def() {
     assert_equiv("> [x]: https://e.com\n\nsee [x]\n");
 }
+
+#[test]
+fn falls_back_on_tab_separated_list_reference_definition() {
+    assert!(pmd_core::incremental::render_incremental("-\t[x]: https://e.com\n\nsee [x]\n").blocks.is_empty());
+    assert!(pmd_core::incremental::render_incremental("1.\t[x]: https://e.com\n\nsee [x]\n").blocks.is_empty());
+}
+
+#[test]
+fn incremental_equals_full_tab_separated_list_ref_def() {
+    assert_equiv("-\t[x]: https://e.com\n\nsee [x]\n");
+}
