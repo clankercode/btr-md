@@ -19748,7 +19748,7 @@ var defaultKeymap = /* @__PURE__ */ [
   { key: "Ctrl-m", mac: "Shift-Alt-m", run: toggleTabFocusMode }
 ].concat(standardKeymap);
 
-// node_modules/codemirror/node_modules/@codemirror/search/dist/index.js
+// node_modules/@codemirror/search/dist/index.js
 var basicNormalize = typeof String.prototype.normalize == "function" ? (x) => x.normalize("NFKD") : (x) => x;
 var SearchCursor = class {
   /**
@@ -20207,6 +20207,9 @@ var searchConfigFacet = /* @__PURE__ */ Facet.define({
     });
   }
 });
+function search(config2) {
+  return config2 ? [searchConfigFacet.of(config2), searchExtensions] : searchExtensions;
+}
 var SearchQuery = class {
   /**
   Create a query object.
@@ -38926,11 +38929,18 @@ export {
   EditorState,
   EditorView,
   GFM,
+  SearchQuery,
   ViewPlugin,
   basicSetup,
+  findNext,
+  findPrevious,
   markdown,
   markdownLanguage,
   oneDark,
+  openSearchPanel,
+  search,
+  searchKeymap,
+  setSearchQuery,
   syntaxTree,
   unifiedMergeView
 };
