@@ -77,6 +77,28 @@ async function installBlockRenderMock(page) {
   });
 }
 
+async function waitForBlockCount(page, count) {
+  await page.waitForFunction(
+    (expected) => document.querySelectorAll('#pmd-content [data-pmd-block]').length === expected,
+    count
+  );
+}
+
+async function waitForPreviewChildCount(page, count) {
+  await page.waitForFunction(
+    (expected) => document.querySelector('#pmd-content')?.children.length === expected,
+    count
+  );
+}
+
+async function waitForBlockText(page, text) {
+  await page.waitForFunction(
+    (expected) => Array.from(document.querySelectorAll('#pmd-content [data-pmd-block]'))
+      .some((el) => el.textContent?.includes(expected)),
+    text
+  );
+}
+
 test('editing one block leaves the other block nodes identical', async ({ page }) => {
   await installBlockRenderMock(page);
   await page.goto(appUrl());
@@ -86,20 +108,21 @@ test('editing one block leaves the other block nodes identical', async ({ page }
   await content.click();
 
   await page.keyboard.type('Alpha block\n\nBeta block\n\nGamma block');
-  await page.waitForTimeout(250);
+  await waitForPreviewChildCount(page, 3);
 
   await page.evaluate(() => {
-    document.querySelectorAll('#pmd-content [data-pmd-block]')
+    Array.from(document.querySelector('#pmd-content')?.children ?? [])
       .forEach((el, i) => { el.__probe = `probe-${i}`; });
   });
 
   await content.click();
   await page.keyboard.press('Control+a');
   await page.keyboard.type('Alpha block\n\nBeta CHANGED\n\nGamma block');
-  await page.waitForTimeout(250);
+  await waitForBlockText(page, 'Beta CHANGED');
+  await waitForPreviewChildCount(page, 3);
 
   const probes = await page.evaluate(() =>
-    Array.from(document.querySelectorAll('#pmd-content [data-pmd-block]')).map((el) => el.__probe ?? null));
+    Array.from(document.querySelector('#pmd-content')?.children ?? []).map((el) => el.__probe ?? null));
 
   expect(probes[0]).toBe('probe-0');
   expect(probes[2]).toBe('probe-2');
@@ -200,13 +223,13 @@ test('inserted top-level code block is decorated with pmd-code-toolbar', async (
 
   // First render: just a paragraph (no code block yet)
   await page.keyboard.type('Hello world');
-  await page.waitForTimeout(300);
+  await waitForBlockCount(page, 1);
 
   // Second render: append a new fenced code block as a second top-level block
   await content.click();
   await page.keyboard.press('Control+a');
   await page.keyboard.type('Hello world\n\n```rust\nfn main() {}\n```');
-  await page.waitForTimeout(300);
+  await waitForBlockCount(page, 2);
 
   // The newly inserted top-level <pre> must have been decorated by decorateCodeBlocks:
   // it should be wrapped in a figure.pmd-code-block containing a .pmd-code-toolbar.
@@ -223,7 +246,7 @@ test('inserting a line above shifts data-src on an unchanged block without recre
   const content = page.locator('.cm-content');
   await content.click();
   await page.keyboard.type('First\n\nSecond');
-  await page.waitForTimeout(250);
+  await waitForBlockCount(page, 2);
 
   await page.evaluate(() => {
     const els = document.querySelectorAll('#pmd-content [data-pmd-block]');
@@ -233,7 +256,7 @@ test('inserting a line above shifts data-src on an unchanged block without recre
   await content.click();
   await page.keyboard.press('Control+Home');
   await page.keyboard.type('Zero\n\n');
-  await page.waitForTimeout(250);
+  await waitForBlockCount(page, 3);
 
   const result = await page.evaluate(() => {
     const last = document.querySelector('#pmd-content [data-pmd-block]:last-child');
