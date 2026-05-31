@@ -1472,6 +1472,19 @@ body[data-state="welcome"] #split-resizer {
 
 .pmd-table-wrap {
   position: relative;
+  transition: width var(--pmd-transition-base), margin var(--pmd-transition-base);
+}
+
+/* Expanded breakout: grow horizontally out of the reading column to (almost)
+   the full preview-pane width, mirroring `.pmd-code-block.pmd-expanded`. Relies
+   on `#preview-pane { container-type: inline-size }` and `.pmd-preview { margin:
+   0 auto }` (both already set), so `cqi` is the pane width and the negative
+   margin re-centres the wider block. In split mode the pane (hence `cqi`) is
+   already narrower, so the breakout scales down with it and never overflows the
+   app chrome; any residual overflow stays inside the viewport's own scroll. */
+.pmd-table-wrap.is-expanded {
+  width: 92cqi;
+  margin-left: calc(50% - 46cqi);
 }
 
 /* The scrollable/collapsible viewport; the controls live on the wrap so they
@@ -2097,6 +2110,12 @@ mark.pmd-find {
   border: 1px solid transparent;
   border-radius: var(--pmd-radius-sm);
   cursor: pointer;
+  /* Keep the label (e.g. "+ frontmatter") on a single line: the leading "+ "
+     must not wrap onto a second row, and the chip must not be flex-shrunk into
+     a too-narrow box that forces a wrap on initial load. */
+  white-space: nowrap;
+  flex-shrink: 0;
+  line-height: 1;
 }
 
 .pmd-status-profile {

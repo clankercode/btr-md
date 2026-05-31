@@ -1,5 +1,5 @@
 use std::collections::BTreeMap;
-use std::ops::Range;
+use std::ops::{Range, RangeInclusive};
 
 use pulldown_cmark::{CodeBlockKind, Event, LinkType, Tag, TagEnd};
 
@@ -31,15 +31,26 @@ pub struct FactBuilder {
     reference_definitions: BTreeMap<String, ReferenceDefinitionFact>,
     math_block_start_line: Option<u32>,
     in_code_block: u32,
+    // True while inside the leading `---`/`+++` frontmatter (MetadataBlock).
+    // Its text is metadata, not document body, so it is excluded from word
+    // counts and math/embedded detection (frontmatter facts come from
+    // `parse_frontmatter`, which reads the raw source independently).
+    in_metadata_block: bool,
 }
 
 impl FactBuilder {
     pub fn new(source: &str) -> Self {
         let line_index = LineIndex::new(source);
-        let scanned_definitions = scan_reference_definitions(source);
+        let frontmatter = parse_frontmatter(source);
+        let frontmatter_lines = frontmatter_excluded_lines(frontmatter.as_ref());
+        let scanned_definitions = scan_reference_definitions(source, frontmatter_lines.clone());
         let reference_definitions = first_definition_lookup(&scanned_definitions);
-        let unresolved_links =
-            scan_unresolved_reference_links(source, &line_index, &reference_definitions);
+        let unresolved_links = scan_unresolved_reference_links(
+            source,
+            &line_index,
+            &reference_definitions,
+            frontmatter_lines,
+        );
         let unresolved_link_starts = unresolved_links
             .iter()
             .map(|link| link.byte_start)
@@ -50,7 +61,7 @@ impl FactBuilder {
             .collect();
         let mut facts = CoreDocumentFacts::empty();
         facts.counts.bytes = source.len().try_into().unwrap_or(u32::MAX);
-        facts.frontmatter = parse_frontmatter(source);
+        facts.frontmatter = frontmatter;
         facts.reference_definitions = scanned_definitions;
 
         Self {
@@ -68,6 +79,7 @@ impl FactBuilder {
             reference_definitions,
             math_block_start_line: None,
             in_code_block: 0,
+            in_metadata_block: false,
         }
     }
 
@@ -83,6 +95,19 @@ impl FactBuilder {
     }
 
     pub fn observe_event(&mut self, event: &Event<'_>, range: Range<usize>) {
+        // Frontmatter block: track open/close and drop all inner content so it
+        // is not word-counted or scanned for math/embedded spans.
+        if matches!(event, Event::Start(Tag::MetadataBlock(_))) {
+            self.in_metadata_block = true;
+            return;
+        }
+        if matches!(event, Event::End(TagEnd::MetadataBlock(_))) {
+            self.in_metadata_block = false;
+            return;
+        }
+        if self.in_metadata_block {
+            return;
+        }
         match event {
             Event::Start(tag) => self.observe_start(tag, range),
             Event::End(tag_end) => self.observe_end(tag_end, range),
@@ -404,6 +429,18 @@ impl FactBuilder {
             });
             cursor = close + 1;
         }
+    }
+}
+
+fn frontmatter_excluded_lines(
+    frontmatter: Option<&crate::facts::FrontmatterFact>,
+) -> Option<RangeInclusive<usize>> {
+    let frontmatter = frontmatter?;
+    let line_count = frontmatter.raw.lines().count();
+    if line_count == 0 {
+        None
+    } else {
+        Some(1..=line_count)
     }
 }
 

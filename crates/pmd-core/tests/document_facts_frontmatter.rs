@@ -44,6 +44,17 @@ fn malformed_yaml_frontmatter_preserves_raw_range_with_default_metadata() {
 }
 
 #[test]
+fn empty_yaml_frontmatter_uses_empty_content_line_range() {
+    let markdown = "---\n---\n# Body\n";
+    let result = pmd_core::emit::render_string(markdown);
+    let frontmatter = result.facts.frontmatter.as_ref().expect("frontmatter");
+
+    assert_eq!(frontmatter.line_start, 1);
+    assert_eq!(frontmatter.line_end, 1);
+    assert_eq!(frontmatter.raw, "---\n---\n");
+}
+
+#[test]
 fn absent_frontmatter_is_none() {
     let result = pmd_core::emit::render_string("# Body\n");
 

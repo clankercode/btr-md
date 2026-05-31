@@ -41,13 +41,40 @@ const COPIED_REVERT_MS = 1200;
  *  code-block expand affordance (see makeExpandButton in code_blocks.ts). */
 const EXPAND_THRESHOLD_PX = 360;
 
+function isDecoratedTable(table: HTMLTableElement): boolean {
+  const viewport = table.parentElement;
+  return Boolean(
+    viewport?.classList.contains('pmd-table-viewport') &&
+      viewport.parentElement?.classList.contains('pmd-table-wrap')
+  );
+}
+
+/** Apply the expanded/collapsed state to a decorated table. Expanding grows the
+ *  table on BOTH axes: it drops the vertical clip (`pmd-table-collapsed` on the
+ *  viewport) AND lets the wrap break out of the reading column to the full
+ *  preview-pane width (`is-expanded` on the wrap — see `.pmd-table-wrap.is-expanded`
+ *  in components.css, which mirrors the code-block `cqi` breakout). Collapsing
+ *  restores the constrained state. Pure DOM mutation, no layout reads. */
+export function applyTableExpanded(
+  viewport: HTMLElement,
+  wrap: HTMLElement,
+  toggle: HTMLButtonElement,
+  expanded: boolean,
+  collapseVertically = true
+): void {
+  viewport.classList.toggle('pmd-table-collapsed', collapseVertically && !expanded);
+  wrap.classList.toggle('is-expanded', expanded);
+  toggle.textContent = expanded ? 'Collapse' : 'Expand';
+  toggle.title = expanded ? 'Collapse the table' : 'Expand the full table';
+  toggle.setAttribute('aria-expanded', String(expanded));
+}
+
 /** Wrap each table with a top-right controls row: a "Copy" button (markdown
  *  source, TSV fallback) and — for tall tables — an Expand/Collapse toggle.
  *  `getSource` returns the current editor document. Idempotent. */
 export function decorateTables(root: HTMLElement, getSource: () => string): void {
   selfAndDescendants<HTMLTableElement>(root, 'table').forEach((table) => {
-    const parent = table.parentElement;
-    if (parent && parent.classList.contains('pmd-table-wrap')) return; // already decorated
+    if (isDecoratedTable(table)) return;
 
     const wrap = document.createElement('div');
     wrap.className = 'pmd-table-wrap';
@@ -93,22 +120,24 @@ export function decorateTables(root: HTMLElement, getSource: () => string): void
 
     controls.appendChild(btn);
 
-    // Collapse tall tables behind an Expand toggle that sits next to Copy.
-    // Measured after layout so scrollHeight is meaningful (deferred a frame).
+    // Offer an Expand toggle when the table is clipped on EITHER axis: too tall
+    // (scrollHeight) or too wide for the reading column (scrollWidth overflows
+    // the viewport). Expanding then grows both axes. Measured after layout so
+    // the scroll dimensions are meaningful (deferred a frame).
     requestAnimationFrame(() => {
-      if (viewport.scrollHeight <= EXPAND_THRESHOLD_PX) return;
-      viewport.classList.add('pmd-table-collapsed');
+      if (!wrap.isConnected) return;
+      const tooTall = viewport.scrollHeight > EXPAND_THRESHOLD_PX;
+      const tooWide = viewport.scrollWidth > viewport.clientWidth + 1;
+      if (!tooTall && !tooWide) return;
       const toggle = document.createElement('button');
       toggle.type = 'button';
       toggle.className = 'pmd-table-btn pmd-table-expand';
-      toggle.textContent = 'Expand';
-      toggle.title = 'Expand the full table';
-      toggle.setAttribute('aria-expanded', 'false');
+      // Only tall tables get the vertical clip; wide-but-short ones stay open
+      // vertically and just gain the horizontal breakout when expanded.
+      applyTableExpanded(viewport, wrap, toggle, false, tooTall);
       toggle.addEventListener('click', () => {
-        const collapsed = viewport.classList.toggle('pmd-table-collapsed');
-        toggle.textContent = collapsed ? 'Expand' : 'Collapse';
-        toggle.title = collapsed ? 'Expand the full table' : 'Collapse the table';
-        toggle.setAttribute('aria-expanded', String(!collapsed));
+        const expanded = !wrap.classList.contains('is-expanded');
+        applyTableExpanded(viewport, wrap, toggle, expanded, tooTall);
       });
       controls.appendChild(toggle);
     });
