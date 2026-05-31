@@ -30,6 +30,10 @@ use std::{
 pub struct PathScope {
     allowed: Mutex<HashSet<PathBuf>>,
     allowed_dirs: Mutex<HashSet<PathBuf>>,
+    /// The current UI listing root. This is a *display cursor only* — it never
+    /// grants authority and is always constrained to sit within an admitted
+    /// dir. Mutating it cannot widen `allowed` / `allowed_dirs`.
+    workspace_root: Mutex<Option<PathBuf>>,
 }
 
 impl Default for PathScope {
@@ -64,6 +68,7 @@ impl PathScope {
         Self {
             allowed: Mutex::new(HashSet::new()),
             allowed_dirs: Mutex::new(HashSet::new()),
+            workspace_root: Mutex::new(None),
         }
     }
 
@@ -159,6 +164,34 @@ impl PathScope {
             .cloned()
             .collect()
     }
+
+    /// Set the UI workspace root. Canonicalises `p` and **requires** it to be
+    /// within an already-admitted directory; otherwise returns an error and the
+    /// current root is left unchanged. This never inserts into `allowed_dirs`,
+    /// so the renderer cannot use it to widen authority.
+    pub fn set_workspace_root(&self, p: &Path) -> std::io::Result<PathBuf> {
+        let canon = std::fs::canonicalize(p)?;
+        if !self.is_within_allowed_dir(&canon) {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::PermissionDenied,
+                "workspace root is outside all granted directories",
+            ));
+        }
+        let mut root = self
+            .workspace_root
+            .lock()
+            .unwrap_or_else(|p| p.into_inner());
+        *root = Some(canon.clone());
+        Ok(canon)
+    }
+
+    /// The current workspace root, if any.
+    pub fn workspace_root(&self) -> Option<PathBuf> {
+        self.workspace_root
+            .lock()
+            .unwrap_or_else(|p| p.into_inner())
+            .clone()
+    }
 }
 
 fn canonicalise(p: &std::path::Path) -> std::io::Result<PathBuf> {
@@ -191,5 +224,28 @@ mod tests {
 
         assert_eq!(allowed, file_path.canonicalize().unwrap());
         assert!(scope.check(&file_path));
+    }
+
+    #[test]
+    fn set_workspace_root_accepts_within_allowed_dir_and_rejects_outside() {
+        let base = tempfile::tempdir().expect("base");
+        let sub = base.path().join("docs");
+        std::fs::create_dir(&sub).expect("sub");
+        let outside = tempfile::tempdir().expect("outside");
+
+        let scope = PathScope::new();
+        scope.allow_dir(base.path()).expect("admit base");
+
+        // Within an admitted dir → accepted, stored, returns canonical.
+        let canon = scope.set_workspace_root(&sub).expect("within base");
+        assert_eq!(canon, sub.canonicalize().unwrap());
+        assert_eq!(scope.workspace_root(), Some(sub.canonicalize().unwrap()));
+
+        // Outside all admitted dirs → rejected, and allowed_dirs is unchanged.
+        let before = scope.allowed_dirs().len();
+        assert!(scope.set_workspace_root(outside.path()).is_err());
+        assert_eq!(scope.allowed_dirs().len(), before, "must not escalate");
+        // Root unchanged after a rejected set.
+        assert_eq!(scope.workspace_root(), Some(sub.canonicalize().unwrap()));
     }
 }
