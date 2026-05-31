@@ -35,11 +35,6 @@ pub fn required_palette_keys() -> HashSet<&'static str> {
         "link_hover",
         "link_visited",
         "image_caption",
-        "mermaid_primary",
-        "mermaid_primary_text",
-        "mermaid_secondary",
-        "mermaid_tertiary",
-        "mermaid_line",
     ]
     .into_iter()
     .collect()
@@ -53,6 +48,17 @@ pub fn optional_palette_keys() -> HashSet<&'static str> {
         "h4",
         "h5",
         "h6",
+        // Mermaid node colours are all optional: when a theme omits them,
+        // `set_theme` derives readable defaults from the core palette (node
+        // fill from `bg_elevated`, label from `fg`, borders/lines from
+        // `border`/`fg_muted`). A theme may set any of these to override the
+        // derived default.
+        "mermaid_primary",
+        "mermaid_primary_text",
+        "mermaid_primary_border",
+        "mermaid_secondary",
+        "mermaid_tertiary",
+        "mermaid_line",
         "mermaid_edge_label_bg",
         "mermaid_cluster_bg",
         "mermaid_note_bg",

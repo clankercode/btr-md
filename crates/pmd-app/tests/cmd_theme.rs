@@ -254,3 +254,58 @@ async fn set_theme_normalizes_bare_hex_values_before_emitting_css() {
         "bare hex must not be emitted into CSS"
     );
 }
+
+// --- Mermaid contrast regression -----------------------------------------
+//
+// Every theme previously set `mermaid_primary` (node fill) equal to
+// `mermaid_primary_text` (node label), both = `fg`, so labels rendered the
+// same colour as their fill and were invisible. set_theme now derives the
+// fill from `bg_elevated` and the text from `fg`. Pin that every bundled
+// theme produces a node fill / label pair that clears WCAG AA (4.5:1), so a
+// future theme or refactor cannot silently reintroduce unreadable diagrams.
+
+fn relative_luminance(hex: &str) -> f64 {
+    let h = hex.strip_prefix('#').unwrap_or(hex);
+    let parse = |i: usize| u8::from_str_radix(&h[i..i + 2], 16).unwrap_or(0);
+    let (r, g, b) = (parse(0), parse(2), parse(4));
+    let ch = |v: u8| {
+        let s = (v as f64) / 255.0;
+        if s <= 0.03928 {
+            s / 12.92
+        } else {
+            ((s + 0.055) / 1.055).powf(2.4)
+        }
+    };
+    0.2126 * ch(r) + 0.7152 * ch(g) + 0.0722 * ch(b)
+}
+
+fn contrast_ratio(a: &str, b: &str) -> f64 {
+    let (la, lb) = (relative_luminance(a), relative_luminance(b));
+    let (hi, lo) = if la > lb { (la, lb) } else { (lb, la) };
+    (hi + 0.05) / (lo + 0.05)
+}
+
+#[test]
+fn every_bundled_theme_has_readable_mermaid_nodes() {
+    let roots = workspace_theme_roots();
+    let themes = list_themes_from_roots(&roots).expect("list themes");
+    assert!(!themes.is_empty(), "expected bundled themes");
+    for theme in &themes {
+        let bundle = set_theme_from_roots(&theme.slug, &roots)
+            .unwrap_or_else(|e| panic!("set_theme {} failed: {e}", theme.slug));
+        let fill = bundle
+            .mermaid_vars
+            .get("primaryColor")
+            .unwrap_or_else(|| panic!("{} missing primaryColor", theme.slug));
+        let text = bundle
+            .mermaid_vars
+            .get("primaryTextColor")
+            .unwrap_or_else(|| panic!("{} missing primaryTextColor", theme.slug));
+        let ratio = contrast_ratio(fill, text);
+        assert!(
+            ratio >= 4.5,
+            "{}: mermaid node fill {fill} vs label {text} is {ratio:.2}:1, below AA 4.5:1",
+            theme.slug
+        );
+    }
+}

@@ -421,17 +421,70 @@ pub fn set_theme_from_roots(slug: &str, roots: &[PathBuf]) -> Result<ThemeBundle
 
     let mut mermaid_vars = BTreeMap::new();
 
-    let mermaid_map: [(&str, &str); 5] = [
-        ("mermaid_primary", "primaryColor"),
-        ("mermaid_primary_text", "primaryTextColor"),
-        ("mermaid_secondary", "secondaryColor"),
-        ("mermaid_tertiary", "tertiaryColor"),
-        ("mermaid_line", "lineColor"),
-    ];
-    for (key, mermaid_key) in &mermaid_map {
-        if let Some(v) = colours.get(*key) {
-            mermaid_vars.insert(mermaid_key.to_string(), v.clone());
+    // --- Mermaid node colours --------------------------------------------
+    //
+    // Derive a readable default set from the core palette, each value
+    // overridable by an explicit `mermaid_*` palette key. The node FILL comes
+    // from the elevated surface and the node TEXT from `fg`, so a label always
+    // contrasts with the node it sits in. Earlier themes set both
+    // `mermaid_primary` (fill) and `mermaid_primary_text` (label) to `fg`,
+    // which rendered labels the same colour as their fill — invisible. Lines
+    // and borders use the muted/border tokens so edges read clearly on the
+    // diagram background without overpowering it.
+    let fg_muted = colours.get("fg_muted");
+    let border = colours.get("border");
+
+    // Mix `t` of the way from `a` toward `b`; falls back to `a` when present
+    // but unparseable, and to `None` when `a` is absent.
+    let mix_toward = |a: Option<&String>, b: Option<&String>, t: f64| -> Option<String> {
+        let a = a?;
+        match (b.and_then(|b| pmd_core::theme::mix::parse_hex(b)), pmd_core::theme::mix::parse_hex(a)) {
+            (Some(rb), Some(ra)) => Some(pmd_core::theme::mix::to_hex(
+                pmd_core::theme::mix::mix(ra, rb, t),
+            )),
+            _ => Some(a.clone()),
         }
+    };
+
+    // Explicit `mermaid_<key>` override, else the derived default.
+    let pick = |key: &str, default: Option<String>| -> Option<String> {
+        colours.get(key).cloned().or(default)
+    };
+
+    let node_fill = pick("mermaid_primary", bg_elevated.cloned());
+    let node_text = pick("mermaid_primary_text", fg.cloned());
+    let node_border = pick("mermaid_primary_border", border.cloned());
+    let line_color = pick("mermaid_line", fg_muted.cloned().or_else(|| border.cloned()));
+    // Secondary/tertiary fills, when not given, are subtle tints of the
+    // elevated surface: they keep visible hierarchy in multi-kind diagrams
+    // while staying dark/light enough that `fg` node text remains readable.
+    let secondary_fill = pick("mermaid_secondary", mix_toward(bg_elevated, accent, 0.18));
+    let tertiary_fill = pick("mermaid_tertiary", mix_toward(bg_elevated, fg, 0.10));
+
+    {
+        let mut set = |k: &str, v: &Option<String>| {
+            if let Some(v) = v {
+                mermaid_vars.insert(k.to_string(), v.clone());
+            }
+        };
+        set("primaryColor", &node_fill);
+        set("mainBkg", &node_fill);
+        set("primaryTextColor", &node_text);
+        set("primaryBorderColor", &node_border);
+        set("nodeBorder", &node_border);
+        set("secondaryColor", &secondary_fill);
+        set("secondaryTextColor", &node_text);
+        set("secondaryBorderColor", &node_border);
+        set("tertiaryColor", &tertiary_fill);
+        set("tertiaryTextColor", &node_text);
+        set("tertiaryBorderColor", &node_border);
+        set("lineColor", &line_color);
+        // Labels that sit on the diagram background (edge labels, titles,
+        // general node text) also track `fg` so they stay readable.
+        set("textColor", &node_text);
+        set("nodeTextColor", &node_text);
+        set("titleColor", &node_text);
+        set("labelColor", &node_text);
     }
 
     if let Some(bg) = colours.get("bg") {

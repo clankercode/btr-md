@@ -54,8 +54,6 @@ link_visited = "#8b5a2b"
 image_caption = "#8b7355"
 
 # Mermaid
-mermaid_primary = "#5c4d3c"
-mermaid_primary_text = "#5c4d3c"
 mermaid_secondary = "#8b7355"
 mermaid_tertiary = "#d4cbb8"
 mermaid_line = "#8b7355"
