@@ -46,6 +46,10 @@ const alias = {};
 for (const pkg of SINGLETONS) {
   alias[pkg] = packageDir(pkg);
 }
+// @codemirror/search is not a shared-state singleton, but the tree must use the
+// v6 copy (it imports the already-aliased state/view singletons). Pin its dir so
+// esbuild does not bundle the stale 0.20.1 hoisted copy.
+alias['@codemirror/search'] = packageDir('@codemirror/search');
 console.log('[build-codemirror] dedupe aliases:');
 for (const [k, v] of Object.entries(alias)) {
   const ver = JSON.parse(readFileSync(path.join(v, 'package.json'), 'utf8')).version;
