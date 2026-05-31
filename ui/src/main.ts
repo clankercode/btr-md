@@ -946,11 +946,11 @@ function starterFrontmatterFact(): FrontmatterFact {
   return {
     format: 'yaml',
     line_start: 1,
-    line_end: 2,
-    raw: '---\ntitle: \n---\n',
+    line_end: 1,
+    raw: '---\n---\n',
     syntax: 'valid',
     metadata: {
-      title: '',
+      title: null,
       description: null,
       slug: null,
       sidebar_label: null,
@@ -973,7 +973,9 @@ function openFrontmatterInspector(x: number, y: number): void {
   const doc = editor.getValue();
   let insertedStarter = false;
   if (!hasOpeningFence(doc)) {
-    applyFrontmatterChange(insertBlockChange(doc, 'title', ''));
+    // Insert an EMPTY frontmatter block — no auto-seeded `title` field. The
+    // user adds fields explicitly via the inspector.
+    applyFrontmatterChange(insertBlockChange(doc, '', ''));
     insertedStarter = true;
   }
   openFrontmatterPanel(x, y, activeFrontmatter() ?? (insertedStarter ? starterFrontmatterFact() : null), {

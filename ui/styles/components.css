@@ -2097,6 +2097,12 @@ mark.pmd-find {
   border: 1px solid transparent;
   border-radius: var(--pmd-radius-sm);
   cursor: pointer;
+  /* Keep the label (e.g. "+ frontmatter") on a single line: the leading "+ "
+     must not wrap onto a second row, and the chip must not be flex-shrunk into
+     a too-narrow box that forces a wrap on initial load. */
+  white-space: nowrap;
+  flex-shrink: 0;
+  line-height: 1;
 }
 
 .pmd-status-frontmatter-present {

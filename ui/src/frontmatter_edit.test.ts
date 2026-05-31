@@ -198,6 +198,28 @@ test("insertBlockChange on an empty doc", () => {
   assert.equal(change.insert, "---\ntitle: New\n---\n");
 });
 
+test("insertBlockChange with empty key seeds an EMPTY block (no auto title field)", () => {
+  const bodyDoc = "# Body\n";
+  const change = insertBlockChange(bodyDoc, "", "");
+  const next = bodyDoc.slice(0, change.from) + change.insert + bodyDoc.slice(change.to);
+  assert.equal(next, "---\n---\n# Body\n");
+  // No field of any kind is auto-inserted.
+  assert.equal(change.insert.includes("title"), false);
+  assert.equal(change.insert.includes(":"), false);
+});
+
+test("empty inserted block accepts a user-added field afterwards", () => {
+  const start = "# Body\n";
+  const ins = insertBlockChange(start, "", "");
+  const afterInsert = start.slice(0, ins.from) + ins.insert + start.slice(ins.to);
+  assert.equal(afterInsert, "---\n---\n# Body\n");
+
+  const add = addEntryChange(afterInsert, "title", "Hello");
+  assert.ok(add);
+  const afterAdd = afterInsert.slice(0, add.from) + add.insert + afterInsert.slice(add.to);
+  assert.equal(afterAdd, "---\ntitle: Hello\n---\n# Body\n");
+});
+
 test("edit/add work on a freshly inserted block with no facts available", () => {
   const start = "# Body\n";
   const ins = insertBlockChange(start, "title", "");

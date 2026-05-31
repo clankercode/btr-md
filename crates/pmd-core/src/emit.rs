@@ -481,6 +481,9 @@ pub fn render_fragment(md: &str, render_nonce: &str) -> FragmentRender {
     // While inside Tag::Image, collect plain text into the alt attribute and
     // suppress body emission. Image markup is emitted on close.
     let mut image_state: Option<ImageState> = None;
+    // Frontmatter (`---`/`+++` MetadataBlock) is metadata, not body: while open,
+    // every child event is dropped so no frontmatter content reaches the HTML.
+    let mut in_metadata_block = false;
     // GitHub-alert detection (buffered: the blockquote open tag is rewritten in
     // place once its first paragraph's leading text is inspected).
     let mut alert_state = AlertScan::None;
@@ -501,8 +504,20 @@ pub fn render_fragment(md: &str, render_nonce: &str) -> FragmentRender {
 
     for (event, range) in parser {
         fact_builder.observe_event(&event, range.clone());
+        // Inside the frontmatter block, drop every child event (text, breaks)
+        // so no metadata content leaks into the rendered HTML. The closing
+        // `End(MetadataBlock)` is allowed through to clear the flag below.
+        if in_metadata_block && !matches!(event, Event::End(TagEnd::MetadataBlock(_))) {
+            continue;
+        }
         match event {
             Event::Start(tag) => {
+                // Open of the leading frontmatter block: drop it and all its
+                // children. Do not push to block_stack/source_map.
+                if matches!(tag, Tag::MetadataBlock(_)) {
+                    in_metadata_block = true;
+                    continue;
+                }
                 let starts_image = matches!(tag, Tag::Image { .. });
                 if image_state.is_some() && !starts_image {
                     continue;
@@ -596,6 +611,11 @@ pub fn render_fragment(md: &str, render_nonce: &str) -> FragmentRender {
                 };
             }
             Event::End(tag_end) => {
+                // Close of the frontmatter block: clear the suppression flag.
+                if matches!(tag_end, TagEnd::MetadataBlock(_)) {
+                    in_metadata_block = false;
+                    continue;
+                }
                 let ends_image = matches!(tag_end, TagEnd::Image);
                 if image_state.is_some() && !ends_image {
                     continue;

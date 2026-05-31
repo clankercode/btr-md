@@ -196,6 +196,11 @@ export function addEntryChange(doc: string, key: string, value: string): FmChang
 
 export function insertBlockChange(doc: string, key: string, value: string): FmChange {
   void doc;
+  // No key → seed an *empty* frontmatter block. The user adds fields explicitly
+  // via the inspector; we do not auto-insert a `title` (or any other) field.
+  if (key === '') {
+    return { from: 0, to: 0, insert: '---\n---\n' };
+  }
   const formatted = value === '' ? '' : formatScalar('yaml', value);
   return { from: 0, to: 0, insert: `---\n${key}: ${formatted}\n---\n` };
 }

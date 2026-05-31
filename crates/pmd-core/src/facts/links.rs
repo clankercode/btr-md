@@ -1,4 +1,5 @@
 use std::collections::BTreeMap;
+use std::ops::RangeInclusive;
 
 use crate::facts::{LinkFact, LinkKind, ReferenceDefinitionFact};
 use crate::source_map::LineIndex;
@@ -43,12 +44,22 @@ pub fn normalize_reference_label(label: &str) -> String {
         .to_ascii_lowercase()
 }
 
-pub fn scan_reference_definitions(source: &str) -> Vec<ReferenceDefinitionFact> {
+pub fn scan_reference_definitions(
+    source: &str,
+    excluded_lines: Option<RangeInclusive<usize>>,
+) -> Vec<ReferenceDefinitionFact> {
     let mut definitions = Vec::new();
     let mut duplicate_counts: BTreeMap<String, u32> = BTreeMap::new();
     let mut code_context = LineCodeContext::default();
 
     for (line_index, line) in source.lines().enumerate() {
+        let line_number = line_index + 1;
+        if excluded_lines
+            .as_ref()
+            .is_some_and(|lines| lines.contains(&line_number))
+        {
+            continue;
+        }
         if code_context.skip_line(line) {
             continue;
         }
@@ -64,8 +75,8 @@ pub fn scan_reference_definitions(source: &str) -> Vec<ReferenceDefinitionFact> 
             label,
             target,
             title,
-            line_start: (line_index + 1).try_into().unwrap_or(u32::MAX),
-            line_end: (line_index + 1).try_into().unwrap_or(u32::MAX),
+            line_start: line_number.try_into().unwrap_or(u32::MAX),
+            line_end: line_number.try_into().unwrap_or(u32::MAX),
             duplicate_index,
         });
     }
@@ -89,13 +100,22 @@ pub fn scan_unresolved_reference_links(
     source: &str,
     line_index: &LineIndex,
     definitions: &BTreeMap<String, ReferenceDefinitionFact>,
+    excluded_lines: Option<RangeInclusive<usize>>,
 ) -> Vec<ScannedLinkFact> {
     let mut facts = Vec::new();
     let mut code_context = LineCodeContext::default();
     let mut byte_start = 0;
 
-    for line in source.split_inclusive('\n') {
+    for (line_zero_index, line) in source.split_inclusive('\n').enumerate() {
         let line_without_newline = line.trim_end_matches(['\r', '\n']);
+        let line_number = line_zero_index + 1;
+        if excluded_lines
+            .as_ref()
+            .is_some_and(|lines| lines.contains(&line_number))
+        {
+            byte_start += line.len();
+            continue;
+        }
         if code_context.skip_line(line_without_newline) {
             byte_start += line.len();
             continue;
