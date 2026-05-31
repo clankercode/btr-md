@@ -100,14 +100,20 @@ Flow:
   have a shifted base and need rewriting; unchanged blocks above the edit are
   reused verbatim. The expensive ammonia pass is skipped for *all* cache hits;
   the line rewrite is O(block HTML) string work, far cheaper than re-sanitizing.
-- **The per-render nonce** (on trusted mermaid/math nodes). Cache a fixed
-  **placeholder** token in place of the nonce; substitute the current render's
-  nonce at assembly (same mechanism as the mermaid SVG re-id fix). This keeps
-  the existing per-render-nonce security model unchanged.
-  - *Considered alternative:* a **stable per-session nonce** (regenerated on
-    file open, constant across edits) would remove the substitution step. It is
-    arguably still secure (nonce is random and never present in document
-    content), but it changes nonce lifetime, so it is **not** chosen for v1.
+- **The per-render nonce** (on trusted mermaid/math nodes). Cached blocks are
+  rendered/sanitized with a **process-stable random placeholder nonce** `P`
+  (generated once via getrandom, never present in document content); at assembly
+  the placeholder is substituted with the current render's nonce `N` in a single
+  string pass (same mechanism as the mermaid SVG re-id fix). This **preserves the
+  per-render-nonce security model**.
+  - *Decision (best long-run):* keep the per-render nonce. A **stable
+    per-session nonce** would remove the substitution step but is
+    **replay-vulnerable** — a nonce observed once (e.g. rendered HTML pasted back
+    into the document as raw HTML) stays valid all session and could forge a
+    "trusted" mermaid/math node. Per-render regeneration defeats that replay; the
+    placeholder→`N` substitution is cheap, so we do not trade security for it.
+    `P` is process-stable only as an internal cache token (never returned to the
+    frontend), so it carries no replay surface.
 
 ### 4.2 Cache
 
@@ -206,9 +212,12 @@ fight mermaid/katex-decorated nodes — see the perf-branch notes).
 
 ## 8. Phasing
 
-- **Phase 1** — backend `render_incremental` + block LRU + fallback + assembly
-  (line/nonce rewrite). Ships independently; identical output; frontend
-  untouched. Captures the dominant ~84% backend cost.
+Both phases below are implemented in a **single implementation plan** (they are
+coupled through block segmentation). Phase-1 tasks come first and remain
+independently landable/shippable (identical output, frontend untouched).
+
+- **Phase 1** — backend `render_incremental` + block cache + fallback + assembly
+  (line/nonce rewrite). Identical output. Captures the dominant ~84% backend cost.
 - **Phase 2** — block manifest in `RenderResult` + frontend keyed reconciliation
   + scoped post-processing. Captures the ~70% frontend reflow.
 - **Phase 3 (future, out of scope)** — viewport/lazy rendering for huge-document
