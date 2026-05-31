@@ -34,7 +34,7 @@ Implementation workers should use `just check` for the default non-WebDriver gat
 
 ## Execution Status
 
-Updated 2026-05-31 after merging `dit-actions-keybindings` into `feat/large-expansion`:
+Updated 2026-05-31 after merging `dit-outline` into `feat/large-expansion`:
 
 - Blocks 1-3, `dit-core-facts`: merged into `feat/large-expansion` as `d062d9c`, `a7cf6db`, and `5d87966`.
 - Block 4, app preview authority shell: merged as `2451545` with implementation commit `d66162f`; `ccc --yolo @cx-reviewer` returned `PASS` after the rebase.
@@ -46,7 +46,9 @@ Updated 2026-05-31 after merging `dit-actions-keybindings` into `feat/large-expa
 - Block 7, `dit-validation`: merged back into `feat/large-expansion` as `2f8553c`.
 - Block 8, action registry and keybinding persistence: implemented as `9960503`; rebased onto Block 7; fixed the ccc-found stale tracked UI bundle artifact; final `ccc --yolo @cx-reviewer` returned `PASS`.
 - Block 8, `dit-actions-keybindings`: merged back into `feat/large-expansion` as `8d47a6d`; root `just check` passed after merge, including 19 Playwright tests.
-- Next active workstreams: Block 9, `dit-outline`, and Block 10, `dit-diagnostics-ui`, both after the shared fact/action/validation foundation.
+- Block 9, UI facts store and outline panel: implemented as `ee87b8b`; `ccc --yolo @cx-reviewer` returned `PASS`.
+- Block 9, `dit-outline`: merged back into `feat/large-expansion`; root `just check` passed after merge, including 20 Playwright tests.
+- Next active workstream: Block 10, `dit-diagnostics-trust`, after the shared fact/action/validation/outline foundation.
 
 ## Operating Contract
 
