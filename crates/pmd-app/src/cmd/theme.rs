@@ -571,6 +571,64 @@ pub fn set_theme_from_roots(slug: &str, roots: &[PathBuf]) -> Result<ThemeBundle
     if let Some(v) = get_or_derive_str("mermaid_error", Some("#e77878")) {
         mermaid_vars.insert("errorBkgColor".to_string(), v);
     }
+    // The parse-error graphic uses a fixed light-red fill; its text would
+    // otherwise default through `tertiaryTextColor` (= `fg`) and vanish on
+    // many themes. Pin it to a fixed near-black so the pair is readable
+    // regardless of theme.
+    mermaid_vars
+        .entry("errorTextColor".to_string())
+        .or_insert_with(|| "#1a1a1a".to_string());
+
+    // --- Gantt status tasks ----------------------------------------------
+    //
+    // Mermaid's Gantt theme defaults several task fills to *literal* colours
+    // (`doneTaskBkgColor = lightgrey`, `critBkgColor = red`) and renders the
+    // task text through `taskTextDarkColor` (= `textColor` = `fg`). That pairs
+    // `fg` against a fixed mid-tone and falls below AA on many themes. Treat
+    // tasks like nodes: fills are surfaces along the `bg_elevated`↔`bg` axis
+    // (guaranteed to clear AA against `fg`), the status distinction moves to
+    // the border, and every task-text variable tracks `fg`.
+    if let Some(bg_elevated) = bg_elevated {
+        mermaid_vars.insert("taskBkgColor".to_string(), bg_elevated.clone());
+        // active tasks pop slightly toward the canvas; done tasks recede
+        // further. Both stay on the bg_elevated↔bg axis, so `fg` text clears
+        // AA (overwriting Mermaid's literal `lightgrey` done-task default).
+        if let Some(v) = mix_toward(Some(bg_elevated), bg, 0.50) {
+            mermaid_vars.insert("activeTaskBkgColor".to_string(), v);
+        }
+        if let Some(v) = mix_toward(Some(bg_elevated), bg, 0.82) {
+            mermaid_vars.insert("doneTaskBkgColor".to_string(), v);
+        }
+        // section bands sit behind tasks — keep them as faint surfaces.
+        mermaid_vars.insert("sectionBkgColor".to_string(), bg_elevated.clone());
+        if let Some(v) = mix_toward(Some(bg_elevated), bg, 0.45) {
+            mermaid_vars.insert("sectionBkgColor2".to_string(), v);
+        }
+        // critical tasks keep their fill on a surface (overwriting Mermaid's
+        // literal `red`); the alarm signal moves to a fixed red border so the
+        // task text stays readable.
+        mermaid_vars.insert("critBkgColor".to_string(), bg_elevated.clone());
+        mermaid_vars.insert("critBorderColor".to_string(), "#e06c75".to_string());
+    }
+    if let Some(accent) = accent {
+        mermaid_vars.insert("activeTaskBorderColor".to_string(), accent.clone());
+    }
+    if let Some(border) = border {
+        mermaid_vars.insert("doneTaskBorderColor".to_string(), border.clone());
+        mermaid_vars.insert("taskBorderColor".to_string(), border.clone());
+        mermaid_vars.insert("gridColor".to_string(), border.clone());
+    }
+    if let Some(fg) = fg {
+        for key in [
+            "taskTextColor",
+            "taskTextDarkColor",
+            "taskTextLightColor",
+            "taskTextOutsideColor",
+            "sectionTextColor",
+        ] {
+            mermaid_vars.insert(key.to_string(), fg.clone());
+        }
+    }
 
     Ok(ThemeBundle {
         css: css_vars,

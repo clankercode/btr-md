@@ -301,6 +301,12 @@ fn every_bundled_theme_has_readable_mermaid_nodes() {
         ("noteBkgColor", "noteTextColor"),
         ("actorBkg", "actorTextColor"),
         ("labelBoxBkgColor", "labelTextColor"),
+        ("errorBkgColor", "errorTextColor"),
+        ("taskBkgColor", "taskTextColor"),
+        ("activeTaskBkgColor", "taskTextColor"),
+        ("doneTaskBkgColor", "taskTextColor"),
+        ("critBkgColor", "taskTextColor"),
+        ("sectionBkgColor", "sectionTextColor"),
     ];
     for theme in &themes {
         let bundle = set_theme_from_roots(&theme.slug, &roots)
