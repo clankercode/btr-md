@@ -32,9 +32,24 @@ The app already has strong renderer ambition: pretty output, themes, Mermaid, Ka
 
 That suggests a near-term roadmap centered on outline/navigation, local validation, image/asset workflow, security transparency, accessibility/keyboard polish, and file-change correctness.
 
+## Implementation Status (updated 2026-05-31)
+
+Audited against the codebase after the P0–P6 large-expansion landing and the
+document-inspection / find work. Of the 12 ranked opportunities below:
+
+- **Shipped (7):** #1 Outline, #2 Link/anchor/image validation, #3 Trust/resource
+  policy UI, #6 File-change/save-conflict, #9 Frontmatter, #11 Find, #12 Stats.
+- **Partial (5):** #4 (blocked-asset recovery ✅, paste/drop image creation ❌),
+  #5 (shortcuts/keyboard ✅, XDG portal preference gate ❌), #7 (GFM features ✅,
+  parity-mode toggle + compat fixtures ❌), #8 (Mermaid zoom/pan/copy-source/SVG +
+  inline errors ✅, PNG export + block-level trust ❌), #10 (desktop/MIME/AppStream
+  + icons ✅, portal open/save + Flatpak manifest + real screenshots ❌).
+
+Per-item status tags are inline on each heading below.
+
 ## Ranked Opportunities
 
-### 1. Document Outline and Heading Navigation
+### 1. Document Outline and Heading Navigation — ✅ IMPLEMENTED (`outline_panel.ts`)
 
 Classification: Necessary
 
@@ -49,7 +64,7 @@ Shape:
 - Click a heading to scroll source and preview.
 - Highlight current section from caret or preview scroll.
 
-### 2. Local Link, Anchor, and Image Validation
+### 2. Local Link, Anchor, and Image Validation — ✅ IMPLEMENTED (`preview/validation.rs`, `diagnostics.ts`)
 
 Classification: Necessary
 
@@ -64,7 +79,7 @@ Shape:
 - Keep network link checking out of v1.
 - Surface diagnostics in the preview, status bar, and a small diagnostics panel.
 
-### 3. Visible Trust and Resource Policy UI
+### 3. Visible Trust and Resource Policy UI — ✅ IMPLEMENTED (`trust_policy_panel.ts`, `resource_policy.rs`)
 
 Classification: Necessary
 
@@ -79,7 +94,7 @@ Shape:
 - Return a structured blocked-resource ledger from render/path resolution.
 - Include blocked remote images, blocked `file://`, out-of-scope relative paths, and allowed local roots.
 
-### 4. Local Asset Grant and Paste/Drop Image Workflow
+### 4. Local Asset Grant and Paste/Drop Image Workflow — 🟡 PARTIAL (recovery ✅ `local_asset_grants.ts`; paste/drop creation ❌)
 
 Classification: Necessary / High-value
 
@@ -94,7 +109,7 @@ Shape:
 - On image paste/drop into a saved document, copy to `images/` or `images/<document-stem>/` and insert a relative Markdown image.
 - For unsaved buffers, prompt to save first.
 
-### 5. Linux Accessibility, Keyboard, and Host Preference Gate
+### 5. Linux Accessibility, Keyboard, and Host Preference Gate — 🟡 PARTIAL (shortcuts/ARIA ✅; XDG portal preference gate ❌)
 
 Classification: Necessary
 
@@ -110,7 +125,7 @@ Shape:
 - High contrast, large text, reduced motion, focus visibility, and screen-reader smoke checks.
 - Prefer XDG Settings portal values for color scheme, accent, contrast, and reduced motion where available.
 
-### 6. File-Change and Save-Conflict UX
+### 6. File-Change and Save-Conflict UX — ✅ IMPLEMENTED (`doc/state.rs`, `watcher.rs`, `doc/merge.rs`)
 
 Classification: Necessary
 
@@ -125,7 +140,7 @@ Shape:
 - Keep or add coverage for atomic-save patterns from common editors.
 - Surface non-local filesystem watcher limitations clearly.
 
-### 7. GitHub Parity Mode and Compatibility Notes
+### 7. GitHub Parity Mode and Compatibility Notes — 🟡 PARTIAL (GFM features ✅; parity-mode toggle + compat fixtures ❌)
 
 Classification: High-value
 
@@ -139,7 +154,7 @@ Shape:
 - Maintain fixtures for alerts, footnotes, task lists, duplicate anchors, Mermaid, math, relative links, and intentional raw-HTML/security deviations.
 - Document known differences instead of hiding them.
 
-### 8. Diagram and Math Inspection Controls
+### 8. Diagram and Math Inspection Controls — 🟡 PARTIAL (zoom/pan/copy-source/SVG + inline errors ✅ `mermaid_zoom.ts`; PNG export + block-level trust ❌)
 
 Classification: High-value
 
@@ -154,7 +169,7 @@ Shape:
 - Copy diagram source and possibly copy SVG/PNG after security review.
 - Show Mermaid/KaTeX trust policy at block level later if useful.
 
-### 9. Frontmatter Awareness Without Generator Scope Creep
+### 9. Frontmatter Awareness Without Generator Scope Creep — ✅ IMPLEMENTED (`frontmatter_panel.ts`, `frontmatter_edit.ts`)
 
 Classification: High-value
 
@@ -169,7 +184,7 @@ Shape:
 - Show a compact metadata inspector.
 - Avoid project build behavior, plugins, and generator execution.
 
-### 10. AppStream, Flatpak, Portal, and Software-Center Completeness
+### 10. AppStream, Flatpak, Portal, and Software-Center Completeness — 🟡 PARTIAL (desktop/MIME/AppStream/icons ✅; portal open/save + Flatpak manifest + real screenshots ❌)
 
 Classification: Necessary
 
@@ -184,7 +199,7 @@ Shape:
 - Validate desktop file, MIME XML, AppStream, and installed icons; the core icon/raster set is now landed, so focus on integration and release metadata.
 - Add real screenshots with captions showing Markdown, Mermaid, KaTeX, code, and themes.
 
-### 11. Find in Source and Rendered Preview
+### 11. Find in Source and Rendered Preview — ✅ IMPLEMENTED (`find_controller.ts`, `find_source.ts`, `find_preview.ts`)
 
 Classification: High-value
 
@@ -199,7 +214,7 @@ Shape:
 - Match counts and keyboard navigation.
 - No raw HTML injection for highlights.
 
-### 12. Reading, Word, and Structure Stats
+### 12. Reading, Word, and Structure Stats — ✅ IMPLEMENTED (`stats_popover.ts`, `counts.ts`)
 
 Classification: High-value
 
