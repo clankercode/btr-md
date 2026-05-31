@@ -103,15 +103,37 @@ async function openMarkdown(page, markdown, options = {}) {
   await page.waitForTimeout(250);
 }
 
+async function openSavedMarkdown(page, filePath, markdown, options = {}) {
+  const files = { ...(options.files ?? {}), [filePath]: markdown };
+  await installTauriMock(page, { ...options, files, initialPath: filePath });
+  await page.goto(appUrl());
+  await page.evaluate((path) => window.__pmdOpenPathForTest(path), filePath);
+  await page.waitForFunction((source) => {
+    const firstLine = String(source).split('\n')[0] ?? '';
+    return document.querySelector('.cm-content')?.textContent?.includes(firstLine) ?? false;
+  }, markdown);
+  await page.waitForTimeout(250);
+}
+
+async function grantFolderInMockBackend(page, canonicalRoot) {
+  await page.evaluate((root) => {
+    window.__pmdNextGrantFolder = root;
+  }, canonicalRoot);
+}
+
 async function installTauriMock(page, options = {}) {
-  await page.addInitScript(({ initialPath, themes, renderHtml, renderDocId, renderVersion, renderFacts, renderDiagnostics }) => {
+  await page.addInitScript(({ initialPath, themes, renderHtml, renderDocId, renderVersion, renderFacts, renderDiagnostics, files: fixtureFiles, gitRoots, trustRoots }) => {
     let callbackId = 1;
     let nextDocId = 1;
+    let nextGrantId = 1;
     let shortcutOverrides = {};
     const callbacks = new Map();
     const files = {
       '/work/tests/corpus/hello.md': '# Hello\n\nThis file was opened by the test harness.',
+      ...(fixtureFiles ?? {}),
     };
+    const assetGrants = [];
+    const trustRootDecisions = [...(trustRoots ?? [])];
 
     const emptyLinkSummary = () => ({
       checked: 0,
@@ -210,6 +232,23 @@ async function installTauriMock(page, options = {}) {
         headings: merged.headings.length,
       };
       return merged;
+    }
+
+    function dirname(filePath) {
+      const index = String(filePath).lastIndexOf('/');
+      return index > 0 ? String(filePath).slice(0, index) : '/';
+    }
+
+    function trustContextForPath(filePath) {
+      const docDir = dirname(filePath);
+      const gitRoot = (gitRoots ?? []).find((root) => String(filePath).startsWith(`${root}/`)) ?? null;
+      const state = trustRootDecisions.find((decision) => decision.canonical_root === gitRoot)?.state ?? 'unknown';
+      return {
+        doc_dir: docDir,
+        git_root: gitRoot,
+        git_root_state: state,
+        should_prompt_for_repo_root: Boolean(gitRoot && state === 'unknown'),
+      };
     }
 
     function diagnosticsForMarkdown(markdown, docId, version) {
@@ -318,6 +357,39 @@ async function installTauriMock(page, options = {}) {
       };
     }
 
+    function hasOutsideAssetGrant(docId) {
+      return assetGrants.some((grant) => {
+        if (grant.doc_id !== docId) return false;
+        return grant.canonical_root === '../assets'
+          || grant.canonical_root === '/work/repo'
+          || grant.canonical_root === '/work/repo/assets';
+      });
+    }
+
+    function grantAwareDiagnosticsForMarkdown(markdown, docId, version) {
+      const diagnostics = diagnosticsForMarkdown(markdown, docId, version);
+      if (String(markdown).includes('../assets/outside.png') && hasOutsideAssetGrant(docId)) {
+        diagnostics.issues = diagnostics.issues.filter((item) => item.id !== 'blocked-image:1');
+        diagnostics.resources.decisions = [{
+          source_target: '../assets/outside.png',
+          normalized_target: '../assets/outside.png',
+          line_start: 1,
+          line_end: 1,
+          kind: 'image',
+          decision: 'allowed',
+          reason: 'allowed_local_scope',
+          safe_url: 'asset://localhost/outside.png',
+          placeholder_id: 'image-0',
+          alt_text: 'outside',
+        }];
+        diagnostics.resources.loaded_resources = ['../assets/outside.png'];
+        diagnostics.resources.allowed_roots = assetGrants
+          .filter((grant) => grant.doc_id === docId)
+          .map((grant) => grant.canonical_root);
+      }
+      return diagnostics;
+    }
+
     const escapeHtml = (value) => String(value)
       .replaceAll('&', '&amp;')
       .replaceAll('<', '&lt;')
@@ -331,6 +403,9 @@ async function installTauriMock(page, options = {}) {
       const linkHtml = externalLink
         ? `<p><a data-pmd-link-id="link-0" href="${escapeHtml(externalLink[2])}" role="link" tabindex="0">${escapeHtml(externalLink[1])}</a></p>`
         : '';
+      if (diagnostics.resources.decisions.some((decision) => decision.decision === 'allowed' && decision.alt_text === 'outside')) {
+        return `<article class="pmd-preview"><h1>${escapeHtml(heading)}</h1><p>${escaped}</p><img src="asset://localhost/outside.png" alt="outside"></article>`;
+      }
       const blocked = diagnostics.issues.some((item) => item.category === 'resource_policy')
         ? '<span class="pmd-image-placeholder">Image blocked<span>Content Blocked</span></span>'
         : diagnostics.issues.some((item) => item.category === 'image')
@@ -407,7 +482,7 @@ async function installTauriMock(page, options = {}) {
           const version = renderVersion ?? args.version ?? 0;
           const docId = renderDocId ?? args.docId ?? args.doc_id ?? 1;
           const markdown = args.markdown ?? '';
-          const diagnostics = diagnosticsForMarkdown(markdown, docId, version);
+          const diagnostics = grantAwareDiagnosticsForMarkdown(markdown, docId, version);
           return {
             doc_id: docId,
             html: renderHtml ?? renderMarkdown(markdown, diagnostics),
@@ -432,18 +507,79 @@ async function installTauriMock(page, options = {}) {
           return { opened: true };
         }
         if (cmd === 'open_file' || cmd === 'request_open_file') {
+          const docId = nextDocId++;
+          const trust_context = trustContextForPath(args.path);
+          if (trust_context.git_root && trust_context.git_root_state === 'trusted') {
+            assetGrants.push({
+              id: nextGrantId++,
+              window_label: 'main',
+              doc_id: docId,
+              canonical_root: trust_context.git_root,
+            });
+          }
           return {
-            doc_id: nextDocId++,
+            doc_id: docId,
             path: args.path,
             contents: files[args.path] ?? '# Missing fixture',
             state: { kind: 'clean', base: '00' },
+            trust_context,
           };
         }
         if (cmd === 'register_doc') {
           return {
             doc_id: nextDocId++,
             state: args.path ? { kind: 'clean', base: '00' } : { kind: 'untitled' },
+            trust_context: args.path ? trustContextForPath(args.path) : null,
           };
+        }
+        if (cmd === 'list_asset_grants') {
+          return assetGrants.filter((grant) => grant.doc_id === args.docId);
+        }
+        if (cmd === 'grant_recommended_root') {
+          const existing = trustRootDecisions.find((decision) => decision.canonical_root === args.canonicalRoot);
+          if (existing) existing.state = 'trusted';
+          else trustRootDecisions.push({ canonical_root: args.canonicalRoot, state: 'trusted' });
+          const grant = {
+            id: nextGrantId++,
+            window_label: 'main',
+            doc_id: args.docId,
+            canonical_root: args.canonicalRoot,
+          };
+          assetGrants.push(grant);
+          return grant;
+        }
+        if (cmd === 'grant_asset_folder') {
+          const root = window.__pmdNextGrantFolder;
+          if (!root) throw new Error('No mocked asset folder selected');
+          window.__pmdNextGrantFolder = null;
+          const grant = {
+            id: nextGrantId++,
+            window_label: 'main',
+            doc_id: args.docId,
+            canonical_root: root,
+          };
+          assetGrants.push(grant);
+          return grant;
+        }
+        if (cmd === 'remember_declined_root') {
+          const existing = trustRootDecisions.find((decision) => decision.canonical_root === args.canonicalRoot);
+          if (existing) existing.state = 'declined';
+          else trustRootDecisions.push({ canonical_root: args.canonicalRoot, state: 'declined' });
+          return null;
+        }
+        if (cmd === 'list_trust_roots') return trustRootDecisions;
+        if (cmd === 'forget_trust_root') {
+          const index = trustRootDecisions.findIndex((decision) => decision.canonical_root === args.canonicalRoot);
+          if (index >= 0) trustRootDecisions.splice(index, 1);
+          for (let i = assetGrants.length - 1; i >= 0; i--) {
+            if (assetGrants[i].canonical_root === args.canonicalRoot) assetGrants.splice(i, 1);
+          }
+          return null;
+        }
+        if (cmd === 'revoke_asset_grant') {
+          const index = assetGrants.findIndex((grant) => grant.id === args.grantId && grant.doc_id === args.docId);
+          if (index >= 0) assetGrants.splice(index, 1);
+          return null;
         }
         if (cmd === 'doc_edited') return { kind: 'dirty', base: '00', mem: 'ff' };
         if (cmd === 'save_doc') return { kind: 'clean', base: '00' };
@@ -470,13 +606,18 @@ async function installTauriMock(page, options = {}) {
     renderVersion: options.renderVersion ?? null,
     renderFacts: options.renderFacts ?? null,
     renderDiagnostics: options.renderDiagnostics ?? null,
+    files: options.files ?? null,
+    gitRoots: options.gitRoots ?? [],
+    trustRoots: options.trustRoots ?? [],
   });
 }
 
 module.exports = {
   appUrl,
+  grantFolderInMockBackend,
   installTauriMock,
   openMarkdown,
+  openSavedMarkdown,
   screenshotPath,
   themes,
 };

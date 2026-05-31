@@ -39,6 +39,8 @@
     "src/inline_issues.ts",
     "src/resource_policy.ts",
     "src/trust_policy_panel.ts",
+    "src/local_asset_grants.ts",
+    "src/trust_roots.ts",
     "src/outline_panel.ts",
     "src/actions.ts",
     "src/keybindings.ts",

@@ -16,11 +16,18 @@ pub async fn render_cmd(
     markdown: String,
 ) -> Result<RenderResult, String> {
     let snapshot = state.docs.preview_snapshot(doc_id)?;
+    let mut allowed_roots = snapshot.allowed_roots;
+    allowed_roots.extend(crate::preview::grants::active_grant_roots_for_render(
+        window.label(),
+        crate::doc::state::DocId(doc_id),
+    )?);
+    allowed_roots.sort();
+    allowed_roots.dedup();
     let result = render_preview(
         snapshot.doc_id,
         version,
         snapshot.path.as_deref(),
-        snapshot.allowed_roots,
+        allowed_roots,
         &markdown,
     )?;
     links.record_render_links(

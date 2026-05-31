@@ -7,6 +7,7 @@
 // fonts, default-handler) can add sections without restructuring.
 
 import type { AutoreloadMode, AutosaveMode, DiffMode, MergeStrategy } from './doc_state.js';
+import type { TrustRootDecision } from './document_contracts.js';
 
 export interface SettingsSnapshot {
   autosave_mode: AutosaveMode;
@@ -32,6 +33,8 @@ export interface SettingsMenuDeps {
   getDefaultHandlerStatus: () => Promise<HandlerStatus>;
   setAsDefaultHandler: () => Promise<void>;
   setMonoFont: (font: string | null) => Promise<void>;
+  listTrustRoots: () => Promise<TrustRootDecision[]>;
+  forgetTrustRoot: (root: string) => Promise<void>;
   onAutosaveChange: (m: AutosaveMode) => void;
   onAutoreloadChange: (m: AutoreloadMode) => void;
   onBaseDirChange: (dir: string) => void;
@@ -264,6 +267,17 @@ export function createSettingsMenu(
   fontRow.appendChild(fontInput);
   menu.appendChild(fontRow);
 
+  const divider3 = document.createElement('div');
+  divider3.className = 'pmd-dropdown-divider';
+  menu.appendChild(divider3);
+  const trustHeading = document.createElement('div');
+  trustHeading.className = 'pmd-dropdown-label';
+  trustHeading.textContent = 'Asset roots';
+  menu.appendChild(trustHeading);
+  const trustRootsList = document.createElement('div');
+  trustRootsList.className = 'pmd-settings-trust-roots';
+  menu.appendChild(trustRootsList);
+
   wrapper.appendChild(btn);
   wrapper.appendChild(menu);
   toolbar.appendChild(wrapper);
@@ -296,6 +310,36 @@ export function createSettingsMenu(
       fontInput.value = s.mono_font ?? '';
     } catch (e) {
       console.error('getSettings failed:', e);
+    }
+    try {
+      const decisions = await deps.listTrustRoots();
+      trustRootsList.replaceChildren();
+      if (decisions.length === 0) {
+        const empty = document.createElement('div');
+        empty.className = 'pmd-settings-row';
+        empty.textContent = 'No stored asset-root decisions';
+        trustRootsList.append(empty);
+      }
+      for (const decision of decisions) {
+        const row = document.createElement('div');
+        row.className = 'pmd-settings-row pmd-settings-row-col';
+        const label = document.createElement('span');
+        label.className = 'pmd-settings-base pmd-truncate';
+        label.textContent = `${decision.state}: ${decision.canonical_root}`;
+        label.title = decision.canonical_root;
+        const remove = document.createElement('button');
+        remove.className = 'pmd-btn pmd-btn-outline pmd-btn-sm';
+        remove.type = 'button';
+        remove.textContent = 'Remove';
+        remove.addEventListener('click', async () => {
+          await deps.forgetTrustRoot(decision.canonical_root);
+          await refresh();
+        });
+        row.append(label, remove);
+        trustRootsList.append(row);
+      }
+    } catch (e) {
+      console.error('listTrustRoots failed:', e);
     }
     void refreshHandler();
   }

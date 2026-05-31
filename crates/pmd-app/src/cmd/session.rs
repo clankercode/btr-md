@@ -109,6 +109,7 @@ pub fn load_session() -> Session {
 #[tauri::command]
 pub async fn restore_dirty_doc(
     app: tauri::AppHandle,
+    window: tauri::Window,
     state: tauri::State<'_, crate::AppState>,
     path: PathBuf,
     content: String,
@@ -129,10 +130,9 @@ pub async fn restore_dirty_doc(
         FileState::DiskChangedDirty { base, mem, disk }
     };
 
-    let doc_id =
-        state
-            .docs
-            .register_restored(canon.clone(), baseline_content, fstate.clone());
+    let doc_id = state
+        .docs
+        .register_restored(canon.clone(), baseline_content, fstate.clone());
 
     // Honor save authority exactly like `register_opened`: a background restore
     // starts the watcher but does NOT steal active-doc save authority.
@@ -141,6 +141,11 @@ pub async fn restore_dirty_doc(
     }
     state.watcher.set_target(app.clone(), doc_id, canon.clone());
     try_push_recent(&canon);
+    let applied = crate::preview::trust_roots::apply_remembered_trust_for_document_global(
+        window.label(),
+        doc_id,
+        &canon,
+    )?;
 
     Ok(OpenedDoc {
         doc_id,
@@ -148,6 +153,7 @@ pub async fn restore_dirty_doc(
         // Seed the editor with the live unsaved buffer, not the disk text.
         contents: content,
         state: fstate,
+        trust_context: applied.trust_context,
     })
 }
 
@@ -222,11 +228,7 @@ mod tests {
         let reg = crate::doc::DocRegistry::new();
         let baseline = "ancestor body".to_string();
         let st = reconstruct(&baseline, "edits", "external");
-        let id = reg.register_restored(
-            PathBuf::from("/tmp/x.md"),
-            baseline.clone(),
-            st.clone(),
-        );
+        let id = reg.register_restored(PathBuf::from("/tmp/x.md"), baseline.clone(), st.clone());
         assert_eq!(reg.base_content_of(id).as_deref(), Some(baseline.as_str()));
         assert_eq!(reg.state_of(id), Some(st));
     }

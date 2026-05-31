@@ -42,7 +42,7 @@ fn allowed_local_image_rewrites_to_asset_url() {
         resolution.report.decisions[0].reason.as_str(),
         "allowed_local_scope"
     );
-    assert!(resolution.safe_html.contains("asset://localhost/"));
+    assert!(resolution.safe_html.contains("data:image/png;base64,"));
     assert!(resolution.safe_html.contains("alt=\"ok\""));
     assert_eq!(resolution.report.loaded_resources.len(), 1);
 }

@@ -6,6 +6,7 @@
 
 import type { EditorState } from '@codemirror/state';
 import type { FileState, Mode } from './doc_state.js';
+import type { DocumentTrustContext } from './document_contracts.js';
 
 export type TabId = number;
 
@@ -30,6 +31,7 @@ export interface DocTab {
    *  if it is still the latest for its tab. */
   renderSeq: number;
   reloadPending: boolean;
+  trustContext: DocumentTrustContext | null;
 }
 
 export interface EmptyTab {
@@ -54,6 +56,7 @@ export interface NewDocTab {
   fileState: FileState;
   baseContent: string;
   editorState: EditorState | null;
+  trustContext: DocumentTrustContext | null;
 }
 
 export interface TabStore {
@@ -110,6 +113,7 @@ export function createTabStore(): TabStore {
       scrollPreview: 0,
       renderSeq: 0,
       reloadPending: false,
+      trustContext: spec.trustContext,
     };
     tabs.push(tab);
     if (!opts?.background) setActive(tab.id);

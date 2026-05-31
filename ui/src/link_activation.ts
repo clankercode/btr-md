@@ -22,6 +22,7 @@ export interface OpenedDocumentFromLink {
   path: string;
   contents: string;
   state: unknown;
+  trust_context?: unknown;
 }
 
 export interface ExternalConfirmationDialog {

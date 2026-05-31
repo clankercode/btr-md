@@ -1,5 +1,10 @@
+pub mod asset_scope;
 pub mod contracts;
+pub mod git_root;
+pub mod grants;
+pub mod image_workflow;
 pub mod link_activation;
 pub mod render_pipeline;
 pub mod resource_policy;
+pub mod trust_roots;
 pub mod validation;

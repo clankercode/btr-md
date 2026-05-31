@@ -37,6 +37,13 @@ fn main() {
             cmd::render::render_cmd,
             pmd_app_lib::preview::link_activation::prepare_link_activation,
             pmd_app_lib::preview::link_activation::confirm_external_open,
+            pmd_app_lib::preview::grants::grant_asset_folder,
+            pmd_app_lib::preview::grants::grant_recommended_root,
+            pmd_app_lib::preview::grants::revoke_asset_grant,
+            pmd_app_lib::preview::grants::list_asset_grants,
+            pmd_app_lib::preview::trust_roots::remember_declined_root,
+            pmd_app_lib::preview::trust_roots::forget_trust_root,
+            pmd_app_lib::preview::trust_roots::list_trust_roots,
             cmd::file::open_file,
             cmd::file::request_open_file,
             cmd::file::open_dialog,
@@ -81,6 +88,13 @@ fn main() {
             cmd::session::restore_dirty_doc,
         ])
         .setup(move |app| {
+            pmd_app_lib::preview::grants::init_grant_store(app.asset_protocol_scope());
+            match pmd_app_lib::preview::trust_roots::init_trust_root_store(
+                pmd_app_lib::preview::trust_roots::trust_root_settings_path(),
+            ) {
+                Ok(()) => {}
+                Err(e) => eprintln!("[btr-md] could not load trusted asset roots: {e}"),
+            }
             // The watcher + registry entry for the initial file are created by
             // the frontend's open flow; here we only nudge it to open.
             if let Some(ref p) = args.initial_path {
