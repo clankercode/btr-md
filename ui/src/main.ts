@@ -1320,6 +1320,7 @@ store.onActivate((prev, next) => {
     outlinePanel.setHeadings([]);
     outlinePanel.setMode('collapsed');
     clearDocumentIntelligenceUi();
+    workspace.setActiveFile(null);
     renderEmptyBody();
     return;
   }
@@ -1330,8 +1331,10 @@ store.onActivate((prev, next) => {
     case 'doc':
       activateDocTab(next);
       if (next.filePath) void revealActiveFile(next.filePath);
+      else workspace.setActiveFile(null);
       break;
     case 'empty':
+      workspace.setActiveFile(null);
       chrome.setCounts(null);
       factsStore.setActiveDoc(null);
       outlinePanel.setHeadings([]);
@@ -1340,6 +1343,7 @@ store.onActivate((prev, next) => {
       renderEmptyBody();
       break;
     case 'browser':
+      workspace.setActiveFile(null);
       chrome.setCounts(null);
       factsStore.setActiveDoc(null);
       outlinePanel.setHeadings([]);
