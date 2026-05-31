@@ -662,7 +662,7 @@ pub fn render_fragment(md: &str, render_nonce: &str) -> FragmentRender {
                 }
                 if matches!(tag_end, TagEnd::Image) {
                     if let Some(state) = image_state.take() {
-                        emit_image(&mut html, &state, &render_nonce);
+                        emit_image(&mut html, &state, render_nonce);
                     }
                 }
                 if matches!(tag_end, TagEnd::Table) {
@@ -796,7 +796,7 @@ pub fn render_fragment(md: &str, render_nonce: &str) -> FragmentRender {
                 };
                 html.push_str(&format!(
                     "<sup class=\"pmd-fnref\" id=\"{ref_id}\"><a href=\"#fn-{n}\" class=\"pmd-fnref-link\" data-pmd-nonce=\"{}\">{n}</a></sup>",
-                    escape_html(&render_nonce)
+                    escape_html(render_nonce)
                 ));
             }
             Event::Rule => {
@@ -816,7 +816,7 @@ pub fn render_fragment(md: &str, render_nonce: &str) -> FragmentRender {
         html.push_str("$$");
         html.push_str(&escape_html(&math));
     }
-    emit_footnotes_section(&mut html, footnotes, &fn_ref_counts, &render_nonce);
+    emit_footnotes_section(&mut html, footnotes, &fn_ref_counts, render_nonce);
     FragmentRender {
         html,
         source_map,

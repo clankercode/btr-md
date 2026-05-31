@@ -1,6 +1,6 @@
-use proptest::prelude::*;
 use pmd_core::emit::render_string;
 use pmd_core::incremental::render_incremental;
+use proptest::prelude::*;
 
 fn strip_block_attr(html: &str) -> String {
     let mut out = String::with_capacity(html.len());
@@ -10,7 +10,10 @@ fn strip_block_attr(html: &str) -> String {
         let s = i + p;
         out.push_str(&html[i..s]);
         let after = s + needle.len();
-        let end = html[after..].find('"').map(|q| after + q + 1).unwrap_or(html.len());
+        let end = html[after..]
+            .find('"')
+            .map(|q| after + q + 1)
+            .unwrap_or(html.len());
         i = end;
     }
     out.push_str(&html[i..]);

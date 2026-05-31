@@ -208,7 +208,10 @@ mod tests {
             let dir = tempfile::tempdir().expect("create temp config home");
             let previous = env::var_os("XDG_CONFIG_HOME");
             env::set_var("XDG_CONFIG_HOME", dir.path());
-            Self { previous, _dir: dir }
+            Self {
+                previous,
+                _dir: dir,
+            }
         }
     }
 
@@ -280,7 +283,10 @@ mod tests {
             browser_tab: false,
         };
         let json = serde_json::to_string(&session).expect("serialize");
-        assert!(!json.contains("unsaved"), "clean doc must omit `unsaved`: {json}");
+        assert!(
+            !json.contains("unsaved"),
+            "clean doc must omit `unsaved`: {json}"
+        );
     }
 
     #[test]
@@ -327,6 +333,9 @@ mod tests {
 
         assert_eq!(load_session(), Session::default());
         // The corrupt file is left in place (not deleted), matching recents.
-        assert!(session_path().exists(), "corrupt session.json must not be deleted");
+        assert!(
+            session_path().exists(),
+            "corrupt session.json must not be deleted"
+        );
     }
 }

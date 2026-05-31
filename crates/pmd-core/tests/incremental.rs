@@ -1,5 +1,5 @@
-use pmd_core::incremental::{plan_blocks_for_test, render_block_for_test, render_incremental};
 use pmd_core::emit::render_string;
+use pmd_core::incremental::{plan_blocks_for_test, render_block_for_test, render_incremental};
 
 #[test]
 fn segments_top_level_blocks_with_lines() {
@@ -44,7 +44,10 @@ fn block_render_is_sanitized_and_cached_relative() {
     assert!(html1.contains("<strong>world</strong>"));
     let (html2, hits2) = render_block_for_test("Hello **world**.");
     assert_eq!(html1, html2);
-    assert!(hits2 > hits1, "second identical render should hit the cache");
+    assert!(
+        hits2 > hits1,
+        "second identical render should hit the cache"
+    );
 }
 
 #[test]
@@ -65,7 +68,10 @@ fn strip_block_attr(html: &str) -> String {
         let s = i + p;
         out.push_str(&html[i..s]);
         let after = s + needle.len();
-        let end = html[after..].find('"').map(|q| after + q + 1).unwrap_or(html.len());
+        let end = html[after..]
+            .find('"')
+            .map(|q| after + q + 1)
+            .unwrap_or(html.len());
         i = end;
     }
     out.push_str(&html[i..]);
@@ -81,17 +87,24 @@ fn assert_equiv(md: &str) {
     let inc_html = strip_block_attr(&inc.html.replace(&inc.render_nonce, "NONCE"));
     let full_html = strip_block_attr(&full.html.replace(&full.render_nonce, "NONCE"));
     assert_eq!(inc_html, full_html, "html mismatch for:\n{md}");
-    assert_eq!(inc.source_map, full.source_map, "source_map mismatch for:\n{md}");
+    assert_eq!(
+        inc.source_map, full.source_map,
+        "source_map mismatch for:\n{md}"
+    );
 }
 
 #[test]
 fn incremental_equals_full_basic() {
-    assert_equiv("# Title\n\nPara **one** with `code`.\n\n- a\n- b\n\n| x | y |\n|---|---|\n| 1 | 2 |\n");
+    assert_equiv(
+        "# Title\n\nPara **one** with `code`.\n\n- a\n- b\n\n| x | y |\n|---|---|\n| 1 | 2 |\n",
+    );
 }
 
 #[test]
 fn incremental_equals_full_with_math_and_code() {
-    assert_equiv("Euler $e^{i\\pi}+1=0$ here.\n\n```rust\nfn main() {}\n```\n\n$$\n\\int_0^1 x\\,dx\n$$\n");
+    assert_equiv(
+        "Euler $e^{i\\pi}+1=0$ here.\n\n```rust\nfn main() {}\n```\n\n$$\n\\int_0^1 x\\,dx\n$$\n",
+    );
 }
 
 #[test]
@@ -105,8 +118,11 @@ fn incremental_emits_block_manifest_and_attrs() {
     let r = render_incremental(md);
     assert_eq!(r.blocks.len(), 3);
     for b in &r.blocks {
-        assert!(r.html.contains(&format!("data-pmd-block=\"{}\"", b.key)),
-            "missing data-pmd-block for key {}", b.key);
+        assert!(
+            r.html.contains(&format!("data-pmd-block=\"{}\"", b.key)),
+            "missing data-pmd-block for key {}",
+            b.key
+        );
     }
     assert_eq!(r.blocks[0].base_line, 1);
     assert_eq!(r.blocks[1].base_line, 3);
@@ -121,12 +137,16 @@ fn full_render_has_empty_manifest() {
 
 #[test]
 fn falls_back_on_blockquote_reference_definition() {
-    assert!(render_incremental("> [x]: https://e.com\n\nsee [x]\n").blocks.is_empty());
+    assert!(render_incremental("> [x]: https://e.com\n\nsee [x]\n")
+        .blocks
+        .is_empty());
 }
 
 #[test]
 fn falls_back_on_list_reference_definition() {
-    assert!(render_incremental("- [x]: https://e.com\n\nsee [x]\n").blocks.is_empty());
+    assert!(render_incremental("- [x]: https://e.com\n\nsee [x]\n")
+        .blocks
+        .is_empty());
 }
 
 #[test]
@@ -136,8 +156,16 @@ fn incremental_equals_full_blockquote_ref_def() {
 
 #[test]
 fn falls_back_on_tab_separated_list_reference_definition() {
-    assert!(pmd_core::incremental::render_incremental("-\t[x]: https://e.com\n\nsee [x]\n").blocks.is_empty());
-    assert!(pmd_core::incremental::render_incremental("1.\t[x]: https://e.com\n\nsee [x]\n").blocks.is_empty());
+    assert!(
+        pmd_core::incremental::render_incremental("-\t[x]: https://e.com\n\nsee [x]\n")
+            .blocks
+            .is_empty()
+    );
+    assert!(
+        pmd_core::incremental::render_incremental("1.\t[x]: https://e.com\n\nsee [x]\n")
+            .blocks
+            .is_empty()
+    );
 }
 
 #[test]
