@@ -5,6 +5,7 @@ node_modules/
 /build-appimage/
 /build-flatpak/
 /dist/
+/ui/dist/
 tests/screenshots/playwright-results/
 tests/screenshots/playwright/
 .playwright-mcp/
