@@ -4,11 +4,19 @@ use serde::{Deserialize, Serialize};
 use crate::escape::escape_html;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct BlockRef {
+    pub key: String,
+    pub base_line: u32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct RenderResult {
     pub version: u64,
     pub html: String,
     pub source_map: Vec<(u32, u32)>,
     pub render_nonce: String,
+    #[serde(default)]
+    pub blocks: Vec<BlockRef>,
 }
 
 pub(crate) fn byte_to_line(md: &str) -> impl Fn(usize) -> u32 + '_ {
@@ -791,5 +799,6 @@ pub fn render_string(md: &str) -> RenderResult {
         html,
         source_map: frag.source_map,
         render_nonce,
+        blocks: Vec::new(),
     }
 }

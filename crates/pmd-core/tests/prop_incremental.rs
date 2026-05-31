@@ -2,9 +2,25 @@ use proptest::prelude::*;
 use pmd_core::emit::render_string;
 use pmd_core::incremental::render_incremental;
 
-// Compare html with each render's own per-render nonce normalized away.
+fn strip_block_attr(html: &str) -> String {
+    let mut out = String::with_capacity(html.len());
+    let needle = " data-pmd-block=\"";
+    let mut i = 0;
+    while let Some(p) = html[i..].find(needle) {
+        let s = i + p;
+        out.push_str(&html[i..s]);
+        let after = s + needle.len();
+        let end = html[after..].find('"').map(|q| after + q + 1).unwrap_or(html.len());
+        i = end;
+    }
+    out.push_str(&html[i..]);
+    out
+}
+
+// Compare html with each render's own per-render nonce normalized away,
+// and data-pmd-block attrs stripped (only present in incremental path).
 fn norm(r: &pmd_core::emit::RenderResult) -> String {
-    r.html.replace(&r.render_nonce, "NONCE")
+    strip_block_attr(&r.html.replace(&r.render_nonce, "NONCE"))
 }
 
 // A markdown generator that avoids fallback triggers (no raw HTML, footnotes,

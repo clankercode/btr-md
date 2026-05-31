@@ -57,13 +57,29 @@ fn cache_eviction_does_not_corrupt() {
     assert_eq!(first, again);
 }
 
+fn strip_block_attr(html: &str) -> String {
+    let mut out = String::with_capacity(html.len());
+    let needle = " data-pmd-block=\"";
+    let mut i = 0;
+    while let Some(p) = html[i..].find(needle) {
+        let s = i + p;
+        out.push_str(&html[i..s]);
+        let after = s + needle.len();
+        let end = html[after..].find('"').map(|q| after + q + 1).unwrap_or(html.len());
+        i = end;
+    }
+    out.push_str(&html[i..]);
+    out
+}
+
 fn assert_equiv(md: &str) {
     let inc = render_incremental(md);
     let full = render_string(md);
     // Normalize per-render nonces before comparing — nonces are intentionally
     // unique per render call; structural equivalence is what matters.
-    let inc_html = inc.html.replace(&inc.render_nonce, "NONCE");
-    let full_html = full.html.replace(&full.render_nonce, "NONCE");
+    // Also strip data-pmd-block attrs (only present in incremental path).
+    let inc_html = strip_block_attr(&inc.html.replace(&inc.render_nonce, "NONCE"));
+    let full_html = strip_block_attr(&full.html.replace(&full.render_nonce, "NONCE"));
     assert_eq!(inc_html, full_html, "html mismatch for:\n{md}");
     assert_eq!(inc.source_map, full.source_map, "source_map mismatch for:\n{md}");
 }
@@ -81,4 +97,24 @@ fn incremental_equals_full_with_math_and_code() {
 #[test]
 fn incremental_falls_back_and_equals_full_on_footnotes() {
     assert_equiv("text[^1]\n\n[^1]: a note\n");
+}
+
+#[test]
+fn incremental_emits_block_manifest_and_attrs() {
+    let md = "# Title\n\nPara.\n\n- a\n- b\n";
+    let r = render_incremental(md);
+    assert_eq!(r.blocks.len(), 3);
+    for b in &r.blocks {
+        assert!(r.html.contains(&format!("data-pmd-block=\"{}\"", b.key)),
+            "missing data-pmd-block for key {}", b.key);
+    }
+    assert_eq!(r.blocks[0].base_line, 1);
+    assert_eq!(r.blocks[1].base_line, 3);
+    assert_eq!(r.blocks[2].base_line, 5);
+}
+
+#[test]
+fn full_render_has_empty_manifest() {
+    let r = render_incremental("<div>x</div>\n"); // raw HTML => fallback
+    assert!(r.blocks.is_empty());
 }

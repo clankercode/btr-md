@@ -142,6 +142,27 @@ pub(crate) fn render_block_cached(src: &str) -> Arc<CachedBlock> {
     block
 }
 
+/// Insert ` data-pmd-block="key"` into the first start-tag of `block_html`
+/// (right after the tag name). Every top-level block emits exactly one opening
+/// element, so the first `<name` is that element.
+fn inject_block_key(out: &mut String, block_html: &str, key: &str) {
+    if let Some(lt) = block_html.find('<') {
+        if block_html[lt + 1..].starts_with('/') {
+            out.push_str(block_html);
+            return;
+        }
+        let after_name = block_html[lt + 1..]
+            .find(|c: char| c.is_whitespace() || c == '>')
+            .map(|p| lt + 1 + p)
+            .unwrap_or(block_html.len());
+        out.push_str(&block_html[..after_name]);
+        out.push_str(&format!(" data-pmd-block=\"{key}\""));
+        out.push_str(&block_html[after_name..]);
+    } else {
+        out.push_str(block_html);
+    }
+}
+
 /// Append `block_html` to `out`, adding `base` to every `data-src-start` and
 /// `data-src-end` numeric value. `base = block.start_line - 1`. Pure string
 /// scan — no HTML parsing.
@@ -187,16 +208,21 @@ pub fn render_incremental(md: &str) -> crate::emit::RenderResult {
     let render_nonce = crate::emit::generate_render_nonce();
     let mut html = String::new();
     let mut source_map = Vec::<(u32, u32)>::new();
+    let mut blocks_manifest = Vec::<crate::emit::BlockRef>::new();
     for b in &blocks {
         let cb = render_block_cached(&md[b.start..b.end]);
         let base = b.start_line - 1;
-        append_with_line_offset(&mut html, &cb.html, base);
+        let key = blake3::hash(md[b.start..b.end].as_bytes()).to_hex().to_string();
+        let mut offset_html = String::new();
+        append_with_line_offset(&mut offset_html, &cb.html, base);
+        inject_block_key(&mut html, &offset_html, &key);
         for &(s, e) in &cb.source_map {
             source_map.push((s + base, e + base));
         }
+        blocks_manifest.push(crate::emit::BlockRef { key, base_line: b.start_line });
     }
     let html = html.replace(placeholder_nonce(), &render_nonce);
-    crate::emit::RenderResult { version: 0, html, source_map, render_nonce }
+    crate::emit::RenderResult { version: 0, html, source_map, render_nonce, blocks: blocks_manifest }
 }
 
 #[doc(hidden)]
