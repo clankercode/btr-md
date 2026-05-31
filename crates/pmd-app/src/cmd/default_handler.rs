@@ -63,9 +63,47 @@ fn query_status() -> HandlerStatus {
     HandlerStatus::NotDefault
 }
 
+/// True if an installed desktop entry with our id exists in any XDG application
+/// directory. `xdg-mime default <id> <mime>` happily writes a `mimeapps.list`
+/// association even when no such entry is installed — file managers then ignore
+/// the dangling association, so the default silently "doesn't take". Checking
+/// first lets us return an actionable error instead.
+#[cfg(target_os = "linux")]
+fn desktop_entry_installed() -> bool {
+    use std::path::PathBuf;
+
+    let home = std::env::var_os("HOME").map(PathBuf::from);
+    let data_home = std::env::var_os("XDG_DATA_HOME")
+        .map(PathBuf::from)
+        .or_else(|| home.as_ref().map(|h| h.join(".local/share")));
+    let data_dirs = std::env::var("XDG_DATA_DIRS")
+        .unwrap_or_else(|_| "/usr/local/share:/usr/share".to_string());
+
+    data_home
+        .into_iter()
+        .chain(
+            data_dirs
+                .split(':')
+                .filter(|s| !s.is_empty())
+                .map(PathBuf::from),
+        )
+        .any(|dir| dir.join("applications").join(DESKTOP_ID).is_file())
+}
+
 #[cfg(target_os = "linux")]
 fn set_default() -> Result<(), String> {
     use std::process::Command;
+
+    // Setting the association is pointless if the desktop entry isn't installed:
+    // the file manager has nothing to launch. Fail loudly with a fix-it hint.
+    if !desktop_entry_installed() {
+        return Err(format!(
+            "{DESKTOP_ID} is not installed. Install desktop integration first \
+             (e.g. `just install-desktop`, or use the AppImage/Flatpak build), \
+             then set btr-md as the default again."
+        ));
+    }
+
     for mime in MARKDOWN_MIMES {
         let status = Command::new("xdg-mime")
             .args(["default", DESKTOP_ID, mime])
@@ -75,6 +113,22 @@ fn set_default() -> Result<(), String> {
             return Err(format!("xdg-mime default failed for {mime}"));
         }
     }
+
+    // Refresh the mimeinfo cache so file managers pick the change up without a
+    // re-login. Best-effort: the association is already written, and not every
+    // system ships update-desktop-database.
+    if let Some(apps_dir) = std::env::var_os("XDG_DATA_HOME")
+        .map(std::path::PathBuf::from)
+        .or_else(|| {
+            std::env::var_os("HOME").map(|h| std::path::PathBuf::from(h).join(".local/share"))
+        })
+        .map(|d| d.join("applications"))
+    {
+        let _ = Command::new("update-desktop-database")
+            .arg(apps_dir)
+            .status();
+    }
+
     Ok(())
 }
 

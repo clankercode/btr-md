@@ -60,6 +60,7 @@ fn main() {
             cmd::browse::list_dir,
             cmd::browse::pick_base_dir,
             cmd::browse::set_workspace_root,
+            cmd::browse::rename_path,
             cmd::reveal::open_in_default_app,
             cmd::reveal::reveal_in_folder,
             cmd::reveal::open_url,

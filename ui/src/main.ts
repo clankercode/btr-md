@@ -160,7 +160,9 @@ sidebarResizer.tabIndex = 0;
 
 function applySidebarWidth(px: number): void {
   const clamped = Math.max(140, Math.min(px, 600));
-  appContainer.style.setProperty('--pmd-sidebar-w', `${clamped}px`);
+  // Set on :root so viewport-fixed overlays (the trust pill) can offset by the
+  // sidebar width too, not just the #app-container subtree.
+  document.documentElement.style.setProperty('--pmd-sidebar-w', `${clamped}px`);
 }
 function applySidebarVisible(visible: boolean): void {
   document.body.dataset.sidebar = visible ? 'on' : 'off';
@@ -184,7 +186,7 @@ const endSidebarResize = (e: PointerEvent) => {
   if (!sidebarResizing) return;
   sidebarResizing = false;
   try { sidebarResizer.releasePointerCapture(e.pointerId); } catch { /* ignore */ }
-  const w = appContainer.style.getPropertyValue('--pmd-sidebar-w').replace('px', '');
+  const w = document.documentElement.style.getPropertyValue('--pmd-sidebar-w').replace('px', '');
   localStorage.setItem(SIDEBAR_WIDTH_KEY, w || '260');
 };
 sidebarResizer.addEventListener('pointerup', endSidebarResize);
@@ -231,6 +233,8 @@ const browserDeps = {
   revealInFolder: (path: string) => {
     void invoke('reveal_in_folder', { path });
   },
+  renameFile: (path: string, newName: string) =>
+    invoke<string>('rename_path', { path, newName }),
 };
 
 const sidebarBrowser = createFileBrowser(browserDeps);
@@ -445,7 +449,9 @@ if (toolbarEl instanceof HTMLElement) {
   sidebarToggleBtn.addEventListener('click', () => {
     void actionRegistry.runAction('view.toggleSidebar');
   });
-  toolbarEl.appendChild(sidebarToggleBtn);
+  // Sidebar lives on the left, so its toggle sits at the far left of the
+  // toolbar (before the File menu) rather than trailing on the right.
+  toolbarEl.prepend(sidebarToggleBtn);
 }
 
 function applyGistVisibility(): void {

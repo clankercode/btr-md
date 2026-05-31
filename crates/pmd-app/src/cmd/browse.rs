@@ -141,3 +141,152 @@ pub fn set_workspace_root(
     }
     Ok(canon)
 }
+
+/// Reject a proposed new file name: it must be a bare file name (no path
+/// separators, no `.`/`..`, non-empty) so a rename can never escape the file's
+/// own directory.
+fn is_valid_rename(name: &str) -> bool {
+    !name.is_empty()
+        && name != "."
+        && name != ".."
+        && !name.contains('/')
+        && !name.contains('\\')
+        && !name.contains('\0')
+}
+
+/// Core of [`rename_path`], split out so it can be unit-tested against a real
+/// [`PathScope`] + tempdir without a Tauri `State`. See that command for the
+/// security contract.
+fn rename_in_scope(
+    scope: &crate::path_scope::PathScope,
+    path: &std::path::Path,
+    new_name: &str,
+) -> Result<PathBuf, String> {
+    if !is_valid_rename(new_name) {
+        return Err(format!("rename_path: invalid file name: {new_name:?}"));
+    }
+    let canon = std::fs::canonicalize(path).map_err(|e| e.to_string())?;
+    if !scope.is_within_allowed_dir(&canon) {
+        return Err(format!(
+            "rename_path: {} is not within an allowed directory",
+            canon.display()
+        ));
+    }
+    if canon.is_dir() {
+        return Err("rename_path: only files can be renamed".into());
+    }
+    let parent = canon
+        .parent()
+        .ok_or_else(|| "rename_path: path has no parent directory".to_string())?;
+    let target = parent.join(new_name);
+    if target == canon {
+        return Ok(canon);
+    }
+    if target.exists() {
+        return Err(format!(
+            "rename_path: a file named {new_name:?} already exists"
+        ));
+    }
+    std::fs::rename(&canon, &target).map_err(|e| e.to_string())?;
+    // The new path inherits the parent's grant; admit it to the file scope too
+    // so a subsequent open/save of the just-renamed file is authorised.
+    let target_canon = std::fs::canonicalize(&target).map_err(|e| e.to_string())?;
+    Ok(scope.allow_canonical(&target_canon))
+}
+
+/// Rename a file within its current directory. The source must resolve inside an
+/// admitted directory (same allowlist `list_dir` enforces); `new_name` must be a
+/// bare file name so the target stays in that directory. Refuses to overwrite an
+/// existing entry. Returns the new canonical path.
+///
+/// # Security
+///
+/// This is a renderer-reachable mutation, so it re-checks scope on the canonical
+/// source rather than trusting the supplied string, and constructs the target
+/// from the canonical parent + a separator-free name. It never widens the scope.
+#[tauri::command]
+pub fn rename_path(
+    state: tauri::State<'_, crate::AppState>,
+    path: PathBuf,
+    new_name: String,
+) -> Result<PathBuf, String> {
+    rename_in_scope(&state.scope, &path, &new_name)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::path_scope::PathScope;
+
+    #[test]
+    fn is_valid_rename_rejects_path_escapes_and_empties() {
+        assert!(is_valid_rename("notes.md"));
+        assert!(is_valid_rename("My File.markdown"));
+        assert!(!is_valid_rename(""));
+        assert!(!is_valid_rename("."));
+        assert!(!is_valid_rename(".."));
+        assert!(!is_valid_rename("../escape.md"));
+        assert!(!is_valid_rename("sub/dir.md"));
+        assert!(!is_valid_rename("a\\b.md"));
+        assert!(!is_valid_rename("nul\0.md"));
+    }
+
+    #[test]
+    fn rename_in_scope_renames_within_granted_dir() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let src = dir.path().join("old.md");
+        std::fs::write(&src, "x").expect("write");
+        let scope = PathScope::new();
+        scope.allow_dir(dir.path()).expect("grant dir");
+
+        let new_path = rename_in_scope(&scope, &src, "new.md").expect("rename ok");
+
+        assert_eq!(new_path, dir.path().join("new.md").canonicalize().unwrap());
+        assert!(!src.exists());
+        assert!(new_path.exists());
+        // The renamed file is admitted to the file scope (openable/savable).
+        assert!(scope.check_canonical(&new_path));
+    }
+
+    #[test]
+    fn rename_in_scope_rejects_outside_grant() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let src = dir.path().join("old.md");
+        std::fs::write(&src, "x").expect("write");
+        // No grant for `dir`.
+        let scope = PathScope::new();
+
+        let err = rename_in_scope(&scope, &src, "new.md").expect_err("must reject");
+        assert!(err.contains("not within an allowed directory"), "{err}");
+        assert!(src.exists(), "source must be untouched on rejection");
+    }
+
+    #[test]
+    fn rename_in_scope_refuses_to_clobber_existing() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let src = dir.path().join("old.md");
+        let occupied = dir.path().join("taken.md");
+        std::fs::write(&src, "x").expect("write src");
+        std::fs::write(&occupied, "y").expect("write occupied");
+        let scope = PathScope::new();
+        scope.allow_dir(dir.path()).expect("grant dir");
+
+        let err = rename_in_scope(&scope, &src, "taken.md").expect_err("must refuse clobber");
+        assert!(err.contains("already exists"), "{err}");
+        assert_eq!(std::fs::read_to_string(&occupied).unwrap(), "y");
+        assert!(src.exists());
+    }
+
+    #[test]
+    fn rename_in_scope_rejects_separator_name() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let src = dir.path().join("old.md");
+        std::fs::write(&src, "x").expect("write");
+        let scope = PathScope::new();
+        scope.allow_dir(dir.path()).expect("grant dir");
+
+        let err = rename_in_scope(&scope, &src, "../evil.md").expect_err("must reject");
+        assert!(err.contains("invalid file name"), "{err}");
+        assert!(src.exists());
+    }
+}

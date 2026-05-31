@@ -733,7 +733,7 @@
   height: 100%;
 }
 
-#app-container { --pmd-sidebar-w: 260px; }
+:root { --pmd-sidebar-w: 260px; }
 #pmd-sidebar {
   width: var(--pmd-sidebar-w);
   flex: 0 0 var(--pmd-sidebar-w);
@@ -1232,6 +1232,10 @@ body[data-state="welcome"] #split-resizer {
   padding: 2px 8px;
   cursor: pointer;
   white-space: nowrap;
+  /* A double-click opens the file; it must never select the row's text.
+     -webkit- prefix is required: the app renders in WebKitGTK on Linux. */
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .pmd-browser-row:hover,
@@ -1264,6 +1268,20 @@ body[data-state="welcome"] #split-resizer {
 .pmd-browser-name {
   flex: 1;
   min-width: 0;
+}
+
+/* Inline rename box (F2 / context menu) — replaces the name span in place. */
+.pmd-browser-rename {
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  color: var(--pmd-fg);
+  background: var(--pmd-bg);
+  border: 1px solid var(--pmd-accent);
+  border-radius: var(--pmd-radius-sm);
+  padding: 0 4px;
+  user-select: text;
+  -webkit-user-select: text;
 }
 
 /* --------------------------------------------
@@ -1726,6 +1744,13 @@ body[data-state="welcome"] #split-resizer {
   max-height: min(56vh, 520px);
   overflow: auto;
   color: var(--pmd-fg);
+}
+
+/* When the folder sidebar is open it occupies the left edge, so shift the
+   viewport-fixed trust pill clear of it instead of letting it overlap. */
+body[data-sidebar="on"] .pmd-trust-panel {
+  left: calc(var(--pmd-sidebar-w, 260px) + var(--pmd-space-4));
+  max-width: min(360px, calc(100vw - var(--pmd-sidebar-w, 260px) - 32px));
 }
 
 .pmd-trust-status,

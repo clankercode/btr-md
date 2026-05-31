@@ -37,6 +37,10 @@ export function tableToTsv(table: HTMLTableElement): string {
 
 const COPIED_REVERT_MS = 1200;
 
+/** Tall tables past this height collapse behind an expand toggle, mirroring the
+ *  code-block expand affordance (see makeExpandButton in code_blocks.ts). */
+const EXPAND_THRESHOLD_PX = 360;
+
 /** Wrap each table with a "Copy" button that yields its markdown source (or a
  *  TSV fallback). `getSource` returns the current editor document. Idempotent. */
 export function decorateTables(root: HTMLElement, getSource: () => string): void {
@@ -48,6 +52,24 @@ export function decorateTables(root: HTMLElement, getSource: () => string): void
     wrap.className = 'pmd-table-wrap';
     table.parentNode?.insertBefore(wrap, table);
     wrap.appendChild(table);
+
+    // Collapse tall tables behind an expand toggle. Measured after layout so
+    // scrollHeight is meaningful; the toggle is a sibling after the wrap.
+    requestAnimationFrame(() => {
+      if (wrap.scrollHeight <= EXPAND_THRESHOLD_PX) return;
+      wrap.classList.add('pmd-table-collapsed');
+      const toggle = document.createElement('button');
+      toggle.type = 'button';
+      toggle.className = 'pmd-table-expand';
+      toggle.textContent = 'Expand';
+      toggle.setAttribute('aria-expanded', 'false');
+      toggle.addEventListener('click', () => {
+        const collapsed = wrap.classList.toggle('pmd-table-collapsed');
+        toggle.textContent = collapsed ? 'Expand' : 'Collapse';
+        toggle.setAttribute('aria-expanded', String(!collapsed));
+      });
+      wrap.parentNode?.insertBefore(toggle, wrap.nextSibling);
+    });
 
     const btn = document.createElement('button');
     btn.type = 'button';
