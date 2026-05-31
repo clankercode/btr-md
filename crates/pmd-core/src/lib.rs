@@ -6,6 +6,7 @@
 
 pub mod emit;
 pub mod escape;
+pub mod incremental;
 pub mod parse;
 pub mod sanitize;
 pub mod source_map;
