@@ -733,6 +733,22 @@
   height: 100%;
 }
 
+#app-container { --pmd-sidebar-w: 260px; }
+#pmd-sidebar {
+  width: var(--pmd-sidebar-w);
+  flex: 0 0 var(--pmd-sidebar-w);
+  min-width: 0;
+  height: 100%;
+  overflow: auto;
+  border-right: 1px solid var(--pmd-border, #2a2a2a);
+  background: var(--pmd-surface, #1b1b1b);
+}
+#sidebar-resizer { flex: 0 0 auto; }
+body[data-sidebar="off"] #pmd-sidebar,
+body[data-sidebar="off"] #sidebar-resizer { display: none !important; }
+.pmd-browser-active { background: color-mix(in srgb, var(--pmd-accent, #5b9) 18%, transparent); }
+.pmd-context-menu { z-index: 120; }
+
 /* Non-document tab bodies (empty/welcome, file browser) take the full content
    area; the editor/preview panes are hidden while they are active. */
 #pmd-tab-body {

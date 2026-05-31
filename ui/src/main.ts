@@ -124,7 +124,55 @@ mainRegion.appendChild(tabBodyEl);
 
 const appContainer = document.createElement('div');
 appContainer.id = 'app-container';
-// Sidebar + its resizer are inserted before main-region in Task E2.
+
+const SIDEBAR_VISIBLE_KEY = 'pmd:sidebar:visible';
+const SIDEBAR_WIDTH_KEY = 'pmd:sidebar:width';
+
+const sidebarEl = document.createElement('div');
+sidebarEl.id = 'pmd-sidebar';
+
+const sidebarResizer = document.createElement('div');
+sidebarResizer.id = 'sidebar-resizer';
+sidebarResizer.className = 'pmd-split-resizer';
+sidebarResizer.setAttribute('role', 'separator');
+sidebarResizer.setAttribute('aria-orientation', 'vertical');
+sidebarResizer.setAttribute('aria-label', 'Resize folder sidebar');
+sidebarResizer.tabIndex = 0;
+
+function applySidebarWidth(px: number): void {
+  const clamped = Math.max(140, Math.min(px, 600));
+  appContainer.style.setProperty('--pmd-sidebar-w', `${clamped}px`);
+}
+function applySidebarVisible(visible: boolean): void {
+  document.body.dataset.sidebar = visible ? 'on' : 'off';
+}
+
+const savedWidth = Number(localStorage.getItem(SIDEBAR_WIDTH_KEY) || '260');
+applySidebarWidth(Number.isFinite(savedWidth) ? savedWidth : 260);
+applySidebarVisible(localStorage.getItem(SIDEBAR_VISIBLE_KEY) !== '0');
+
+let sidebarResizing = false;
+sidebarResizer.addEventListener('pointerdown', (e) => {
+  sidebarResizing = true;
+  sidebarResizer.setPointerCapture(e.pointerId);
+});
+sidebarResizer.addEventListener('pointermove', (e) => {
+  if (!sidebarResizing) return;
+  const rect = appContainer.getBoundingClientRect();
+  applySidebarWidth(e.clientX - rect.left);
+});
+const endSidebarResize = (e: PointerEvent) => {
+  if (!sidebarResizing) return;
+  sidebarResizing = false;
+  try { sidebarResizer.releasePointerCapture(e.pointerId); } catch { /* ignore */ }
+  const w = appContainer.style.getPropertyValue('--pmd-sidebar-w').replace('px', '');
+  localStorage.setItem(SIDEBAR_WIDTH_KEY, w || '260');
+};
+sidebarResizer.addEventListener('pointerup', endSidebarResize);
+sidebarResizer.addEventListener('pointercancel', endSidebarResize);
+
+appContainer.appendChild(sidebarEl);
+appContainer.appendChild(sidebarResizer);
 appContainer.appendChild(mainRegion);
 document.body.appendChild(appContainer);
 
