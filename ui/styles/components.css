@@ -1472,13 +1472,48 @@ body[data-state="welcome"] #split-resizer {
 
 .pmd-table-wrap {
   position: relative;
+}
+
+/* The scrollable/collapsible viewport; the controls live on the wrap so they
+   stay put while this clips. */
+.pmd-table-viewport {
   overflow-x: auto;
 }
 
-.pmd-table-copy {
+.pmd-table-viewport.pmd-table-collapsed {
+  max-height: 360px;
+  overflow-y: hidden;
+}
+
+.pmd-table-viewport.pmd-table-collapsed::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 64px;
+  background: linear-gradient(transparent, var(--pmd-bg, #ffffff));
+  pointer-events: none;
+}
+
+/* Top-right controls row: Copy + Expand/Collapse, revealed on hover/focus. */
+.pmd-table-controls {
   position: absolute;
   top: var(--pmd-space-1);
   right: var(--pmd-space-1);
+  display: flex;
+  gap: var(--pmd-space-1);
+  opacity: 0;
+  transition: opacity var(--pmd-transition-fast);
+  z-index: 1;
+}
+
+.pmd-table-wrap:hover .pmd-table-controls,
+.pmd-table-controls:focus-within {
+  opacity: 1;
+}
+
+.pmd-table-btn {
   padding: 2px var(--pmd-space-2);
   font-size: var(--pmd-text-xs);
   border: 1px solid var(--pmd-border);
@@ -1486,13 +1521,11 @@ body[data-state="welcome"] #split-resizer {
   background: var(--pmd-bg-elevated);
   color: var(--pmd-fg-muted);
   cursor: pointer;
-  opacity: 0;
-  transition: opacity var(--pmd-transition-fast);
 }
 
-.pmd-table-wrap:hover .pmd-table-copy,
-.pmd-table-copy:focus-visible {
-  opacity: 1;
+.pmd-table-btn:hover {
+  color: var(--pmd-fg);
+  background: var(--pmd-bg-muted);
 }
 
 .pmd-file-ops,

@@ -41,8 +41,9 @@ const COPIED_REVERT_MS = 1200;
  *  code-block expand affordance (see makeExpandButton in code_blocks.ts). */
 const EXPAND_THRESHOLD_PX = 360;
 
-/** Wrap each table with a "Copy" button that yields its markdown source (or a
- *  TSV fallback). `getSource` returns the current editor document. Idempotent. */
+/** Wrap each table with a top-right controls row: a "Copy" button (markdown
+ *  source, TSV fallback) and — for tall tables — an Expand/Collapse toggle.
+ *  `getSource` returns the current editor document. Idempotent. */
 export function decorateTables(root: HTMLElement, getSource: () => string): void {
   selfAndDescendants<HTMLTableElement>(root, 'table').forEach((table) => {
     const parent = table.parentElement;
@@ -51,29 +52,21 @@ export function decorateTables(root: HTMLElement, getSource: () => string): void
     const wrap = document.createElement('div');
     wrap.className = 'pmd-table-wrap';
     table.parentNode?.insertBefore(wrap, table);
-    wrap.appendChild(table);
 
-    // Collapse tall tables behind an expand toggle. Measured after layout so
-    // scrollHeight is meaningful; the toggle is a sibling after the wrap.
-    requestAnimationFrame(() => {
-      if (wrap.scrollHeight <= EXPAND_THRESHOLD_PX) return;
-      wrap.classList.add('pmd-table-collapsed');
-      const toggle = document.createElement('button');
-      toggle.type = 'button';
-      toggle.className = 'pmd-table-expand';
-      toggle.textContent = 'Expand';
-      toggle.setAttribute('aria-expanded', 'false');
-      toggle.addEventListener('click', () => {
-        const collapsed = wrap.classList.toggle('pmd-table-collapsed');
-        toggle.textContent = collapsed ? 'Expand' : 'Collapse';
-        toggle.setAttribute('aria-expanded', String(!collapsed));
-      });
-      wrap.parentNode?.insertBefore(toggle, wrap.nextSibling);
-    });
+    // The table scrolls/collapses inside an inner viewport; the controls sit on
+    // the wrap (which never clips) so they stay visible when collapsed.
+    const viewport = document.createElement('div');
+    viewport.className = 'pmd-table-viewport';
+    wrap.appendChild(viewport);
+    viewport.appendChild(table);
+
+    const controls = document.createElement('div');
+    controls.className = 'pmd-table-controls';
+    wrap.appendChild(controls);
 
     const btn = document.createElement('button');
     btn.type = 'button';
-    btn.className = 'pmd-table-copy';
+    btn.className = 'pmd-table-btn pmd-table-copy';
     btn.textContent = 'Copy';
     btn.title = 'Copy table as Markdown';
 
@@ -98,6 +91,26 @@ export function decorateTables(root: HTMLElement, getSource: () => string): void
       clip.writeText(md).then(() => flash('Copied')).catch(() => flash('Failed'));
     });
 
-    wrap.appendChild(btn);
+    controls.appendChild(btn);
+
+    // Collapse tall tables behind an Expand toggle that sits next to Copy.
+    // Measured after layout so scrollHeight is meaningful (deferred a frame).
+    requestAnimationFrame(() => {
+      if (viewport.scrollHeight <= EXPAND_THRESHOLD_PX) return;
+      viewport.classList.add('pmd-table-collapsed');
+      const toggle = document.createElement('button');
+      toggle.type = 'button';
+      toggle.className = 'pmd-table-btn pmd-table-expand';
+      toggle.textContent = 'Expand';
+      toggle.title = 'Expand the full table';
+      toggle.setAttribute('aria-expanded', 'false');
+      toggle.addEventListener('click', () => {
+        const collapsed = viewport.classList.toggle('pmd-table-collapsed');
+        toggle.textContent = collapsed ? 'Expand' : 'Collapse';
+        toggle.title = collapsed ? 'Expand the full table' : 'Collapse the table';
+        toggle.setAttribute('aria-expanded', String(!collapsed));
+      });
+      controls.appendChild(toggle);
+    });
   });
 }
