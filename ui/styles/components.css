@@ -2080,3 +2080,39 @@ mark.pmd-find {
   flex: 1;
   min-width: 0;
 }
+
+/* --------------------------------------------
+   Stats popover
+   -------------------------------------------- */
+.pmd-stats-popover {
+  min-width: 14rem;
+  padding: var(--pmd-space-2);
+}
+
+.pmd-stats-row {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--pmd-space-3);
+  padding: 2px 0;
+  font-size: var(--pmd-text-sm);
+}
+
+.pmd-stats-label {
+  color: var(--pmd-fg-muted);
+}
+
+.pmd-stats-value {
+  font-variant-numeric: tabular-nums;
+}
+
+.pmd-status-counts {
+  color: inherit;
+  font: inherit;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.pmd-status-counts:hover {
+  color: var(--pmd-fg);
+}

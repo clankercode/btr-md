@@ -45,6 +45,7 @@ import {
 import { createCommandOverlay } from './command_overlay.js';
 import { createFindController } from './find_controller.js';
 import { openFrontmatterPanel } from './frontmatter_panel.js';
+import { openStatsPopover } from './stats_popover.js';
 import {
   addEntryChange,
   editValueChange,
@@ -66,6 +67,7 @@ import {
   type FrontmatterFact,
   type HeadingFact,
   type RenderResult,
+  type StructureCounts,
 } from './document_contracts.js';
 import { createDocumentFactsStore } from './document_facts_store.js';
 import { createOutlinePanel } from './outline_panel.js';
@@ -931,6 +933,12 @@ function activeFrontmatter(): FrontmatterFact | null {
   return factsStore.current(active.docId)?.facts?.frontmatter ?? null;
 }
 
+function activeStructureCounts(): StructureCounts | null {
+  const active = store.activeDoc();
+  if (!active) return null;
+  return factsStore.current(active.docId)?.facts?.counts ?? null;
+}
+
 function openFrontmatterInspector(x: number, y: number): void {
   if (!editor) return;
   const doc = editor.getValue();
@@ -1166,6 +1174,10 @@ chrome.onMergeClick(() => doMerge());
 chrome.onFrontmatterClick(() => {
   const rect = document.querySelector('.pmd-status-frontmatter')?.getBoundingClientRect();
   openFrontmatterInspector(rect?.left ?? 80, rect?.top ?? 80);
+});
+chrome.onCountsClick(() => {
+  const rect = document.querySelector('.pmd-status-counts')?.getBoundingClientRect();
+  openStatsPopover(rect?.left ?? 80, (rect?.top ?? 80) - 8, activeStructureCounts());
 });
 
 // Quick file ops (File menu). Operate on the active document's path.
