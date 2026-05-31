@@ -88,8 +88,23 @@ function screenshotPath(name) {
   return path.join(screenshotDir, name);
 }
 
+async function openMarkdown(page, markdown, options = {}) {
+  await installTauriMock(page, options);
+  await page.goto(appUrl());
+  await page.getByRole('button', { name: 'New File' }).click();
+  const editor = page.locator('.cm-content');
+  await editor.waitFor({ state: 'visible' });
+  await editor.click();
+  await page.keyboard.insertText(markdown);
+  await page.waitForFunction((source) => {
+    const firstLine = String(source).split('\n')[0] ?? '';
+    return document.querySelector('.cm-content')?.textContent?.includes(firstLine) ?? false;
+  }, markdown);
+  await page.waitForTimeout(250);
+}
+
 async function installTauriMock(page, options = {}) {
-  await page.addInitScript(({ initialPath, themes, renderHtml, renderDocId, renderVersion, renderFacts }) => {
+  await page.addInitScript(({ initialPath, themes, renderHtml, renderDocId, renderVersion, renderFacts, renderDiagnostics }) => {
     let callbackId = 1;
     let nextDocId = 1;
     let shortcutOverrides = {};
@@ -98,36 +113,231 @@ async function installTauriMock(page, options = {}) {
       '/work/tests/corpus/hello.md': '# Hello\n\nThis file was opened by the test harness.',
     };
 
-    const renderMarkdown = (markdown) => {
-      const escaped = String(markdown)
-        .replaceAll('&', '&amp;')
-        .replaceAll('<', '&lt;')
-        .replaceAll('>', '&gt;');
-      return `<article class="pmd-preview"><h1>${escaped.split('\n')[0].replace(/^#\s*/, '') || 'Untitled'}</h1><p>${escaped}</p></article>`;
-    };
+    const emptyLinkSummary = () => ({
+      checked: 0,
+      errors: 0,
+      warnings: 0,
+      unchecked_external: 0,
+      pending_async: 0,
+    });
 
-    function emptyDiagnostics(docId, version) {
+    function issue(id, severity, category, message, detail = null, primary_action = null) {
+      return {
+        id,
+        severity,
+        category,
+        line_start: 1,
+        line_end: 1,
+        block_id: null,
+        message,
+        detail,
+        primary_action,
+      };
+    }
+
+    function slugify(value) {
+      return String(value)
+        .toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, '')
+        .trim()
+        .replace(/\s+/g, '-');
+    }
+
+    function factsForMarkdown(markdown, docId, version) {
+      const headings = Array.from(String(markdown).matchAll(/^#{1,6}\s+(.+)$/gm)).map((match, index) => {
+        const line = String(markdown).slice(0, match.index).split('\n').length;
+        return {
+          level: match[0].match(/^#+/)?.[0].length ?? 1,
+          text: match[1],
+          slug: slugify(match[1]),
+          duplicate_index: 0,
+          line_start: line,
+          line_end: line,
+          block_id: `block-${index}`,
+        };
+      });
+      const facts = {
+        doc_id: docId,
+        version,
+        headings,
+        anchors: headings.map((heading) => ({
+          slug: heading.slug,
+          line_start: heading.line_start,
+          line_end: heading.line_end,
+          block_id: heading.block_id,
+          source: 'heading',
+        })),
+        links: [],
+        reference_definitions: [],
+        images: [],
+        frontmatter: null,
+        blocks: [],
+        embedded: {
+          code_blocks: [],
+          mermaid_blocks: [],
+          math_spans: [],
+          math_blocks: [],
+        },
+        counts: {
+          words: String(markdown).trim().split(/\s+/).filter(Boolean).length,
+          bytes: String(markdown).length,
+          sentences: 0,
+          paragraphs: String(markdown).trim() ? 1 : 0,
+          headings: headings.length,
+          links: 0,
+          images: 0,
+          code_blocks: 0,
+          mermaid_blocks: 0,
+          math_spans: 0,
+          math_blocks: 0,
+        },
+      };
+      if (!renderFacts) return facts;
+      const merged = { ...facts, ...renderFacts };
+      merged.doc_id = docId;
+      merged.version = version;
+      merged.headings = renderFacts.headings ?? facts.headings;
+      merged.anchors = renderFacts.anchors ?? merged.headings.map((heading) => ({
+        slug: heading.slug,
+        line_start: heading.line_start,
+        line_end: heading.line_end,
+        block_id: heading.block_id,
+        source: 'heading',
+      }));
+      merged.counts = {
+        ...facts.counts,
+        ...(renderFacts.counts ?? {}),
+        headings: merged.headings.length,
+      };
+      return merged;
+    }
+
+    function diagnosticsForMarkdown(markdown, docId, version) {
+      if (renderDiagnostics) {
+        return {
+          ...structuredClone(renderDiagnostics),
+          doc_id: docId,
+          version,
+        };
+      }
+      const source = String(markdown);
+      const issues = [];
+      const decisions = [];
+      const linkSummary = emptyLinkSummary();
+      if (source.startsWith('---\ntitle: [unterminated')) {
+        issues.push(issue(
+          'frontmatter:1',
+          'warning',
+          'frontmatter',
+          'Frontmatter could not be parsed',
+          'Fix the YAML/TOML frontmatter syntax.'
+        ));
+      }
+      if (/!\[[^\]]*\]\(https?:\/\//.test(source)) {
+        issues.push(issue(
+          'remote-image:1',
+          'blocked',
+          'resource_policy',
+          'Remote image blocked: use a local file or open the URL outside the preview.'
+        ));
+        decisions.push({
+          source_target: 'https://example.com/image.png',
+          normalized_target: null,
+          line_start: 1,
+          line_end: 1,
+          kind: 'image',
+          decision: 'blocked',
+          reason: 'remote_blocked',
+          safe_url: null,
+          placeholder_id: 'image-0',
+          alt_text: 'remote',
+        });
+      }
+      if (/!\[[^\]]+\]\(missing\.png\)/.test(source)) {
+        issues.push(issue(
+          'missing-image:1',
+          'error',
+          'image',
+          'Image missing: fix the path or move the file next to the document.',
+          'missing.png'
+        ));
+        decisions.push({
+          source_target: 'missing.png',
+          normalized_target: 'missing.png',
+          line_start: 1,
+          line_end: 1,
+          kind: 'image',
+          decision: 'missing',
+          reason: 'missing_file',
+          safe_url: null,
+          placeholder_id: 'image-0',
+          alt_text: 'missing',
+        });
+      }
+      if (/\[[^\]]+\]\(missing\.md\)/.test(source)) {
+        issues.push(issue(
+          'missing-md:1',
+          'error',
+          'link',
+          'Linked Markdown file not found: missing.md',
+          'missing.md'
+        ));
+      }
+      if (/!\[[^\]]+\]\(\.\.\/assets\/outside\.png\)/.test(source)) {
+        issues.push(issue(
+          'blocked-image:1',
+          'blocked',
+          'resource_policy',
+          'Image blocked: grant the containing folder or move it under the document folder.',
+          null,
+          'asset.grantFolder'
+        ));
+        decisions.push({
+          source_target: '../assets/outside.png',
+          normalized_target: '../assets/outside.png',
+          line_start: 1,
+          line_end: 1,
+          kind: 'image',
+          decision: 'blocked',
+          reason: 'outside_allowed_roots',
+          safe_url: null,
+          placeholder_id: 'image-0',
+          alt_text: 'outside',
+        });
+      }
+      if (/\[[^\]]+\]\(https?:\/\/[^)]+\)/.test(source)) {
+        linkSummary.unchecked_external = 1;
+      }
       return {
         doc_id: docId,
         version,
         phase: 'initial',
-        issues: [],
-        resources: {
-          doc_id: docId,
-          version,
-          allowed_roots: [],
-          loaded_resources: [],
-          decisions: [],
-        },
-        link_summary: {
-          checked: 0,
-          errors: 0,
-          warnings: 0,
-          unchecked_external: 0,
-          pending_async: 0,
-        },
+        issues,
+        resources: { doc_id: docId, version, allowed_roots: [], loaded_resources: [], decisions },
+        link_summary: linkSummary,
       };
     }
+
+    const escapeHtml = (value) => String(value)
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;');
+
+    const renderMarkdown = (markdown, diagnostics) => {
+      const withoutFrontmatter = String(markdown).replace(/^---[\s\S]*?---\n/, '');
+      const heading = withoutFrontmatter.match(/^#\s+(.+)$/m)?.[1] ?? 'Untitled';
+      const escaped = escapeHtml(withoutFrontmatter);
+      const externalLink = withoutFrontmatter.match(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/);
+      const linkHtml = externalLink
+        ? `<p><a data-pmd-link-id="link-0" href="${escapeHtml(externalLink[2])}" role="link" tabindex="0">${escapeHtml(externalLink[1])}</a></p>`
+        : '';
+      const blocked = diagnostics.issues.some((item) => item.category === 'resource_policy')
+        ? '<span class="pmd-image-placeholder">Image blocked<span>Content Blocked</span></span>'
+        : diagnostics.issues.some((item) => item.category === 'image')
+          ? '<span class="pmd-image-placeholder" data-pmd-resource-state="missing">Image missing</span>'
+          : '';
+      return `<article class="pmd-preview"><h1>${escapeHtml(heading)}</h1><p>${escaped}</p>${linkHtml}${blocked}</article>`;
+    };
 
     window.__pmdInvocations = [];
     window.__pmdE2e = true;
@@ -196,44 +406,30 @@ async function installTauriMock(page, options = {}) {
         if (cmd === 'render_cmd') {
           const version = renderVersion ?? args.version ?? 0;
           const docId = renderDocId ?? args.docId ?? args.doc_id ?? 1;
+          const markdown = args.markdown ?? '';
+          const diagnostics = diagnosticsForMarkdown(markdown, docId, version);
           return {
             doc_id: docId,
-            html: renderHtml ?? renderMarkdown(args.markdown ?? ''),
+            html: renderHtml ?? renderMarkdown(markdown, diagnostics),
             version,
             source_map: [],
             render_nonce: '',
-            facts: {
-              doc_id: docId,
-              version,
-              headings: renderFacts?.headings ?? [],
-              anchors: [],
-              links: [],
-              reference_definitions: [],
-              images: [],
-              frontmatter: null,
-              blocks: [],
-              embedded: {
-                code_blocks: [],
-                mermaid_blocks: [],
-                math_spans: [],
-                math_blocks: [],
-              },
-              counts: {
-                words: 0,
-                bytes: 0,
-                sentences: 0,
-                paragraphs: 0,
-                headings: renderFacts?.headings?.length ?? 0,
-                links: 0,
-                images: 0,
-                code_blocks: 0,
-                mermaid_blocks: 0,
-                math_spans: 0,
-                math_blocks: 0,
-              },
-            },
-            diagnostics: emptyDiagnostics(docId, version),
+            facts: factsForMarkdown(markdown, docId, version),
+            diagnostics,
           };
+        }
+        if (cmd === 'prepare_link_activation') {
+          return {
+            kind: 'external_confirmation',
+            normalized_url: 'https://example.com/report',
+            scheme: 'https',
+            host: 'example.com',
+            label_text: 'external report',
+            action_token: 'external-token-1',
+          };
+        }
+        if (cmd === 'confirm_external_open') {
+          return { opened: true };
         }
         if (cmd === 'open_file' || cmd === 'request_open_file') {
           return {
@@ -273,12 +469,14 @@ async function installTauriMock(page, options = {}) {
     renderDocId: options.renderDocId ?? null,
     renderVersion: options.renderVersion ?? null,
     renderFacts: options.renderFacts ?? null,
+    renderDiagnostics: options.renderDiagnostics ?? null,
   });
 }
 
 module.exports = {
   appUrl,
   installTauriMock,
+  openMarkdown,
   screenshotPath,
   themes,
 };
