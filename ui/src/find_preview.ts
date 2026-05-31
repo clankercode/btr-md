@@ -175,6 +175,7 @@ export function createPreviewFind(root: HTMLElement): PreviewFind {
     current =
       rangesByMatch.length > 0 ? Math.min(Math.max(current, 0), rangesByMatch.length - 1) : -1;
     paint();
+    if (current >= 0) scrollCurrentIntoView();
   }
 
   return {

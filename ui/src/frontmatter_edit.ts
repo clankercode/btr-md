@@ -92,6 +92,37 @@ export function formatScalar(format: FmFormat, value: string): string {
   return needsQuote ? JSON.stringify(value) : value;
 }
 
+/** Split a comma-separated tags input into trimmed, non-empty items. */
+function splitTags(value: string): string[] {
+  return value
+    .split(',')
+    .map((item) => item.trim())
+    .filter((item) => item.length > 0);
+}
+
+/** Render a tags sequence as a single-line flow value (no key, no separator).
+ *  YAML: `[a, b]` (items quoted only when needed); TOML: `["a", "b"]`. */
+function formatTagsSequence(format: FmFormat, items: string[]): string {
+  if (format === 'toml') {
+    return `[${items.map((item) => JSON.stringify(item)).join(', ')}]`;
+  }
+  return `[${items.map((item) => formatScalar('yaml', item)).join(', ')}]`;
+}
+
+/** The end offset of a `tags:` block span: the located line plus any
+ *  immediately-following block-sequence items (`^\s+-\s`). Returns the offset
+ *  of the line end of the last covered line. */
+function tagsSpanEndOffset(doc: string, block: FmBlock, line: number): number {
+  let last = line;
+  for (let next = line + 1; next <= block.endLine; next += 1) {
+    const from = lineStartOffset(doc, next);
+    const to = lineEndOffset(doc, next);
+    if (/^\s+-\s/.test(doc.slice(from, to))) last = next;
+    else break;
+  }
+  return lineEndOffset(doc, last);
+}
+
 export function editValueChange(doc: string, key: string, value: string): FmChange | null {
   const block = locateBlock(doc);
   if (!block) return null;
@@ -104,6 +135,23 @@ export function editValueChange(doc: string, key: string, value: string): FmChan
   if (!match) return null;
   const prefix = match[1];
   const remainder = match[2];
+
+  if (key === 'tags') {
+    const sequence = formatTagsSequence(block.format, splitTags(value));
+    // Replace the whole tags span: the key + value line PLUS any following
+    // block-sequence items, collapsing them into one flow value. Reconstruct
+    // the prefix as `key:`/`key =` + one space so a block-form line (`tags:`
+    // with no inline value) does not lose the separating space.
+    const sep = block.format === 'toml' ? ' = ' : ': ';
+    const indent = prefix.match(/^(\s*)/)?.[1] ?? '';
+    const keyName = prefix.match(/^\s*([^:=\s]+)/)?.[1] ?? key;
+    return {
+      from,
+      to: tagsSpanEndOffset(doc, block, line),
+      insert: `${indent}${keyName}${sep}${sequence}`,
+    };
+  }
+
   const comment = remainder.match(/(\s+#.*)$/)?.[1] ?? '';
   return {
     from: from + prefix.length,
@@ -117,7 +165,11 @@ export function addEntryChange(doc: string, key: string, value: string): FmChang
   if (!block) return null;
   const sep = block.format === 'toml' ? ' = ' : ': ';
   const at = lineStartOffset(doc, block.endLine + 1);
-  return { from: at, to: at, insert: `${key}${sep}${formatScalar(block.format, value)}\n` };
+  const formatted =
+    key === 'tags'
+      ? formatTagsSequence(block.format, splitTags(value))
+      : formatScalar(block.format, value);
+  return { from: at, to: at, insert: `${key}${sep}${formatted}\n` };
 }
 
 export function insertBlockChange(doc: string, key: string, value: string): FmChange {
