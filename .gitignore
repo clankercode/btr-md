@@ -8,6 +8,9 @@ node_modules/
 /ui/dist/
 tests/screenshots/playwright-results/
 tests/screenshots/playwright/
+# Generated marketing/AppStream placeholders (scripts/capture-screenshots.sh);
+# the metainfo references hosted URLs, so these are upload artifacts, not repo content.
+/screenshots/
 .playwright-mcp/
 .review-screens/
 
