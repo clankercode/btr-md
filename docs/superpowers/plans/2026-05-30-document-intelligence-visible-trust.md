@@ -34,12 +34,15 @@ Implementation workers should use `just check` for the default non-WebDriver gat
 
 ## Execution Status
 
-Updated 2026-05-30 after rebasing onto `master` at `e7a8b47`:
+Updated 2026-05-31 after merging `dit-app-authority` into `feat/large-expansion`:
 
 - Blocks 1-3, `dit-core-facts`: merged into `feat/large-expansion` as `d062d9c`, `a7cf6db`, and `5d87966`.
 - Block 4, app preview authority shell: merged as `2451545` with implementation commit `d66162f`; `ccc --yolo @cx-reviewer` returned `PASS` after the rebase.
 - Post-rebase rustfmt cleanup from `master` landed as `d2c10fc` so worker baselines start with `cargo fmt --check` clean.
-- Next active block: Block 5, synchronous resource policy, continuing in `.worktrees/dit-app-authority` on `work/dit-app-authority`.
+- Block 5, synchronous resource policy: implemented as `85d5736`; focused verification and `ccc --yolo @cx-reviewer` returned `PASS`.
+- Block 6, backend-mediated link activation: implemented as `6109dad`; fixed the reviewer-found stale external-confirmation token case, reran verification, and `ccc --yolo @cx-reviewer` returned `PASS` with WebView navigation sentinel coverage still provisional until Block 12.
+- Blocks 4-6, `dit-app-authority`: merged back into `feat/large-expansion` as `6d22101`; root `just check` passed after merge.
+- Next active workstreams: Block 7, `dit-validation`, and Block 8, `dit-actions-keybindings`, both after `dit-app-authority`.
 
 ## Operating Contract
 
