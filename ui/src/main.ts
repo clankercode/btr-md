@@ -46,50 +46,13 @@ import {
   handleLinkActivationResponse,
   type OpenedDocumentFromLink,
 } from './link_activation.js';
-
-interface RenderResult {
-  doc_id: number;
-  html: string;
-  version: number;
-  source_map: Array<[number, number]>;
-  render_nonce: string;
-  blocks?: BlockRef[];
-  facts: {
-    doc_id: number;
-    version: number;
-    headings: unknown[];
-    anchors: unknown[];
-    links: unknown[];
-    reference_definitions: unknown[];
-    images: unknown[];
-    frontmatter: unknown | null;
-    blocks: unknown[];
-    embedded: unknown;
-    counts: {
-      words: number;
-      bytes: number;
-      sentences: number;
-      paragraphs: number;
-      headings: number;
-      links: number;
-      images: number;
-      code_blocks: number;
-      mermaid_blocks: number;
-      math_spans: number;
-      math_blocks: number;
-    };
-  };
-  diagnostics: unknown;
-}
-
-type AsyncDocumentDiagnostics = {
-  doc_id: number;
-  version: number;
-  phase: 'initial' | 'enriched';
-  issues: unknown[];
-  resources: unknown;
-  link_summary: unknown;
-};
+import {
+  type DocumentDiagnostics,
+  type HeadingFact,
+  type RenderResult,
+} from './document_contracts.js';
+import { createDocumentFactsStore } from './document_facts_store.js';
+import { createOutlinePanel } from './outline_panel.js';
 
 interface Settings {
   active_theme: string | null;
@@ -240,6 +203,25 @@ const tabBar: TabBarInstance = createTabBar(store, {
 // Tab strip lives inside `.pmd-chrome`, below the toolbar.
 chrome.el.appendChild(tabBar.el);
 
+const factsStore = createDocumentFactsStore();
+const outlinePanel = createOutlinePanel({
+  onJump(blockId) {
+    jumpEditorToBlock(blockId);
+    previewContent
+      .querySelector<HTMLElement>(blockSelector(blockId))
+      ?.scrollIntoView({ block: 'start' });
+    editor?.focus();
+  },
+  restoreFocus() {
+    editor?.focus();
+  },
+});
+document.body.append(outlinePanel.element);
+
+let outlineObserver: IntersectionObserver | null = null;
+let outlineScrollFrame = 0;
+let outlineTrackingInterval = 0;
+
 // Declared before the toolbar block below assigns it (a later `let` would
 // otherwise re-initialise it to null after assignment).
 let insertMenu: InsertMenuInstance | null = null;
@@ -360,6 +342,7 @@ function recordActionForE2e(actionId: ActionId): boolean {
 
 async function runAction(id: ActionId): Promise<void> {
   if (recordActionForE2e(id)) return;
+  if (runOutlineAction(id)) return;
   switch (id) {
     case 'file.new':
       await newFile();
@@ -517,11 +500,12 @@ function showError(message: string): void {
   console.error(message);
 }
 
-const latestEnrichedDiagnostics = new Map<number, AsyncDocumentDiagnostics>();
+const latestEnrichedDiagnostics = new Map<number, DocumentDiagnostics>();
 let unlistenDiagnostics: (() => void) | null = null;
 
-function renderDiagnostics(diagnostics: AsyncDocumentDiagnostics): void {
+function renderDiagnostics(diagnostics: DocumentDiagnostics): void {
   latestEnrichedDiagnostics.set(diagnostics.doc_id, diagnostics);
+  factsStore.acceptDiagnostics(diagnostics);
 }
 
 function docTabByDocId(docId: number): DocTab | undefined {
@@ -535,11 +519,147 @@ function currentPreviewDoc(): { doc_id: number; version: number } | null {
   return { doc_id: tab.docId, version };
 }
 
+function cssEscape(value: string): string {
+  return typeof CSS !== 'undefined' && CSS.escape ? CSS.escape(value) : value.replace(/["\\]/g, '\\$&');
+}
+
+function blockSelector(blockId: string): string {
+  return `[data-pmd-block-id="${cssEscape(blockId)}"]`;
+}
+
 function scrollPreviewToBlock(blockId: string): void {
-  const escaped = typeof CSS !== 'undefined' && CSS.escape ? CSS.escape(blockId) : blockId;
+  const escaped = cssEscape(blockId);
   const target = previewContent.querySelector(`#${escaped}, [data-pmd-block-id="${escaped}"]`);
   if (target instanceof HTMLElement) target.scrollIntoView({ block: 'center' });
 }
+
+function jumpEditorToBlock(blockId: string): void {
+  const active = store.activeDoc();
+  if (!active || !editor) return;
+  const snapshot = factsStore.current(active.docId);
+  const heading = snapshot?.headings.find((item) => item.block_id === blockId);
+  if (!heading) return;
+  const lineNumber = Math.max(1, Math.min(editor.view.state.doc.lines, heading.line_start));
+  const line = editor.view.state.doc.line(lineNumber);
+  editor.view.dispatch({
+    selection: { anchor: line.from },
+    scrollIntoView: true,
+  });
+}
+
+function applyOutlineRender(result: RenderResult): void {
+  if (!factsStore.accept({
+    doc_id: result.doc_id,
+    version: result.version,
+    headings: result.facts.headings,
+    facts: result.facts,
+    diagnostics: result.diagnostics,
+  })) {
+    return;
+  }
+  outlinePanel.setHeadings(result.facts.headings);
+  observePreviewHeadings(result.facts.headings);
+  updateOutlineFromEditorCaret();
+}
+
+function observePreviewHeadings(headings: HeadingFact[]): void {
+  outlineObserver?.disconnect();
+  outlineObserver = new IntersectionObserver((entries) => {
+    const visible = entries
+      .filter((entry) => entry.isIntersecting)
+      .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
+    const blockId = visible?.target.getAttribute('data-pmd-block-id') ?? null;
+    if (blockId) outlinePanel.setActiveBlock(blockId);
+  }, { root: previewPane, rootMargin: '0px 0px -70% 0px', threshold: 0.01 });
+  for (const heading of headings) {
+    const node = previewContent.querySelector(blockSelector(heading.block_id));
+    if (node) outlineObserver.observe(node);
+  }
+  updateOutlineFromPreviewScroll();
+}
+
+function updateOutlineFromEditorCaret(): void {
+  const active = store.activeDoc();
+  if (!active || !editor) return;
+  const snapshot = factsStore.current(active.docId);
+  if (!snapshot) return;
+  const line = editor.view.state.doc.lineAt(editor.view.state.selection.main.head).number;
+  const heading = [...snapshot.headings].reverse().find((item) => item.line_start <= line);
+  outlinePanel.setActiveBlock(heading?.block_id ?? null);
+}
+
+function updateOutlineFromPreviewScroll(): void {
+  const active = store.activeDoc();
+  if (!active) return;
+  const snapshot = factsStore.current(active.docId);
+  if (!snapshot) return;
+  const paneRect = previewPane.getBoundingClientRect();
+  const visibleHeadings: Array<{ blockId: string; top: number }> = [];
+  const marker = paneRect.top + Math.min(160, paneRect.height * 0.3);
+  let activeBlockId: string | null = null;
+  let activeVisibleBlockId: string | null = null;
+  for (const heading of snapshot.headings) {
+    const node = previewContent.querySelector(blockSelector(heading.block_id));
+    if (!(node instanceof HTMLElement)) continue;
+    const rect = node.getBoundingClientRect();
+    if (rect.bottom >= paneRect.top && rect.top <= paneRect.bottom) {
+      visibleHeadings.push({ blockId: heading.block_id, top: rect.top });
+      if (rect.top <= marker) activeVisibleBlockId = heading.block_id;
+    }
+    if (rect.top <= marker) activeBlockId = heading.block_id;
+  }
+  visibleHeadings.sort((a, b) => a.top - b.top);
+  outlinePanel.setActiveBlock(
+    activeVisibleBlockId ?? visibleHeadings[0]?.blockId ?? activeBlockId ?? snapshot.headings[0]?.block_id ?? null
+  );
+}
+
+function scheduleOutlineScrollUpdate(): void {
+  if (outlineScrollFrame) return;
+  outlineScrollFrame = window.requestAnimationFrame(() => {
+    outlineScrollFrame = 0;
+    updateOutlineFromPreviewScroll();
+  });
+}
+
+function startOutlineTrackingLoop(): void {
+  if (outlineTrackingInterval) return;
+  outlineTrackingInterval = window.setInterval(() => {
+    if (outlinePanel.element.hidden) {
+      window.clearInterval(outlineTrackingInterval);
+      outlineTrackingInterval = 0;
+      return;
+    }
+    updateOutlineFromPreviewScroll();
+  }, 100);
+}
+
+previewPane.addEventListener('scroll', scheduleOutlineScrollUpdate, { passive: true });
+document.addEventListener('scroll', scheduleOutlineScrollUpdate, { passive: true, capture: true });
+
+let outlineCaretListenersInstalled = false;
+
+function installOutlineCaretListeners(): void {
+  if (!editor || outlineCaretListenersInstalled) return;
+  editor.view.dom.addEventListener('keyup', updateOutlineFromEditorCaret);
+  editor.view.dom.addEventListener('mouseup', updateOutlineFromEditorCaret);
+  outlineCaretListenersInstalled = true;
+}
+
+function runOutlineAction(id: ActionId): boolean {
+  if (id !== 'navigate.outline') return false;
+  outlinePanel.setMode('overlay');
+  outlinePanel.focusSearch();
+  startOutlineTrackingLoop();
+  return true;
+}
+
+document.addEventListener('keydown', (event) => {
+  if (event.key !== 'Escape' || outlinePanel.element.hidden) return;
+  event.preventDefault();
+  outlinePanel.setMode('collapsed');
+  editor?.focus();
+}, { capture: true });
 
 async function adoptOpenedDocumentFromLink(documentFromBackend: OpenedDocumentFromLink): Promise<void> {
   const doc: OpenedDoc = {
@@ -877,6 +997,7 @@ async function processRenderQueue(): Promise<void> {
         decorateCodeBlocks(previewContent);
         decorateTables(previewContent, () => editor?.getValue() ?? '');
       }
+      applyOutlineRender(result);
     }
     item.resolve();
   } catch (e) {
@@ -895,6 +1016,7 @@ async function ensureEditor(): Promise<void> {
   if (editor) return;
   editor = await mountEditor(editorPane, () => onActiveEdit());
   attachScrollSync(editor.view, previewPane);
+  installOutlineCaretListeners();
 }
 
 // Coalesce keystroke bursts into a single render. Each render re-parses the
@@ -998,6 +1120,9 @@ store.onActivate((prev, next) => {
   }
   if (!next) {
     document.body.dataset.tabkind = 'empty';
+    factsStore.setActiveDoc(null);
+    outlinePanel.setHeadings([]);
+    outlinePanel.setMode('collapsed');
     renderEmptyBody();
     return;
   }
@@ -1010,10 +1135,16 @@ store.onActivate((prev, next) => {
       break;
     case 'empty':
       chrome.setCounts(null);
+      factsStore.setActiveDoc(null);
+      outlinePanel.setHeadings([]);
+      outlinePanel.setMode('collapsed');
       renderEmptyBody();
       break;
     case 'browser':
       chrome.setCounts(null);
+      factsStore.setActiveDoc(null);
+      outlinePanel.setHeadings([]);
+      outlinePanel.setMode('collapsed');
       renderBrowserBody();
       break;
     default:
@@ -1026,6 +1157,7 @@ async function activateDocTab(tab: DocTab): Promise<void> {
   await ensureEditor();
   if (!editor) return;
   if (tab.editorState) editor.activateState(tab.editorState);
+  factsStore.setActiveDoc(tab.docId);
   invoke('set_active_doc', { docId: tab.docId }).catch(() => {});
   chrome.setFilename(tab.filePath ? basename(tab.filePath) : 'Untitled');
   applyMode(tab.mode);
@@ -1309,7 +1441,7 @@ listen<DocStateChanged>('doc_state_changed', (event) => {
   if (active && active.docId === doc_id) maybeAutoreload(state);
 }).catch(() => {});
 
-listen<AsyncDocumentDiagnostics>('pmd://diagnostics-enriched', (event) => {
+listen<DocumentDiagnostics>('pmd://diagnostics-enriched', (event) => {
   const active = store.activeDoc();
   const appliedVersion = Number(previewContent.dataset.versionApplied || '0');
   if (!active || active.docId !== event.payload.doc_id || appliedVersion !== event.payload.version) {

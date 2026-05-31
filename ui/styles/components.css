@@ -1558,3 +1558,79 @@ body[data-state="welcome"] #split-resizer {
   color: var(--pmd-danger, #b42318);
   font-size: var(--pmd-text-sm);
 }
+
+/* --------------------------------------------
+   24. Document outline (Block 9)
+   -------------------------------------------- */
+
+.pmd-outline-panel {
+  position: fixed;
+  z-index: 55;
+  top: calc(var(--pmd-chrome-h, 44px) + var(--pmd-space-4));
+  right: var(--pmd-space-4);
+  width: min(360px, calc(100vw - 32px));
+  max-height: min(72vh, 640px);
+  overflow: hidden;
+  border: 1px solid var(--pmd-border);
+  border-radius: var(--pmd-radius-md);
+  background: var(--pmd-bg-elevated);
+  box-shadow: var(--pmd-shadow-lg);
+  color: var(--pmd-fg);
+}
+
+.pmd-outline-panel[hidden] {
+  display: none;
+}
+
+.pmd-outline-search {
+  width: 100%;
+  box-sizing: border-box;
+  padding: var(--pmd-space-3) var(--pmd-space-4);
+  border: 0;
+  border-bottom: 1px solid var(--pmd-border);
+  background: var(--pmd-bg);
+  color: var(--pmd-fg);
+  font: inherit;
+}
+
+.pmd-outline-search:focus-visible {
+  outline: 2px solid var(--pmd-accent);
+  outline-offset: -2px;
+}
+
+.pmd-outline-tree {
+  max-height: calc(min(72vh, 640px) - 48px);
+  overflow-y: auto;
+  padding: var(--pmd-space-1);
+}
+
+.pmd-outline-tree:focus {
+  outline: none;
+}
+
+.pmd-outline-item {
+  display: block;
+  width: 100%;
+  min-height: 32px;
+  padding: var(--pmd-space-2) var(--pmd-space-3);
+  padding-left: calc(var(--pmd-space-3) + (var(--pmd-outline-level, 1) - 1) * var(--pmd-space-4));
+  border: 0;
+  border-radius: var(--pmd-radius-sm);
+  background: transparent;
+  color: var(--pmd-fg);
+  font: inherit;
+  font-size: var(--pmd-text-sm);
+  text-align: left;
+  cursor: pointer;
+}
+
+.pmd-outline-item:hover,
+.pmd-outline-item:focus-visible {
+  background: var(--pmd-bg-muted);
+  outline: none;
+}
+
+.pmd-outline-item[aria-selected='true'] {
+  background: color-mix(in srgb, var(--pmd-accent) 14%, transparent);
+  color: var(--pmd-fg);
+}

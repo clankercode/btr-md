@@ -89,7 +89,7 @@ function screenshotPath(name) {
 }
 
 async function installTauriMock(page, options = {}) {
-  await page.addInitScript(({ initialPath, themes, renderHtml, renderDocId, renderVersion }) => {
+  await page.addInitScript(({ initialPath, themes, renderHtml, renderDocId, renderVersion, renderFacts }) => {
     let callbackId = 1;
     let nextDocId = 1;
     let shortcutOverrides = {};
@@ -105,6 +105,29 @@ async function installTauriMock(page, options = {}) {
         .replaceAll('>', '&gt;');
       return `<article class="pmd-preview"><h1>${escaped.split('\n')[0].replace(/^#\s*/, '') || 'Untitled'}</h1><p>${escaped}</p></article>`;
     };
+
+    function emptyDiagnostics(docId, version) {
+      return {
+        doc_id: docId,
+        version,
+        phase: 'initial',
+        issues: [],
+        resources: {
+          doc_id: docId,
+          version,
+          allowed_roots: [],
+          loaded_resources: [],
+          decisions: [],
+        },
+        link_summary: {
+          checked: 0,
+          errors: 0,
+          warnings: 0,
+          unchecked_external: 0,
+          pending_async: 0,
+        },
+      };
+    }
 
     window.__pmdInvocations = [];
     window.__pmdE2e = true;
@@ -172,7 +195,7 @@ async function installTauriMock(page, options = {}) {
         }
         if (cmd === 'render_cmd') {
           const version = renderVersion ?? args.version ?? 0;
-          const docId = renderDocId ?? args.docId ?? 0;
+          const docId = renderDocId ?? args.docId ?? args.doc_id ?? 1;
           return {
             doc_id: docId,
             html: renderHtml ?? renderMarkdown(args.markdown ?? ''),
@@ -182,7 +205,7 @@ async function installTauriMock(page, options = {}) {
             facts: {
               doc_id: docId,
               version,
-              headings: [],
+              headings: renderFacts?.headings ?? [],
               anchors: [],
               links: [],
               reference_definitions: [],
@@ -200,7 +223,7 @@ async function installTauriMock(page, options = {}) {
                 bytes: 0,
                 sentences: 0,
                 paragraphs: 0,
-                headings: 0,
+                headings: renderFacts?.headings?.length ?? 0,
                 links: 0,
                 images: 0,
                 code_blocks: 0,
@@ -209,26 +232,7 @@ async function installTauriMock(page, options = {}) {
                 math_blocks: 0,
               },
             },
-            diagnostics: {
-              doc_id: docId,
-              version,
-              phase: 'initial',
-              issues: [],
-              resources: {
-                doc_id: docId,
-                version,
-                allowed_roots: [],
-                loaded_resources: [],
-                decisions: [],
-              },
-              link_summary: {
-                checked: 0,
-                errors: 0,
-                warnings: 0,
-                unchecked_external: 0,
-                pending_async: 0,
-              },
-            },
+            diagnostics: emptyDiagnostics(docId, version),
           };
         }
         if (cmd === 'open_file' || cmd === 'request_open_file') {
@@ -268,6 +272,7 @@ async function installTauriMock(page, options = {}) {
     renderHtml: options.renderHtml ?? null,
     renderDocId: options.renderDocId ?? null,
     renderVersion: options.renderVersion ?? null,
+    renderFacts: options.renderFacts ?? null,
   });
 }
 
