@@ -1,4 +1,4 @@
-use pmd_core::incremental::{plan_blocks_for_test, render_block_for_test, render_incremental, BlockSliceView};
+use pmd_core::incremental::{plan_blocks_for_test, render_block_for_test, render_incremental};
 use pmd_core::emit::render_string;
 
 #[test]

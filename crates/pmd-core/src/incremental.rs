@@ -10,13 +10,11 @@ use pulldown_cmark::{Event, Parser, Tag};
 /// A process-stable random token used as the render nonce inside cached blocks.
 /// Never returned to the frontend; substituted for the real per-render nonce at
 /// assembly. Random so it cannot appear in document content.
-#[allow(dead_code)]
 fn placeholder_nonce() -> &'static str {
     static P: OnceLock<String> = OnceLock::new();
     P.get_or_init(crate::emit::generate_render_nonce)
 }
 
-#[allow(dead_code)]
 pub(crate) struct BlockSlice {
     pub start: usize,
     pub end: usize,
@@ -132,7 +130,6 @@ fn cache() -> &'static Mutex<BlockCache> {
 
 /// Render+sanitize one block's source with the placeholder nonce, memoized by
 /// blake3(source). Returns shared cached HTML (relative line numbers).
-#[allow(dead_code)]
 pub(crate) fn render_block_cached(src: &str) -> Arc<CachedBlock> {
     let key: [u8; 32] = *blake3::hash(src.as_bytes()).as_bytes();
     if let Some(hit) = cache().lock().unwrap().get(&key) {
@@ -169,6 +166,7 @@ fn append_with_line_offset(out: &mut String, block_html: &str, base: u32) {
                     i += 1;
                 }
                 if i > num_start {
+                    // data-src line numbers always fit in u32; unwrap_or(0) is a defensive no-op.
                     let n: u32 = block_html[num_start..i].parse().unwrap_or(0);
                     out.push_str(&(n + base).to_string());
                 }
@@ -201,7 +199,9 @@ pub fn render_incremental(md: &str) -> crate::emit::RenderResult {
     crate::emit::RenderResult { version: 0, html, source_map, render_nonce }
 }
 
+#[doc(hidden)]
 pub fn render_block_for_test(src: &str) -> (String, u64) {
+    // Test-support only (used by tests/incremental.rs); not part of the public API.
     let b = render_block_cached(src);
     let hits = cache().lock().unwrap().hits;
     (b.html.clone(), hits)
@@ -214,7 +214,9 @@ pub struct BlockSliceView {
     pub start_line: u32,
 }
 
+#[doc(hidden)]
 pub fn plan_blocks_for_test(md: &str) -> Option<Vec<BlockSliceView>> {
+    // Test-support only (used by tests/incremental.rs); not part of the public API.
     plan_blocks(md).map(|v| {
         v.into_iter()
             .map(|b| BlockSliceView {
