@@ -1968,3 +1968,85 @@ mark.pmd-find {
   color: var(--pmd-bg);
   background: var(--pmd-warning, #ffd54f);
 }
+
+/* --------------------------------------------
+   Frontmatter inspector + status chip
+   -------------------------------------------- */
+.pmd-status-frontmatter {
+  margin-left: var(--pmd-space-3);
+  padding: 0 var(--pmd-space-2);
+  color: var(--pmd-fg-muted);
+  font: inherit;
+  font-size: var(--pmd-text-xs);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--pmd-radius-sm);
+  cursor: pointer;
+}
+
+.pmd-status-frontmatter-present {
+  color: var(--pmd-fg);
+  background: var(--pmd-bg-elevated);
+  border-color: var(--pmd-border);
+}
+
+.pmd-status-frontmatter-malformed {
+  color: var(--pmd-danger, #ef4444);
+}
+
+.pmd-frontmatter-panel {
+  min-width: 18rem;
+  max-width: min(32rem, calc(100vw - var(--pmd-space-4)));
+  padding: var(--pmd-space-2);
+}
+
+.pmd-frontmatter-header {
+  margin-bottom: var(--pmd-space-2);
+  font-weight: var(--pmd-font-medium);
+}
+
+.pmd-frontmatter-badge {
+  padding: 0 var(--pmd-space-1);
+  color: var(--pmd-danger, #ef4444);
+  font-size: var(--pmd-text-xs);
+  border: 1px solid currentColor;
+  border-radius: var(--pmd-radius-sm);
+}
+
+.pmd-frontmatter-hint {
+  color: var(--pmd-fg-muted);
+  font-size: var(--pmd-text-xs);
+}
+
+.pmd-frontmatter-field {
+  display: flex;
+  align-items: center;
+  gap: var(--pmd-space-2);
+  margin: 2px 0;
+}
+
+.pmd-frontmatter-key {
+  width: 9rem;
+  color: var(--pmd-fg-muted);
+  font-size: var(--pmd-text-xs);
+}
+
+.pmd-frontmatter-value {
+  flex: 1;
+  min-width: 0;
+}
+
+.pmd-frontmatter-add {
+  display: flex;
+  gap: var(--pmd-space-1);
+  margin-top: var(--pmd-space-2);
+}
+
+.pmd-frontmatter-add-key {
+  width: 7rem;
+}
+
+.pmd-frontmatter-add-value {
+  flex: 1;
+  min-width: 0;
+}
