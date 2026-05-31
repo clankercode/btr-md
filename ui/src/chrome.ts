@@ -26,6 +26,8 @@ export interface ChromeInstance {
   onCopyUrl: (handler: () => void) => void;
   onRevealInFolder: (handler: () => void) => void;
   onOpenInApp: (handler: () => void) => void;
+  onExportPdf: (handler: () => void) => void;
+  onExportHtml: (handler: () => void) => void;
   onModeChange: (handler: (mode: Mode) => void) => void;
   onRecentFileSelect: (handler: (path: string) => void) => void;
   onThemePickerClick: (handler: () => void) => void;
@@ -105,6 +107,28 @@ export function createChrome(parent: HTMLElement): ChromeInstance {
   addFileOp('copyUrl', 'Copy file:// URL');
   addFileOp('reveal', 'Reveal in folder');
   addFileOp('openApp', 'Open in default app');
+
+  // Export section: divider then PDF / HTML. Always enabled (export operates on
+  // the rendered document, which exists even for an unsaved buffer).
+  const exportDivider = document.createElement('li');
+  exportDivider.className = 'pmd-dropdown-divider';
+  exportDivider.setAttribute('role', 'separator');
+  fileOpsList.appendChild(exportDivider);
+
+  const exportHandlers: Record<string, (() => void)[]> = { pdf: [], html: [] };
+  const addExportItem = (key: string, label: string) => {
+    const li = document.createElement('li');
+    li.className = 'pmd-dropdown-item';
+    li.setAttribute('role', 'menuitem');
+    li.textContent = label;
+    li.addEventListener('click', () => {
+      closeDropdown();
+      exportHandlers[key].forEach((h) => h());
+    });
+    fileOpsList.appendChild(li);
+  };
+  addExportItem('pdf', 'Export to PDF…');
+  addExportItem('html', 'Export to HTML…');
 
   const titleSection = document.createElement('div');
   titleSection.className = 'pmd-title-section';
@@ -414,6 +438,12 @@ export function createChrome(parent: HTMLElement): ChromeInstance {
     },
     onOpenInApp: (handler: () => void) => {
       fileOpHandlers.openApp.push(handler);
+    },
+    onExportPdf: (handler: () => void) => {
+      exportHandlers.pdf.push(handler);
+    },
+    onExportHtml: (handler: () => void) => {
+      exportHandlers.html.push(handler);
     },
     onModeChange: (handler: (mode: Mode) => void) => {
       modeHandlers.push(handler);

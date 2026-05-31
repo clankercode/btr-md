@@ -44,6 +44,8 @@ export type ActionId =
   | "document.reloadFromDisk"
   | "document.mergeDiskChanges"
   | "document.editFrontmatter"
+  | "document.export.pdf"
+  | "document.export.html"
   | "view.setDiffMode"
   | "navigate.fileBrowser"
   | "share.openGist"
@@ -110,6 +112,8 @@ export const NO_DEFAULT_ACTION_IDS: ActionId[] = [
   "document.reloadFromDisk",
   "document.mergeDiskChanges",
   "document.editFrontmatter",
+  "document.export.pdf",
+  "document.export.html",
   "view.setDiffMode",
   "navigate.fileBrowser",
   "share.openGist",
@@ -176,6 +180,8 @@ export const defaultActionSpecs: ActionSpec[] = [
   spec("document.reloadFromDisk", "Reload from disk", "Document", "Reload the active document"),
   spec("document.mergeDiskChanges", "Merge disk changes", "Document", "Merge disk changes into the active document"),
   spec("document.editFrontmatter", "Edit frontmatter", "Document", "Inspect and edit document frontmatter", []),
+  spec("document.export.pdf", "Export to PDF", "Document", "Print the rendered document (Save as PDF)", []),
+  spec("document.export.html", "Export to HTML", "Document", "Export the rendered document as a self-contained HTML file", []),
   spec("view.setDiffMode", "Set diff mode", "View", "Select the diff mode"),
   spec("navigate.fileBrowser", "File browser", "Navigate", "Open the file browser tab"),
   spec("share.openGist", "Open Gist", "Share", "Open the document Gist"),

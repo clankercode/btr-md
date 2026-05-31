@@ -50,5 +50,5 @@ test("all no-default actions are registered searchable and unbound", () => {
     assert.equal(searchActions(defaultActionSpecs, action.label)[0].id, id);
     assert.equal(typeof action.run, "function");
   }
-  assert.equal(NO_DEFAULT_ACTION_IDS.length, 21);
+  assert.equal(NO_DEFAULT_ACTION_IDS.length, 23);
 });

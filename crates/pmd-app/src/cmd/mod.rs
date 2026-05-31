@@ -1,6 +1,7 @@
 pub mod browse;
 pub mod default_handler;
 pub mod doc;
+pub mod export;
 pub mod file;
 pub mod render;
 pub mod reveal;

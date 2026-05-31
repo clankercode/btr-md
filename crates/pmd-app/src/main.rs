@@ -60,6 +60,7 @@ fn main() {
             cmd::file::request_open_file,
             cmd::file::open_dialog,
             cmd::file::save_dialog,
+            cmd::export::export_html,
             cmd::doc::register_doc,
             cmd::doc::set_active_doc,
             cmd::doc::doc_edited,

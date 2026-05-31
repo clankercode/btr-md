@@ -55,6 +55,11 @@ import {
 } from './frontmatter_edit.js';
 import { createShortcutEditor } from './shortcut_editor.js';
 import {
+  buildHtmlExportPayload,
+  suggestedExportName,
+  type HtmlExportPayload,
+} from './export_document.js';
+import {
   attachPreviewLinkActivation,
   createExternalConfirmationDialog,
   handleLinkActivationResponse,
@@ -632,6 +637,12 @@ async function runAction(id: ActionId): Promise<void> {
       openFrontmatterInspector(rect?.left ?? 80, rect?.top ?? 80);
       return;
     }
+    case 'document.export.pdf':
+      exportToPdf();
+      return;
+    case 'document.export.html':
+      await exportToHtml();
+      return;
     case 'navigate.fileBrowser':
       store.addBrowser();
       return;
@@ -1216,6 +1227,77 @@ function activeFilePath(): string | null {
   const t = store.activeDoc();
   return t ? t.filePath : null;
 }
+
+// --- Export (PDF print + self-contained HTML) ------------------------------
+
+/** The active theme's emitted CSS, so an HTML export styles like the app. */
+function activeThemeCss(): string {
+  return (document.getElementById('pmd-theme-styles') as HTMLStyleElement | null)?.textContent ?? '';
+}
+
+/** Best-effort document title: first rendered H1, else the filename stem. */
+function exportTitle(): string {
+  const h1 = previewContent.querySelector('h1')?.textContent?.trim();
+  if (h1) return h1;
+  const path = activeFilePath();
+  return path ? (path.split('/').pop() ?? '') : '';
+}
+
+/**
+ * PDF export (#1): switch the preview into print mode and invoke the WebKitGTK
+ * print path (`window.print()`), which offers "Save as PDF". `print.css`
+ * (gated under `@media print`) strips chrome, expands collapsed blocks and
+ * paginates; the `print-export` body class is a JS-set hook around the call.
+ * Force preview mode first so the rendered document is what gets laid out.
+ */
+function exportToPdf(): void {
+  if (currentMode !== 'preview') applyMode('preview');
+  document.body.classList.add('print-export');
+  let cleanupTimer: number | undefined;
+  const cleanup = () => {
+    if (cleanupTimer !== undefined) {
+      clearTimeout(cleanupTimer);
+      cleanupTimer = undefined;
+    }
+    document.body.classList.remove('print-export');
+    window.removeEventListener('afterprint', cleanup);
+  };
+  window.addEventListener('afterprint', cleanup);
+  try {
+    window.print();
+  } catch (e) {
+    cleanup();
+    showError(`Print failed: ${String(e)}`);
+    return;
+  }
+  // WebKitGTK does not always emit `afterprint`; remove the class shortly after
+  // so the app does not stay in print-export state.
+  cleanupTimer = window.setTimeout(cleanup, 1000);
+}
+
+/**
+ * HTML export (#7): serialize the *already-sanitized* preview DOM (with
+ * pre-rendered Mermaid/KaTeX and scoped data-URI images), pair it with the
+ * active theme CSS, and hand it to the backend `export_html` command, which
+ * re-sanitizes, inlines the CSS, and writes via the OS save dialog.
+ */
+async function exportToHtml(): Promise<void> {
+  const payload: HtmlExportPayload = buildHtmlExportPayload({
+    bodyHtml: previewContent.innerHTML,
+    themeCss: activeThemeCss(),
+    title: exportTitle(),
+    docPath: activeFilePath(),
+  });
+  try {
+    const saved = await invoke<string | null>('export_html', {
+      payload,
+      suggestedName: suggestedExportName(activeFilePath()),
+    });
+    chrome.setStatus(saved ? `Exported to ${basename(saved)}` : 'Export cancelled');
+  } catch (e) {
+    showError(`HTML export failed: ${String(e)}`);
+  }
+}
 async function copyToClipboard(text: string, label: string): Promise<void> {
   try {
     await navigator.clipboard.writeText(text);
@@ -1247,6 +1329,8 @@ chrome.onOpenInApp(() => {
   const p = activeFilePath();
   if (p) invoke('open_in_default_app', { path: p }).catch((e) => showError(`Open failed: ${String(e)}`));
 });
+chrome.onExportPdf(() => exportToPdf());
+chrome.onExportHtml(() => exportToHtml());
 chrome.setFileOpsEnabled(false);
 
 async function loadRecentFiles(): Promise<void> {

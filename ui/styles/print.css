@@ -1,0 +1,159 @@
+/* Print / PDF-export stylesheet.
+ *
+ * Loaded unconditionally (see index.html) but every rule is gated under
+ * `@media print`, so it is inert during normal on-screen use. The
+ * `document.export.pdf` action adds a `print-export` class to <body> around
+ * the `window.print()` call (WebKitGTK's print path offers "Save as PDF"),
+ * giving us a JS hook that is *also* only honoured while printing.
+ *
+ * Goals while printing:
+ *   1. Strip all app chrome (toolbar, tab bar, status bar, sidebars, resizers,
+ *      find bar, overlays) so only the rendered preview is on the page.
+ *   2. Lay the preview out as normal flowing document content (the app pins it
+ *      to a scrolling pane on screen; that would clip to one page in print).
+ *   3. Force-expand any collapsed / inner-scrolling blocks (expandable tables,
+ *      collapsible code blocks) so their full content prints instead of being
+ *      cut at the on-screen viewport height.
+ *   4. Paginate sensibly: avoid breaking inside code blocks, tables, figures,
+ *      and headings; keep headings with the text that follows.
+ */
+
+@media print {
+  /* 1. Hide everything that is not the rendered document. -------------------- */
+  .pmd-chrome,
+  .pmd-toolbar,
+  .pmd-status-bar,
+  .pmd-tabbar,
+  #pmd-sidebar,
+  #sidebar-resizer,
+  #split-resizer,
+  #editor-pane,
+  .pmd-find-bar,
+  .pmd-dropdown-menu,
+  .pmd-command-overlay,
+  .pmd-picker,
+  .pmd-diagnostics-panel,
+  .pmd-trust-policy,
+  .pmd-context-menu,
+  .pmd-stats-popover,
+  .pmd-frontmatter-panel,
+  .pmd-outline-panel,
+  /* Per-block UI controls injected into the rendered output. */
+  .pmd-table-controls,
+  .pmd-table-btn,
+  .pmd-code-toolbar,
+  .pmd-code-btn,
+  .pmd-mermaid-expand,
+  .pmd-mermaid-copy,
+  .pmd-mermaid-overlay,
+  .pmd-copy-btn,
+  .pmd-drag-overlay {
+    display: none !important;
+  }
+
+  /* 2. Let the document flow down the page instead of into a fixed pane. ----- */
+  html,
+  body,
+  #app-container,
+  #main-region,
+  #pmd-tab-body {
+    display: block !important;
+    position: static !important;
+    overflow: visible !important;
+    height: auto !important;
+    max-height: none !important;
+    width: auto !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  #preview-pane {
+    display: block !important;
+    position: static !important;
+    overflow: visible !important;
+    height: auto !important;
+    max-height: none !important;
+    width: auto !important;
+    flex: none !important;
+  }
+
+  /* The preview content keeps theme typography but drops the on-screen zoom
+   * transform and any scroll constraints. */
+  #pmd-content,
+  .pmd-preview {
+    overflow: visible !important;
+    height: auto !important;
+    max-height: none !important;
+    font-size: 11pt !important;
+  }
+
+  /* 3. Force-expand collapsible / inner-scrolling blocks. -------------------- */
+  .pmd-table-wrap,
+  .pmd-table-viewport,
+  .pmd-table-viewport.pmd-table-collapsed,
+  .pmd-table-viewport.pmd-table-collapsed::after,
+  figure.pmd-code-block,
+  .pmd-code-block.pmd-expanded,
+  pre,
+  pre > code {
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  .pmd-code-block,
+  .pmd-code-block.pmd-expanded {
+    width: auto !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+
+  .pmd-table-viewport.pmd-table-collapsed::after {
+    content: none !important;
+    display: none !important;
+  }
+
+  /* 4. Pagination. ----------------------------------------------------------- */
+  pre,
+  table,
+  figure,
+  .pmd-table-wrap,
+  blockquote,
+  .pmd-mermaid,
+  .pmd-math.math-display {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+
+  img,
+  svg {
+    max-width: 100% !important;
+  }
+
+  a[href]::after {
+    /* Anchors in rendered output are stripped to data-attributes, so this is a
+     * no-op for the sanitized preview; kept defensive in case real hrefs ever
+     * survive. */
+    content: "";
+  }
+}
+
+/* The `print-export` body class is added by the export action immediately
+ * before `window.print()` and removed after. It scopes nothing extra today but
+ * gives a single, testable hook and lets future print-only tweaks target an
+ * explicit "we are exporting" state rather than every `@media print`. */
+@media print {
+  body.print-export {
+    background: #ffffff !important;
+  }
+}

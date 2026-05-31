@@ -54,6 +54,7 @@
     "src/stats_popover.ts",
     "src/editor_format.ts",
     "src/editor_list.ts",
-    "src/find_replace.ts"
+    "src/find_replace.ts",
+    "src/export_document.ts"
   ]
 }
