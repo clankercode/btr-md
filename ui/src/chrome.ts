@@ -17,6 +17,7 @@ export interface ChromeInstance {
   setCounts: (counts: Counts | null) => void;
   setRecentFiles: (files: string[]) => void;
   setFileOpsEnabled: (enabled: boolean) => void;
+  focusMenu: () => void;
   onCopyPath: (handler: () => void) => void;
   onCopyFilename: (handler: () => void) => void;
   onCopyUrl: (handler: () => void) => void;
@@ -41,6 +42,8 @@ export function createChrome(parent: HTMLElement): ChromeInstance {
 
   const toolbar = document.createElement('div');
   toolbar.className = 'pmd-toolbar';
+  toolbar.setAttribute('role', 'menubar');
+  toolbar.tabIndex = -1;
 
   const fileMenuWrapper = document.createElement('div');
   fileMenuWrapper.className = 'pmd-dropdown';
@@ -49,6 +52,7 @@ export function createChrome(parent: HTMLElement): ChromeInstance {
   fileMenuBtn.className = 'pmd-btn pmd-btn-ghost pmd-btn-sm';
   fileMenuBtn.textContent = 'File';
   fileMenuBtn.type = 'button';
+  fileMenuBtn.setAttribute('role', 'menuitem');
 
   const fileDropdown = document.createElement('div');
   fileDropdown.className = 'pmd-dropdown-menu';
@@ -159,6 +163,7 @@ export function createChrome(parent: HTMLElement): ChromeInstance {
   saveBtn.textContent = 'Save';
   saveBtn.type = 'button';
   saveBtn.title = 'Save (Ctrl+S)';
+  saveBtn.setAttribute('aria-label', 'Write document');
   saveBtn.disabled = true;
   toolbar.appendChild(saveBtn);
 
@@ -357,6 +362,10 @@ export function createChrome(parent: HTMLElement): ChromeInstance {
     },
     setFileOpsEnabled: (enabled: boolean) => {
       fileOpItems.forEach((li) => li.toggleAttribute('data-disabled', !enabled));
+    },
+    focusMenu: () => {
+      fileDropdown.style.display = 'block';
+      fileMenuBtn.focus();
     },
     onCopyPath: (handler: () => void) => {
       fileOpHandlers.copyPath.push(handler);

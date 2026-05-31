@@ -3,6 +3,7 @@ use anyhow::Result;
 use fs2::FileExt;
 use serde::{Deserialize, Serialize};
 use std::{
+    collections::BTreeMap,
     fs::OpenOptions,
     io::{Read, Seek, SeekFrom, Write},
     path::PathBuf,
@@ -37,6 +38,8 @@ pub struct Settings {
     /// Selected mono/editor font (a downloaded Nerd Font family name), if any.
     #[serde(default)]
     pub mono_font: Option<String>,
+    #[serde(default)]
+    pub shortcut_overrides: BTreeMap<String, Vec<String>>,
 }
 
 /// Read the current settings from disk, falling back to defaults if the file is

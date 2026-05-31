@@ -1,8 +1,8 @@
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
+import { getCurrentWindow } from '@tauri-apps/api/window';
 import { mountEditor, type EditorHandle } from './editor.js';
 import { createChrome, type Mode } from './chrome.js';
-import { createHotkeyHandler, createOverlay } from './hotkeys.js';
 import { attachScrollSync } from './scroll_sync.js';
 import { markAllNodes, rerenderForThemeChange } from './theme_apply.js';
 import { renderMermaidNodes, setMermaidTheme } from './mermaid_runner.js';
@@ -29,6 +29,17 @@ import { planFootnoteInsertion } from './footnotes.js';
 import { insertAtCursor, dispatchInsert } from './editor_insert.js';
 import { decorateTables } from './table_copy.js';
 import { reconcileBlocks, type BlockRef } from './block_reconcile.js';
+import {
+  createActionRegistry,
+  defaultActionSpecs,
+  type ActionId,
+} from './actions.js';
+import {
+  installActionHotkeys,
+  type ShortcutOverrides,
+} from './keybindings.js';
+import { createCommandOverlay } from './command_overlay.js';
+import { createShortcutEditor } from './shortcut_editor.js';
 import {
   attachPreviewLinkActivation,
   createExternalConfirmationDialog,
@@ -93,6 +104,14 @@ interface Settings {
   diff_mode: DiffMode;
   dont_ask_default_handler: boolean;
   mono_font: string | null;
+  shortcut_overrides: ShortcutOverrides;
+}
+
+declare global {
+  interface Window {
+    __pmdE2e?: boolean;
+    __pmdE2eActions?: string[];
+  }
 }
 
 interface OpenedDoc {
@@ -204,9 +223,6 @@ splitResizer.addEventListener('keydown', (e) => {
 // ---------------------------------------------------------------------------
 
 const chrome = createChrome(document.body);
-const hotkeyOverlay = createOverlay();
-hotkeyOverlay.style.display = 'none';
-document.body.appendChild(hotkeyOverlay);
 
 const store = createTabStore();
 const tabBar: TabBarInstance = createTabBar(store, {
@@ -227,11 +243,12 @@ chrome.el.appendChild(tabBar.el);
 // Declared before the toolbar block below assigns it (a later `let` would
 // otherwise re-initialise it to null after assignment).
 let insertMenu: InsertMenuInstance | null = null;
+let settingsMenu: ReturnType<typeof createSettingsMenu> | null = null;
 
 // Settings dropdown: appends its own trigger into the toolbar.
 const toolbarEl = chrome.el.querySelector('.pmd-toolbar');
 if (toolbarEl instanceof HTMLElement) {
-  createSettingsMenu(toolbarEl, {
+  settingsMenu = createSettingsMenu(toolbarEl, {
     getSettings: () => invoke<SettingsSnapshot>('get_settings'),
     setAutosaveMode: (m) => invoke('set_autosave_mode', { mode: m }).then(() => {}),
     setAutoreloadMode: (m) => invoke('set_autoreload_mode', { mode: m }).then(() => {}),
@@ -287,6 +304,11 @@ function applyGistVisibility(): void {
   if (gistBtn) gistBtn.style.display = gistEnabled ? '' : 'none';
 }
 
+function setPreviewZoom(value: number): void {
+  previewZoom = Math.max(0.5, Math.min(2, value));
+  previewContent.style.fontSize = `${previewZoom}rem`;
+}
+
 /** Drive the editor/mono font CSS var from a chosen family (any installed font,
  *  e.g. a system-installed Nerd Font). */
 function applyMonoFont(font: string | null): void {
@@ -322,6 +344,161 @@ let browserBaseDir: string | null = null;
 let gistEnabled = false;
 let diffMode: DiffMode = 'none';
 let gistBtn: HTMLButtonElement | null = null;
+let shortcutOverrides: ShortcutOverrides = {};
+let previewZoom = 1;
+
+function enabledActionIds(): Set<ActionId> {
+  return new Set(defaultActionSpecs.map((action) => action.id));
+}
+
+function recordActionForE2e(actionId: ActionId): boolean {
+  if (!window.__pmdE2e) return false;
+  window.__pmdE2eActions = window.__pmdE2eActions ?? [];
+  window.__pmdE2eActions.push(actionId);
+  return actionId === 'app.quit';
+}
+
+async function runAction(id: ActionId): Promise<void> {
+  if (recordActionForE2e(id)) return;
+  switch (id) {
+    case 'file.new':
+      await newFile();
+      return;
+    case 'file.open':
+      await openFileDialog();
+      return;
+    case 'file.save':
+      await saveCurrentDoc();
+      return;
+    case 'file.saveAs':
+      await saveCurrentDocAs();
+      return;
+    case 'file.closeTab': {
+      const id = store.activeId();
+      if (id !== null) closeTab(id);
+      return;
+    }
+    case 'app.quit':
+      await getCurrentWindow().close();
+      return;
+    case 'view.zoomIn':
+      setPreviewZoom(previewZoom + 0.1);
+      return;
+    case 'view.zoomOut':
+      setPreviewZoom(previewZoom - 0.1);
+      return;
+    case 'view.zoomReset':
+      setPreviewZoom(1);
+      return;
+    case 'view.cycleMode':
+      cycleMode();
+      return;
+    case 'view.toggleWordWrap':
+      toggleWordWrap();
+      return;
+    case 'navigate.commandOverlay':
+      commandOverlay.open();
+      return;
+    case 'help.shortcuts':
+      shortcutEditor.open();
+      return;
+    case 'theme.pick':
+      await showThemePicker();
+      return;
+    case 'settings.open':
+      await settingsMenu?.open();
+      return;
+    case 'menu.focus':
+      chrome.focusMenu();
+      return;
+    case 'file.copyPath': {
+      const p = activeFilePath();
+      if (p) await copyToClipboard(p, 'path');
+      return;
+    }
+    case 'file.copyFilename': {
+      const p = activeFilePath();
+      if (p) await copyToClipboard(basename(p), 'filename');
+      return;
+    }
+    case 'file.copyFileUrl': {
+      const p = activeFilePath();
+      if (p) await copyToClipboard(`file://${p}`, 'file URL');
+      return;
+    }
+    case 'file.revealInFolder': {
+      const p = activeFilePath();
+      if (p) await invoke('reveal_in_folder', { path: p }).catch((e) => showError(`Reveal failed: ${String(e)}`));
+      return;
+    }
+    case 'file.openDefaultApp': {
+      const p = activeFilePath();
+      if (p) await invoke('open_in_default_app', { path: p }).catch((e) => showError(`Open failed: ${String(e)}`));
+      return;
+    }
+    case 'file.clearRecent':
+      await invoke('clear_recent_files');
+      chrome.setRecentFiles([]);
+      return;
+    case 'document.reloadFromDisk':
+      await doReload();
+      return;
+    case 'document.mergeDiskChanges':
+      await doMerge();
+      return;
+    case 'navigate.fileBrowser':
+      store.addBrowser();
+      return;
+    case 'share.openGist':
+    case 'share.copyGistMarkdown':
+      await openGist();
+      return;
+    case 'edit.find':
+    case 'edit.findNext':
+    case 'edit.findPrevious':
+      editor?.focus();
+      return;
+    case 'view.setDiffMode':
+    case 'settings.pickBaseFolder':
+    case 'settings.selectMonoFont':
+    case 'settings.setDefaultHandler':
+    case 'navigate.outline':
+    case 'diagnostics.togglePanel':
+    case 'asset.grantFolder':
+    case 'asset.revokeGrant':
+      chrome.setStatus(defaultActionSpecs.find((action) => action.id === id)?.label ?? id);
+      return;
+    default:
+      assertNever(id);
+  }
+}
+
+const actionRegistry = createActionRegistry(defaultActionSpecs, {
+  run: runAction,
+  isEnabled: () => true,
+  isVisible: () => true,
+});
+
+const commandOverlay = createCommandOverlay(defaultActionSpecs, actionRegistry, {
+  isVisible: () => true,
+});
+const shortcutEditor = createShortcutEditor({
+  actions: defaultActionSpecs,
+  loadOverrides: () => shortcutOverrides,
+  saveOverrides: async (overrides) => {
+    const settings = await invoke<Settings>('set_shortcut_overrides', { overrides });
+    shortcutOverrides = settings.shortcut_overrides ?? {};
+  },
+  enabledActionIds,
+});
+document.body.append(commandOverlay.element, shortcutEditor.element);
+
+installActionHotkeys({
+  actions: defaultActionSpecs,
+  registry: actionRegistry,
+  getOverrides: () => shortcutOverrides,
+  isEnabled: () => true,
+});
 
 const MARKDOWN_EXTENSIONS = ['md', 'markdown', 'mdown', 'mkd'];
 
@@ -514,37 +691,6 @@ chrome.onOpenInApp(() => {
 });
 chrome.setFileOpsEnabled(false);
 
-document.addEventListener('keydown', (e: KeyboardEvent) => {
-  if (e.ctrlKey && e.key === 't') {
-    e.preventDefault();
-    showThemePicker();
-  }
-  if (e.ctrlKey && e.key === 'n') {
-    e.preventDefault();
-    newFile();
-  }
-  if (e.ctrlKey && e.key === 'o') {
-    e.preventDefault();
-    openFileDialog();
-  }
-  if (e.ctrlKey && e.key === 's') {
-    e.preventDefault();
-    saveCurrentDoc();
-  }
-  if (e.ctrlKey && e.key === 'w') {
-    e.preventDefault();
-    const id = store.activeId();
-    if (id !== null) closeTab(id);
-  }
-  if (e.altKey && (e.key === 'z' || e.key === 'Z')) {
-    e.preventDefault();
-    if (editor) {
-      const wrap = editor.toggleWrap();
-      chrome.setStatus(wrap ? 'Word wrap on' : 'Word wrap off');
-    }
-  }
-});
-
 async function loadRecentFiles(): Promise<void> {
   try {
     const files = await invoke<string[]>('get_recent_files');
@@ -599,6 +745,20 @@ function applyMode(mode: Mode): void {
   if (t) store.updateDoc(t.id, { mode });
 }
 
+function cycleMode(): void {
+  const modes: Mode[] = ['source', 'split', 'preview'];
+  const idx = modes.indexOf(currentMode);
+  const next = modes[(idx + 1) % modes.length];
+  applyMode(next);
+  document.body.dispatchEvent(new CustomEvent('mode-change', { detail: { mode: next } }));
+}
+
+function toggleWordWrap(): void {
+  if (!editor) return;
+  const wrap = editor.toggleWrap();
+  chrome.setStatus(wrap ? 'Word wrap on' : 'Word wrap off');
+}
+
 const systemColorSchemeQuery = window.matchMedia('(prefers-color-scheme: dark)');
 
 async function loadSettings(): Promise<Settings | null> {
@@ -623,15 +783,6 @@ function handleSystemThemeChange(): void {
   applyAutoSwitchTheme().catch((e) => console.error('Auto-switch failed:', e));
 }
 systemColorSchemeQuery.addEventListener('change', handleSystemThemeChange);
-
-const setupHotkeys = createHotkeyHandler(
-  () => currentMode,
-  (mode) => applyMode(mode),
-  () => {
-    hotkeyOverlay.style.display = 'flex';
-  }
-);
-setupHotkeys();
 
 chrome.onModeChange((mode) => applyMode(mode));
 
@@ -1009,12 +1160,16 @@ async function openFile(path: string, opts: { background?: boolean } = {}): Prom
   }
 }
 
-async function saveCurrentDoc(): Promise<void> {
+async function saveCurrentDocAs(): Promise<void> {
+  await saveCurrentDoc(true);
+}
+
+async function saveCurrentDoc(forceSaveAs = false): Promise<void> {
   const tab = store.activeDoc();
   if (!tab || !editor) return;
   try {
     let path: string | null = null;
-    if (!tab.filePath) {
+    if (forceSaveAs || !tab.filePath) {
       const suggested = editor.getValue().split('\n')[0].slice(0, 50) || 'Untitled';
       const picked = await invoke<string | null>('save_dialog', { suggestedName: suggested + '.md' });
       if (!picked) return;
@@ -1305,6 +1460,7 @@ async function bootstrap(): Promise<void> {
     if (settings.browser_base_dir) browserBaseDir = settings.browser_base_dir;
     gistEnabled = settings.gist_enabled === true;
     if (settings.diff_mode) diffMode = settings.diff_mode;
+    shortcutOverrides = settings.shortcut_overrides ?? {};
     applyGistVisibility();
     if (settings.mono_font) applyMonoFont(settings.mono_font);
     if (settings.active_theme) await applyTheme(settings.active_theme);

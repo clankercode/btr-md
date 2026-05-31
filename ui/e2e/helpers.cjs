@@ -92,6 +92,7 @@ async function installTauriMock(page, options = {}) {
   await page.addInitScript(({ initialPath, themes, renderHtml, renderDocId, renderVersion }) => {
     let callbackId = 1;
     let nextDocId = 1;
+    let shortcutOverrides = {};
     const callbacks = new Map();
     const files = {
       '/work/tests/corpus/hello.md': '# Hello\n\nThis file was opened by the test harness.',
@@ -106,7 +107,28 @@ async function installTauriMock(page, options = {}) {
     };
 
     window.__pmdInvocations = [];
+    window.__pmdE2e = true;
+    window.__pmdE2eActions = [];
     delete window.__TAURI__;
+
+    function settingsPayload() {
+      return {
+        active_theme: null,
+        light_theme: null,
+        dark_theme: null,
+        auto_switch: false,
+        default_mode: null,
+        autosave_mode: 'off',
+        autoreload_mode: 'when_clean',
+        merge_strategy: 'raise_conflict',
+        browser_base_dir: null,
+        gist_enabled: false,
+        diff_mode: 'none',
+        dont_ask_default_handler: true,
+        mono_font: null,
+        shortcut_overrides: shortcutOverrides,
+      };
+    }
 
     window.__TAURI_INTERNALS__ = {
       callbacks,
@@ -129,22 +151,10 @@ async function installTauriMock(page, options = {}) {
         if (cmd === 'plugin:event|listen') return args.handler;
         if (cmd === 'plugin:event|unlisten') return null;
         if (cmd === 'get_recent_files') return [];
-        if (cmd === 'get_settings') {
-          return {
-            active_theme: null,
-            light_theme: null,
-            dark_theme: null,
-            auto_switch: false,
-            default_mode: null,
-            autosave_mode: 'off',
-            autoreload_mode: 'when_clean',
-            merge_strategy: 'raise_conflict',
-            browser_base_dir: null,
-            gist_enabled: false,
-            diff_mode: 'none',
-            dont_ask_default_handler: true,
-            mono_font: null,
-          };
+        if (cmd === 'get_settings') return settingsPayload();
+        if (cmd === 'set_shortcut_overrides') {
+          shortcutOverrides = structuredClone(args.overrides ?? {});
+          return settingsPayload();
         }
         if (cmd === 'default_handler_status') return { status: 'unknown', platform: 'linux' };
         if (cmd === 'get_initial_path') return initialPath ?? null;

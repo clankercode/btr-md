@@ -10,6 +10,7 @@
     "target": "ES2020",
     "module": "ESNext",
     "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
     "lib": ["ES2020", "DOM", "DOM.Iterable"],
     "skipLibCheck": true,
     "noUnusedLocals": true,
@@ -30,6 +31,10 @@
     "src/footnotes.ts",
     "src/table_copy.ts",
     "src/insert_menu.ts",
-    "src/link_activation.ts"
+    "src/link_activation.ts",
+    "src/actions.ts",
+    "src/keybindings.ts",
+    "src/command_overlay.ts",
+    "src/shortcut_editor.ts"
   ]
 }

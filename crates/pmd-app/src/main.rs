@@ -69,6 +69,7 @@ fn main() {
             cmd::settings::set_diff_mode,
             cmd::settings::set_dont_ask_default_handler,
             cmd::settings::set_mono_font,
+            cmd::settings::set_shortcut_overrides,
             cmd::settings::get_recent_files,
             cmd::settings::clear_recent_files,
             cmd::file::get_initial_path,
