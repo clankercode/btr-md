@@ -63,6 +63,13 @@ fn is_within(dir: &Path, child: &Path) -> bool {
     }
 }
 
+/// True if `dir` (a candidate directory to grant) is grantable — i.e. it is not
+/// a filesystem root. Granting a filesystem root would, via transitive
+/// membership, admit the entire tree, so it is refused.
+fn dir_is_grantable(dir: &Path) -> bool {
+    dir.parent().is_some()
+}
+
 impl PathScope {
     pub fn new() -> Self {
         Self {
@@ -192,6 +199,29 @@ impl PathScope {
             .unwrap_or_else(|p| p.into_inner())
             .clone()
     }
+
+    /// Test-visible wrapper over the root guard predicate.
+    #[cfg(test)]
+    pub fn grants_parent_dir(dir: &Path) -> bool {
+        dir_is_grantable(dir)
+    }
+
+    /// Admit a file via a TRUSTED origin (CLI argv or OS open dialog) and, when
+    /// its canonical parent is not a filesystem root, also admit that parent
+    /// directory so the user can browse/open siblings. The renderer must never
+    /// call this (it would forge a directory grant); renderer opens go through
+    /// `cmd::file::request_open_file`, which only admits the single file.
+    pub fn allow_file_and_parent(&self, p: &Path) -> std::io::Result<PathBuf> {
+        let canon = self.allow(p)?;
+        if let Some(parent) = canon.parent() {
+            if dir_is_grantable(parent) {
+                // Best-effort: parent of a real file is a dir; ignore errors so
+                // a transient stat failure never blocks opening the file.
+                let _ = self.allow_dir(parent);
+            }
+        }
+        Ok(canon)
+    }
 }
 
 fn canonicalise(p: &std::path::Path) -> std::io::Result<PathBuf> {
@@ -247,5 +277,44 @@ mod tests {
         assert_eq!(scope.allowed_dirs().len(), before, "must not escalate");
         // Root unchanged after a rejected set.
         assert_eq!(scope.workspace_root(), Some(sub.canonicalize().unwrap()));
+    }
+
+    #[test]
+    fn allow_file_and_parent_grants_parent_dir() {
+        let dir = tempfile::tempdir().expect("dir");
+        let file = dir.path().join("readme.md");
+        std::fs::write(&file, "x").expect("write");
+        let scope = PathScope::new();
+
+        let canon = scope.allow_file_and_parent(&file).expect("admit");
+        assert_eq!(canon, file.canonicalize().unwrap());
+        // The file is in scope...
+        assert!(scope.check_canonical(&canon));
+        // ...and its parent dir is now an admitted dir (siblings browsable).
+        let sibling = dir.path().join("other.md");
+        std::fs::write(&sibling, "y").expect("write sibling");
+        assert!(scope.is_within_allowed_dir(&sibling.canonicalize().unwrap()));
+    }
+
+    #[test]
+    fn allow_file_and_parent_root_guard_skips_filesystem_root() {
+        // We can't write to "/", so simulate a path whose parent is the root by
+        // checking the guard directly: a file directly under root must NOT add a
+        // dir grant. Use the canonical root of the temp dir's filesystem via "/".
+        let scope = PathScope::new();
+        // Construct a path "/<name>" that may or may not exist; the guard is
+        // about the parent being a filesystem root (parent.parent() == None).
+        // We assert no allowed_dir is added even when the file itself is admitted
+        // via a real file placed at a mount we control is not possible portably,
+        // so we test the helper's guard predicate instead.
+        assert!(
+            !PathScope::grants_parent_dir(std::path::Path::new("/")),
+            "root has no parent to grant"
+        );
+        assert!(
+            PathScope::grants_parent_dir(std::path::Path::new("/home/user")),
+            "a normal dir is grantable"
+        );
+        let _ = scope; // silence unused in case
     }
 }
