@@ -396,6 +396,11 @@ async function installTauriMock(page, options = {}) {
       .replaceAll('<', '&lt;')
       .replaceAll('>', '&gt;');
 
+    // NOTE: this is a STUB renderer for e2e only — it emits an <h1> + <p> (plus a
+    // link/image placeholder), NOT the real backend HTML. It never produces
+    // <table>, code blocks, mermaid, or KaTeX, so DOM decoration of rendered
+    // output (table copy/expand, code-block toolbars, diagram controls) cannot be
+    // tested here — verify those on a real `just run`. See AGENTS.md.
     const renderMarkdown = (markdown, diagnostics) => {
       const withoutFrontmatter = String(markdown).replace(/^---[\s\S]*?---\n/, '');
       const heading = withoutFrontmatter.match(/^#\s+(.+)$/m)?.[1] ?? 'Untitled';
