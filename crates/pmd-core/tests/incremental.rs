@@ -118,3 +118,18 @@ fn full_render_has_empty_manifest() {
     let r = render_incremental("<div>x</div>\n"); // raw HTML => fallback
     assert!(r.blocks.is_empty());
 }
+
+#[test]
+fn falls_back_on_blockquote_reference_definition() {
+    assert!(render_incremental("> [x]: https://e.com\n\nsee [x]\n").blocks.is_empty());
+}
+
+#[test]
+fn falls_back_on_list_reference_definition() {
+    assert!(render_incremental("- [x]: https://e.com\n\nsee [x]\n").blocks.is_empty());
+}
+
+#[test]
+fn incremental_equals_full_blockquote_ref_def() {
+    assert_equiv("> [x]: https://e.com\n\nsee [x]\n");
+}

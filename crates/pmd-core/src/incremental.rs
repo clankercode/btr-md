@@ -67,22 +67,43 @@ pub(crate) fn plan_blocks(md: &str) -> Option<Vec<BlockSlice>> {
     Some(blocks)
 }
 
-/// Conservative scan for reference-style link/image definitions: a line of the
-/// form `[label]: ...` with up to 3 leading spaces. pulldown-cmark consumes
-/// these without emitting events, so they cannot be detected from the stream.
-/// A false positive only forces a (correct) full render.
+/// Conservative detection of reference-style link/image definitions, including
+/// those nested inside blockquote/list containers (pulldown-cmark consumes
+/// these without emitting events). A false positive only forces a correct full
+/// render. Strips leading whitespace + `>`/list-marker container prefixes, then
+/// checks for `[label]:`.
 fn has_reference_definition(md: &str) -> bool {
-    md.lines().any(|line| {
-        let t = line.trim_start_matches(' ');
-        if line.len() - t.len() > 3 || !t.starts_with('[') {
-            return false;
+    md.lines().any(looks_like_ref_def)
+}
+
+fn looks_like_ref_def(line: &str) -> bool {
+    let mut s = line;
+    loop {
+        let t = s.trim_start();
+        if let Some(rest) = t.strip_prefix('>') {
+            s = rest;
+            continue;
         }
-        if let Some(close) = t.find("]:") {
-            close > 1 // non-empty label
-        } else {
-            false
+        if let Some(rest) = t.strip_prefix(['-', '+', '*']) {
+            if rest.is_empty() || rest.starts_with(' ') {
+                s = rest;
+                continue;
+            }
         }
-    })
+        let digits = t.chars().take_while(|c| c.is_ascii_digit()).count();
+        if digits > 0 {
+            let after = &t[digits..];
+            if let Some(rest) = after.strip_prefix(['.', ')']) {
+                if rest.is_empty() || rest.starts_with(' ') {
+                    s = rest;
+                    continue;
+                }
+            }
+        }
+        break;
+    }
+    let t = s.trim_start();
+    t.starts_with('[') && t.find("]:").is_some_and(|close| close > 1)
 }
 
 pub(crate) struct CachedBlock {
@@ -93,16 +114,19 @@ pub(crate) struct CachedBlock {
 }
 
 const BLOCK_CACHE_CAP: usize = 4096;
+const BLOCK_CACHE_BYTE_BUDGET: usize = 8 * 1024 * 1024;
 
 struct BlockCache {
     map: HashMap<[u8; 32], Arc<CachedBlock>>,
-    order: VecDeque<[u8; 32]>,
+    /// (key, html_len) in insertion order for LRU eviction.
+    order: VecDeque<([u8; 32], usize)>,
+    bytes: usize,
     hits: u64,
 }
 
 impl BlockCache {
     fn new() -> Self {
-        Self { map: HashMap::new(), order: VecDeque::new(), hits: 0 }
+        Self { map: HashMap::new(), order: VecDeque::new(), bytes: 0, hits: 0 }
     }
     fn get(&mut self, key: &[u8; 32]) -> Option<Arc<CachedBlock>> {
         let v = self.map.get(key).cloned();
@@ -112,11 +136,16 @@ impl BlockCache {
         v
     }
     fn put(&mut self, key: [u8; 32], block: Arc<CachedBlock>) {
+        let html_len = block.html.len();
         if self.map.insert(key, block).is_none() {
-            self.order.push_back(key);
-            while self.order.len() > BLOCK_CACHE_CAP {
-                if let Some(old) = self.order.pop_front() {
+            self.bytes += html_len;
+            self.order.push_back((key, html_len));
+            while self.order.len() > BLOCK_CACHE_CAP || self.bytes > BLOCK_CACHE_BYTE_BUDGET {
+                if let Some((old, old_len)) = self.order.pop_front() {
                     self.map.remove(&old);
+                    self.bytes = self.bytes.saturating_sub(old_len);
+                } else {
+                    break;
                 }
             }
         }
@@ -212,7 +241,7 @@ pub fn render_incremental(md: &str) -> crate::emit::RenderResult {
     for b in &blocks {
         let cb = render_block_cached(&md[b.start..b.end]);
         let base = b.start_line - 1;
-        let key = blake3::hash(md[b.start..b.end].as_bytes()).to_hex().to_string();
+        let key = blake3::hash(&md.as_bytes()[b.start..b.end]).to_hex().to_string();
         let mut offset_html = String::new();
         append_with_line_offset(&mut offset_html, &cb.html, base);
         inject_block_key(&mut html, &offset_html, &key);
