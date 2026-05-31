@@ -39,14 +39,19 @@ development slice.
 | Document Outline / TOC Panel | High | Med |
 | Snippet Library | High | Med |
 | Smart List Continuation | High | Low |
+| Markdown Formatting Shortcuts | High | Low |
 | Visual Table Editor | Med | High |
 | Bracket / Quote Auto-Close | Med | Low |
 | Focus / Distraction-Free Mode | Med | Low |
 | Typewriter Scroll | Med | Low |
 | Spell-Check Underlines | Med | Med |
 | Link Autocomplete from Headings | Med | Med |
+| Syntax Autocomplete (LaTeX / Markdown) | Med | Med |
+| Show Invisible Characters | Med | Low |
 | Reading-Time Estimate | Low | Low |
 | Writing Goal / Daily Target | Low | Low |
+| Scroll Past End | Low | Low |
+| RTL Writing Direction | Low | Low |
 
 ### Find-and-Replace with Regex
 **Description:** In-editor find/replace panel (Ctrl+H) supporting plain text and regex, with live match highlighting in both source and preview panes.
@@ -131,6 +136,42 @@ development slice.
 **Value:** Low
 **Effort:** Low
 **Notes:** Stored in `state.toml`; progress is local and private by default.
+
+> The following five entries were added 2026-05-31 after reviewing the Pine
+> macOS Markdown editor (<https://lukakerr.github.io/Pine/>). Pine's JavaScript
+> preview-plugin system was deliberately excluded as it conflicts with the
+> visible-trust / strict-sanitization posture; auto-pairing of Markdown tags is
+> already captured by *Bracket / Quote Auto-Close* above.
+
+### Markdown Formatting Shortcuts
+**Description:** Standard editor shortcuts that wrap or toggle the selection — `Ctrl+B` bold, `Ctrl+I` italic, `` Ctrl+` `` inline code, `Ctrl+K` link, plus heading and list toggles — mirroring the existing toolbar actions.
+**Value:** High
+**Effort:** Low
+**Notes:** Pure CodeMirror 6 keymap over selection transforms; table-stakes ergonomics Pine ships. Should share the same command implementations as any formatting toolbar buttons to avoid divergence.
+
+### Syntax Autocomplete (LaTeX / Markdown)
+**Description:** Completion popups for LaTeX/KaTeX commands (`\alpha`, `\frac`, …) inside math spans and for common Markdown constructs (fences, alert types, task items), complementing the heading-anchor completion already proposed.
+**Value:** Med
+**Effort:** Med
+**Notes:** CodeMirror `autocompletion` with static, offline completion sources; LaTeX command list is a bundled table (no network). Builds on *Link Autocomplete from Headings*; scope math completions to within `$`/`$$` regions to avoid noise in prose.
+
+### Show Invisible Characters
+**Description:** A toggle that renders whitespace glyphs — spaces, tabs, trailing whitespace, and line breaks — in the source editor for precise control over Markdown's whitespace-sensitive constructs (hard breaks, list indentation, code fences).
+**Value:** Med
+**Effort:** Low
+**Notes:** CodeMirror `highlightTrailingWhitespace` plus a whitespace-rendering decoration; toggleable in settings. On-brand for "see exactly what's in the file." No backend changes.
+
+### Scroll Past End
+**Description:** Allow the editor to scroll past the final line so the last lines can sit mid-viewport instead of pinned to the bottom edge.
+**Value:** Low
+**Effort:** Low
+**Notes:** Bottom padding on the CodeMirror scroller (or `scrollPastEnd`-style extension); toggleable. Pairs naturally with *Typewriter Scroll*. No backend changes.
+
+### RTL Writing Direction
+**Description:** A per-document toggle for right-to-left writing direction in the editor and preview, for authoring in RTL scripts (Arabic, Hebrew).
+**Value:** Low
+**Effort:** Low
+**Notes:** Sets `dir="rtl"` on the editor and preview containers; CodeMirror supports bidi text natively. Persisted per-file in `state.toml`; an i18n/accessibility nicety.
 
 ---
 
@@ -555,14 +596,14 @@ development slice.
 
 | Section | Ideas |
 |---------|-------|
-| Authoring / Editing Ergonomics | 14 |
+| Authoring / Editing Ergonomics | 19 |
 | Navigation & Organization | 10 |
 | Rendering & Export | 13 |
 | Collaboration / Sharing & Integrations | 10 |
 | Power-User & Platform | 12 |
 | Security & Robustness | 11 |
-| **Total** | **70** |
+| **Total** | **75** |
 
 > Ideas that naturally span two sections (e.g., Pandoc Export, Share as Image) are
 > counted once in their primary section and cross-referenced in the secondary.
-> Effective unique idea count: **68**.
+> Effective unique idea count: **73**.
