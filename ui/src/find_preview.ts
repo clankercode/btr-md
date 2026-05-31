@@ -147,13 +147,21 @@ export function createPreviewFind(root: HTMLElement): PreviewFind {
     }
 
     for (let i = allRanges.length - 1; i >= 0; i--) {
+      const mark = document.createElement('mark');
+      mark.className = MARK_CLASS;
       try {
-        const mark = document.createElement('mark');
-        mark.className = MARK_CLASS;
         allRanges[i].surroundContents(mark);
       } catch {
-        // Some ranges cannot be wrapped; the Custom Highlight path covers these
-        // on capable WebViews, and the fallback should never break rendering.
+        // surroundContents throws when a range partially selects a non-Text
+        // node (a match spanning element boundaries). Wrap the extracted
+        // contents instead so the match is still highlighted rather than
+        // silently dropped (keeps count and visible highlights consistent).
+        try {
+          mark.appendChild(allRanges[i].extractContents());
+          allRanges[i].insertNode(mark);
+        } catch {
+          // Stale range from a concurrent reconcile: skip safely.
+        }
       }
     }
   }
