@@ -40,8 +40,10 @@ frontend `localStorage` session store.
 - **State persistence precedent**: `state/recents.rs` and `state/settings.rs`
   persist **TOML** under the **btr-md XDG config dir** via
   `xdg::BaseDirectories::with_prefix("btr-md").place_config_file(...)` using
-  `fs2` advisory file-locking. The session store reuses this **locking +
-  atomic-write** pattern (it persists JSON, not TOML — see Feature 2).
+  `fs2` advisory file-locking, rewriting **in place** (`truncate(false)` +
+  `set_len(0)` + `write_all`; `recents.rs:69-83`, `settings.rs:84-98`). The
+  session store reuses the config-dir + `fs2`-locking part but persists JSON and
+  **adds atomic temp+rename** instead of in-place rewrite (see Feature 2).
 - **Doc registry internals** (`crates/pmd-app/src/doc/registry.rs:24-32`,
   `:75-90`): `DocEntry` holds `state: FileState`, `base_content: String` (the
   *merge ancestor* — last loaded/saved text), and `path`. It **deliberately does
@@ -193,6 +195,14 @@ hold the merge baseline**. So `save_session` is split by ownership:
   - saved, `content != base_content` → **dirty**: persist `content` +
     `baseline_content = base_content`.
 
+  `DiskChangedClean` (`mem == base`, `disk != base` — file changed externally
+  but the user has no local edits) compares equal and is therefore persisted as
+  clean and reopened from current disk content on restart. This is an
+  **accepted, deliberate** behavior: there are no unsaved user edits to lose, and
+  adopting the current on-disk content on a fresh launch is the sensible default —
+  the only thing not carried across restart is the *unacknowledged-change* status
+  itself, which is not worth persisting. (See "Restore" and Out of scope.)
+
   Comparing supplied content to `base_content` — rather than reading the registry
   `FileState` — is deliberate: `FileState` becomes `Dirty` only after the
   **debounced** `doc_edited` IPC lands (`main.ts:618-632`), so an edit made inside
@@ -318,6 +328,9 @@ lost:
   unchanged from today — see "Untitled semantics" below.)
 - **Saved, clean** (`unsaved` absent): `openFile(path, {background:true})`
   (reopens from disk), restore `mode`. Non-admissible path → skip (as today).
+  (A doc that was `DiskChangedClean` last session falls here — it reopens at the
+  current disk content; the unacknowledged-change status is intentionally not
+  restored, since no unsaved edits exist.)
 - **Saved, dirty** (`unsaved` present, `path` set): call
   `restore_dirty_doc({ path, content: unsaved.content, baselineContent:
   unsaved.baseline_content, background:true })`. The backend reconstructs the
@@ -401,6 +414,10 @@ run.
 - No separate per-draft content files / content-addressed store — one json file.
 - No new merge/conflict UI — reuse `disk_changed_dirty`.
 - No drag-to-reorder or drag-into-specific-pane; only drag-to-open.
+- Not preserved across restart: the `DiskChangedClean` *unacknowledged-external-
+  change* status. Such docs (no local edits) reopen from current disk content.
+  Only unsaved **user edits** (dirty / untitled / `DiskChangedDirty`) are
+  preserved exactly.
 
 ## Implementation plan / parallelism
 
