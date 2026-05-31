@@ -26,6 +26,7 @@ export type ActionId =
   | "view.zoomReset"
   | "view.cycleMode"
   | "view.toggleWordWrap"
+  | "view.toggleSidebar"
   | "navigate.commandOverlay"
   | "navigate.outline"
   | "diagnostics.togglePanel"
@@ -83,6 +84,7 @@ export const DEFAULT_ACTION_SHORTCUTS: Record<string, string[]> = {
   "view.zoomReset": ["Ctrl+0"],
   "view.cycleMode": ["Ctrl+\\"],
   "view.toggleWordWrap": ["Alt+Z"],
+  "view.toggleSidebar": ["Ctrl+B"],
   "navigate.commandOverlay": ["Ctrl+P"],
   "navigate.outline": ["Ctrl+Shift+O"],
   "diagnostics.togglePanel": ["Ctrl+Shift+M"],
@@ -146,6 +148,7 @@ export const defaultActionSpecs: ActionSpec[] = [
   spec("view.zoomReset", "Reset zoom", "View", "Reset preview zoom"),
   spec("view.cycleMode", "Cycle mode", "View", "Cycle source split preview modes"),
   spec("view.toggleWordWrap", "Toggle word wrap", "View", "Toggle editor word wrapping"),
+  spec("view.toggleSidebar", "Toggle sidebar", "View", "Show or hide the folder sidebar"),
   spec("navigate.commandOverlay", "Command overlay", "Navigate", "Open the command overlay"),
   spec("navigate.outline", "Show outline", "Navigate", "Show document outline"),
   spec("diagnostics.togglePanel", "Toggle diagnostics", "Diagnostics", "Show or hide diagnostics"),

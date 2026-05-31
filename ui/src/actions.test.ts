@@ -14,7 +14,12 @@ test("default action inventory includes every approved shortcut exactly", () => 
   for (const [id, shortcuts] of Object.entries(DEFAULT_ACTION_SHORTCUTS)) {
     assert.deepEqual(byId.get(id)?.defaultShortcuts, shortcuts, id);
   }
-  assert.equal(Object.keys(DEFAULT_ACTION_SHORTCUTS).length, 21);
+  assert.equal(Object.keys(DEFAULT_ACTION_SHORTCUTS).length, 22);
+});
+
+test("toggle sidebar action exists with Ctrl+B", () => {
+  const byId = new Map(defaultActionSpecs.map((a) => [a.id, a]));
+  assert.deepEqual(byId.get("view.toggleSidebar")?.defaultShortcuts, ["Ctrl+B"]);
 });
 
 test("default shortcuts are conflict free", () => {
