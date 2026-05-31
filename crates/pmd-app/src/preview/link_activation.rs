@@ -317,6 +317,7 @@ pub fn test_state() -> LinkActivationStore {
 #[tauri::command]
 pub fn prepare_link_activation(
     app: tauri::AppHandle,
+    window: tauri::Window,
     state: tauri::State<'_, crate::AppState>,
     links: tauri::State<'_, LinkActivationStore>,
     doc_id: u64,
@@ -335,7 +336,12 @@ pub fn prepare_link_activation(
     );
     if response.kind == LinkActivationResponseKind::OpenDocument {
         if let Some(path) = response.normalized_url.as_deref() {
-            response.opened_document = Some(open_markdown_from_backend(&app, &state, path)?);
+            response.opened_document = Some(open_markdown_from_backend(
+                &app,
+                &state,
+                window.label(),
+                path,
+            )?);
         }
     }
     if response.kind == LinkActivationResponseKind::OpenDefaultApp {
@@ -502,6 +508,7 @@ fn resolve_local_target(link: &StoredLink) -> Result<PathBuf, String> {
 fn open_markdown_from_backend(
     app: &tauri::AppHandle,
     state: &crate::AppState,
+    window_label: &str,
     path: &str,
 ) -> Result<OpenedDoc, String> {
     let path = PathBuf::from(path);
@@ -514,11 +521,17 @@ fn open_markdown_from_backend(
     let contents_ui = contents.clone();
     let (doc_id, file_state) = state.docs.register(Some(canon.clone()), contents);
     state.watcher.set_target(app.clone(), doc_id, canon.clone());
+    let applied = crate::preview::trust_roots::apply_remembered_trust_for_document_global(
+        window_label,
+        doc_id,
+        &canon,
+    )?;
     Ok(OpenedDoc {
         doc_id,
         path: canon,
         contents: contents_ui,
         state: file_state,
+        trust_context: applied.trust_context,
     })
 }
 

@@ -50,6 +50,9 @@ export type ActionId =
   | "settings.selectMonoFont"
   | "settings.setDefaultHandler"
   | "asset.grantFolder"
+  | "asset.trustRepositoryRoot"
+  | "asset.declineRepositoryRoot"
+  | "settings.removeTrustRoot"
   | "asset.revokeGrant";
 
 export interface ActionContext {
@@ -111,6 +114,9 @@ export const NO_DEFAULT_ACTION_IDS: ActionId[] = [
   "settings.selectMonoFont",
   "settings.setDefaultHandler",
   "asset.grantFolder",
+  "asset.trustRepositoryRoot",
+  "asset.declineRepositoryRoot",
+  "settings.removeTrustRoot",
   "asset.revokeGrant",
 ];
 
@@ -172,7 +178,10 @@ export const defaultActionSpecs: ActionSpec[] = [
   spec("settings.selectMonoFont", "Select editor font", "Settings", "Select the editor font"),
   spec("settings.setDefaultHandler", "Set as Markdown default", "Settings", "Set preview-md as the Markdown default handler"),
   spec("asset.grantFolder", "Grant folder", "Assets", "Grant a folder for blocked local assets", []),
+  spec("asset.trustRepositoryRoot", "Trust repository root", "Assets", "Trust the repository root for local assets", []),
+  spec("asset.declineRepositoryRoot", "Decline repository root", "Assets", "Hide the repository-root asset grant recommendation", []),
   spec("asset.revokeGrant", "Revoke grant", "Assets", "Revoke a local asset folder grant", []),
+  spec("settings.removeTrustRoot", "Remove trusted root", "Settings", "Remove a stored asset-root trust decision", []),
 ];
 
 export interface ActionRegistry {

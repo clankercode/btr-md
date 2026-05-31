@@ -49,6 +49,8 @@ import {
 } from './link_activation.js';
 import {
   type DocumentDiagnostics,
+  type AssetGrant,
+  type DocumentTrustContext,
   type HeadingFact,
   type RenderResult,
 } from './document_contracts.js';
@@ -59,6 +61,17 @@ import { createDiagnosticsPanel } from './diagnostics_panel.js';
 import { renderInlineIssues } from './inline_issues.js';
 import { deriveTrustStatus } from './resource_policy.js';
 import { createTrustPolicyPanel } from './trust_policy_panel.js';
+import {
+  grantAssetFolderForBlockedImage,
+  listAssetGrants,
+  revokeAssetGrantForDocument,
+} from './local_asset_grants.js';
+import {
+  forgetTrustRoot,
+  grantRecommendedRoot,
+  listTrustRoots,
+  rememberDeclinedRoot,
+} from './trust_roots.js';
 
 interface Settings {
   active_theme: string | null;
@@ -80,6 +93,7 @@ declare global {
   interface Window {
     __pmdE2e?: boolean;
     __pmdE2eActions?: string[];
+    __pmdOpenPathForTest?: (path: string) => Promise<void>;
   }
 }
 
@@ -88,6 +102,7 @@ interface OpenedDoc {
   path: string;
   contents: string;
   state: FileState;
+  trust_context: DocumentTrustContext | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -342,6 +357,17 @@ const diagnosticsPanel = createDiagnosticsPanel({
 });
 const trustPolicyPanel = createTrustPolicyPanel();
 document.body.append(diagnosticsPanel.element, trustPolicyPanel.element);
+trustPolicyPanel.setHandlers({
+  trustRepositoryRoot: async (root) => {
+    await trustRepositoryRoot(root);
+  },
+  declineRepositoryRoot: async (root) => {
+    await declineRepositoryRoot(root);
+  },
+  revokeGrant: async (grantId) => {
+    await revokeAssetGrant(grantId);
+  },
+});
 
 // Declared before the toolbar block below assigns it (a later `let` would
 // otherwise re-initialise it to null after assignment).
@@ -362,9 +388,11 @@ if (toolbarEl instanceof HTMLElement) {
     getDefaultHandlerStatus: () =>
       invoke<{ status: HandlerStatus; platform: string }>('default_handler_status').then(
         (r) => r.status
-      ),
+    ),
     setAsDefaultHandler: () => invoke('set_as_default_handler').then(() => {}),
     setMonoFont: (f) => invoke('set_mono_font', { font: f }).then(() => {}),
+    listTrustRoots,
+    forgetTrustRoot: forgetTrustRootFromSettings,
     onAutosaveChange: (m) => {
       autosaveMode = m;
     },
@@ -589,8 +617,19 @@ async function runAction(id: ActionId): Promise<void> {
     case 'settings.setDefaultHandler':
     case 'navigate.outline':
     case 'diagnostics.togglePanel':
+      toggleDiagnosticsPanel();
+      return;
     case 'asset.grantFolder':
+      await grantAssetFolder();
+      return;
+    case 'asset.trustRepositoryRoot':
+      await trustRepositoryRoot();
+      return;
+    case 'asset.declineRepositoryRoot':
+      await declineRepositoryRoot();
+      return;
     case 'asset.revokeGrant':
+    case 'settings.removeTrustRoot':
       chrome.setStatus(defaultActionSpecs.find((action) => action.id === id)?.label ?? id);
       return;
     default:
@@ -600,12 +639,12 @@ async function runAction(id: ActionId): Promise<void> {
 
 const actionRegistry = createActionRegistry(defaultActionSpecs, {
   run: runAction,
-  isEnabled: () => true,
-  isVisible: () => true,
+  isEnabled: isActionAvailable,
+  isVisible: isActionAvailable,
 });
 
 const commandOverlay = createCommandOverlay(defaultActionSpecs, actionRegistry, {
-  isVisible: () => true,
+  isVisible: isActionAvailable,
 });
 const shortcutEditor = createShortcutEditor({
   actions: defaultActionSpecs,
@@ -622,7 +661,7 @@ installActionHotkeys({
   actions: defaultActionSpecs,
   registry: actionRegistry,
   getOverrides: () => shortcutOverrides,
-  isEnabled: () => true,
+  isEnabled: isActionAvailable,
 });
 
 const MARKDOWN_EXTENSIONS = ['md', 'markdown', 'mdown', 'mkd'];
@@ -682,7 +721,7 @@ async function runDiagnosticPrimaryAction(action: string): Promise<void> {
 }
 
 function isImplementedDiagnosticAction(action: string): boolean {
-  return action !== 'asset.grantFolder' && action !== 'asset.revokeGrant';
+  return defaultActionSpecs.some((item) => item.id === action);
 }
 
 function applyDocumentDiagnostics(diagnostics: DocumentDiagnostics): void {
@@ -711,6 +750,108 @@ function currentPreviewDoc(): { doc_id: number; version: number } | null {
   const version = Number(previewContent.dataset.versionApplied || '0');
   if (!tab || !version) return null;
   return { doc_id: tab.docId, version };
+}
+
+function activePromptRoot(): string | null {
+  const context = store.activeDoc()?.trustContext;
+  return context?.should_prompt_for_repo_root ? context.git_root : null;
+}
+
+function isActionAvailable(id: ActionId): boolean {
+  switch (id) {
+    case 'asset.revokeGrant':
+    case 'settings.removeTrustRoot':
+      return false;
+    case 'asset.trustRepositoryRoot':
+    case 'asset.declineRepositoryRoot':
+      return activePromptRoot() !== null;
+    default:
+      return true;
+  }
+}
+
+function updateOpenTrustContexts(
+  canonicalRoot: string,
+  state: DocumentTrustContext['git_root_state'],
+): void {
+  const shouldPrompt = state === 'unknown';
+  for (const tab of store.list()) {
+    if (tab.kind !== 'doc' || tab.trustContext?.git_root !== canonicalRoot) continue;
+    tab.trustContext = {
+      ...tab.trustContext,
+      git_root_state: state,
+      should_prompt_for_repo_root: shouldPrompt,
+    };
+  }
+  const active = store.activeDoc();
+  if (active?.trustContext?.git_root === canonicalRoot) {
+    trustPolicyPanel.setTrustContext(active.trustContext);
+  }
+}
+
+async function refreshActiveAssetGrants(): Promise<void> {
+  const tab = store.activeDoc();
+  if (!tab) {
+    trustPolicyPanel.setActiveGrants([]);
+    return;
+  }
+  try {
+    const grants = await listAssetGrants(tab.docId);
+    trustPolicyPanel.setActiveGrants(grants);
+    rerenderCurrentDiagnostics();
+  } catch (e) {
+    console.warn('Could not list asset grants', e);
+  }
+}
+
+async function grantAssetFolder(): Promise<void> {
+  const current = currentPreviewDoc();
+  if (!current) return;
+  const blocked = activeDiagnostics()?.resources.decisions.find((decision) => decision.placeholder_id);
+  await grantAssetFolderForBlockedImage({
+    docId: current.doc_id,
+    version: current.version,
+    placeholderId: blocked?.placeholder_id ?? '',
+  });
+  await refreshActiveAssetGrants();
+  await scheduleRender();
+}
+
+async function trustRepositoryRoot(root?: string): Promise<void> {
+  const current = currentPreviewDoc();
+  const canonicalRoot = root ?? store.activeDoc()?.trustContext?.git_root ?? null;
+  if (!current || !canonicalRoot) return;
+  await grantRecommendedRoot({
+    docId: current.doc_id,
+    version: current.version,
+    canonicalRoot,
+  });
+  updateOpenTrustContexts(canonicalRoot, 'trusted');
+  await refreshActiveAssetGrants();
+  await scheduleRender();
+}
+
+async function declineRepositoryRoot(root?: string): Promise<void> {
+  const canonicalRoot = root ?? store.activeDoc()?.trustContext?.git_root ?? null;
+  if (!canonicalRoot) return;
+  await rememberDeclinedRoot(canonicalRoot);
+  updateOpenTrustContexts(canonicalRoot, 'declined');
+  rerenderCurrentDiagnostics();
+}
+
+async function forgetTrustRootFromSettings(canonicalRoot: string): Promise<void> {
+  await forgetTrustRoot(canonicalRoot);
+  updateOpenTrustContexts(canonicalRoot, 'unknown');
+  await refreshActiveAssetGrants();
+  await scheduleRender();
+}
+
+async function revokeAssetGrant(grantId?: number): Promise<void> {
+  const active = store.activeDoc();
+  if (!active || grantId === undefined) return;
+  await revokeAssetGrantForDocument({ docId: active.docId, grantId });
+  await refreshActiveAssetGrants();
+  await scheduleRender();
 }
 
 function cssEscape(value: string): string {
@@ -863,6 +1004,7 @@ async function adoptOpenedDocumentFromLink(documentFromBackend: OpenedDocumentFr
     path: documentFromBackend.path,
     contents: documentFromBackend.contents,
     state: documentFromBackend.state as FileState,
+    trust_context: (documentFromBackend.trust_context ?? null) as DocumentTrustContext | null,
   };
   const existing = store.findDocByPath(doc.path);
   if (existing) {
@@ -1194,6 +1336,7 @@ async function processRenderQueue(): Promise<void> {
         decorateTables(previewContent, () => editor?.getValue() ?? '');
       }
       applyOutlineRender(result);
+      void refreshActiveAssetGrants();
     }
     item.resolve();
   } catch (e) {
@@ -1363,6 +1506,8 @@ async function activateDocTab(tab: DocTab): Promise<void> {
   if (tab.editorState) editor.activateState(tab.editorState);
   factsStore.setActiveDoc(tab.docId);
   clearDocumentIntelligenceUi();
+  trustPolicyPanel.setTrustContext(tab.trustContext);
+  void refreshActiveAssetGrants();
   invoke('set_active_doc', { docId: tab.docId }).catch(() => {});
   chrome.setFilename(tab.filePath ? basename(tab.filePath) : 'Untitled');
   applyMode(tab.mode);
@@ -1423,6 +1568,7 @@ async function addDocTab(
       fileState: doc.state,
       baseContent: doc.contents,
       editorState,
+      trustContext: doc.trust_context,
     },
     { background: opts.background }
   );
@@ -1432,11 +1578,11 @@ async function addDocTab(
 
 async function newFile(): Promise<void> {
   try {
-    const reg = await invoke<{ doc_id: number; state: FileState }>('register_doc', {
+    const reg = await invoke<{ doc_id: number; state: FileState; trust_context: DocumentTrustContext | null }>('register_doc', {
       path: null,
       contents: '',
     });
-    await addDocTab({ doc_id: reg.doc_id, path: '', contents: '', state: reg.state }, { background: false });
+    await addDocTab({ doc_id: reg.doc_id, path: '', contents: '', state: reg.state, trust_context: reg.trust_context }, { background: false });
     chrome.setStatus('Ready');
   } catch (e) {
     showError(`New file failed: ${String(e)}`);
@@ -1486,6 +1632,10 @@ async function openFile(path: string, opts: { background?: boolean } = {}): Prom
   } catch (e) {
     showError(`Open failed: ${String(e)}`);
   }
+}
+
+if (window.__pmdE2e !== undefined) {
+  window.__pmdOpenPathForTest = (path: string) => openFile(path);
 }
 
 async function saveCurrentDocAs(): Promise<void> {

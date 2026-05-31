@@ -9,6 +9,27 @@ export interface RenderResult {
   diagnostics: DocumentDiagnostics;
 }
 
+export type TrustRootState = "unknown" | "trusted" | "declined";
+
+export interface DocumentTrustContext {
+  doc_dir: string | null;
+  git_root: string | null;
+  git_root_state: TrustRootState;
+  should_prompt_for_repo_root: boolean;
+}
+
+export interface AssetGrant {
+  id: number;
+  window_label: string;
+  doc_id: number;
+  canonical_root: string;
+}
+
+export interface TrustRootDecision {
+  canonical_root: string;
+  state: TrustRootState;
+}
+
 export interface BlockRef {
   key: string;
   base_line: number;

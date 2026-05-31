@@ -11,12 +11,14 @@ use std::path::PathBuf;
 
 use crate::doc::merge::three_way;
 use crate::doc::state::{Digest, DocId, FileState};
+use crate::preview::trust_roots::DocumentTrustContextForUi;
 use crate::state::settings;
 
 #[derive(Serialize)]
 pub struct RegisteredDoc {
     pub doc_id: DocId,
     pub state: FileState,
+    pub trust_context: DocumentTrustContextForUi,
 }
 
 /// Register a brand-new (untitled, `path = None`) or content-supplied document.
@@ -25,6 +27,7 @@ pub struct RegisteredDoc {
 #[tauri::command]
 pub fn register_doc(
     app: tauri::AppHandle,
+    window: tauri::Window,
     state: tauri::State<'_, crate::AppState>,
     path: Option<PathBuf>,
     contents: String,
@@ -46,12 +49,21 @@ pub fn register_doc(
 
     let (doc_id, fstate) = state.docs.register(canon.clone(), contents);
     state.docs.set_active(doc_id);
-    if let Some(canon) = canon {
-        state.watcher.set_target(app.clone(), doc_id, canon);
-    }
+    let trust_context = if let Some(canon) = canon {
+        state.watcher.set_target(app.clone(), doc_id, canon.clone());
+        crate::preview::trust_roots::apply_remembered_trust_for_document_global(
+            window.label(),
+            doc_id,
+            &canon,
+        )?
+        .trust_context
+    } else {
+        DocumentTrustContextForUi::default()
+    };
     Ok(RegisteredDoc {
         doc_id,
         state: fstate,
+        trust_context,
     })
 }
 
@@ -240,6 +252,7 @@ pub fn resolve_disk_change(
 /// Close a document: drop its registry entry and stop watching it.
 #[tauri::command]
 pub fn drop_doc(state: tauri::State<'_, crate::AppState>, doc_id: DocId) -> Result<(), String> {
+    crate::preview::grants::revoke_grants_for_doc(doc_id)?;
     state.watcher.clear(doc_id);
     state.docs.drop_doc(doc_id);
     Ok(())

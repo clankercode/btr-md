@@ -1,6 +1,7 @@
 use std::collections::BTreeSet;
 use std::path::{Path, PathBuf};
 
+use base64::Engine;
 use pmd_core::facts::{ImageFact, LinkKind};
 
 use crate::preview::contracts::{
@@ -210,16 +211,26 @@ fn decide_image(
     if candidate.exists() {
         let canonical = canonical_existing_path(&candidate)?;
         if roots.iter().any(|root| is_within(root, &canonical)) {
-            let safe_url = format!("asset://localhost/{}", percent_encode_path(&canonical));
-            Ok(image_decision(
-                image,
-                target.clone(),
-                Some(canonical.display().to_string()),
-                ResourceDecisionKind::Allowed,
-                ResourceReason::AllowedLocalScope,
-                Some(safe_url),
-                placeholder_id,
-            ))
+            match data_url_for_local_image(&canonical) {
+                Ok(safe_url) => Ok(image_decision(
+                    image,
+                    target.clone(),
+                    Some(canonical.display().to_string()),
+                    ResourceDecisionKind::Allowed,
+                    ResourceReason::AllowedLocalScope,
+                    Some(safe_url),
+                    placeholder_id,
+                )),
+                Err(_) => Ok(image_decision(
+                    image,
+                    target.clone(),
+                    Some(canonical.display().to_string()),
+                    ResourceDecisionKind::Blocked,
+                    ResourceReason::InvalidProtocol,
+                    None,
+                    placeholder_id,
+                )),
+            }
         } else {
             Ok(image_decision(
                 image,
@@ -443,6 +454,31 @@ fn is_safe_data_image(target: &str) -> bool {
     target.starts_with("data:image/png;base64,")
         || target.starts_with("data:image/jpeg;base64,")
         || target.starts_with("data:image/gif;base64,")
+        || target.starts_with("data:image/webp;base64,")
+}
+
+fn data_url_for_local_image(path: &Path) -> Result<String, String> {
+    let mime = match path
+        .extension()
+        .and_then(|extension| extension.to_str())
+        .map(|extension| extension.to_ascii_lowercase())
+        .as_deref()
+    {
+        Some("png") => "image/png",
+        Some("jpg") | Some("jpeg") => "image/jpeg",
+        Some("gif") => "image/gif",
+        Some("webp") => "image/webp",
+        _ => {
+            return Err(format!(
+                "Unsupported local image type for {}",
+                path.display()
+            ))
+        }
+    };
+    let bytes =
+        std::fs::read(path).map_err(|err| format!("Could not read {}: {err}", path.display()))?;
+    let encoded = base64::engine::general_purpose::STANDARD.encode(bytes);
+    Ok(format!("data:{mime};base64,{encoded}"))
 }
 
 fn has_url_scheme(target: &str) -> bool {
@@ -488,19 +524,6 @@ fn canonical_allowed_roots(roots: &[PathBuf]) -> Result<Vec<PathBuf>, String> {
 
 fn is_within(root: &Path, child: &Path) -> bool {
     child == root || child.starts_with(root)
-}
-
-fn percent_encode_path(path: &Path) -> String {
-    path.as_os_str()
-        .as_encoded_bytes()
-        .iter()
-        .flat_map(|byte| match *byte {
-            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'/' | b'.' | b'-' | b'_' => {
-                vec![*byte as char]
-            }
-            other => format!("%{other:02X}").chars().collect(),
-        })
-        .collect()
 }
 
 fn html_escape(value: &str) -> String {

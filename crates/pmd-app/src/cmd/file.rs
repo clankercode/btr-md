@@ -40,6 +40,7 @@ use std::path::{Path, PathBuf};
 use tauri_plugin_dialog::DialogExt;
 
 use crate::doc::state::{DocId, FileState};
+use crate::preview::trust_roots::DocumentTrustContextForUi;
 
 /// Write `contents` to `path` while refusing to follow symlinks.
 ///
@@ -101,6 +102,7 @@ pub struct OpenedDoc {
     pub path: PathBuf,
     pub contents: String,
     pub state: FileState,
+    pub trust_context: DocumentTrustContextForUi,
 }
 
 /// Push to recents, treating I/O / parse failures as non-fatal.
@@ -123,27 +125,35 @@ fn try_push_recent(path: &PathBuf) {
 fn register_opened(
     app: &tauri::AppHandle,
     state: &crate::AppState,
+    window_label: &str,
     canon: PathBuf,
     contents: String,
     foreground: bool,
-) -> OpenedDoc {
+) -> Result<OpenedDoc, String> {
     let contents_ui = contents.clone();
     let (doc_id, fstate) = state.docs.register(Some(canon.clone()), contents);
     if foreground {
         state.docs.set_active(doc_id);
     }
     state.watcher.set_target(app.clone(), doc_id, canon.clone());
-    OpenedDoc {
+    let applied = crate::preview::trust_roots::apply_remembered_trust_for_document_global(
+        window_label,
+        doc_id,
+        &canon,
+    )?;
+    Ok(OpenedDoc {
         doc_id,
         path: canon,
         contents: contents_ui,
         state: fstate,
-    }
+        trust_context: applied.trust_context,
+    })
 }
 
 #[tauri::command]
 pub async fn open_file(
     app: tauri::AppHandle,
+    window: tauri::Window,
     state: tauri::State<'_, crate::AppState>,
     path: PathBuf,
 ) -> Result<OpenedDoc, String> {
@@ -153,7 +163,7 @@ pub async fn open_file(
     }
     let contents = std::fs::read_to_string(&canon).map_err(|e| e.to_string())?;
     try_push_recent(&canon);
-    Ok(register_opened(&app, &state, canon, contents, true))
+    register_opened(&app, &state, window.label(), canon, contents, true)
 }
 
 /// User-initiated open from a Tauri-event-driven entry point (drag/drop,
@@ -167,6 +177,7 @@ pub async fn open_file(
 #[tauri::command]
 pub async fn request_open_file(
     app: tauri::AppHandle,
+    window: tauri::Window,
     state: tauri::State<'_, crate::AppState>,
     path: PathBuf,
     background: Option<bool>,
@@ -208,7 +219,7 @@ pub async fn request_open_file(
     let contents = std::fs::read_to_string(&canon).map_err(|e| e.to_string())?;
     try_push_recent(&canon);
     let foreground = !background.unwrap_or(false);
-    Ok(register_opened(&app, &state, canon, contents, foreground))
+    register_opened(&app, &state, window.label(), canon, contents, foreground)
 }
 
 #[tauri::command]
@@ -234,6 +245,7 @@ pub fn get_open_dialog_on_start(state: tauri::State<'_, crate::AppState>) -> boo
 #[tauri::command]
 pub async fn open_dialog(
     app: tauri::AppHandle,
+    window: tauri::Window,
     state: tauri::State<'_, crate::AppState>,
 ) -> Result<Option<OpenedDoc>, String> {
     let file_path = app
@@ -250,7 +262,14 @@ pub async fn open_dialog(
             .map_err(|e| e.to_string())?;
         let contents = std::fs::read_to_string(&canon).map_err(|e| e.to_string())?;
         try_push_recent(&canon);
-        Ok(Some(register_opened(&app, &state, canon, contents, true)))
+        Ok(Some(register_opened(
+            &app,
+            &state,
+            window.label(),
+            canon,
+            contents,
+            true,
+        )?))
     } else {
         Ok(None)
     }
