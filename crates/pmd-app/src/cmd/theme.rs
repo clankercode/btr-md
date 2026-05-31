@@ -455,11 +455,16 @@ pub fn set_theme_from_roots(slug: &str, roots: &[PathBuf]) -> Result<ThemeBundle
     let node_text = pick("mermaid_primary_text", fg.cloned());
     let node_border = pick("mermaid_primary_border", border.cloned());
     let line_color = pick("mermaid_line", fg_muted.cloned().or_else(|| border.cloned()));
-    // Secondary/tertiary fills, when not given, are subtle tints of the
-    // elevated surface: they keep visible hierarchy in multi-kind diagrams
-    // while staying dark/light enough that `fg` node text remains readable.
-    let secondary_fill = pick("mermaid_secondary", mix_toward(bg_elevated, accent, 0.18));
-    let tertiary_fill = pick("mermaid_tertiary", mix_toward(bg_elevated, fg, 0.10));
+    // Secondary/tertiary fills, when not given, slide from the elevated
+    // surface toward the base background. That axis stays on the far side of
+    // `fg` from the surface, so the fills keep visible hierarchy in
+    // multi-kind diagrams while their contrast with `fg` text is guaranteed:
+    // both `bg` and `bg_elevated` clear AA against `fg`, and contrast is
+    // monotonic in luminance, so every blend of them does too. (Mixing toward
+    // `accent` instead can drop below AA on low-contrast themes — sepia's
+    // accent-tinted secondary measured 3.77:1.)
+    let secondary_fill = pick("mermaid_secondary", mix_toward(bg_elevated, bg, 0.50));
+    let tertiary_fill = pick("mermaid_tertiary", mix_toward(bg_elevated, bg, 0.82));
 
     {
         let mut set = |k: &str, v: &Option<String>| {
@@ -485,6 +490,9 @@ pub fn set_theme_from_roots(slug: &str, roots: &[PathBuf]) -> Result<ThemeBundle
         set("nodeTextColor", &node_text);
         set("titleColor", &node_text);
         set("labelColor", &node_text);
+        // Note bodies sit on `noteBkgColor` (derived from `bg_elevated`
+        // below), the same surface as nodes, so `fg` text stays readable.
+        set("noteTextColor", &node_text);
     }
 
     if let Some(bg) = colours.get("bg") {

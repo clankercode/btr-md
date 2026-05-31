@@ -54,9 +54,6 @@ link_visited = "#c9a227"
 image_caption = "#a0a0a0"
 
 # Mermaid
-mermaid_secondary = "#a0a0a0"
-mermaid_tertiary = "#505050"
-mermaid_line = "#a0a0a0"
 
 # Syntax
 syntax = { keyword = "#e6c229", string = "#7ec17e", number = "#e6a229", function = "#c9a227", type = "#e69629", comment = "#a0a0a0", operator = "#e0e0e0", punctuation = "#e0e0e0", variable = "#e6a229", constant = "#79c0ff" }

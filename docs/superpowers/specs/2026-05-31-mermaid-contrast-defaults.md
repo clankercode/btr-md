@@ -28,12 +28,16 @@ Good defaults derived from the core palette, still overridable per theme.
   `mermaid_*` palette key:
   - node fill (`primaryColor`/`mainBkg`) ← `mermaid_primary` else `bg_elevated`
   - node label (`primaryTextColor`, and `secondary/tertiaryTextColor`,
-    `textColor`, `nodeTextColor`, `titleColor`, `labelColor`) ← `mermaid_primary_text` else `fg`
+    `textColor`, `nodeTextColor`, `titleColor`, `labelColor`, `noteTextColor`)
+    ← `mermaid_primary_text` else `fg`
   - node border (`primaryBorderColor`/`nodeBorder`, secondary/tertiary borders)
     ← `mermaid_primary_border` else `border`
   - lines (`lineColor`) ← `mermaid_line` else `fg_muted` (then `border`)
-  - secondary fill ← `mermaid_secondary` else `bg_elevated` mixed 18% toward `accent`
-  - tertiary fill ← `mermaid_tertiary` else `bg_elevated` mixed 10% toward `fg`
+  - secondary fill ← `mermaid_secondary` else `bg_elevated` mixed 50% toward `bg`
+  - tertiary fill ← `mermaid_tertiary` else `bg_elevated` mixed 82% toward `bg`
+    (the `bg_elevated`↔`bg` axis stays clear of `fg`, so the derived fills are
+    guaranteed to clear AA against `fg` text — mixing toward `accent`/`fg`
+    instead can fall below AA on low-contrast themes)
   - cluster/note/actor/error/edge-label derivations unchanged.
 
   Fill comes from a surface token and text from `fg`, so they sit at opposite
@@ -44,10 +48,13 @@ Good defaults derived from the core palette, still overridable per theme.
   `mermaid_primary_border`). A theme can now define **zero** mermaid keys and
   still get readable diagrams.
 
-- **Manifests** (all 17 `themes/*/manifest.toml`): the broken
-  `mermaid_primary` / `mermaid_primary_text` (`= fg`) lines are removed so the
-  derived defaults govern. Intentional `mermaid_secondary`/`_tertiary`/`_line`
-  overrides are retained.
+- **Manifests** (all 17 `themes/*/manifest.toml`): all five basic
+  `mermaid_*` lines are removed so the derived defaults govern. The retained
+  `mermaid_secondary`/`_tertiary` values were light "brand" colours, not
+  fills — pairing them with `fg` text reproduced the invisible-label bug on
+  secondary/tertiary nodes — so they are stripped too and the fills are
+  derived as surface tints that contrast with `fg`. Bundled themes now define
+  zero mermaid keys; the override path remains for custom themes.
 
 ## Allowing custom styling
 
@@ -59,5 +66,7 @@ defaults for free.
 ## Regression guard
 
 `crates/pmd-app/tests/cmd_theme.rs::every_bundled_theme_has_readable_mermaid_nodes`
-asserts that, for every bundled theme, the derived `primaryColor` (fill) vs
-`primaryTextColor` (label) pair clears WCAG AA (4.5:1).
+asserts that, for every bundled theme, each label-bearing fill/text pair —
+`primaryColor`/`primaryTextColor`, `secondaryColor`/`secondaryTextColor`,
+`tertiaryColor`/`tertiaryTextColor`, and `noteBkgColor`/`noteTextColor` —
+clears WCAG AA (4.5:1).

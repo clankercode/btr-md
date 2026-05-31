@@ -54,9 +54,6 @@ link_visited = "#8250df"
 image_caption = "#656d76"
 
 # Mermaid
-mermaid_secondary = "#656d76"
-mermaid_tertiary = "#6e7781"
-mermaid_line = "#656d76"
 
 # Syntax (GitHub Light syntax colors)
 syntax = { keyword = "#cf222e", string = "#0a3069", number = "#0550ae", function = "#8250df", type = "#953800", comment = "#6e7781", operator = "#1f2328", punctuation = "#1f2328", variable = "#953800", constant = "#0550ae" }

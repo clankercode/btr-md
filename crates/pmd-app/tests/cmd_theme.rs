@@ -290,22 +290,34 @@ fn every_bundled_theme_has_readable_mermaid_nodes() {
     let roots = workspace_theme_roots();
     let themes = list_themes_from_roots(&roots).expect("list themes");
     assert!(!themes.is_empty(), "expected bundled themes");
+    // Every filled surface a mermaid label sits on, paired with the label
+    // colour the derivation assigns to it. All must clear WCAG AA so no
+    // node tier (primary/secondary/tertiary) or note reintroduces the
+    // same-colour-as-fill bug — including via a retained palette override.
+    let pairs = [
+        ("primaryColor", "primaryTextColor"),
+        ("secondaryColor", "secondaryTextColor"),
+        ("tertiaryColor", "tertiaryTextColor"),
+        ("noteBkgColor", "noteTextColor"),
+    ];
     for theme in &themes {
         let bundle = set_theme_from_roots(&theme.slug, &roots)
             .unwrap_or_else(|e| panic!("set_theme {} failed: {e}", theme.slug));
-        let fill = bundle
-            .mermaid_vars
-            .get("primaryColor")
-            .unwrap_or_else(|| panic!("{} missing primaryColor", theme.slug));
-        let text = bundle
-            .mermaid_vars
-            .get("primaryTextColor")
-            .unwrap_or_else(|| panic!("{} missing primaryTextColor", theme.slug));
-        let ratio = contrast_ratio(fill, text);
-        assert!(
-            ratio >= 4.5,
-            "{}: mermaid node fill {fill} vs label {text} is {ratio:.2}:1, below AA 4.5:1",
-            theme.slug
-        );
+        for (fill_key, text_key) in pairs {
+            let fill = bundle
+                .mermaid_vars
+                .get(fill_key)
+                .unwrap_or_else(|| panic!("{} missing {fill_key}", theme.slug));
+            let text = bundle
+                .mermaid_vars
+                .get(text_key)
+                .unwrap_or_else(|| panic!("{} missing {text_key}", theme.slug));
+            let ratio = contrast_ratio(fill, text);
+            assert!(
+                ratio >= 4.5,
+                "{}: mermaid {fill_key} {fill} vs {text_key} {text} is {ratio:.2}:1, below AA 4.5:1",
+                theme.slug
+            );
+        }
     }
 }
