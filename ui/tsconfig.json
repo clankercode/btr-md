@@ -51,6 +51,9 @@
     "src/find_preview.ts",
     "src/frontmatter_edit.ts",
     "src/frontmatter_panel.ts",
-    "src/stats_popover.ts"
+    "src/stats_popover.ts",
+    "src/editor_format.ts",
+    "src/editor_list.ts",
+    "src/find_replace.ts"
   ]
 }

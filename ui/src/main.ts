@@ -642,6 +642,9 @@ async function runAction(id: ActionId): Promise<void> {
     case 'edit.find':
       findController.open();
       return;
+    case 'edit.replace':
+      findController.openReplace();
+      return;
     case 'edit.findNext':
       findController.next();
       return;

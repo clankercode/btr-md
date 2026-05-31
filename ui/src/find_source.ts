@@ -4,8 +4,11 @@ import {
   findNext,
   findPrevious,
   setSearchQuery,
+  replaceNext,
+  replaceAll,
   SearchQuery,
 } from '../vendor/codemirror-6/codemirror.bundle.js';
+import type { ReplaceQuerySpec } from './find_replace.js';
 
 /** The search extension installed in the editor's search compartment. The panel
  *  is shown at the top and supplies CodeMirror's own match highlighting/counts.
@@ -31,4 +34,29 @@ export function sourceFindNext(view: any): void {
 }
 export function sourceFindPrevious(view: any): void {
   findPrevious(view);
+}
+
+/** Push the full find/replace query (honouring regex + case toggles) into
+ *  CodeMirror's search state. Must run before `sourceReplaceNext`/`All` so the
+ *  replacement string and match options are current. */
+export function setSourceReplaceQuery(view: any, spec: ReplaceQuerySpec): void {
+  view.dispatch({
+    effects: setSearchQuery.of(
+      new SearchQuery({
+        search: spec.search,
+        replace: spec.replace,
+        caseSensitive: spec.caseSensitive,
+        regexp: spec.regexp,
+      })
+    ),
+  });
+}
+
+/** Replace the current (or next) source match. No-op if nothing matches. */
+export function sourceReplaceNext(view: any): void {
+  replaceNext(view);
+}
+/** Replace every source match in one transaction. */
+export function sourceReplaceAll(view: any): void {
+  replaceAll(view);
 }

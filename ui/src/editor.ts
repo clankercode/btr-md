@@ -10,8 +10,19 @@ import {
   markdownLanguage,
   GFM,
   unifiedMergeView,
+  keymap,
+  Prec,
 } from '../vendor/codemirror-6/codemirror.bundle.js';
 import { searchExtension, openSourceFind, sourceFindNext, sourceFindPrevious } from './find_source.js';
+import {
+  toggleBold,
+  toggleItalic,
+  toggleInlineCode,
+  insertLink,
+  toggleHeading,
+  toggleList,
+} from './editor_format.js';
+import { listEnter } from './editor_list.js';
 
 // One EditorView is reused across all document tabs; each tab owns a live
 // `EditorState` (held in memory by the tab store, never serialized). Switching
@@ -158,8 +169,37 @@ const editorTheme = EditorView.theme({
   '.cm-md-mark': { opacity: '0.5' },
 });
 
+// Markdown formatting + smart-list keymap (Slice A, features #2/#3).
+//
+// Ctrl+B CONFLICT RESOLUTION: the global hotkey layer (`installActionHotkeys`
+// on `document`) binds Ctrl+B to `view.toggleSidebar`. We do NOT rebind the
+// sidebar — instead this editor keymap takes precedence *only while the editor
+// is focused*. CodeMirror's `keymap` facet handles the event on the editor's
+// content DOM and, when a binding's command returns true, calls both
+// `preventDefault()` and `stopPropagation()`, so the keydown never bubbles to
+// the document listener. When the editor is NOT focused the keydown never
+// reaches this keymap, so Ctrl+B falls through to the global handler and still
+// toggles the sidebar. `Prec.highest` keeps these bindings ahead of basicSetup
+// (and the search keymap) for the chords we own.
+function formattingKeymap() {
+  return Prec.highest(
+    keymap.of([
+      { key: 'Mod-b', run: toggleBold, preventDefault: true },
+      { key: 'Mod-i', run: toggleItalic, preventDefault: true },
+      { key: 'Mod-`', run: toggleInlineCode, preventDefault: true },
+      { key: 'Mod-k', run: insertLink, preventDefault: true },
+      { key: 'Mod-Shift-h', run: toggleHeading, preventDefault: true },
+      { key: 'Mod-Shift-l', run: toggleList, preventDefault: true },
+      // Smart list continuation: returns false on non-list lines so the
+      // default Enter (newline) binding from basicSetup still runs.
+      { key: 'Enter', run: listEnter },
+    ])
+  );
+}
+
 function buildExtensions() {
   return [
+    formattingKeymap(),
     basicSetup,
     markdown({ base: markdownLanguage, extensions: [GFM] }),
     wrapCompartment.of(wrapEnabled ? EditorView.lineWrapping : []),

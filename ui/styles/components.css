@@ -1984,8 +1984,8 @@ body[data-sidebar="on"] .pmd-trust-panel {
   right: var(--pmd-space-3);
   z-index: 20;
   display: flex;
-  align-items: center;
-  gap: var(--pmd-space-2);
+  flex-direction: column;
+  gap: var(--pmd-space-1);
   padding: var(--pmd-space-1) var(--pmd-space-2);
   background: var(--pmd-bg-elevated);
   border: 1px solid var(--pmd-border);
@@ -1997,7 +1997,23 @@ body[data-sidebar="on"] .pmd-trust-panel {
   display: none;
 }
 
-.pmd-find-input {
+.pmd-find-row {
+  display: flex;
+  align-items: center;
+  gap: var(--pmd-space-2);
+}
+
+.pmd-find-row[hidden] {
+  display: none;
+}
+
+.pmd-find-replace-row .pmd-find-replace-input {
+  /* Align the replace input with the find input above it. */
+  flex: 1;
+}
+
+.pmd-find-input,
+.pmd-find-replace-input {
   min-width: 12rem;
   padding: 2px var(--pmd-space-2);
   font-family: inherit;
@@ -2038,9 +2054,19 @@ body[data-sidebar="on"] .pmd-trust-panel {
   cursor: pointer;
 }
 
-.pmd-find-scope-btn.data-active {
+.pmd-find-scope-btn.data-active,
+.pmd-find-toggle.data-active {
   background: var(--pmd-bg-muted);
   border-color: var(--pmd-border-strong);
+}
+
+.pmd-find-toggle {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.pmd-find-text-btn {
+  min-width: auto;
 }
 
 .pmd-find-btn:disabled {
