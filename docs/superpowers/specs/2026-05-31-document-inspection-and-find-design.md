@@ -35,8 +35,18 @@ turning the previewer into an editor platform.
   `data-src-start`/`data-src-end` on block elements for source mapping. Scroll
   sync (`scroll_sync.ts`) already maps between source and preview.
 - **CodeMirror** (`editor.ts`): one reused `EditorView`, configured via
-  `Compartment`s; `codemirror` meta-package (^6.0.2) ships `@codemirror/search`
-  transitively.
+  `Compartment`s. **It imports from a *vendored* bundle**
+  (`ui/vendor/codemirror-6/codemirror.bundle.js`), built by
+  `ui/vendor/build-codemirror.mjs` from `ui/src/codemirror-entry.ts`. That entry
+  re-exports a fixed symbol set (`EditorState`, `Compartment`, `EditorView`,
+  `basicSetup`, `Decoration`, `ViewPlugin`, `markdown`, `markdownLanguage`,
+  `syntaxTree`, `GFM`, `oneDark`, `unifiedMergeView`) — **it does NOT export any
+  search API**, and the bundle is hand-built with esbuild `alias` dedupe of the
+  CodeMirror singletons (`@codemirror/state`, `@codemirror/view`,
+  `@codemirror/language`, `@lezer/common`). The repo has two `@codemirror/search`
+  copies (hoisted `0.20.1`, nested `6.7.0`); naive importing would mismatch the
+  `state`/`view` singletons. Adding search is a **bundle change** (see Find below),
+  not a free transitive import.
 - **Actions** (`actions.ts`): `edit.find` / `edit.findNext` / `edit.findPrevious`
   exist with defaults Ctrl+F / Ctrl+G / Shift+Ctrl+G but currently only call
   `editor.focus()` in `main.ts`.
@@ -54,8 +64,9 @@ turning the previewer into an editor platform.
   diagnostic**. No delete in v1.
 - Stats: **click the status-bar counts → popover** with reading time + structural
   counts. Inline bar unchanged.
-- Triggers: **status bar** hosts both the stats popover (existing counts) and a
-  frontmatter chip (shown only when frontmatter is present).
+- Triggers: **status bar** hosts both the stats popover (existing counts) and an
+  always-present frontmatter control (a chip when frontmatter exists → inspector;
+  a subdued "+ frontmatter" when absent → insert block + inspector).
 
 ## Components
 
@@ -63,24 +74,43 @@ turning the previewer into an editor platform.
 
 New module split into source and preview concerns plus a small controller.
 
-**Source (`find_source.ts`):** add `search({ top: true })` + `searchKeymap` in a
-new editor compartment (`editor.ts`). Re-point the three `edit.*` actions in
-`main.ts` to `openSearchPanel` / `findNext` / `findPrevious` from
-`@codemirror/search`. CodeMirror's panel supplies match highlighting and counts.
+**Source (`find_source.ts`) — requires a bundle change first:** add
+`@codemirror/search` **v6** as a direct dependency, add `@codemirror/search` to
+the singleton `alias` map in `build-codemirror.mjs` (pinning the v6 copy so it
+shares the bundle's `@codemirror/state`/`@codemirror/view` instances), import
+`search`, `searchKeymap`, `openSearchPanel`, `findNext`, `findPrevious` in
+`codemirror-entry.ts`, re-export them, and rebuild the vendored bundle. Then add
+`search({ top: true })` + `searchKeymap` in a new editor compartment (`editor.ts`)
+and re-point the three `edit.*` actions in `main.ts` (currently `editor.focus()`)
+to `openSearchPanel` / `findNext` / `findPrevious`. CodeMirror's panel supplies
+match highlighting and counts. (Plan Phase 0 confirms the rebuilt bundle still
+produces a working markdown tree — the dedupe is the known fragile point.)
 
 **Preview (`find_preview.ts`):** highlight matches inside `#pmd-content` using the
 **CSS Custom Highlight API** — build `Range`s over text nodes for the query and
 register them with `CSS.highlights.set("pmd-find", highlight)`, styled via
 `::highlight(pmd-find)` in CSS. This is an **overlay keyed to ranges: it mutates
 no DOM and injects no markup**, satisfying the sanitization constraint and not
-disturbing block-incremental reconciliation. Recompute on query change and after
-each render (subscribe to the existing post-render hook). Track a "current match"
-for next/previous and `scrollIntoView` it.
+disturbing block-incremental reconciliation. Track a "current match" for
+next/previous and `scrollIntoView` it.
 
+- **Recompute integration point (no existing hook).** Preview post-processing is
+  inline in `processRenderQueue` (`main.ts`), split across the incremental
+  (`reconcileBlocks` + per-changed-node mermaid/math/code/table) and full
+  (`innerHTML` replace + same post-processing) branches. There is no reusable
+  post-render subscription. The plan adds **one** explicit recompute call placed
+  after the `if (blocks) {…} else {…}` block (so it covers both branches, after
+  all async post-processing `await`s complete), plus a call on query change. A
+  thin `onPreviewRendered(cb)` notifier may be introduced to avoid coupling
+  `find_preview` directly into `processRenderQueue`.
 - **WebKitGTK support is a hard prerequisite.** Phase 0 of the plan verifies
   `CSS.highlights` exists in the app's webview. If absent, fall back to wrapping
-  matches in `<mark class="pmd-find">` via DOM `Range`s, torn down and rebuilt per
-  render. The fallback is uglier but contained to `find_preview.ts`.
+  matches in `<mark class="pmd-find">` built **only via DOM APIs over existing
+  text nodes (never `innerHTML`)**. Because incremental reconciliation preserves
+  unchanged keyed nodes, the fallback **must tear down all `mark.pmd-find` across
+  the live `#pmd-content` before each reconcile/recompute** (otherwise stale or
+  nested marks survive in unchanged blocks). The fallback is uglier but contained
+  to `find_preview.ts`.
 
 **Controller (`find_controller.ts`):** owns the find bar UI (query input, count
 "n/m", prev/next, close, and in split mode a source⇄preview scope segmented
@@ -89,38 +119,78 @@ scope is implied by the active pane. Pure query→ranges logic is unit-tested.
 
 ### 2. Mermaid errors + copy source (`mermaid_runner.ts`, `mermaid_zoom.ts`)
 
-- On `mermaid.render` rejection, replace the silent gap with an inline
-  `.pmd-mermaid-error` block showing the message and a "Go to source" link. The
-  source line comes from the enclosing `[data-src-start]` ancestor; clicking
-  scrolls the editor to that line (reuse scroll-sync's line→pos path).
+**Existing baseline:** `renderMermaidNode`'s `catch` already adds
+`.pmd-mermaid-error` and sets `container.textContent = source`, and
+`copySourceRange` already copies `data-src-start`/`data-src-end` onto the
+container. So this is an **enhancement of an existing path**, not new rendering.
+
+- On `mermaid.render` rejection, replace the bare `textContent = source` with a
+  structured inline error: the error message, the (still-visible) source, and a
+  **"Go to source"** link. The source line is read directly from
+  `container.dataset.srcStart` (already present — no ancestor walk).
+- **A new shared line-jump helper is required** — `scroll_sync.ts` only maps
+  selection→preview-scroll, and `jumpEditorToBlock` (`main.ts`) is
+  heading/block-id-specific, not arbitrary-line. Add `gotoEditorLine(line)`
+  (in/alongside `editor.ts`'s jump logic): clamp to `view.state.doc.lines`,
+  resolve `doc.line(n).from`, and `dispatch({ selection, scrollIntoView: true })`,
+  mirroring `jumpEditorToBlock`'s existing dispatch. The error link calls it; the
+  link no-ops gracefully when `dataset.srcStart` is absent.
 - Add a **"Copy source"** button next to Expand (`addMermaidExpandButton`), copying
   `container.dataset.mermaidSource` to the clipboard.
 
 ### 3. Frontmatter inspector + editor (`ui/src/frontmatter/`)
 
 **Inspector (`frontmatter_panel.ts`):** a popover (context-menu-style) opened from
-a `.pmd-status-frontmatter` chip that appears only when `facts.frontmatter` is
-present. Lists recognized `CommonFrontmatter` fields and unknown keys, with the
-format (YAML/TOML) and a malformed/unsupported badge from `syntax`.
+an **always-present** `.pmd-status-frontmatter` status-bar control, so the
+"no block yet" add path always has a trigger:
+
+- When `facts.frontmatter` is present, the control shows a "frontmatter" chip and
+  opens the inspector listing recognized `CommonFrontmatter` fields and unknown
+  keys, with the format (YAML/TOML) and a malformed badge from `syntax`.
+- When absent, the control shows a subdued "+ frontmatter" affordance; activating
+  it inserts a new YAML block (below) and opens the inspector.
+
+A command-palette action (`document.editFrontmatter`, no default shortcut) exposes
+the same entry point for discoverability, and the existing
+`primary_action: "Edit frontmatter"` on the malformed diagnostic is wired to open
+the inspector.
 
 **Editing (`frontmatter_edit.ts`, pure):** add a new `key: value` entry and edit a
 recognized field's value. Edits are **line-oriented transactions on the CodeMirror
-buffer**, located via `frontmatter.line_start`/`line_end`:
+buffer**, located via `frontmatter.line_start`/`line_end`.
 
-- *Edit value*: find the field's line within the block, replace its value text.
-- *Add entry*: insert a new line before the block's closing delimiter.
-- *No block yet*: insert a new **YAML** block (`---\nkey: value\n---\n`) at the top
-  of the document.
+**Line semantics (confirmed against `crates/pmd-core/src/facts/frontmatter.rs`):**
+`line_start` is the **opening** fence line (always 1); `line_end` is the **last
+content line, i.e. the line *before* the closing fence**, so the closing
+delimiter sits at **`line_end + 1`** (verified by
+`crates/pmd-core/tests/document_facts_frontmatter.rs`). For an unclosed block the
+parser sets `line_end` to the last line of the file and `syntax` is `malformed`.
+
+- *Edit value*: find the field's line within `[line_start+1, line_end]`, replace
+  its value text.
+- *Add entry*: insert a new line **after `line_end`** (i.e. immediately before the
+  closing fence at `line_end + 1`).
+- *No block yet* (`frontmatter == null`): insert a new **YAML** block
+  (`---\nkey: value\n---\n`) at the top of the document.
+- *Malformed/unsupported* (`syntax !== "valid"`): **add and edit are disabled** —
+  there is no safe closing delimiter, so the inspector shows the malformed badge
+  and a "fix in source" hint instead.
 
 Going through the buffer means undo/redo, dirty-state, autosave, and
 re-render-from-facts all work unchanged, and existing comments/unknown lines are
 preserved (no full re-serialize). Edits are restricted to scalar string/number/
 bool values and `tags` (comma-split) — complex nested YAML is read-only in v1.
-TOML blocks are editable with TOML syntax; new blocks default to YAML.
+Existing valid TOML blocks are editable with TOML syntax; new blocks default to
+YAML.
 
-**Diagnostic:** ensure malformed/unsupported frontmatter shows as a `frontmatter`
-issue in `diagnostics_panel.ts`. If core already emits it, this is surfacing only;
-if not, add emission in `crates/pmd-core/src/facts/`.
+**Diagnostic (already implemented — verify only):** `frontmatter_issues` in
+`crates/pmd-app/src/preview/contracts.rs` already emits a `Warning`/`Frontmatter`
+`DocumentIssue` for `syntax == Malformed` (with `primary_action: "Edit
+frontmatter"`), and `diagnostics_panel.ts` renders any category generically — so
+the malformed diagnostic already appears. No new emission needed; the plan only
+verifies it surfaces and wires `primary_action` to the inspector.
+`unsupported_format` is **not** emitted today (and per review may be unreachable);
+extending the diagnostic to it is **out of scope** for v1.
 
 ### 4. Stats popover (`ui/src/stats_popover.ts`, `chrome.ts`)
 
@@ -145,8 +215,9 @@ rendered DOM (preview), independent of the facts store.
 
 - Find: empty query clears highlights; zero matches shows "0/0" and disables
   next/prev; preview highlight recompute is wrapped so a stale range never throws.
-- Mermaid: render failure is shown inline, never silent; "Go to source" no-ops
-  gracefully if the block lacks a `data-src-start` ancestor.
+- Mermaid: render failure is shown inline, never silent; "Go to source" reads
+  `container.dataset.srcStart` (copied on by `copySourceRange`) and no-ops
+  gracefully when it is absent.
 - Frontmatter edit: malformed existing block → editing is disabled (inspector
   shows the malformed badge and a "fix in source" hint) to avoid corrupting it;
   add-entry on a malformed block is also disabled. Buffer writes are guarded so a
@@ -185,8 +256,14 @@ rendered DOM (preview), independent of the facts store.
 
 - **CSS Custom Highlight API in WebKitGTK** — resolved in plan Phase 0 (verify;
   else `<mark>` fallback). Does not change the public design.
-- Whether core already emits the `frontmatter` diagnostic — confirmed in plan
-  Phase 0 (surface vs. add).
+- The `frontmatter` (Malformed) diagnostic is **already emitted and surfaced** —
+  no longer open. Remaining work is verification only: confirm it renders in the
+  diagnostics panel and wire its `primary_action: "Edit frontmatter"` to open the
+  inspector.
+- **Vendored-bundle rebuild with `@codemirror/search` v6** — the CodeMirror
+  bundle is hand-built with singleton dedupe; adding search risks a
+  state/view-instance mismatch (empty parse tree). Plan Phase 0 rebuilds and
+  smoke-checks markdown highlighting before any search wiring.
 
 --- SUMMARY ---
 
@@ -197,9 +274,11 @@ rendered DOM (preview), independent of the facts store.
   computes (`CoreDocumentFacts`: frontmatter, counts, embedded blocks); only find
   is a new subsystem. They share status-bar/popover/panel conventions.
 - **Key decisions:**
-  - Find spans source (wire `@codemirror/search`) and preview (CSS Custom
-    Highlight API — no DOM mutation, no raw-HTML injection; `<mark>` fallback if
-    the webview lacks the API), with a split-mode scope toggle and match counts.
+  - Find spans source (add `@codemirror/search` v6 to the **vendored bundle** —
+    not a free transitive import — then wire it via a compartment + the existing
+    `edit.*` actions) and preview (CSS Custom Highlight API — no DOM mutation, no
+    raw-HTML injection; `<mark>` fallback with mandatory teardown if the webview
+    lacks the API), with a split-mode scope toggle and match counts.
   - Frontmatter editing is **line-oriented edits to the CodeMirror buffer**
     (add entry + edit recognized value; no delete), preserving comments/unknown
     keys and reusing undo/save/render. New blocks default to YAML.
@@ -207,10 +286,13 @@ rendered DOM (preview), independent of the facts store.
   - Stats: click status counts → popover with reading time + structural counts
     from `facts.counts`; inline bar unchanged.
   - Both the frontmatter inspector and stats popover are triggered from the status
-    bar (a frontmatter chip appears only when frontmatter is present).
+    bar; the frontmatter control is always present (chip when frontmatter exists,
+    "+ frontmatter" when absent) so the add-block path always has a trigger.
 - **Security:** no new sanitization surface (highlight overlay adds no markup);
   frontmatter edits write only to the open in-scope buffer; clipboard copies only
   the document's own content.
 - **Risks/Open:** WebKitGTK support for the Custom Highlight API (plan Phase 0,
-  with fallback); whether the malformed-frontmatter diagnostic already exists
-  (surface vs. add). Neither changes the public design.
+  with fallback); the vendored CodeMirror bundle rebuild with `@codemirror/search`
+  v6 (singleton-dedupe fragility, plan Phase 0 smoke-check). The
+  malformed-frontmatter diagnostic already exists and surfaces (verify + wire
+  `primary_action` only). None change the public design.
