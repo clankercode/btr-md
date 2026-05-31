@@ -244,7 +244,10 @@ pub async fn open_dialog(
 
     if let Some(path) = file_path {
         let canon = path.into_path().map_err(|e| e.to_string())?;
-        let canon = state.scope.allow(&canon).map_err(|e| e.to_string())?;
+        let canon = state
+            .scope
+            .allow_file_and_parent(&canon)
+            .map_err(|e| e.to_string())?;
         let contents = std::fs::read_to_string(&canon).map_err(|e| e.to_string())?;
         try_push_recent(&canon);
         Ok(Some(register_opened(&app, &state, canon, contents, true)))
