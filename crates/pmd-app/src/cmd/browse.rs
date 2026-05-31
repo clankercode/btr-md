@@ -118,3 +118,26 @@ pub async fn pick_base_dir(
         Ok(None)
     }
 }
+
+/// Set the UI workspace root. Accepts only a directory already within a granted
+/// base (the renderer cannot widen authority here); persists it as the browser
+/// base so it is restored next launch. Returns the canonical root. On rejection
+/// the frontend falls back to `pick_base_dir` (the OS picker) to grant a new
+/// base.
+#[tauri::command]
+pub fn set_workspace_root(
+    state: tauri::State<'_, crate::AppState>,
+    path: PathBuf,
+) -> Result<PathBuf, String> {
+    let canon = state
+        .scope
+        .set_workspace_root(&path)
+        .map_err(|e| e.to_string())?;
+    if let Err(e) = settings::rmw(|s| settings::Settings {
+        browser_base_dir: Some(canon.clone()),
+        ..s
+    }) {
+        eprintln!("[btr-md] could not persist workspace root: {e}");
+    }
+    Ok(canon)
+}

@@ -50,6 +50,7 @@ fn main() {
             cmd::doc::drop_doc,
             cmd::browse::list_dir,
             cmd::browse::pick_base_dir,
+            cmd::browse::set_workspace_root,
             cmd::reveal::open_in_default_app,
             cmd::reveal::reveal_in_folder,
             cmd::reveal::open_url,
