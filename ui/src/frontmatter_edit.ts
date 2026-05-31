@@ -100,6 +100,28 @@ function splitTags(value: string): string[] {
     .filter((item) => item.length > 0);
 }
 
+/**
+ * Return the trailing ` #...` comment of a YAML value remainder, or '' if none.
+ * Quote-aware: a `#` inside a single/double-quoted scalar (e.g. `"Issue #42"`)
+ * is NOT a comment, so it is not stripped. A comment must be a `#` that sits
+ * outside quotes and is preceded by whitespace.
+ */
+function trailingComment(remainder: string): string {
+  let inSingle = false;
+  let inDouble = false;
+  for (let i = 0; i < remainder.length; i++) {
+    const ch = remainder[i];
+    if (ch === '"' && !inSingle) inDouble = !inDouble;
+    else if (ch === "'" && !inDouble) inSingle = !inSingle;
+    else if (ch === '#' && !inSingle && !inDouble && i > 0 && /\s/.test(remainder[i - 1])) {
+      let start = i;
+      while (start > 0 && /\s/.test(remainder[start - 1])) start--;
+      return remainder.slice(start);
+    }
+  }
+  return '';
+}
+
 /** Render a tags sequence as a single-line flow value (no key, no separator).
  *  YAML: `[a, b]` (items quoted only when needed); TOML: `["a", "b"]`. */
 function formatTagsSequence(format: FmFormat, items: string[]): string {
@@ -152,7 +174,7 @@ export function editValueChange(doc: string, key: string, value: string): FmChan
     };
   }
 
-  const comment = remainder.match(/(\s+#.*)$/)?.[1] ?? '';
+  const comment = trailingComment(remainder);
   return {
     from: from + prefix.length,
     to,

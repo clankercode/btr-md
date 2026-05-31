@@ -65,6 +65,23 @@ test("editValueChange preserves a trailing inline comment", () => {
   assert.equal(next, "---\ntitle: New # note\n---\n# Body\n");
 });
 
+test("editValueChange does NOT treat a # inside an existing quoted value as a comment", () => {
+  // Regression: `# 42` lives inside the quotes, so it must not be stripped/re-appended.
+  const quoted = '---\ntitle: "Issue # 42"\n---\n# Body\n';
+  const change = editValueChange(quoted, "title", "New");
+  assert.ok(change);
+  const next = quoted.slice(0, change.from) + change.insert + quoted.slice(change.to);
+  assert.equal(next, "---\ntitle: New\n---\n# Body\n");
+});
+
+test("editValueChange keeps the real comment after a quoted value with an inner #", () => {
+  const quoted = '---\ntitle: "Issue # 42" # real\n---\n# Body\n';
+  const change = editValueChange(quoted, "title", "New");
+  assert.ok(change);
+  const next = quoted.slice(0, change.from) + change.insert + quoted.slice(change.to);
+  assert.equal(next, "---\ntitle: New # real\n---\n# Body\n");
+});
+
 test("editValueChange YAML-quotes a value containing a colon", () => {
   const change = editValueChange(doc, "title", "a: b");
   assert.ok(change);
