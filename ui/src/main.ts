@@ -1,6 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
-import { getCurrentWindow } from '@tauri-apps/api/window';
 import { mountEditor, type EditorHandle } from './editor.js';
 import { createChrome, type Mode } from './chrome.js';
 import { createHotkeyHandler, createOverlay } from './hotkeys.js';
@@ -30,12 +29,8 @@ import { planFootnoteInsertion } from './footnotes.js';
 import { insertAtCursor, dispatchInsert } from './editor_insert.js';
 import { decorateTables } from './table_copy.js';
 import { installDragOverlay } from './drag_overlay.js';
-import {
-  buildSavePayload,
-  classifyRestore,
-  type TabSnapshot,
-  type LoadedSession,
-} from './session.js';
+import { type LoadedSession } from './session.js';
+import { createSessionManager } from './session_manager.js';
 
 interface RenderResult {
   html: string;
@@ -1017,123 +1012,11 @@ listen<string>('mode-change', (event) => {
 }).catch(() => {});
 
 // ---------------------------------------------------------------------------
-// Session persistence (open doc paths + per-tab mode + browser tab).
+// Session persistence (extracted into session_manager.ts; backend-authoritative).
 // ---------------------------------------------------------------------------
 
-// The backend (state/session.rs) is the source of truth: `save_session` takes
-// the live buffer of every open doc and decides clean/dirty by comparing to its
-// stored base_content; `load_session` returns the full Session to restore.
-
-const STALE_LOCALSTORAGE_KEY = 'pmd:session';
-
-/** Snapshot the open tabs into the `save_session` payload + the active index. */
-function buildSessionPayloadFromStore() {
-  const tabs = store.list();
-  const snapshots: TabSnapshot[] = tabs.map((tab) =>
-    tab.kind === 'doc'
-      ? { kind: 'doc', docId: tab.docId, mode: tab.mode, buffer: tabBuffer(tab) }
-      : { kind: tab.kind }
-  );
-  const activeId = store.activeId();
-  const activeIndex = activeId === null ? -1 : tabs.findIndex((t) => t.id === activeId);
-  return buildSavePayload(snapshots, activeIndex);
-}
-
-async function doSaveSession(): Promise<void> {
-  const { docs, active, browserTab } = buildSessionPayloadFromStore();
-  try {
-    await invoke('save_session', { docs, active, browserTab });
-  } catch (e) {
-    // Same fault-tolerance as the old localStorage catch: never block the UI.
-    console.error('save_session failed:', e);
-  }
-}
-
-const saveSession = debounce(doSaveSession, 300);
-
-/** Force the pending session save to complete now (used on window close). */
-async function flushSessionNow(): Promise<void> {
-  // Run the debounced call if one is pending; otherwise save the current state.
-  await (saveSession.flush() ?? doSaveSession());
-}
-
-async function restoreSession(session: LoadedSession): Promise<boolean> {
-  let opened = 0;
-  // Track which docs landed as tabs so we can resolve the active index after.
-  for (const d of session.docs) {
-    try {
-      const action = classifyRestore(d);
-      if (action.kind === 'untitled') {
-        const reg = await invoke<{ doc_id: number; state: FileState }>('register_doc', {
-          path: null,
-          contents: action.content,
-        });
-        const tab = await addDocTab(
-          { doc_id: reg.doc_id, path: '', contents: action.content, state: reg.state },
-          { background: true }
-        );
-        store.updateDoc(tab.id, { mode: action.mode });
-        opened++;
-      } else if (action.kind === 'clean') {
-        await openFile(action.path, { background: true });
-        const tab = store.findDocByPath(action.path);
-        if (tab) {
-          store.updateDoc(tab.id, { mode: action.mode });
-          opened++;
-        }
-      } else {
-        // Dirty saved doc: reconstruct the authoritative FileState via the
-        // backend, seeding the editor with the returned live buffer.
-        try {
-          const doc = await invoke<OpenedDoc>('restore_dirty_doc', {
-            path: action.path,
-            content: action.content,
-            baselineContent: action.baselineContent,
-            background: true,
-          });
-          const tab = await addDocTab(doc, {
-            background: true,
-            baseContent: action.baselineContent,
-          });
-          store.updateDoc(tab.id, { mode: action.mode });
-          opened++;
-        } catch (e) {
-          // File gone / non-admissible: never drop unsaved work — fall back to
-          // an untitled buffer holding the unsaved content.
-          console.error('restore_dirty_doc failed, falling back to untitled:', e);
-          const reg = await invoke<{ doc_id: number; state: FileState }>('register_doc', {
-            path: null,
-            contents: action.content,
-          });
-          const tab = await addDocTab(
-            { doc_id: reg.doc_id, path: '', contents: action.content, state: reg.state },
-            { background: true }
-          );
-          store.updateDoc(tab.id, { mode: action.mode });
-          opened++;
-        }
-      }
-    } catch (e) {
-      // One bad entry never aborts the whole restore.
-      console.error('Skipping un-restorable session doc:', e);
-    }
-  }
-
-  if (session.browser_tab) store.addBrowser({ background: true });
-
-  // Restore the focused tab. `active.doc` indexes into the restored docs, but
-  // some docs may have been skipped, so resolve positionally over doc tabs.
-  const active = session.active;
-  if (active === 'browser') {
-    store.addBrowser();
-  } else if (active && typeof active === 'object') {
-    const docTabs = store.list().filter((t): t is DocTab => t.kind === 'doc');
-    const target = docTabs[active.doc];
-    if (target) store.setActive(target.id);
-  }
-
-  return opened > 0 || session.browser_tab;
-}
+const sessionManager = createSessionManager({ store, tabBuffer, addDocTab, openFile });
+const saveSession = sessionManager.saveSession;
 
 // ---------------------------------------------------------------------------
 // Bootstrap.
@@ -1179,27 +1062,8 @@ function showDefaultHandlerBanner(): void {
 }
 
 async function bootstrap(): Promise<void> {
-  // Migration: the old localStorage session store is gone (backend is now the
-  // source of truth). Drop any stale key on first run after upgrade.
-  try {
-    localStorage.removeItem(STALE_LOCALSTORAGE_KEY);
-  } catch {
-    /* ignore */
-  }
-
-  // Flush the (debounced) session save before the window actually closes —
-  // beforeunload cannot await async IPC, so onCloseRequested is required.
-  getCurrentWindow()
-    .onCloseRequested(async (event) => {
-      event.preventDefault();
-      try {
-        await flushSessionNow();
-      } catch (e) {
-        console.error('Session flush on close failed:', e);
-      }
-      void getCurrentWindow().destroy();
-    })
-    .catch((e) => console.error('onCloseRequested setup failed:', e));
+  sessionManager.clearStaleSession();
+  sessionManager.installCloseFlush();
 
   const settings = await loadSettings();
   if (settings) {
@@ -1247,7 +1111,7 @@ async function bootstrap(): Promise<void> {
   let restored = false;
   try {
     const session = await invoke<LoadedSession>('load_session');
-    restored = await restoreSession(session);
+    restored = await sessionManager.restoreSession(session);
   } catch (e) {
     console.error('Session restore failed:', e);
   }
