@@ -43,6 +43,7 @@ import {
   type ShortcutOverrides,
 } from './keybindings.js';
 import { createCommandOverlay } from './command_overlay.js';
+import { createFindController } from './find_controller.js';
 import { createShortcutEditor } from './shortcut_editor.js';
 import {
   attachPreviewLinkActivation,
@@ -304,6 +305,13 @@ splitResizer.addEventListener('keydown', (e) => {
 // ---------------------------------------------------------------------------
 
 const chrome = createChrome(document.body);
+
+const findController = createFindController({
+  getEditor: () => editor,
+  previewContent,
+  getMode: () => currentMode,
+});
+mainRegion.appendChild(findController.element);
 
 const store = createTabStore();
 const tabBar: TabBarInstance = createTabBar(store, {
@@ -610,9 +618,13 @@ async function runAction(id: ActionId): Promise<void> {
       await openGist();
       return;
     case 'edit.find':
+      findController.open();
+      return;
     case 'edit.findNext':
+      findController.next();
+      return;
     case 'edit.findPrevious':
-      editor?.focus();
+      findController.previous();
       return;
     case 'view.setDiffMode':
     case 'settings.pickBaseFolder':
@@ -1321,6 +1333,10 @@ async function processRenderQueue(): Promise<void> {
         decorateCodeBlocks(previewContent);
         decorateTables(previewContent, () => editor?.getValue() ?? '');
       }
+      // Single post-render hook covering both reconcile and full-replace
+      // branches: refresh the preview-find overlay against the new DOM. Wrapped
+      // implicitly — refreshPreview never throws on stale ranges.
+      findController.refreshPreview();
       applyOutlineRender(result);
       void refreshActiveAssetGrants();
     }
