@@ -65,7 +65,9 @@ package-all:
 package-smoke:
     bash -n scripts/package-appimage.sh
     bash -n scripts/package-flatpak.sh
+    bash -n scripts/capture-screenshots.sh
     test -f packaging/linux/btr-md.1
+    test -f packaging/flatpak/md.btr.app.yml
     test -d themes
 
 # install (local desktop integration)

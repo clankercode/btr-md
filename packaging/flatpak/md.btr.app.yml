@@ -1,0 +1,90 @@
+# Flatpak manifest for btr.md (better markdown).
+#
+# Consumed by scripts/package-flatpak.sh, which runs:
+#   flatpak-builder --force-clean build-flatpak packaging/flatpak/md.btr.app.yml
+#
+# App id, runtime, command and install paths are kept in lockstep with the
+# AppImage packaging (scripts/package-appimage.sh) and the shared desktop /
+# metainfo / mime files under packaging/linux/.
+#
+# Runtime choice: btr.md is a Tauri (WebKitGTK) app, so it needs the GNOME
+# runtime/SDK rather than bare freedesktop: GNOME carries the GTK/WebKitGTK
+# stack needed by the Linux webview. The freedesktop rust-stable SDK extension
+# is inherited by the GNOME SDK and supplies cargo/rustc for the build below.
+app-id: md.btr.app
+runtime: org.gnome.Platform
+runtime-version: '50'
+sdk: org.gnome.Sdk
+# rust-stable SDK extension supplies cargo/rustc for the build module.
+sdk-extensions:
+  - org.freedesktop.Sdk.Extension.rust-stable
+command: btr-md
+
+# --- Sandbox permissions (XDG portal first, minimal static filesystem) ---
+#
+# btr.md opens and saves single markdown files plus side-car asset folders.
+# Rather than poking a hole with --filesystem=host, we rely on the XDG Desktop
+# Portal: the GTK/rfd file dialogs raised by tauri-plugin-dialog go through
+# org.freedesktop.portal.FileChooser when running sandboxed, and the document
+# portal then hands back a sandboxed path the app can read/write. That gives the
+# user the *real* system file picker while the app keeps almost no static
+# filesystem access of its own.
+finish-args:
+  # Wayland + fallback X11 so the window displays on either session.
+  - --socket=wayland
+  - --socket=fallback-x11
+  # Shared memory for the X11 fallback path (XShm); avoids slow image transport.
+  - --share=ipc
+  # GPU access for WebKitGTK compositing / hardware-accelerated rendering.
+  - --device=dri
+  # FileChooser portal: backs the native Open/Save dialogs (open markdown, save
+  # exports). This is how the app reaches user files without a broad filesystem
+  # grant — the portal returns sandbox-scoped handles to the chosen paths.
+  - --talk-name=org.freedesktop.portal.FileChooser
+  # Documents portal: persists access to files/side-car asset folders chosen via
+  # the picker (e.g. images/<doc-stem>/ written next to a saved document) across
+  # restarts, so re-grants are not needed every launch.
+  - --talk-name=org.freedesktop.portal.Documents
+  # xdg-documents/xdg-download: the only *static* filesystem grants. They let the
+  # app resolve relative asset paths and default save locations under the user's
+  # Documents/Downloads dirs without prompting for every read. Everything outside
+  # these still goes through the portal picker. Deliberately NOT --filesystem=host.
+  - --filesystem=xdg-documents
+  - --filesystem=xdg-download
+
+modules:
+  - name: btr-md
+    buildsystem: simple
+    # Build the release binary with the rust-stable extension on PATH, then
+    # install the binary, bundled themes, and the shared desktop-integration
+    # files (mirrors scripts/package-appimage.sh layout under /app).
+    build-options:
+      append-path: /usr/lib/sdk/rust-stable/bin
+      env:
+        CARGO_HOME: /run/build/btr-md/cargo
+    build-commands:
+      - cargo build --release -j 2 -p pmd-app
+      # Binary
+      - install -Dm755 target/release/btr-md /app/bin/btr-md
+      # Bundled themes (resolved at runtime relative to the binary / share dir)
+      - |
+        mkdir -p /app/share/btr-md
+        cp -a themes /app/share/btr-md/themes
+      # Desktop entry, AppStream metainfo, MIME associations, man page
+      - install -Dm644 packaging/linux/md.btr.app.desktop /app/share/applications/md.btr.app.desktop
+      - install -Dm644 packaging/linux/md.btr.app.metainfo.xml /app/share/metainfo/md.btr.app.metainfo.xml
+      - install -Dm644 packaging/linux/md.btr.app.mime.xml /app/share/mime/packages/md.btr.app.mime.xml
+      - install -Dm644 packaging/linux/btr-md.1 /app/share/man/man1/btr-md.1
+      # Icons (sized PNGs + scalable SVG), matching md.btr.app icon name
+      - |
+        for icon in packaging/linux/icons/*x*.png; do
+          size="$(basename "$icon" .png)"
+          install -Dm644 "$icon" "/app/share/icons/hicolor/$size/apps/md.btr.app.png"
+        done
+        install -Dm644 packaging/linux/icons/btr-md.svg \
+          /app/share/icons/hicolor/scalable/apps/md.btr.app.svg
+    sources:
+      # Build from the local checkout. flatpak-builder copies the tree pointed at
+      # by package-flatpak.sh's working directory (the repo root).
+      - type: dir
+        path: ../..
