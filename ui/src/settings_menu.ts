@@ -43,6 +43,8 @@ export interface SettingsMenuDeps {
 export interface SettingsMenuInstance {
   el: HTMLElement;
   refresh: () => Promise<void>;
+  open: () => Promise<void>;
+  close: () => void;
 }
 
 interface Choice<T extends string> {
@@ -301,12 +303,16 @@ export function createSettingsMenu(
   function close(): void {
     menu.style.display = 'none';
   }
+  async function open(): Promise<void> {
+    await refresh();
+    menu.style.display = 'block';
+    btn.focus();
+  }
   btn.addEventListener('click', (e) => {
     e.stopPropagation();
     const hidden = menu.style.display === 'none';
     if (hidden) {
-      refresh();
-      menu.style.display = 'block';
+      void open();
     } else {
       close();
     }
@@ -315,5 +321,5 @@ export function createSettingsMenu(
     if (!wrapper.contains(e.target as Node)) close();
   });
 
-  return { el: wrapper, refresh };
+  return { el: wrapper, refresh, open, close };
 }

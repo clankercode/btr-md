@@ -63,6 +63,21 @@ fn open_external(s: &str) -> Result<(), String> {
     spawn(c)
 }
 
+pub(crate) fn open_external_url(url: &str) -> Result<(), String> {
+    let lower = url.trim().to_ascii_lowercase();
+    if !(lower.starts_with("https://")
+        || lower.starts_with("http://")
+        || lower.starts_with("mailto:"))
+    {
+        return Err("external open refused: only http(s) and mailto URLs are allowed".into());
+    }
+    open_external(url)
+}
+
+pub(crate) fn open_path_from_backend(path: &Path) -> Result<(), String> {
+    open_path(path)
+}
+
 #[cfg(target_os = "macos")]
 fn open_external(s: &str) -> Result<(), String> {
     let mut c = Command::new("open");

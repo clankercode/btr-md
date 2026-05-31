@@ -6,13 +6,15 @@
 // Everything is built with createElement/textContent/setAttribute — no
 // innerHTML — so no untrusted content is ever parsed as markup.
 
+import { selfAndDescendants } from './dom_scope.js';
+
 const REVERT_DELAY_MS = 1200;
 
 // Classes that mark a `<code>` as something other than a copyable code sample.
 const SKIP_CODE_CLASSES = ['language-mermaid', 'language-math', 'math-block'];
 
 export function decorateCodeBlocks(root: HTMLElement): void {
-  const pres = root.querySelectorAll<HTMLPreElement>('pre');
+  const pres = selfAndDescendants<HTMLPreElement>(root, 'pre');
   pres.forEach((pre) => {
     // Idempotent: skip blocks we've already wrapped, and mermaid `<pre>`s.
     if (pre.closest('figure.pmd-code-block')) return;

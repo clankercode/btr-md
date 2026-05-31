@@ -8,10 +8,12 @@ license.workspace = true
 [dependencies]
 serde.workspace = true
 toml.workspace = true
+yaml-rust2 = { version = "0.11.0", default-features = false }
 thiserror.workspace = true
 pulldown-cmark.workspace = true
 ammonia.workspace = true
 getrandom.workspace = true
+blake3.workspace = true
 
 [dev-dependencies]
 proptest.workspace = true

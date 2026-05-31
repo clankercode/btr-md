@@ -32,6 +32,27 @@ Observed result on 2026-05-30:
 
 Implementation workers should use `just check` for the default non-WebDriver gate. Security sentinel tests in `crates/pmd-e2e/tests/navigation_policy.rs` are release-blocking once Block 12 exists; start the repo e2e harness with `just e2e` or the documented WebDriver setup before claiming final PASS.
 
+## Execution Status
+
+Updated 2026-05-31 after rebasing and merging `dit-diagnostics-trust` into `master`:
+
+- Blocks 1-3, `dit-core-facts`: merged into `feat/large-expansion` as `d062d9c`, `a7cf6db`, and `5d87966`.
+- Block 4, app preview authority shell: merged as `2451545` with implementation commit `d66162f`; `ccc --yolo @cx-reviewer` returned `PASS` after the rebase.
+- Post-rebase rustfmt cleanup from `master` landed as `d2c10fc` so worker baselines start with `cargo fmt --check` clean.
+- Block 5, synchronous resource policy: implemented as `85d5736`; focused verification and `ccc --yolo @cx-reviewer` returned `PASS`.
+- Block 6, backend-mediated link activation: implemented as `6109dad`; fixed the reviewer-found stale external-confirmation token case, reran verification, and `ccc --yolo @cx-reviewer` returned `PASS` with WebView navigation sentinel coverage still provisional until Block 12.
+- Blocks 4-6, `dit-app-authority`: merged back into `feat/large-expansion` as `6d22101`; root `just check` passed after merge.
+- Block 7, async local validation: implemented as `35f5cf5`; `ccc --yolo @cx-reviewer` returned `PASS`; root `just test-ipc`, `cargo check -p pmd-e2e --tests -j 2`, and `npm run typecheck` passed after merge.
+- Block 7, `dit-validation`: merged back into `feat/large-expansion` as `2f8553c`.
+- Block 8, action registry and keybinding persistence: implemented as `9960503`; rebased onto Block 7; fixed the ccc-found stale tracked UI bundle artifact; final `ccc --yolo @cx-reviewer` returned `PASS`.
+- Block 8, `dit-actions-keybindings`: merged back into `feat/large-expansion` as `8d47a6d`; root `just check` passed after merge, including 19 Playwright tests.
+- Block 9, UI facts store and outline panel: implemented as `ee87b8b`; `ccc --yolo @cx-reviewer` returned `PASS`.
+- Block 9, `dit-outline`: merged back into `feat/large-expansion`; root `just check` passed after merge, including 20 Playwright tests.
+- Block 10, diagnostics panel, inline issues, and trust status: implemented through `work/dit-diagnostics-trust`, rebased onto `master` after the rebrand/incremental-rendering merge, and merged into `master` as `merge: diagnostics trust surfaces`.
+- Block 10 post-rebase integration fixed incremental render/facts/block reconciliation compatibility, stale/foreign diagnostics gating, and the incremental e2e render mock contract in `5bdc490`.
+- `ccc --yolo @cx-reviewer` returned `PASS` for Block 10 after the mock-contract fix; output log: `/home/xertrov/.local/state/ccc/runs/codex-1780193168118-1448701-0`.
+- Next active workstream: Block 11, `dit-asset-grants`, after the diagnostics/trust panel foundation.
+
 ## Operating Contract
 
 ### Worktrees
@@ -5530,7 +5551,7 @@ git -C "$INTEGRATION_ROOT" merge --no-ff work/dit-outline
 
 This block must append `src/diagnostics.ts`, `src/diagnostics_panel.ts`, `src/inline_issues.ts`, `src/resource_policy.ts`, and `src/trust_policy_panel.ts` to `ui/tsconfig.json` `include` before the `npm run typecheck` gate.
 
-- [ ] **Step 10.1: Write diagnostics unit tests**
+- [x] **Step 10.1: Write diagnostics unit tests**
 
 Create `ui/src/diagnostics.test.ts` with these tests:
 
@@ -5604,7 +5625,7 @@ test("inline detail can be hidden while keeping one-line markers", () => {
 });
 ```
 
-- [ ] **Step 10.2: Write trust/resource tests**
+- [x] **Step 10.2: Write trust/resource tests**
 
 Create tests in `ui/src/resource_policy.test.ts` that assert:
 
@@ -5661,7 +5682,7 @@ test("external confirmation exposes normalized destination context", () => {
 });
 ```
 
-- [ ] **Step 10.3: Write e2e tests**
+- [x] **Step 10.3: Write e2e tests**
 
 Create tests in `ui/e2e/trust-policy.spec.cjs` for:
 
@@ -5833,7 +5854,7 @@ test('malformed frontmatter shows a warning and keeps preview content', async ({
 });
 ```
 
-- [ ] **Step 10.4: Implement diagnostics panel and inline issues**
+- [x] **Step 10.4: Implement diagnostics panel and inline issues**
 
 `ui/src/diagnostics.ts` owns pure presentation derivation:
 
@@ -5869,7 +5890,7 @@ export function deriveDiagnosticsPresentation(diagnostics: DocumentDiagnostics, 
 
 `ui/src/diagnostics_panel.ts` renders a labelled region when `panelVisible` is true and a compact button with counts when `collapsedIndicatorVisible` is true. `ui/src/inline_issues.ts` renders one-line actionable messages next to editor/source lines and backend-provided placeholders, with no raw unsafe URL attributes.
 
-- [ ] **Step 10.5: Implement trust status and panel**
+- [x] **Step 10.5: Implement trust status and panel**
 
 `ui/src/resource_policy.ts` owns trust derivation and external confirmation models:
 
@@ -5982,7 +6003,7 @@ listen<DocumentDiagnostics>("pmd://diagnostics-enriched", (event) => {
 
 Call `acceptRenderDiagnostics(result)` immediately after the existing render-result newest-wins guard accepts `result` and before any later outline/trust/grant UI reads diagnostics. This is the step that makes enriched diagnostics a full replacement for the current `(doc_id, version)` panel state, inline issues, and trust status. In the existing `ActionContext.run` body from Blocks 8 and 9, call `if (runDiagnosticsAction(id)) return;` alongside the outline action hook before falling through to existing action cases, so `diagnostics.togglePanel` and `Ctrl+Shift+M` replace the temporary Block 8 handler.
 
-- [ ] **Step 10.6: Verify**
+- [x] **Step 10.6: Verify**
 
 ```bash
 cd ui && npm run test:unit
@@ -5992,7 +6013,7 @@ cd ui && npm run test:e2e:playwright -- e2e/trust-policy.spec.cjs
 
 Expected: all commands pass.
 
-- [ ] **Step 10.7: Review, commit, and merge**
+- [x] **Step 10.7: Review, commit, and merge**
 
 ```bash
 ccc --yolo @cx-reviewer "Review diagnostics and trust UI for panel visibility rules, one-line inline actionability, security messaging, and accessibility. Return PASS or blockers."
@@ -6022,16 +6043,23 @@ git -C "$INTEGRATION_ROOT" merge --no-ff work/dit-diagnostics-trust
 
 - Create: `crates/pmd-app/src/preview/grants.rs`
 - Create: `crates/pmd-app/src/preview/asset_scope.rs`
+- Create: `crates/pmd-app/src/preview/git_root.rs`
+- Create: `crates/pmd-app/src/preview/trust_roots.rs`
 - Modify: `crates/pmd-app/src/preview/mod.rs`
 - Modify: `crates/pmd-app/src/preview/resource_policy.rs`
 - Integration-owner modify: `crates/pmd-app/src/preview/contracts.rs`
+- Modify: `crates/pmd-app/src/cmd/doc.rs`
 - Modify: `crates/pmd-app/src/cmd/render.rs`
+- Modify: `crates/pmd-app/src/doc/registry.rs`
 - Integration-owner modify: `crates/pmd-app/src/main.rs`
 - Create: `crates/pmd-app/src/preview/image_workflow.rs`
 - Create: `crates/pmd-app/tests/asset_grants.rs`
+- Create: `crates/pmd-app/tests/trust_roots.rs`
 - Create: `ui/src/local_asset_grants.ts`
+- Create: `ui/src/trust_roots.ts`
 - Modify: `ui/src/diagnostics_panel.ts`
 - Modify: `ui/src/trust_policy_panel.ts`
+- Modify: `ui/src/settings_menu.ts`
 - Integration-owner modify: `ui/src/actions.ts`
 - Integration-owner modify: `ui/src/main.ts`
 - Integration-owner modify: `ui/e2e/helpers.cjs`
@@ -6039,7 +6067,23 @@ git -C "$INTEGRATION_ROOT" merge --no-ff work/dit-diagnostics-trust
 - Integration-owner modify: `ui/e2e/trust-policy.spec.cjs`
 - Modify: `ui/tsconfig.json`
 
-This block must append `src/local_asset_grants.ts` to `ui/tsconfig.json` `include` before the `npm run typecheck` gate.
+This block must append `src/local_asset_grants.ts` and `src/trust_roots.ts` to `ui/tsconfig.json` `include` before the `npm run typecheck` gate.
+
+Asset authority is split into:
+
+- **Session grants:** in-memory grants that let the current render load images from canonical roots.
+- **Persistent trusted roots:** settings-backed user decisions that survive app restart and automatically materialize session grants when a loaded Markdown file is still inside the trusted context.
+- **Persistent declined roots:** settings-backed user decisions that suppress repeated automatic repository-root prompts without granting authority.
+
+When a Markdown file is loaded or registered, discover its trust context before first render:
+
+- `doc_dir`: canonical parent directory of the Markdown file.
+- `git_root`: nearest ancestor containing `.git` as either a directory or a file. The `.git` file case covers git worktrees and submodules.
+- `trust_state`: existing persisted decision for the canonical `git_root` and, if needed, `doc_dir`.
+
+If the Markdown file lives inside a git repository and the repo root is not already trusted or declined, the UI offers to trust the parent containing `.git` as the reusable root. If the root is trusted, the app creates an equivalent session grant during load/register after canonicalization and existence checks, so the user does not need to reallow it on every launch. If the root is declined, no automatic grant is created and the app does not keep prompting for that root. Settings must expose persisted trusted and declined roots and let the user remove either decision; removing a trusted root prevents future auto-grants but does not need to revoke already-active session grants until the next document refresh/reload unless implementation can do that cheaply.
+
+Persist only canonical root paths and decision state. Do not persist document contents, image paths, placeholder ids, or transient grant ids.
 
 - [ ] **Step 11.1: Write backend grant tests**
 
@@ -6054,6 +6098,11 @@ Create tests in `crates/pmd-app/tests/asset_grants.rs` that assert:
 - asset-scope mirror receives a revoke call when no active document/grant still needs the canonical root.
 - shared asset-scope roots use reference counting so revoking one document's grant does not break another document that still owns the root.
 - image workflow foundation exposes future paste/drop destination decisions without copying files in this slice.
+- loading a Markdown file detects the nearest git root before first render.
+- `.git` files count as git roots in addition to `.git` directories.
+- remembered trusted roots materialize as session grants on later app launches.
+- remembered declined roots suppress repeated automatic trust prompts and do not materialize grants.
+- persisted trust decisions contain only canonical root path and trust/decline state.
 
 Include:
 
@@ -6120,6 +6169,79 @@ fn granted_roots_are_supplied_to_resource_policy() {
     assert!(resolution.report.allowed_roots.iter().any(|root| root.contains("assets")));
     assert!(resolution.report.decisions.iter().any(|decision| decision.reason.as_str() == "allowed_local_scope"));
 }
+
+#[test]
+fn detects_git_root_when_markdown_file_is_loaded() {
+    let temp = tempfile::tempdir().unwrap();
+    let repo = temp.path().join("repo");
+    let docs = repo.join("docs");
+    std::fs::create_dir_all(docs.join("nested")).unwrap();
+    std::fs::create_dir(repo.join(".git")).unwrap();
+    let doc_path = docs.join("nested/doc.md");
+    std::fs::write(&doc_path, "# Doc").unwrap();
+
+    let context = pmd_app_lib::preview::git_root::discover_document_trust_context(&doc_path).unwrap();
+
+    assert_eq!(context.doc_dir, docs.join("nested").canonicalize().unwrap());
+    assert_eq!(context.git_root, Some(repo.canonicalize().unwrap()));
+}
+
+#[test]
+fn git_worktree_file_marker_counts_as_git_root() {
+    let temp = tempfile::tempdir().unwrap();
+    let worktree = temp.path().join("worktree");
+    std::fs::create_dir_all(worktree.join("docs")).unwrap();
+    std::fs::write(worktree.join(".git"), "gitdir: ../main/.git/worktrees/worktree\n").unwrap();
+    let doc_path = worktree.join("docs/doc.md");
+    std::fs::write(&doc_path, "# Doc").unwrap();
+
+    let context = pmd_app_lib::preview::git_root::discover_document_trust_context(&doc_path).unwrap();
+
+    assert_eq!(context.git_root, Some(worktree.canonicalize().unwrap()));
+}
+
+#[test]
+fn remembered_trusted_git_root_materializes_as_session_grant_on_load() {
+    let temp = tempfile::tempdir().unwrap();
+    let repo = temp.path().join("repo");
+    std::fs::create_dir_all(repo.join("docs")).unwrap();
+    std::fs::create_dir(repo.join(".git")).unwrap();
+    let doc_path = repo.join("docs/doc.md");
+    std::fs::write(&doc_path, "![outside](../assets/outside.png)").unwrap();
+    let repo_root = repo.canonicalize().unwrap();
+
+    let mirror = pmd_app_lib::preview::asset_scope::RecordingAssetScopeMirror::default();
+    let mut grants = pmd_app_lib::preview::grants::GrantStore::with_mirror(Box::new(mirror));
+    let mut trust = pmd_app_lib::preview::trust_roots::TrustRootStore::empty_for_test();
+    trust.remember_trusted_for_test(&repo_root).unwrap();
+
+    let applied = trust.apply_remembered_trust_for_document("main", 1, &doc_path, &mut grants).unwrap();
+
+    assert_eq!(applied.granted_roots, vec![repo_root.clone()]);
+    assert!(grants.is_allowed_for_test("main", 1, &repo_root.join("docs/doc.md")));
+}
+
+#[test]
+fn remembered_declined_git_root_does_not_materialize_as_session_grant() {
+    let temp = tempfile::tempdir().unwrap();
+    let repo = temp.path().join("repo");
+    std::fs::create_dir_all(repo.join("docs")).unwrap();
+    std::fs::create_dir(repo.join(".git")).unwrap();
+    let doc_path = repo.join("docs/doc.md");
+    std::fs::write(&doc_path, "# Doc").unwrap();
+    let repo_root = repo.canonicalize().unwrap();
+
+    let mirror = pmd_app_lib::preview::asset_scope::RecordingAssetScopeMirror::default();
+    let mut grants = pmd_app_lib::preview::grants::GrantStore::with_mirror(Box::new(mirror));
+    let mut trust = pmd_app_lib::preview::trust_roots::TrustRootStore::empty_for_test();
+    trust.remember_declined_for_test(&repo_root).unwrap();
+
+    let applied = trust.apply_remembered_trust_for_document("main", 1, &doc_path, &mut grants).unwrap();
+
+    assert!(applied.granted_roots.is_empty());
+    assert!(!applied.should_prompt_for_repo_root);
+    assert!(!grants.is_allowed_for_test("main", 1, &repo_root.join("docs/doc.md")));
+}
 ```
 
 - [ ] **Step 11.2: Write UI/e2e grant recovery tests**
@@ -6130,6 +6252,11 @@ Create the grant recovery e2e test below. It covers:
 - clicking it calls backend picker command.
 - after grant, the document rerenders and resource policy shows the image loaded.
 - revocation returns the document to blocked state.
+- opening a Markdown file inside a git repository shows a trust-repository-root recommendation before first render completes.
+- accepting that recommendation persists the trusted root, creates a session grant, and recovers blocked images.
+- reopening/relaunching with the same persisted trusted root auto-materializes a session grant without asking again.
+- declining the repository-root recommendation persists the decline and suppresses repeated automatic prompts.
+- settings can remove trusted or declined roots so the next load can ask again.
 
 Extend `ui/e2e/helpers.cjs` with a deterministic asset-grant picker mock:
 
@@ -6146,13 +6273,54 @@ Place this state beside the existing `callbackId` and `nextDocId` variables insi
 ```js
 let nextGrantId = 1;
 const assetGrants = [];
+const trustDecisions = new Map();
+let detectMockGitRoot = null;
 ```
+
+Add mock helpers:
+
+```js
+async function setMockGitRootForOpen(page, relativeRoot) {
+  await page.addInitScript((root) => {
+    window.__pmdMockGitRoot = root;
+  }, relativeRoot);
+}
+
+function trustContextForPath(path) {
+  const gitRoot = window.__pmdMockGitRoot ?? detectMockGitRoot;
+  const state = gitRoot ? trustDecisions.get(gitRoot) ?? "unknown" : "unknown";
+  return {
+    doc_dir: ".",
+    git_root: gitRoot,
+    git_root_state: state,
+    should_prompt_for_repo_root: Boolean(gitRoot && state === "unknown"),
+  };
+}
+
+async function openSavedMarkdown(page, markdown, options = {}) {
+  const docPath = options.path ?? '/work/repo/docs/doc.md';
+  const gitRoot = options.gitRoot ?? '../repo';
+  await installTauriMock(page, {
+    files: { [docPath]: markdown },
+    mockGitRoot: gitRoot,
+    initialPath: docPath,
+  });
+  await page.goto(appUrl());
+  await page.evaluate((path) => window.__pmdOpenPathForTest?.(path), docPath);
+  await page.waitForTimeout(250);
+}
+```
+
+Extend the `installTauriMock` init payload with `files` and `mockGitRoot`, merge `options.files` into the existing mock `files`, and set `detectMockGitRoot = mockGitRoot ?? null` before command handling. Add a test-only browser helper `window.__pmdOpenPathForTest(path)` that calls the same frontend open path used by the app's file-open flow; repository-root tests must use this saved-document path so production and e2e both receive `trust_context`.
 
 Extend the Block 10 mock render helpers so the grant recovery test sees the same rerender transition as production:
 
 ```js
 function hasOutsideAssetGrant(docId) {
-  return assetGrants.some((grant) => grant.doc_id === docId && grant.canonical_root === '../assets');
+  return assetGrants.some((grant) => {
+    if (grant.doc_id !== docId) return false;
+    return grant.canonical_root === '../assets' || grant.canonical_root === '../repo';
+  });
 }
 
 function grantAwareDiagnosticsForMarkdown(markdown, docId, version) {
@@ -6203,6 +6371,8 @@ if (cmd === 'render_cmd') {
 
 Extend the `installTauriMock` `invoke` handler with the commands below:
 
+If `helpers.cjs` already has `open_file`, `request_open_file`, or `register_doc` mock branches, replace those branches with the trust-context-aware versions below rather than adding duplicate later branches that would shadow them.
+
 ```js
 if (cmd === 'grant_asset_folder' || cmd === 'grant_asset_folder_for_test') {
   const docId = args.docId ?? args.doc_id;
@@ -6240,6 +6410,72 @@ if (cmd === 'list_asset_grants' || cmd === 'list_asset_grants_for_test') {
   const docId = args.docId ?? args.doc_id;
   return assetGrants.filter((item) => item.doc_id === docId);
 }
+
+if (cmd === 'grant_recommended_root' || cmd === 'grant_recommended_root_for_test') {
+  const docId = args.docId ?? args.doc_id;
+  const version = args.version ?? 0;
+  const root = args.canonicalRoot ?? args.canonical_root;
+  trustDecisions.set(root, 'trusted');
+  const grant = {
+    id: nextGrantId++,
+    window_label: 'main',
+    doc_id: docId,
+    canonical_root: root,
+  };
+  assetGrants.push(grant);
+  return {
+    grants: assetGrants.filter((item) => item.doc_id === docId),
+    rerender_doc_id: docId,
+    rerender_version: version + 1,
+  };
+}
+
+if (cmd === 'remember_trusted_root' || cmd === 'remember_trusted_root_for_test') {
+  const root = args.canonicalRoot ?? args.canonical_root;
+  trustDecisions.set(root, 'trusted');
+  return { canonical_root: root, state: 'trusted' };
+}
+
+if (cmd === 'remember_declined_root' || cmd === 'remember_declined_root_for_test') {
+  const root = args.canonicalRoot ?? args.canonical_root;
+  trustDecisions.set(root, 'declined');
+  return { canonical_root: root, state: 'declined' };
+}
+
+if (cmd === 'forget_trust_root' || cmd === 'forget_trust_root_for_test') {
+  const root = args.canonicalRoot ?? args.canonical_root;
+  trustDecisions.delete(root);
+  return { canonical_root: root, state: 'unknown' };
+}
+
+if (cmd === 'list_trust_roots' || cmd === 'list_trust_roots_for_test') {
+  return Array.from(trustDecisions.entries()).map(([canonical_root, state]) => ({ canonical_root, state }));
+}
+
+if (cmd === 'open_file' || cmd === 'request_open_file') {
+  const docId = nextDocId++;
+  const docPath = args.path;
+  const trust_context = trustContextForPath(docPath);
+  if (trust_context.git_root_state === 'trusted' && trust_context.git_root) {
+    assetGrants.push({ id: nextGrantId++, window_label: 'main', doc_id: docId, canonical_root: trust_context.git_root });
+  }
+  return {
+    doc_id: docId,
+    path: docPath,
+    contents: files[docPath] ?? '# Missing fixture',
+    state: { kind: 'clean', base: '00' },
+    trust_context,
+  };
+}
+
+if (cmd === 'register_doc') {
+  const docId = nextDocId++;
+  return {
+    doc_id: docId,
+    state: args.path ? { kind: 'clean', base: '00' } : { kind: 'untitled' },
+    trust_context: args.path ? trustContextForPath(args.path) : { doc_dir: null, git_root: null, git_root_state: 'unknown', should_prompt_for_repo_root: false },
+  };
+}
 ```
 
 Update the helper exports:
@@ -6250,7 +6486,9 @@ module.exports = {
   grantFolderInMockBackend,
   installTauriMock,
   openMarkdown,
+  openSavedMarkdown,
   screenshotPath,
+  setMockGitRootForOpen,
   themes,
 };
 ```
@@ -6258,7 +6496,7 @@ module.exports = {
 Include:
 
 ```js
-const { grantFolderInMockBackend, openMarkdown } = require('./helpers.cjs');
+const { grantFolderInMockBackend, openMarkdown, openSavedMarkdown, setMockGitRootForOpen } = require('./helpers.cjs');
 
 test('Grant Folder recovers and revocation re-blocks a local image', async ({ page }) => {
   await openMarkdown(page, '![outside](../assets/outside.png)');
@@ -6272,6 +6510,50 @@ test('Grant Folder recovers and revocation re-blocks a local image', async ({ pa
 
   await page.getByRole('button', { name: 'Revoke grant' }).click();
   await expect(page.getByText('Image blocked')).toBeVisible();
+});
+
+test('repository root trust is detected on open and remembered for future loads', async ({ page }) => {
+  await setMockGitRootForOpen(page, '../repo');
+  await openSavedMarkdown(page, '![outside](../assets/outside.png)');
+
+  await expect(page.getByRole('button', { name: /Trust repository root/ })).toBeVisible();
+  await page.getByRole('button', { name: /Trust repository root/ }).click();
+  await expect.poll(async () => page.evaluate(() => window.__pmdInvocations.map((call) => call.cmd))).toEqual(expect.arrayContaining(['grant_recommended_root']));
+  await expect(page.getByAltText('outside')).toBeVisible();
+
+  await openSavedMarkdown(page, '![outside](../assets/outside.png)');
+  await expect(page.getByRole('button', { name: /Trust repository root/ })).toHaveCount(0);
+  await expect(page.getByAltText('outside')).toBeVisible();
+});
+
+test('declined repository root suppresses repeated automatic trust prompt', async ({ page }) => {
+  await setMockGitRootForOpen(page, '../repo');
+  await openSavedMarkdown(page, '![outside](../assets/outside.png)');
+  await page.getByRole('button', { name: /Do not trust repository root/ }).click();
+
+  await openSavedMarkdown(page, '![outside](../assets/outside.png)');
+  await expect(page.getByRole('button', { name: /Trust repository root/ })).toHaveCount(0);
+  await expect(page.getByText('Image blocked')).toBeVisible();
+});
+
+test('settings can forget trusted and declined repository roots', async ({ page }) => {
+  await setMockGitRootForOpen(page, '../repo');
+  await openSavedMarkdown(page, '![outside](../assets/outside.png)');
+  await page.getByRole('button', { name: /Trust repository root/ }).click();
+
+  await page.getByRole('button', { name: /Settings/ }).click();
+  await expect(page.getByRole('region', { name: /Trusted roots/ })).toContainText('../repo');
+  await page.getByRole('button', { name: /Remove trusted root/ }).click();
+  await expect.poll(async () => page.evaluate(() => window.__pmdInvocations.map((call) => call.cmd))).toEqual(expect.arrayContaining(['forget_trust_root']));
+
+  await openSavedMarkdown(page, '![outside](../assets/outside.png)');
+  await expect(page.getByRole('button', { name: /Trust repository root/ })).toBeVisible();
+  await page.getByRole('button', { name: /Do not trust repository root/ }).click();
+  await page.getByRole('button', { name: /Settings/ }).click();
+  await expect(page.getByRole('region', { name: /Declined roots/ })).toContainText('../repo');
+  await page.getByRole('button', { name: /Remove declined root/ }).click();
+  await openSavedMarkdown(page, '![outside](../assets/outside.png)');
+  await expect(page.getByRole('button', { name: /Trust repository root/ })).toBeVisible();
 });
 ```
 
@@ -6327,16 +6609,19 @@ impl GrantStore {
     }
 
     pub fn revoke(&mut self, window_label: &str, doc_id: u64, id: AssetGrantId) -> Result<(), String> {
-        let grant = self.grants.remove(&id).ok_or_else(|| "Unknown asset grant".to_string())?;
+        let grant = self.grants.get(&id).cloned().ok_or_else(|| "Unknown asset grant".to_string())?;
         if grant.window_label != window_label || grant.doc_id != doc_id {
-            self.grants.insert(id, grant);
             return Err("Asset grant does not belong to this document".to_string());
         }
-        let count = self.root_refcounts.get_mut(&grant.canonical_root).ok_or_else(|| "Missing grant refcount".to_string())?;
-        *count -= 1;
-        if *count == 0 {
-            self.root_refcounts.remove(&grant.canonical_root);
+        let count = self.root_refcounts.get(&grant.canonical_root).copied().ok_or_else(|| "Missing grant refcount".to_string())?;
+        if count == 1 {
             self.mirror.revoke_directory(&grant.canonical_root)?;
+        }
+        self.grants.remove(&id);
+        if count == 1 {
+            self.root_refcounts.remove(&grant.canonical_root);
+        } else {
+            self.root_refcounts.insert(grant.canonical_root, count - 1);
         }
         Ok(())
     }
@@ -6461,16 +6746,258 @@ Rules reserved by this foundation:
 
 The existing `PathScope` may expose reusable canonical comparison helpers, but persisted file-browser folders do not become asset grants.
 
+`preview/git_root.rs` owns load-time trust-context discovery:
+
+```rust
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
+pub struct DocumentTrustContext {
+    pub doc_dir: std::path::PathBuf,
+    pub git_root: Option<std::path::PathBuf>,
+}
+
+pub fn discover_document_trust_context(doc_path: &std::path::Path) -> Result<DocumentTrustContext, String> {
+    let canonical_doc = doc_path.canonicalize().map_err(|err| err.to_string())?;
+    let doc_dir = canonical_doc
+        .parent()
+        .ok_or_else(|| "Markdown file has no parent directory".to_string())?
+        .to_path_buf();
+    let git_root = find_git_root(&doc_dir)?;
+    Ok(DocumentTrustContext { doc_dir, git_root })
+}
+
+pub fn find_git_root(start: &std::path::Path) -> Result<Option<std::path::PathBuf>, String> {
+    let mut cursor = start.canonicalize().map_err(|err| err.to_string())?;
+    loop {
+        let marker = cursor.join(".git");
+        if marker.is_dir() || marker.is_file() {
+            return Ok(Some(cursor));
+        }
+        if !cursor.pop() {
+            return Ok(None);
+        }
+    }
+}
+```
+
+`preview/trust_roots.rs` owns persisted root decisions and the bridge from remembered trust into session grants:
+
+```rust
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum TrustRootState {
+    Unknown,
+    Trusted,
+    Declined,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub struct TrustRootDecision {
+    pub canonical_root: std::path::PathBuf,
+    pub state: TrustRootState,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq, serde::Serialize)]
+pub struct AppliedTrustRoots {
+    pub granted_roots: Vec<std::path::PathBuf>,
+    pub declined_roots: Vec<std::path::PathBuf>,
+    pub should_prompt_for_repo_root: bool,
+    pub recommended_repo_root: Option<std::path::PathBuf>,
+}
+
+pub struct TrustRootStore {
+    decisions: std::collections::BTreeMap<std::path::PathBuf, TrustRootState>,
+    settings_path: std::path::PathBuf,
+}
+
+#[derive(Debug, Default, serde::Serialize, serde::Deserialize)]
+struct PersistedTrustRoots {
+    roots: Vec<TrustRootDecision>,
+}
+
+impl TrustRootStore {
+    pub fn load(settings_path: std::path::PathBuf) -> Result<Self, String> {
+        if !settings_path.exists() {
+            return Ok(Self { decisions: std::collections::BTreeMap::new(), settings_path });
+        }
+        let bytes = std::fs::read(&settings_path).map_err(|err| err.to_string())?;
+        let persisted: PersistedTrustRoots = serde_json::from_slice(&bytes).map_err(|err| err.to_string())?;
+        let decisions = persisted
+            .roots
+            .into_iter()
+            .filter_map(|entry| entry.canonical_root.canonicalize().ok().map(|root| (root, entry.state)))
+            .collect();
+        Ok(Self { decisions, settings_path })
+    }
+
+    pub fn empty_for_test() -> Self {
+        Self { decisions: std::collections::BTreeMap::new(), settings_path: std::path::PathBuf::new() }
+    }
+
+    pub fn empty_at(settings_path: std::path::PathBuf) -> Self {
+        Self { decisions: std::collections::BTreeMap::new(), settings_path }
+    }
+
+    fn persist(&self) -> Result<(), String> {
+        if self.settings_path.as_os_str().is_empty() {
+            return Ok(());
+        }
+        if let Some(parent) = self.settings_path.parent() {
+            std::fs::create_dir_all(parent).map_err(|err| err.to_string())?;
+        }
+        let roots = self
+            .decisions
+            .iter()
+            .map(|(canonical_root, state)| TrustRootDecision { canonical_root: canonical_root.clone(), state: *state })
+            .collect();
+        let bytes = serde_json::to_vec_pretty(&PersistedTrustRoots { roots }).map_err(|err| err.to_string())?;
+        std::fs::write(&self.settings_path, bytes).map_err(|err| err.to_string())
+    }
+
+    pub fn remember(&mut self, canonical_root: &std::path::Path, state: TrustRootState) -> Result<TrustRootDecision, String> {
+        let canonical_root = canonical_root.canonicalize().map_err(|err| err.to_string())?;
+        self.decisions.insert(canonical_root.clone(), state);
+        self.persist()?;
+        Ok(TrustRootDecision { canonical_root, state })
+    }
+
+    pub fn forget(&mut self, canonical_root: &std::path::Path) -> Result<(), String> {
+        let canonical_root = canonical_root.canonicalize().map_err(|err| err.to_string())?;
+        self.decisions.remove(&canonical_root);
+        self.persist()
+    }
+
+    pub fn decision_for(&self, canonical_root: &std::path::Path) -> Option<TrustRootState> {
+        self.decisions.get(canonical_root).copied()
+    }
+
+    pub fn list(&self) -> Vec<TrustRootDecision> {
+        self.decisions
+            .iter()
+            .map(|(canonical_root, state)| TrustRootDecision { canonical_root: canonical_root.clone(), state: *state })
+            .collect()
+    }
+
+    pub fn remember_trusted_for_test(&mut self, canonical_root: &std::path::Path) -> Result<TrustRootDecision, String> {
+        self.remember(canonical_root, TrustRootState::Trusted)
+    }
+
+    pub fn remember_declined_for_test(&mut self, canonical_root: &std::path::Path) -> Result<TrustRootDecision, String> {
+        self.remember(canonical_root, TrustRootState::Declined)
+    }
+
+    pub fn apply_remembered_trust_for_document(
+        &self,
+        window_label: &str,
+        doc_id: u64,
+        doc_path: &std::path::Path,
+        grants: &mut crate::preview::grants::GrantStore,
+    ) -> Result<AppliedTrustRoots, String> {
+        let context = crate::preview::git_root::discover_document_trust_context(doc_path)?;
+        let Some(repo_root) = context.git_root else {
+            return Ok(AppliedTrustRoots::default());
+        };
+        match self.decision_for(&repo_root) {
+            Some(TrustRootState::Trusted) => {
+                grants.grant_root(window_label, doc_id, &repo_root)?;
+                Ok(AppliedTrustRoots {
+                    granted_roots: vec![repo_root],
+                    should_prompt_for_repo_root: false,
+                    ..AppliedTrustRoots::default()
+                })
+            }
+            Some(TrustRootState::Declined) => Ok(AppliedTrustRoots {
+                declined_roots: vec![repo_root],
+                should_prompt_for_repo_root: false,
+                ..AppliedTrustRoots::default()
+            }),
+            Some(TrustRootState::Unknown) | None => Ok(AppliedTrustRoots {
+                recommended_repo_root: Some(repo_root),
+                should_prompt_for_repo_root: true,
+                ..AppliedTrustRoots::default()
+            }),
+        }
+    }
+}
+```
+
+Persisted trust roots live in the same application settings/state area used by other preview preferences. The JSON stores only:
+
+```json
+{
+  "roots": [
+    { "canonical_root": "/repo", "state": "trusted" },
+    { "canonical_root": "/other/repo", "state": "declined" }
+  ]
+}
+```
+
+`cmd/file.rs`, `cmd/doc.rs`, and `doc/registry.rs` must populate trust context as part of file load/register, before first render. Untitled buffers skip git-root discovery and never prompt for repository trust until saved. Reopening a saved file inside a remembered trusted root applies the session grant before the first render request is resolved, so the preview does not flash blocked local images solely because the app restarted.
+
+Extend every backend response that creates/adopts a saved Markdown document with a serializable UI trust context:
+
+```rust
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct DocumentTrustContextForUi {
+    pub doc_dir: Option<std::path::PathBuf>,
+    pub git_root: Option<std::path::PathBuf>,
+    pub git_root_state: TrustRootState,
+    pub should_prompt_for_repo_root: bool,
+}
+
+impl DocumentTrustContextForUi {
+    pub fn untitled() -> Self {
+        Self { doc_dir: None, git_root: None, git_root_state: TrustRootState::Unknown, should_prompt_for_repo_root: false }
+    }
+}
+
+pub fn trust_context_for_opened_document(doc_path: &std::path::Path) -> Result<DocumentTrustContextForUi, String> {
+    let discovered = crate::preview::git_root::discover_document_trust_context(doc_path)?;
+    let state = discovered
+        .git_root
+        .as_deref()
+        .and_then(|root| trust_root_store().ok()?.lock().ok()?.decision_for(root))
+        .unwrap_or(TrustRootState::Unknown);
+    Ok(DocumentTrustContextForUi {
+        doc_dir: Some(discovered.doc_dir),
+        git_root: discovered.git_root.clone(),
+        git_root_state: state,
+        should_prompt_for_repo_root: discovered.git_root.is_some() && state == TrustRootState::Unknown,
+    })
+}
+```
+
+Add `trust_context: DocumentTrustContextForUi` to `cmd::file::OpenedDoc`, `cmd::doc::RegisteredDoc`, and the `opened_document` payload returned by backend-mediated link activation when it opens a Markdown file. In `register_opened` and `register_doc`, compute the trust context before returning the document to the UI. For saved documents, also call `apply_remembered_trust_for_document(window_label, doc_id, path, grant_store)` before returning so the first UI render sees active grants. In `ui/src/main.ts`, extend `OpenedDoc` and `OpenedDocumentFromLink` with `trust_context`, store it beside the tab/document metadata, and call `trustPolicyPanel.setTrustContext(doc.trust_context)` before scheduling the first render.
+
+Export the new modules from `crates/pmd-app/src/preview/mod.rs`:
+
+```rust
+pub mod asset_scope;
+pub mod git_root;
+pub mod grants;
+pub mod image_workflow;
+pub mod trust_roots;
+```
+
 - [ ] **Step 11.4: Implement commands**
 
 Production Tauri commands derive `window_label` from the current `Window`, while test/internal helpers use an explicit label:
 
 - `grant_asset_folder(window, validation, doc_id, version, placeholder_id) -> GrantResult`
+- `grant_recommended_root(window, validation, doc_id, version, canonical_root) -> GrantResult`
 - `revoke_asset_grant(window, validation, doc_id, grant_id) -> GrantResult`
 - `list_asset_grants(window, doc_id) -> Vec<AssetGrant>`
+- `remember_trusted_root(canonical_root) -> TrustRootDecision`
+- `remember_declined_root(canonical_root) -> TrustRootDecision`
+- `forget_trust_root(canonical_root) -> TrustRootDecision`
+- `list_trust_roots() -> Vec<TrustRootDecision>`
 - `grant_asset_folder_for_test(window_label, doc_id, version, placeholder_id, picked_root) -> GrantResult`
+- `grant_recommended_root_for_test(window_label, doc_id, version, canonical_root) -> GrantResult`
 - `revoke_asset_grant_for_test(window_label, doc_id, grant_id) -> GrantResult`
 - `list_asset_grants_for_test(window_label, doc_id) -> Vec<AssetGrant>`
+- `remember_trusted_root_for_test(canonical_root) -> TrustRootDecision`
+- `remember_declined_root_for_test(canonical_root) -> TrustRootDecision`
+- `forget_trust_root_for_test(canonical_root) -> TrustRootDecision`
+- `list_trust_roots_for_test() -> Vec<TrustRootDecision>`
 
 Command code shape:
 
@@ -6478,6 +7005,7 @@ Command code shape:
 use std::sync::{Mutex, OnceLock};
 
 static GRANT_STORE: OnceLock<Mutex<GrantStore>> = OnceLock::new();
+static TRUST_ROOT_STORE: OnceLock<Mutex<TrustRootStore>> = OnceLock::new();
 
 pub fn init_grant_store(asset_scope: tauri::scope::fs::Scope) -> Result<(), String> {
     GRANT_STORE
@@ -6485,8 +7013,25 @@ pub fn init_grant_store(asset_scope: tauri::scope::fs::Scope) -> Result<(), Stri
         .map_err(|_| "Asset grant store already initialized".to_string())
 }
 
+pub fn init_trust_root_store(settings_path: std::path::PathBuf) -> Result<(), String> {
+    let store = match TrustRootStore::load(settings_path) {
+        Ok(store) => store,
+        Err(err) => {
+            tracing::warn!(error = %err, "failed to load trusted asset roots; starting with an empty store");
+            TrustRootStore::empty_at(settings_path)
+        }
+    };
+    TRUST_ROOT_STORE
+        .set(Mutex::new(store))
+        .map_err(|_| "Trust root store already initialized".to_string())
+}
+
 fn grant_store() -> Result<&'static Mutex<GrantStore>, String> {
     GRANT_STORE.get().ok_or_else(|| "Asset grant store is not initialized".to_string())
+}
+
+fn trust_root_store() -> Result<&'static Mutex<TrustRootStore>, String> {
+    TRUST_ROOT_STORE.get().ok_or_else(|| "Trust root store is not initialized".to_string())
 }
 
 async fn pick_folder_for_placeholder(
@@ -6512,6 +7057,7 @@ pub struct GrantResult {
     pub rerender_version: u64,
 }
 
+#[tauri::command]
 pub async fn grant_asset_folder(
     window: tauri::Window,
     validation: tauri::State<'_, crate::preview::render_pipeline::ValidationWorker>,
@@ -6526,6 +7072,7 @@ pub async fn grant_asset_folder(
     Ok(result)
 }
 
+#[tauri::command]
 pub async fn revoke_asset_grant(
     window: tauri::Window,
     validation: tauri::State<'_, crate::preview::render_pipeline::ValidationWorker>,
@@ -6537,8 +7084,42 @@ pub async fn revoke_asset_grant(
     Ok(result)
 }
 
+#[tauri::command]
 pub fn list_asset_grants(window: tauri::Window, doc_id: u64) -> Result<Vec<AssetGrant>, String> {
     list_asset_grants_for_test(window.label().to_string(), doc_id)
+}
+
+#[tauri::command]
+pub async fn grant_recommended_root(
+    window: tauri::Window,
+    validation: tauri::State<'_, crate::preview::render_pipeline::ValidationWorker>,
+    doc_id: u64,
+    version: u64,
+    canonical_root: std::path::PathBuf,
+) -> Result<GrantResult, String> {
+    let result = grant_recommended_root_for_test(window.label().to_string(), doc_id, version, canonical_root)?;
+    validation.invalidate_for_grant_change(doc_id).await;
+    Ok(result)
+}
+
+#[tauri::command]
+pub fn remember_trusted_root(canonical_root: std::path::PathBuf) -> Result<TrustRootDecision, String> {
+    remember_trusted_root_for_test(canonical_root)
+}
+
+#[tauri::command]
+pub fn remember_declined_root(canonical_root: std::path::PathBuf) -> Result<TrustRootDecision, String> {
+    remember_declined_root_for_test(canonical_root)
+}
+
+#[tauri::command]
+pub fn forget_trust_root(canonical_root: std::path::PathBuf) -> Result<TrustRootDecision, String> {
+    forget_trust_root_for_test(canonical_root)
+}
+
+#[tauri::command]
+pub fn list_trust_roots() -> Result<Vec<TrustRootDecision>, String> {
+    list_trust_roots_for_test()
 }
 
 pub fn grant_asset_folder_for_test(
@@ -6550,6 +7131,35 @@ pub fn grant_asset_folder_for_test(
 ) -> Result<GrantResult, String> {
     let grant = grant_store()?.lock().unwrap().grant_root(&window_label, doc_id, &picked_root)?;
     Ok(GrantResult { grants: vec![grant], rerender_doc_id: doc_id, rerender_version: version + 1 })
+}
+
+pub fn grant_recommended_root_for_test(
+    window_label: String,
+    doc_id: u64,
+    version: u64,
+    canonical_root: std::path::PathBuf,
+) -> Result<GrantResult, String> {
+    trust_root_store()?.lock().unwrap().remember(&canonical_root, TrustRootState::Trusted)?;
+    let grant = grant_store()?.lock().unwrap().grant_root(&window_label, doc_id, &canonical_root)?;
+    Ok(GrantResult { grants: vec![grant], rerender_doc_id: doc_id, rerender_version: version + 1 })
+}
+
+pub fn remember_trusted_root_for_test(canonical_root: std::path::PathBuf) -> Result<TrustRootDecision, String> {
+    trust_root_store()?.lock().unwrap().remember(&canonical_root, TrustRootState::Trusted)
+}
+
+pub fn remember_declined_root_for_test(canonical_root: std::path::PathBuf) -> Result<TrustRootDecision, String> {
+    trust_root_store()?.lock().unwrap().remember(&canonical_root, TrustRootState::Declined)
+}
+
+pub fn forget_trust_root_for_test(canonical_root: std::path::PathBuf) -> Result<TrustRootDecision, String> {
+    let canonical_root = canonical_root.canonicalize().map_err(|err| err.to_string())?;
+    trust_root_store()?.lock().unwrap().forget(&canonical_root)?;
+    Ok(TrustRootDecision { canonical_root, state: TrustRootState::Unknown })
+}
+
+pub fn list_trust_roots_for_test() -> Result<Vec<TrustRootDecision>, String> {
+    Ok(trust_root_store()?.lock().unwrap().list())
 }
 
 pub fn revoke_asset_grant_for_test(window_label: String, doc_id: u64, grant_id: AssetGrantId) -> Result<GrantResult, String> {
@@ -6566,16 +7176,9 @@ pub fn active_grant_roots_for_render(window_label: &str, doc_id: u64) -> Result<
 }
 ```
 
-Export the new modules from `crates/pmd-app/src/preview/mod.rs`:
-
-```rust
-pub mod asset_scope;
-pub mod grants;
-pub mod image_workflow;
-```
-
 Every successful grant/revoke triggers rerender and async revalidation for affected documents in the same window/document context only.
-Register `grant_asset_folder`, `revoke_asset_grant`, and `list_asset_grants` in `crates/pmd-app/src/main.rs`. In the same setup path, call `crate::preview::grants::init_grant_store(app.asset_protocol_scope()).expect("asset grant store")` before the first render command can run.
+Every successful recommended-root trust persists the trusted root before creating the session grant. A grant failure after persistence must return a clear error and leave the trust decision in settings, because the user explicitly trusted the root and can remove it from settings.
+Register `grant_asset_folder`, `grant_recommended_root`, `revoke_asset_grant`, `list_asset_grants`, `remember_trusted_root`, `remember_declined_root`, `forget_trust_root`, and `list_trust_roots` in `crates/pmd-app/src/main.rs`. In the same setup path, call `crate::preview::grants::init_grant_store(app.asset_protocol_scope()).expect("asset grant store")` and initialize `TrustRootStore` from the app settings/state directory before document open/register or the first render command can run.
 Modify `crates/pmd-app/src/cmd/render.rs` so every render appends active grant roots before resource resolution. This extends the Block 7 render command; keep Block 6 link registration and Block 7 async validation observe/spawn behavior intact:
 
 ```rust
@@ -6651,7 +7254,57 @@ export function registerAssetGrantActions(
 }
 ```
 
-Register `asset.grantFolder` and `asset.revokeGrant` in `ui/src/actions.ts`. Wire diagnostics primary action buttons and resource policy panel revoke controls to these action ids, not to ad hoc click handlers. In `ui/src/main.ts`, pass:
+`ui/src/trust_roots.ts` owns persistent trust-root UI types and helpers:
+
+```ts
+export type TrustRootState = "trusted" | "declined" | "unknown";
+
+export interface TrustRootDecision {
+  canonical_root: string;
+  state: TrustRootState;
+}
+
+export interface DocumentTrustContext {
+  doc_dir: string | null;
+  git_root: string | null;
+  git_root_state: TrustRootState;
+  should_prompt_for_repo_root: boolean;
+}
+
+export function recommendedTrustRoots(context: DocumentTrustContext): string[] {
+  if (!context.git_root || !context.should_prompt_for_repo_root) return [];
+  if (context.git_root_state !== "unknown") return [];
+  return [context.git_root];
+}
+```
+
+Register `asset.grantFolder`, `asset.trustRepositoryRoot`, `asset.declineRepositoryRoot`, `asset.revokeGrant`, and `settings.removeTrustRoot` in `ui/src/actions.ts`. Wire diagnostics primary action buttons, repository-root recommendation buttons, settings remove buttons, and resource policy panel revoke controls to these action ids, not to ad hoc click handlers. Extend `registerAssetGrantActions` with:
+
+```ts
+async function trustRecommendedRoot(docId: number, version: number, canonicalRoot: string) {
+  if (!context.isEnabled("asset.trustRepositoryRoot")) return;
+  const result = await invoke<GrantResult>("grant_recommended_root", { docId, version, canonicalRoot });
+  await rerenderIfStillCurrent(result, "asset-grant");
+}
+
+async function declineRecommendedRoot(canonicalRoot: string) {
+  if (!context.isEnabled("asset.declineRepositoryRoot")) return;
+  await invoke("remember_declined_root", { canonicalRoot });
+  trustPolicyPanel.setRecommendedRoots([]);
+}
+```
+
+`ui/src/trust_policy_panel.ts` must expose:
+
+- `setActiveGrants(grants: AssetGrant[])`
+- `setTrustContext(context: DocumentTrustContext | null)`
+- `setRecommendedRoots(roots: string[])`
+
+If the current document has an unknown git root, the panel shows a compact recommendation row: `Trust repository root: <path>` with actions to trust or decline. If the root is declined, the recommendation stays hidden. If the root is trusted and materialized, the root is listed with active trust/grants and can be revoked as a session grant for the current document. Persistent removal lives in settings, not in the per-document trust panel.
+
+`ui/src/settings_menu.ts` must list trusted and declined roots from `list_trust_roots`. Each row has a remove action wired to `forget_trust_root`, after which the settings list refreshes. Removing a trusted root from settings affects future document loads; the UI may also offer a separate current-session revoke button through the trust policy panel if a session grant is active.
+
+In `ui/src/main.ts`, pass:
 
 ```ts
 async function refreshAssetGrantsForActiveDoc(): Promise<void> {
@@ -6685,10 +7338,11 @@ Do not use `document.reloadFromDisk` for grant or revoke recovery. Grant/revoke 
 
 ```bash
 cargo test -p pmd-app --test asset_grants -j 2
+cargo test -p pmd-app --test trust_roots -j 2
 cargo check -p pmd-e2e --tests -j 2
 cd ui && npm run test:unit
 cd ui && npm run typecheck
-cd ui && npm run test:e2e:playwright -- e2e/trust-policy.spec.cjs --grep "Grant Folder|revocation"
+cd ui && npm run test:e2e:playwright -- e2e/trust-policy.spec.cjs --grep "Grant Folder|revocation|repository root"
 ```
 
 Expected: all commands pass.
@@ -6696,14 +7350,14 @@ Expected: all commands pass.
 - [ ] **Step 11.7: Review, commit, and merge**
 
 ```bash
-ccc --yolo @cx-reviewer "Review asset grants for session scoping, symlink safety, Tauri asset scope revocation, and UI recovery behavior. Treat WebView load/navigation security PASS as provisional until Block 12 WebDriver sentinels run. Return PASS or blockers."
+ccc --yolo @cx-reviewer "Review asset grants for session scoping, load-time git-root detection, persistent trusted/declined root decisions, settings removal, symlink safety, Tauri asset scope revocation, and UI recovery behavior. Treat WebView load/navigation security PASS as provisional until Block 12 WebDriver sentinels run. Return PASS or blockers."
 ```
 
 If the reviewer returns anything other than `PASS`, fix the findings and rerun Step 11.7. After `PASS`, run:
 
 ```bash
 git status --short
-git add crates/pmd-app/src/preview/grants.rs crates/pmd-app/src/preview/asset_scope.rs crates/pmd-app/src/preview/mod.rs crates/pmd-app/src/preview/resource_policy.rs crates/pmd-app/src/preview/contracts.rs crates/pmd-app/src/cmd/render.rs crates/pmd-app/src/main.rs crates/pmd-app/src/preview/image_workflow.rs crates/pmd-app/tests/asset_grants.rs ui/src/local_asset_grants.ts ui/src/diagnostics_panel.ts ui/src/trust_policy_panel.ts ui/src/actions.ts ui/src/main.ts crates/pmd-e2e/tests/asset_grants.rs ui/e2e/trust-policy.spec.cjs ui/e2e/helpers.cjs ui/tsconfig.json
+git add crates/pmd-app/src/preview/grants.rs crates/pmd-app/src/preview/asset_scope.rs crates/pmd-app/src/preview/git_root.rs crates/pmd-app/src/preview/trust_roots.rs crates/pmd-app/src/preview/mod.rs crates/pmd-app/src/preview/resource_policy.rs crates/pmd-app/src/preview/contracts.rs crates/pmd-app/src/cmd/doc.rs crates/pmd-app/src/cmd/render.rs crates/pmd-app/src/doc/registry.rs crates/pmd-app/src/main.rs crates/pmd-app/src/preview/image_workflow.rs crates/pmd-app/tests/asset_grants.rs crates/pmd-app/tests/trust_roots.rs ui/src/local_asset_grants.ts ui/src/trust_roots.ts ui/src/diagnostics_panel.ts ui/src/trust_policy_panel.ts ui/src/settings_menu.ts ui/src/actions.ts ui/src/main.ts crates/pmd-e2e/tests/asset_grants.rs ui/e2e/trust-policy.spec.cjs ui/e2e/helpers.cjs ui/tsconfig.json
 git commit -m "feat(app): add recoverable local asset grants"
 WORKTREE_ROOT="$(git rev-parse --show-toplevel)"
 INTEGRATION_ROOT="$(cd "$WORKTREE_ROOT/../.." && pwd -P)"
@@ -7333,6 +7987,6 @@ Type consistency check:
 
 - Rust/TypeScript contracts use snake_case backend field names across `RenderResult`, `DocumentFacts`, `DocumentDiagnostics`, `ResourcePolicyReport`, `ResourceDecision`, and `LinkValidationSummary`.
 - `block-{n}`, `image-{n}`, `data-pmd-image-id`, and `data-pmd-link-id` identifiers are stable across `pmd-core`, `pmd-app`, UI handlers, and e2e probes.
-- Shortcut action ids use `help.shortcuts`, `navigate.commandOverlay`, `navigate.outline`, `diagnostics.togglePanel`, `asset.grantFolder`, and `asset.revokeGrant` consistently.
+- Shortcut action ids use `help.shortcuts`, `navigate.commandOverlay`, `navigate.outline`, `diagnostics.togglePanel`, `asset.grantFolder`, `asset.trustRepositoryRoot`, `asset.declineRepositoryRoot`, `asset.revokeGrant`, and `settings.removeTrustRoot` consistently.
 - Asset grants use canonical roots from the backend grant store and are appended to `ResourcePolicyContext.allowed_roots` before rerender.
 - Async diagnostics carry `(doc_id, version)`, are emitted as full enriched replacements, and are dropped in the UI when they no longer match the active render.

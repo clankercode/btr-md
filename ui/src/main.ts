@@ -1,8 +1,8 @@
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
+import { getCurrentWindow } from '@tauri-apps/api/window';
 import { mountEditor, type EditorHandle } from './editor.js';
 import { createChrome, type Mode } from './chrome.js';
-import { createHotkeyHandler, createOverlay } from './hotkeys.js';
 import { attachScrollSync } from './scroll_sync.js';
 import { markAllNodes, rerenderForThemeChange } from './theme_apply.js';
 import { renderMermaidNodes, setMermaidTheme } from './mermaid_runner.js';
@@ -21,7 +21,8 @@ import {
 } from './doc_state.js';
 import { createTabStore, type DocTab } from './tabs.js';
 import { createTabBar, type TabBarInstance } from './tabbar.js';
-import { createFileBrowser, type FileBrowserInstance } from './file_browser.js';
+import { createFileBrowser, type FileBrowserInstance, type DirListing } from './file_browser.js';
+import { createWorkspaceModel, parentOf } from './workspace.js';
 import { createSettingsMenu, type SettingsSnapshot, type HandlerStatus } from './settings_menu.js';
 import { computeCounts } from './counts.js';
 import { createInsertMenu, type AlertType, type InsertMenuInstance } from './insert_menu.js';
@@ -31,12 +32,36 @@ import { decorateTables } from './table_copy.js';
 import { installDragOverlay } from './drag_overlay.js';
 import { type LoadedSession } from './session.js';
 import { createSessionManager } from './session_manager.js';
-
-interface RenderResult {
-  html: string;
-  version: number;
-  render_nonce: string;
-}
+import { reconcileBlocks, type BlockRef } from './block_reconcile.js';
+import {
+  createActionRegistry,
+  defaultActionSpecs,
+  type ActionId,
+} from './actions.js';
+import {
+  installActionHotkeys,
+  type ShortcutOverrides,
+} from './keybindings.js';
+import { createCommandOverlay } from './command_overlay.js';
+import { createShortcutEditor } from './shortcut_editor.js';
+import {
+  attachPreviewLinkActivation,
+  createExternalConfirmationDialog,
+  handleLinkActivationResponse,
+  type OpenedDocumentFromLink,
+} from './link_activation.js';
+import {
+  type DocumentDiagnostics,
+  type HeadingFact,
+  type RenderResult,
+} from './document_contracts.js';
+import { createDocumentFactsStore } from './document_facts_store.js';
+import { createOutlinePanel } from './outline_panel.js';
+import { deriveDiagnosticsPresentation, type DiagnosticsSettings } from './diagnostics.js';
+import { createDiagnosticsPanel } from './diagnostics_panel.js';
+import { renderInlineIssues } from './inline_issues.js';
+import { deriveTrustStatus } from './resource_policy.js';
+import { createTrustPolicyPanel } from './trust_policy_panel.js';
 
 interface Settings {
   active_theme: string | null;
@@ -51,6 +76,14 @@ interface Settings {
   diff_mode: DiffMode;
   dont_ask_default_handler: boolean;
   mono_font: string | null;
+  shortcut_overrides: ShortcutOverrides;
+}
+
+declare global {
+  interface Window {
+    __pmdE2e?: boolean;
+    __pmdE2eActions?: string[];
+  }
 }
 
 interface OpenedDoc {
@@ -67,6 +100,7 @@ interface OpenedDoc {
 
 const previewPane = document.getElementById('preview-pane') as HTMLElement;
 const previewContent = document.getElementById('pmd-content') as HTMLElement;
+const externalConfirmation = createExternalConfirmationDialog();
 const editorPane = document.createElement('div');
 editorPane.id = 'editor-pane';
 editorPane.className = 'pmd-editor-pane';
@@ -85,13 +119,107 @@ splitResizer.tabIndex = 0;
 const tabBodyEl = document.createElement('div');
 tabBodyEl.id = 'pmd-tab-body';
 
+const mainRegion = document.createElement('div');
+mainRegion.id = 'main-region';
+mainRegion.appendChild(editorPane);
+mainRegion.appendChild(splitResizer);
+mainRegion.appendChild(previewPane);
+mainRegion.appendChild(tabBodyEl);
+
 const appContainer = document.createElement('div');
 appContainer.id = 'app-container';
-appContainer.appendChild(editorPane);
-appContainer.appendChild(splitResizer);
-appContainer.appendChild(previewPane);
-appContainer.appendChild(tabBodyEl);
+
+const SIDEBAR_VISIBLE_KEY = 'pmd:sidebar:visible';
+const SIDEBAR_WIDTH_KEY = 'pmd:sidebar:width';
+
+const sidebarEl = document.createElement('div');
+sidebarEl.id = 'pmd-sidebar';
+
+const sidebarResizer = document.createElement('div');
+sidebarResizer.id = 'sidebar-resizer';
+sidebarResizer.className = 'pmd-split-resizer';
+sidebarResizer.setAttribute('role', 'separator');
+sidebarResizer.setAttribute('aria-orientation', 'vertical');
+sidebarResizer.setAttribute('aria-label', 'Resize folder sidebar');
+sidebarResizer.tabIndex = 0;
+
+function applySidebarWidth(px: number): void {
+  const clamped = Math.max(140, Math.min(px, 600));
+  appContainer.style.setProperty('--pmd-sidebar-w', `${clamped}px`);
+}
+function applySidebarVisible(visible: boolean): void {
+  document.body.dataset.sidebar = visible ? 'on' : 'off';
+}
+
+const savedWidth = Number(localStorage.getItem(SIDEBAR_WIDTH_KEY) || '260');
+applySidebarWidth(Number.isFinite(savedWidth) ? savedWidth : 260);
+applySidebarVisible(localStorage.getItem(SIDEBAR_VISIBLE_KEY) !== '0');
+
+let sidebarResizing = false;
+sidebarResizer.addEventListener('pointerdown', (e) => {
+  sidebarResizing = true;
+  sidebarResizer.setPointerCapture(e.pointerId);
+});
+sidebarResizer.addEventListener('pointermove', (e) => {
+  if (!sidebarResizing) return;
+  const rect = appContainer.getBoundingClientRect();
+  applySidebarWidth(e.clientX - rect.left);
+});
+const endSidebarResize = (e: PointerEvent) => {
+  if (!sidebarResizing) return;
+  sidebarResizing = false;
+  try { sidebarResizer.releasePointerCapture(e.pointerId); } catch { /* ignore */ }
+  const w = appContainer.style.getPropertyValue('--pmd-sidebar-w').replace('px', '');
+  localStorage.setItem(SIDEBAR_WIDTH_KEY, w || '260');
+};
+sidebarResizer.addEventListener('pointerup', endSidebarResize);
+sidebarResizer.addEventListener('pointercancel', endSidebarResize);
+
+appContainer.appendChild(sidebarEl);
+appContainer.appendChild(sidebarResizer);
+appContainer.appendChild(mainRegion);
 document.body.appendChild(appContainer);
+
+const workspace = createWorkspaceModel({
+  listDir: (dir) => invoke<DirListing>('list_dir', { dir }),
+});
+
+async function setWorkspaceRoot(path: string): Promise<boolean> {
+  try {
+    const canon = await invoke<string>('set_workspace_root', { path });
+    await workspace.setRoot(canon);
+    return true;
+  } catch (e) {
+    console.warn('set_workspace_root rejected:', e);
+    return false;
+  }
+}
+
+// Keep the workspace's active-file highlight mirroring the active document.
+// Cold-start only: when no sticky root exists yet, default it to the file's
+// parent folder. Once a root exists it is sticky — opening files never moves
+// it; we just reveal/clear the active-file highlight against the current root.
+async function revealActiveFile(filePath: string): Promise<void> {
+  if (!workspace.root()) {
+    const parent = parentOf(filePath);
+    if (parent) await setWorkspaceRoot(parent);
+  }
+  await workspace.revealFile(filePath);
+}
+
+const browserDeps = {
+  model: workspace,
+  pickBaseDir: () => invoke<string | null>('pick_base_dir'),
+  onOpenFile: (path: string, opts: { background: boolean }) =>
+    openFile(path, { background: opts.background }),
+  setRoot: setWorkspaceRoot,
+  revealInFolder: (path: string) => {
+    void invoke('reveal_in_folder', { path });
+  },
+};
+
+const sidebarBrowser = createFileBrowser(browserDeps);
+sidebarEl.appendChild(sidebarBrowser.el);
 
 const SPLIT_RATIO_KEY = 'pmd:split-ratio';
 const MIN_RATIO = 0.2;
@@ -104,7 +232,7 @@ function clampRatio(r: number): number {
 
 function applySplitRatio(ratio: number): void {
   const clamped = clampRatio(ratio);
-  appContainer.style.setProperty('--pmd-split-ratio', String(clamped));
+  mainRegion.style.setProperty('--pmd-split-ratio', String(clamped));
   splitResizer.setAttribute('aria-valuenow', String(Math.round(clamped * 100)));
 }
 
@@ -121,7 +249,7 @@ splitResizer.addEventListener('pointerdown', (e) => {
 });
 splitResizer.addEventListener('pointermove', (e) => {
   if (!resizing) return;
-  const rect = appContainer.getBoundingClientRect();
+  const rect = mainRegion.getBoundingClientRect();
   const ratio = (e.clientX - rect.left) / rect.width;
   applySplitRatio(ratio);
 });
@@ -130,7 +258,7 @@ function endResize(e: PointerEvent) {
   resizing = false;
   splitResizer.releasePointerCapture(e.pointerId);
   document.body.classList.remove('pmd-resizing');
-  const ratio = parseFloat(appContainer.style.getPropertyValue('--pmd-split-ratio') || '0.5');
+  const ratio = parseFloat(mainRegion.style.getPropertyValue('--pmd-split-ratio') || '0.5');
   localStorage.setItem(SPLIT_RATIO_KEY, String(ratio));
 }
 splitResizer.addEventListener('pointerup', endResize);
@@ -142,7 +270,7 @@ splitResizer.addEventListener('dblclick', () => {
 splitResizer.addEventListener('keydown', (e) => {
   if (currentMode !== 'split') return;
   const current = parseFloat(
-    appContainer.style.getPropertyValue('--pmd-split-ratio') || String(DEFAULT_RATIO)
+    mainRegion.style.getPropertyValue('--pmd-split-ratio') || String(DEFAULT_RATIO)
   );
   let next = current;
   if (e.key === 'ArrowLeft') next = current - 0.02;
@@ -161,9 +289,6 @@ splitResizer.addEventListener('keydown', (e) => {
 // ---------------------------------------------------------------------------
 
 const chrome = createChrome(document.body);
-const hotkeyOverlay = createOverlay();
-hotkeyOverlay.style.display = 'none';
-document.body.appendChild(hotkeyOverlay);
 
 const store = createTabStore();
 const tabBar: TabBarInstance = createTabBar(store, {
@@ -181,14 +306,55 @@ const tabBar: TabBarInstance = createTabBar(store, {
 // Tab strip lives inside `.pmd-chrome`, below the toolbar.
 chrome.el.appendChild(tabBar.el);
 
+const factsStore = createDocumentFactsStore();
+const outlinePanel = createOutlinePanel({
+  onJump(blockId) {
+    jumpEditorToBlock(blockId);
+    previewContent
+      .querySelector<HTMLElement>(blockSelector(blockId))
+      ?.scrollIntoView({ block: 'start' });
+    editor?.focus();
+  },
+  restoreFocus() {
+    editor?.focus();
+  },
+});
+document.body.append(outlinePanel.element);
+
+let outlineObserver: IntersectionObserver | null = null;
+let outlineScrollFrame = 0;
+let outlineTrackingInterval = 0;
+
+const diagnosticsSettings: DiagnosticsSettings = {
+  inlineDetail: true,
+  panelExpanded: false,
+};
+
+const diagnosticsPanel = createDiagnosticsPanel({
+  onToggleExpanded: () => {
+    toggleDiagnosticsPanel();
+  },
+  onToggleInlineDetail: () => {
+    diagnosticsSettings.inlineDetail = !diagnosticsSettings.inlineDetail;
+    rerenderCurrentDiagnostics();
+  },
+  onPrimaryAction: (action) => {
+    void runDiagnosticPrimaryAction(action);
+  },
+  canRunPrimaryAction: (action) => isImplementedDiagnosticAction(action),
+});
+const trustPolicyPanel = createTrustPolicyPanel();
+document.body.append(diagnosticsPanel.element, trustPolicyPanel.element);
+
 // Declared before the toolbar block below assigns it (a later `let` would
 // otherwise re-initialise it to null after assignment).
 let insertMenu: InsertMenuInstance | null = null;
+let settingsMenu: ReturnType<typeof createSettingsMenu> | null = null;
 
 // Settings dropdown: appends its own trigger into the toolbar.
 const toolbarEl = chrome.el.querySelector('.pmd-toolbar');
 if (toolbarEl instanceof HTMLElement) {
-  createSettingsMenu(toolbarEl, {
+  settingsMenu = createSettingsMenu(toolbarEl, {
     getSettings: () => invoke<SettingsSnapshot>('get_settings'),
     setAutosaveMode: (m) => invoke('set_autosave_mode', { mode: m }).then(() => {}),
     setAutoreloadMode: (m) => invoke('set_autoreload_mode', { mode: m }).then(() => {}),
@@ -211,6 +377,10 @@ if (toolbarEl instanceof HTMLElement) {
     onBaseDirChange: (dir) => {
       browserBaseDir = dir;
       saveSession();
+      // Single source of truth: the picker just granted+persisted this folder,
+      // so re-root the shared workspace model. The sidebar and folder tab both
+      // render from it and update immediately (no restart needed).
+      void setWorkspaceRoot(dir);
     },
     onGistChange: (e) => {
       gistEnabled = e;
@@ -238,10 +408,25 @@ if (toolbarEl instanceof HTMLElement) {
   gistBtn.style.display = 'none';
   gistBtn.addEventListener('click', () => openGist());
   toolbarEl.appendChild(gistBtn);
+
+  const sidebarToggleBtn = document.createElement('button');
+  sidebarToggleBtn.className = 'pmd-btn pmd-btn-ghost pmd-btn-sm';
+  sidebarToggleBtn.type = 'button';
+  sidebarToggleBtn.textContent = '▌';
+  sidebarToggleBtn.title = 'Toggle sidebar (Ctrl+B)';
+  sidebarToggleBtn.addEventListener('click', () => {
+    void actionRegistry.runAction('view.toggleSidebar');
+  });
+  toolbarEl.appendChild(sidebarToggleBtn);
 }
 
 function applyGistVisibility(): void {
   if (gistBtn) gistBtn.style.display = gistEnabled ? '' : 'none';
+}
+
+function setPreviewZoom(value: number): void {
+  previewZoom = Math.max(0.5, Math.min(2, value));
+  previewContent.style.fontSize = `${previewZoom}rem`;
 }
 
 /** Drive the editor/mono font CSS var from a chosen family (any installed font,
@@ -279,6 +464,169 @@ let browserBaseDir: string | null = null;
 let gistEnabled = false;
 let diffMode: DiffMode = 'none';
 let gistBtn: HTMLButtonElement | null = null;
+let shortcutOverrides: ShortcutOverrides = {};
+let previewZoom = 1;
+
+function enabledActionIds(): Set<ActionId> {
+  return new Set(defaultActionSpecs.map((action) => action.id));
+}
+
+function recordActionForE2e(actionId: ActionId): boolean {
+  if (!window.__pmdE2e) return false;
+  window.__pmdE2eActions = window.__pmdE2eActions ?? [];
+  window.__pmdE2eActions.push(actionId);
+  return actionId === 'app.quit';
+}
+
+async function runAction(id: ActionId): Promise<void> {
+  if (recordActionForE2e(id)) return;
+  if (runOutlineAction(id)) return;
+  if (runDiagnosticsAction(id)) return;
+  switch (id) {
+    case 'file.new':
+      await newFile();
+      return;
+    case 'file.open':
+      await openFileDialog();
+      return;
+    case 'file.save':
+      await saveCurrentDoc();
+      return;
+    case 'file.saveAs':
+      await saveCurrentDocAs();
+      return;
+    case 'file.closeTab': {
+      const id = store.activeId();
+      if (id !== null) closeTab(id);
+      return;
+    }
+    case 'app.quit':
+      await getCurrentWindow().close();
+      return;
+    case 'view.zoomIn':
+      setPreviewZoom(previewZoom + 0.1);
+      return;
+    case 'view.zoomOut':
+      setPreviewZoom(previewZoom - 0.1);
+      return;
+    case 'view.zoomReset':
+      setPreviewZoom(1);
+      return;
+    case 'view.cycleMode':
+      cycleMode();
+      return;
+    case 'view.toggleWordWrap':
+      toggleWordWrap();
+      return;
+    case 'view.toggleSidebar': {
+      const next = document.body.dataset.sidebar !== 'on';
+      applySidebarVisible(next);
+      localStorage.setItem(SIDEBAR_VISIBLE_KEY, next ? '1' : '0');
+      return;
+    }
+    case 'navigate.commandOverlay':
+      commandOverlay.open();
+      return;
+    case 'help.shortcuts':
+      shortcutEditor.open();
+      return;
+    case 'theme.pick':
+      await showThemePicker();
+      return;
+    case 'settings.open':
+      await settingsMenu?.open();
+      return;
+    case 'menu.focus':
+      chrome.focusMenu();
+      return;
+    case 'file.copyPath': {
+      const p = activeFilePath();
+      if (p) await copyToClipboard(p, 'path');
+      return;
+    }
+    case 'file.copyFilename': {
+      const p = activeFilePath();
+      if (p) await copyToClipboard(basename(p), 'filename');
+      return;
+    }
+    case 'file.copyFileUrl': {
+      const p = activeFilePath();
+      if (p) await copyToClipboard(`file://${p}`, 'file URL');
+      return;
+    }
+    case 'file.revealInFolder': {
+      const p = activeFilePath();
+      if (p) await invoke('reveal_in_folder', { path: p }).catch((e) => showError(`Reveal failed: ${String(e)}`));
+      return;
+    }
+    case 'file.openDefaultApp': {
+      const p = activeFilePath();
+      if (p) await invoke('open_in_default_app', { path: p }).catch((e) => showError(`Open failed: ${String(e)}`));
+      return;
+    }
+    case 'file.clearRecent':
+      await invoke('clear_recent_files');
+      chrome.setRecentFiles([]);
+      return;
+    case 'document.reloadFromDisk':
+      await doReload();
+      return;
+    case 'document.mergeDiskChanges':
+      await doMerge();
+      return;
+    case 'navigate.fileBrowser':
+      store.addBrowser();
+      return;
+    case 'share.openGist':
+    case 'share.copyGistMarkdown':
+      await openGist();
+      return;
+    case 'edit.find':
+    case 'edit.findNext':
+    case 'edit.findPrevious':
+      editor?.focus();
+      return;
+    case 'view.setDiffMode':
+    case 'settings.pickBaseFolder':
+    case 'settings.selectMonoFont':
+    case 'settings.setDefaultHandler':
+    case 'navigate.outline':
+    case 'diagnostics.togglePanel':
+    case 'asset.grantFolder':
+    case 'asset.revokeGrant':
+      chrome.setStatus(defaultActionSpecs.find((action) => action.id === id)?.label ?? id);
+      return;
+    default:
+      assertNever(id);
+  }
+}
+
+const actionRegistry = createActionRegistry(defaultActionSpecs, {
+  run: runAction,
+  isEnabled: () => true,
+  isVisible: () => true,
+});
+
+const commandOverlay = createCommandOverlay(defaultActionSpecs, actionRegistry, {
+  isVisible: () => true,
+});
+const shortcutEditor = createShortcutEditor({
+  actions: defaultActionSpecs,
+  loadOverrides: () => shortcutOverrides,
+  saveOverrides: async (overrides) => {
+    const settings = await invoke<Settings>('set_shortcut_overrides', { overrides });
+    shortcutOverrides = settings.shortcut_overrides ?? {};
+  },
+  enabledActionIds,
+});
+document.body.append(commandOverlay.element, shortcutEditor.element);
+
+installActionHotkeys({
+  actions: defaultActionSpecs,
+  registry: actionRegistry,
+  getOverrides: () => shortcutOverrides,
+  isEnabled: () => true,
+});
 
 function basename(p: string): string {
   return p.split('/').pop() || p;
@@ -287,6 +635,66 @@ function basename(p: string): string {
 function showError(message: string): void {
   chrome.setStatus(message);
   console.error(message);
+}
+
+let unlistenDiagnostics: (() => void) | null = null;
+
+function activeDiagnostics(): DocumentDiagnostics | null {
+  const active = store.activeDoc();
+  if (!active) return null;
+  return factsStore.current(active.docId)?.diagnostics ?? null;
+}
+
+function rerenderCurrentDiagnostics(): void {
+  const diagnostics = activeDiagnostics();
+  if (!diagnostics) {
+    diagnosticsPanel.clear();
+    trustPolicyPanel.clear();
+    renderInlineIssues(previewContent, []);
+    return;
+  }
+  applyDocumentDiagnostics(diagnostics);
+}
+
+function toggleDiagnosticsPanel(): void {
+  diagnosticsSettings.panelExpanded = !diagnosticsSettings.panelExpanded;
+  rerenderCurrentDiagnostics();
+}
+
+function runDiagnosticsAction(id: ActionId): boolean {
+  if (id !== 'diagnostics.togglePanel') return false;
+  toggleDiagnosticsPanel();
+  return true;
+}
+
+async function runDiagnosticPrimaryAction(action: string): Promise<void> {
+  const spec = defaultActionSpecs.find((item) => item.id === action);
+  if (!spec || !isImplementedDiagnosticAction(action)) {
+    chrome.setStatus(action);
+    return;
+  }
+  await runAction(spec.id);
+}
+
+function isImplementedDiagnosticAction(action: string): boolean {
+  return action !== 'asset.grantFolder' && action !== 'asset.revokeGrant';
+}
+
+function applyDocumentDiagnostics(diagnostics: DocumentDiagnostics): void {
+  const presentation = deriveDiagnosticsPresentation(diagnostics, diagnosticsSettings);
+  diagnosticsPanel.render(presentation);
+  renderInlineIssues(previewContent, presentation.inlineIssues);
+  trustPolicyPanel.render({
+    status: deriveTrustStatus(diagnostics.resources, diagnostics.issues),
+    report: diagnostics.resources,
+    issues: diagnostics.issues,
+  });
+}
+
+function clearDocumentIntelligenceUi(): void {
+  diagnosticsPanel.clear();
+  trustPolicyPanel.clear();
+  renderInlineIssues(previewContent, []);
 }
 
 function docTabByDocId(docId: number): DocTab | undefined {
@@ -299,6 +707,191 @@ function tabBuffer(tab: DocTab): string {
   if (editor && store.activeId() === tab.id) return editor.getValue();
   return tab.editorState ? tab.editorState.doc.toString() : tab.baseContent;
 }
+
+function currentPreviewDoc(): { doc_id: number; version: number } | null {
+  const tab = store.activeDoc();
+  const version = Number(previewContent.dataset.versionApplied || '0');
+  if (!tab || !version) return null;
+  return { doc_id: tab.docId, version };
+}
+
+function cssEscape(value: string): string {
+  return typeof CSS !== 'undefined' && CSS.escape ? CSS.escape(value) : value.replace(/["\\]/g, '\\$&');
+}
+
+function blockSelector(blockId: string): string {
+  return `[data-pmd-block-id="${cssEscape(blockId)}"]`;
+}
+
+function scrollPreviewToBlock(blockId: string): void {
+  const escaped = cssEscape(blockId);
+  const target = previewContent.querySelector(`#${escaped}, [data-pmd-block-id="${escaped}"]`);
+  if (target instanceof HTMLElement) target.scrollIntoView({ block: 'center' });
+}
+
+function jumpEditorToBlock(blockId: string): void {
+  const active = store.activeDoc();
+  if (!active || !editor) return;
+  const snapshot = factsStore.current(active.docId);
+  const heading = snapshot?.headings.find((item) => item.block_id === blockId);
+  if (!heading) return;
+  const lineNumber = Math.max(1, Math.min(editor.view.state.doc.lines, heading.line_start));
+  const line = editor.view.state.doc.line(lineNumber);
+  editor.view.dispatch({
+    selection: { anchor: line.from },
+    scrollIntoView: true,
+  });
+}
+
+function applyOutlineRender(result: RenderResult): boolean {
+  if (!factsStore.accept({
+    doc_id: result.doc_id,
+    version: result.version,
+    headings: result.facts.headings,
+    facts: result.facts,
+    diagnostics: result.diagnostics,
+  })) {
+    return false;
+  }
+  outlinePanel.setHeadings(result.facts.headings);
+  observePreviewHeadings(result.facts.headings);
+  updateOutlineFromEditorCaret();
+  applyDocumentDiagnostics(result.diagnostics);
+  return true;
+}
+
+function observePreviewHeadings(headings: HeadingFact[]): void {
+  outlineObserver?.disconnect();
+  outlineObserver = new IntersectionObserver((entries) => {
+    const visible = entries
+      .filter((entry) => entry.isIntersecting)
+      .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
+    const blockId = visible?.target.getAttribute('data-pmd-block-id') ?? null;
+    if (blockId) outlinePanel.setActiveBlock(blockId);
+  }, { root: previewPane, rootMargin: '0px 0px -70% 0px', threshold: 0.01 });
+  for (const heading of headings) {
+    const node = previewContent.querySelector(blockSelector(heading.block_id));
+    if (node) outlineObserver.observe(node);
+  }
+  updateOutlineFromPreviewScroll();
+}
+
+function updateOutlineFromEditorCaret(): void {
+  const active = store.activeDoc();
+  if (!active || !editor) return;
+  const snapshot = factsStore.current(active.docId);
+  if (!snapshot) return;
+  const line = editor.view.state.doc.lineAt(editor.view.state.selection.main.head).number;
+  const heading = [...snapshot.headings].reverse().find((item) => item.line_start <= line);
+  outlinePanel.setActiveBlock(heading?.block_id ?? null);
+}
+
+function updateOutlineFromPreviewScroll(): void {
+  const active = store.activeDoc();
+  if (!active) return;
+  const snapshot = factsStore.current(active.docId);
+  if (!snapshot) return;
+  const paneRect = previewPane.getBoundingClientRect();
+  const visibleHeadings: Array<{ blockId: string; top: number }> = [];
+  const marker = paneRect.top + Math.min(160, paneRect.height * 0.3);
+  let activeBlockId: string | null = null;
+  let activeVisibleBlockId: string | null = null;
+  for (const heading of snapshot.headings) {
+    const node = previewContent.querySelector(blockSelector(heading.block_id));
+    if (!(node instanceof HTMLElement)) continue;
+    const rect = node.getBoundingClientRect();
+    if (rect.bottom >= paneRect.top && rect.top <= paneRect.bottom) {
+      visibleHeadings.push({ blockId: heading.block_id, top: rect.top });
+      if (rect.top <= marker) activeVisibleBlockId = heading.block_id;
+    }
+    if (rect.top <= marker) activeBlockId = heading.block_id;
+  }
+  visibleHeadings.sort((a, b) => a.top - b.top);
+  outlinePanel.setActiveBlock(
+    activeVisibleBlockId ?? visibleHeadings[0]?.blockId ?? activeBlockId ?? snapshot.headings[0]?.block_id ?? null
+  );
+}
+
+function scheduleOutlineScrollUpdate(): void {
+  if (outlineScrollFrame) return;
+  outlineScrollFrame = window.requestAnimationFrame(() => {
+    outlineScrollFrame = 0;
+    updateOutlineFromPreviewScroll();
+  });
+}
+
+function startOutlineTrackingLoop(): void {
+  if (outlineTrackingInterval) return;
+  outlineTrackingInterval = window.setInterval(() => {
+    if (outlinePanel.element.hidden) {
+      window.clearInterval(outlineTrackingInterval);
+      outlineTrackingInterval = 0;
+      return;
+    }
+    updateOutlineFromPreviewScroll();
+  }, 100);
+}
+
+previewPane.addEventListener('scroll', scheduleOutlineScrollUpdate, { passive: true });
+document.addEventListener('scroll', scheduleOutlineScrollUpdate, { passive: true, capture: true });
+
+let outlineCaretListenersInstalled = false;
+
+function installOutlineCaretListeners(): void {
+  if (!editor || outlineCaretListenersInstalled) return;
+  editor.view.dom.addEventListener('keyup', updateOutlineFromEditorCaret);
+  editor.view.dom.addEventListener('mouseup', updateOutlineFromEditorCaret);
+  outlineCaretListenersInstalled = true;
+}
+
+function runOutlineAction(id: ActionId): boolean {
+  if (id !== 'navigate.outline') return false;
+  outlinePanel.setMode('overlay');
+  outlinePanel.focusSearch();
+  startOutlineTrackingLoop();
+  return true;
+}
+
+document.addEventListener('keydown', (event) => {
+  if (event.key !== 'Escape' || outlinePanel.element.hidden) return;
+  event.preventDefault();
+  outlinePanel.setMode('collapsed');
+  editor?.focus();
+}, { capture: true });
+
+async function adoptOpenedDocumentFromLink(documentFromBackend: OpenedDocumentFromLink): Promise<void> {
+  const doc: OpenedDoc = {
+    doc_id: documentFromBackend.doc_id,
+    path: documentFromBackend.path,
+    contents: documentFromBackend.contents,
+    state: documentFromBackend.state as FileState,
+  };
+  const existing = store.findDocByPath(doc.path);
+  if (existing) {
+    invoke('drop_doc', { docId: doc.doc_id }).catch(() => {});
+    store.setActive(existing.id);
+    return;
+  }
+  await addDocTab(doc, { background: false });
+  loadRecentFiles();
+  chrome.setStatus('Ready');
+}
+
+attachPreviewLinkActivation(previewContent, {
+  currentDoc: currentPreviewDoc,
+  invoke,
+  handleResponse: (response, doc) =>
+    handleLinkActivationResponse({
+      response,
+      docId: doc.doc_id,
+      version: doc.version,
+      invoke,
+      scrollToBlock: scrollPreviewToBlock,
+      openDocument: adoptOpenedDocumentFromLink,
+      showMessage: (message) => chrome.setStatus(message),
+      externalConfirmation,
+    }).catch((error) => showError(`Link failed: ${String(error)}`)),
+});
 
 // ---------------------------------------------------------------------------
 // Drag & drop.
@@ -400,37 +993,6 @@ chrome.onOpenInApp(() => {
 });
 chrome.setFileOpsEnabled(false);
 
-document.addEventListener('keydown', (e: KeyboardEvent) => {
-  if (e.ctrlKey && e.key === 't') {
-    e.preventDefault();
-    showThemePicker();
-  }
-  if (e.ctrlKey && e.key === 'n') {
-    e.preventDefault();
-    newFile();
-  }
-  if (e.ctrlKey && e.key === 'o') {
-    e.preventDefault();
-    openFileDialog();
-  }
-  if (e.ctrlKey && e.key === 's') {
-    e.preventDefault();
-    saveCurrentDoc();
-  }
-  if (e.ctrlKey && e.key === 'w') {
-    e.preventDefault();
-    const id = store.activeId();
-    if (id !== null) closeTab(id);
-  }
-  if (e.altKey && (e.key === 'z' || e.key === 'Z')) {
-    e.preventDefault();
-    if (editor) {
-      const wrap = editor.toggleWrap();
-      chrome.setStatus(wrap ? 'Word wrap on' : 'Word wrap off');
-    }
-  }
-});
-
 async function loadRecentFiles(): Promise<void> {
   try {
     const files = await invoke<string[]>('get_recent_files');
@@ -485,6 +1047,20 @@ function applyMode(mode: Mode): void {
   if (t) store.updateDoc(t.id, { mode });
 }
 
+function cycleMode(): void {
+  const modes: Mode[] = ['source', 'split', 'preview'];
+  const idx = modes.indexOf(currentMode);
+  const next = modes[(idx + 1) % modes.length];
+  applyMode(next);
+  document.body.dispatchEvent(new CustomEvent('mode-change', { detail: { mode: next } }));
+}
+
+function toggleWordWrap(): void {
+  if (!editor) return;
+  const wrap = editor.toggleWrap();
+  chrome.setStatus(wrap ? 'Word wrap on' : 'Word wrap off');
+}
+
 const systemColorSchemeQuery = window.matchMedia('(prefers-color-scheme: dark)');
 
 async function loadSettings(): Promise<Settings | null> {
@@ -510,15 +1086,6 @@ function handleSystemThemeChange(): void {
 }
 systemColorSchemeQuery.addEventListener('change', handleSystemThemeChange);
 
-const setupHotkeys = createHotkeyHandler(
-  () => currentMode,
-  (mode) => applyMode(mode),
-  () => {
-    hotkeyOverlay.style.display = 'flex';
-  }
-);
-setupHotkeys();
-
 chrome.onModeChange((mode) => applyMode(mode));
 
 document.body.addEventListener('mode-change', (event) => {
@@ -535,7 +1102,9 @@ document.body.addEventListener('mode-change', (event) => {
 interface RenderItem {
   md: string;
   tabId: number;
+  docId: number;
   seq: number;
+  version: number;
   resolve: () => void;
   reject: (e: unknown) => void;
 }
@@ -545,13 +1114,19 @@ let rendering = false;
 let currentVersion = 0;
 
 function scheduleRender(): Promise<void> {
+  // Drop any pending debounced edit-render: this render supersedes it (covers
+  // immediate tab-switch/reload/merge renders, and the debounced fire itself).
+  scheduleRenderDebounced.cancel();
   const tab = store.activeDoc();
   if (!tab || !editor) return Promise.resolve();
   tab.renderSeq++;
+  const version = ++currentVersion;
   const item: Omit<RenderItem, 'resolve' | 'reject'> = {
     md: editor.getValue(),
     tabId: tab.id,
+    docId: tab.docId,
     seq: tab.renderSeq,
+    version,
   };
   return new Promise<void>((resolve, reject) => {
     renderQueue.push({ ...item, resolve, reject });
@@ -564,23 +1139,47 @@ async function processRenderQueue(): Promise<void> {
   rendering = true;
   const item = renderQueue.shift()!;
   try {
-    currentVersion++;
     const result = await invoke<RenderResult>('render_cmd', {
-      version: currentVersion,
+      docId: item.docId,
+      version: item.version,
       markdown: item.md,
     });
     const tab = store.get(item.tabId);
     const stillCurrent =
-      tab && tab.kind === 'doc' && tab.renderSeq === item.seq && store.activeId() === item.tabId;
+      tab &&
+      tab.kind === 'doc' &&
+      tab.renderSeq === item.seq &&
+      tab.docId === result.doc_id &&
+      result.version === item.version &&
+      store.activeId() === item.tabId;
     if (stillCurrent) {
-      previewContent.innerHTML = result.html;
       previewContent.dataset.versionApplied = String(result.version);
       previewContent.dataset.pmdNonce = result.render_nonce;
-      markAllNodes(previewContent, result.render_nonce);
-      await renderMermaidNodes(previewContent, result.render_nonce);
-      await renderMathNodes(previewContent, result.render_nonce);
-      decorateCodeBlocks(previewContent);
-      decorateTables(previewContent, () => editor?.getValue() ?? '');
+      if (result.blocks && result.blocks.length > 0) {
+        const frag = document.createElement('div');
+        frag.innerHTML = result.html;
+        const changed = reconcileBlocks(previewContent, frag, result.blocks);
+        for (const node of changed) {
+          markAllNodes(node, result.render_nonce);
+          await renderMermaidNodes(node, result.render_nonce);
+          await renderMathNodes(node, result.render_nonce);
+          decorateCodeBlocks(node);
+          decorateTables(node, () => editor?.getValue() ?? '');
+        }
+        // Refresh the nonce on all kept (unchanged) nodes so that a later
+        // theme change (rerenderForThemeChange) does not skip them — it
+        // filters by the current root nonce.
+        previewContent.querySelectorAll<HTMLElement>('[data-pmd-nonce]')
+          .forEach((el) => { el.dataset.pmdNonce = result.render_nonce; });
+      } else {
+        previewContent.innerHTML = result.html;
+        markAllNodes(previewContent, result.render_nonce);
+        await renderMermaidNodes(previewContent, result.render_nonce);
+        await renderMathNodes(previewContent, result.render_nonce);
+        decorateCodeBlocks(previewContent);
+        decorateTables(previewContent, () => editor?.getValue() ?? '');
+      }
+      applyOutlineRender(result);
     }
     item.resolve();
   } catch (e) {
@@ -599,12 +1198,22 @@ async function ensureEditor(): Promise<void> {
   if (editor) return;
   editor = await mountEditor(editorPane, () => onActiveEdit());
   attachScrollSync(editor.view, previewPane);
+  installOutlineCaretListeners();
 }
+
+// Coalesce keystroke bursts into a single render. Each render re-parses the
+// whole document (Rust) and rebuilds the preview DOM (JS main thread); firing
+// one per keystroke on a large file pins the main thread and makes typing lag.
+// Tab-switch / reload / merge paths still call scheduleRender() directly so the
+// preview updates immediately on those non-typing actions.
+const scheduleRenderDebounced = debounce(() => {
+  scheduleRender();
+}, 80);
 
 function onActiveEdit(): void {
   const tab = store.activeDoc();
   if (!tab || !editor) return;
-  scheduleRender();
+  scheduleRenderDebounced();
   sendDocEdited(tab.docId, editor.getValue());
   scheduleIdleAutosave();
   scheduleCounts();
@@ -695,6 +1304,11 @@ store.onActivate((prev, next) => {
   }
   if (!next) {
     document.body.dataset.tabkind = 'empty';
+    factsStore.setActiveDoc(null);
+    outlinePanel.setHeadings([]);
+    outlinePanel.setMode('collapsed');
+    clearDocumentIntelligenceUi();
+    workspace.setActiveFile(null);
     renderEmptyBody();
     return;
   }
@@ -704,13 +1318,25 @@ store.onActivate((prev, next) => {
   switch (next.kind) {
     case 'doc':
       activateDocTab(next);
+      if (next.filePath) void revealActiveFile(next.filePath);
+      else workspace.setActiveFile(null);
       break;
     case 'empty':
+      workspace.setActiveFile(null);
       chrome.setCounts(null);
+      factsStore.setActiveDoc(null);
+      outlinePanel.setHeadings([]);
+      outlinePanel.setMode('collapsed');
+      clearDocumentIntelligenceUi();
       renderEmptyBody();
       break;
     case 'browser':
+      workspace.setActiveFile(null);
       chrome.setCounts(null);
+      factsStore.setActiveDoc(null);
+      outlinePanel.setHeadings([]);
+      outlinePanel.setMode('collapsed');
+      clearDocumentIntelligenceUi();
       renderBrowserBody();
       break;
     default:
@@ -723,6 +1349,8 @@ async function activateDocTab(tab: DocTab): Promise<void> {
   await ensureEditor();
   if (!editor) return;
   if (tab.editorState) editor.activateState(tab.editorState);
+  factsStore.setActiveDoc(tab.docId);
+  clearDocumentIntelligenceUi();
   invoke('set_active_doc', { docId: tab.docId }).catch(() => {});
   chrome.setFilename(tab.filePath ? basename(tab.filePath) : 'Untitled');
   applyMode(tab.mode);
@@ -758,16 +1386,7 @@ function renderEmptyBody(): void {
 
 function renderBrowserBody(): void {
   if (!fileBrowser) {
-    fileBrowser = createFileBrowser({
-      initialBaseDir: browserBaseDir,
-      listDir: (dir) => invoke('list_dir', { dir }),
-      pickBaseDir: () => invoke<string | null>('pick_base_dir'),
-      onOpenFile: (path, opts) => openFile(path, opts),
-      onBaseDirChange: (dir) => {
-        browserBaseDir = dir;
-        saveSession();
-      },
-    });
+    fileBrowser = createFileBrowser(browserDeps);
   }
   tabBodyEl.replaceChildren(fileBrowser.el);
 }
@@ -859,12 +1478,16 @@ async function openFile(path: string, opts: { background?: boolean } = {}): Prom
   }
 }
 
-async function saveCurrentDoc(): Promise<void> {
+async function saveCurrentDocAs(): Promise<void> {
+  await saveCurrentDoc(true);
+}
+
+async function saveCurrentDoc(forceSaveAs = false): Promise<void> {
   const tab = store.activeDoc();
   if (!tab || !editor) return;
   try {
     let path: string | null = null;
-    if (!tab.filePath) {
+    if (forceSaveAs || !tab.filePath) {
       const suggested = editor.getValue().split('\n')[0].slice(0, 50) || 'Untitled';
       const picked = await invoke<string | null>('save_dialog', { suggestedName: suggested + '.md' });
       if (!picked) return;
@@ -877,6 +1500,8 @@ async function saveCurrentDoc(): Promise<void> {
       chrome.setFilename(basename(path));
       updateFileOps();
       saveSession();
+      // Keep the workspace active-file highlight in sync with the new path.
+      void revealActiveFile(path);
     }
     store.updateDoc(tab.id, { fileState: state, baseContent: contents });
     refreshChrome(state);
@@ -1004,6 +1629,21 @@ listen<DocStateChanged>('doc_state_changed', (event) => {
   if (active && active.docId === doc_id) maybeAutoreload(state);
 }).catch(() => {});
 
+listen<DocumentDiagnostics>('pmd://diagnostics-enriched', (event) => {
+  if (!factsStore.acceptDiagnostics(event.payload)) return;
+  applyDocumentDiagnostics(event.payload);
+})
+  .then((unlisten) => {
+    unlistenDiagnostics = unlisten;
+  })
+  .catch((error) => {
+    console.error('Failed to listen for enriched diagnostics', error);
+  });
+
+window.addEventListener('beforeunload', () => {
+  unlistenDiagnostics?.();
+});
+
 listen('system_theme_changed', handleSystemThemeChange).catch(() => {});
 
 listen<string>('mode-change', (event) => {
@@ -1070,9 +1710,17 @@ async function bootstrap(): Promise<void> {
     if (isMode(settings.default_mode)) currentMode = settings.default_mode;
     if (settings.autosave_mode) autosaveMode = settings.autosave_mode;
     if (settings.autoreload_mode) autoreloadMode = settings.autoreload_mode;
-    if (settings.browser_base_dir) browserBaseDir = settings.browser_base_dir;
+    if (settings.browser_base_dir) {
+      browserBaseDir = settings.browser_base_dir;
+      // Await so the sticky root is established BEFORE bootstrap opens the
+      // initial file/session. Otherwise the doc-activate handler would see a
+      // null root and re-root to the opened file's parent, silently moving the
+      // persisted workspace root.
+      await setWorkspaceRoot(settings.browser_base_dir);
+    }
     gistEnabled = settings.gist_enabled === true;
     if (settings.diff_mode) diffMode = settings.diff_mode;
+    shortcutOverrides = settings.shortcut_overrides ?? {};
     applyGistVisibility();
     if (settings.mono_font) applyMonoFont(settings.mono_font);
     if (settings.active_theme) await applyTheme(settings.active_theme);

@@ -1,5 +1,7 @@
 use pmd_app_lib::{
-    cmd::settings::{get_settings, set_active_theme, set_theme_pair},
+    cmd::settings::{
+        get_settings, set_active_theme, set_shortcut_overrides_for_test, set_theme_pair,
+    },
     state::settings,
 };
 use std::{
@@ -106,6 +108,31 @@ fn set_active_theme_persists_slug_without_clearing_other_settings() {
     assert_eq!(s.active_theme.as_deref(), Some("solarized-light"));
     assert_eq!(s.light_theme.as_deref(), Some("github-light"));
     assert_eq!(s.dark_theme.as_deref(), Some("github-dark"));
+}
+
+#[test]
+fn shortcut_overrides_round_trip_without_clearing_theme_settings() {
+    let _lock = config_env_lock();
+    let _home = ConfigHomeGuard::new();
+
+    set_theme_pair(
+        Some("github-light".to_string()),
+        Some("github-dark".to_string()),
+    )
+    .expect("seed theme slots");
+
+    let settings = set_shortcut_overrides_for_test(vec![(
+        "navigate.commandOverlay".to_string(),
+        vec!["Ctrl+K".to_string()],
+    )])
+    .expect("settings");
+
+    assert_eq!(
+        settings.shortcut_overrides["navigate.commandOverlay"],
+        vec!["Ctrl+K"]
+    );
+    assert_eq!(settings.light_theme.as_deref(), Some("github-light"));
+    assert_eq!(settings.dark_theme.as_deref(), Some("github-dark"));
 }
 
 #[test]

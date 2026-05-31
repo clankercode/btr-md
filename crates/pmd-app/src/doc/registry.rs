@@ -21,6 +21,13 @@ use std::sync::Mutex;
 use crate::doc::race::{self, RaceEvent};
 use crate::doc::state::{Digest, DocEvent, DocId, FileState};
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PreviewDocumentSnapshot {
+    pub doc_id: u64,
+    pub path: Option<PathBuf>,
+    pub allowed_roots: Vec<PathBuf>,
+}
+
 /// One open document's bookkeeping. `base_content` is the last-loaded /
 /// last-saved text — the merge ancestor. We deliberately do **not** store the
 /// live buffer text here; commands that need it (save, merge) carry it in their
@@ -284,5 +291,25 @@ impl DocRegistry {
 
     pub fn contains(&self, doc: DocId) -> bool {
         self.lock().contains_key(&doc)
+    }
+
+    pub fn preview_snapshot(&self, doc_id: u64) -> Result<PreviewDocumentSnapshot, String> {
+        let doc_id = DocId(doc_id);
+        let docs = self.lock();
+        let doc = docs
+            .get(&doc_id)
+            .ok_or_else(|| "Unknown document".to_string())?;
+        let path = doc.path.clone();
+        let allowed_roots = match path.as_ref().and_then(|path| path.parent()) {
+            Some(parent) => vec![parent
+                .canonicalize()
+                .map_err(|e| format!("Document parent directory is unavailable: {e}"))?],
+            None => Vec::new(),
+        };
+        Ok(PreviewDocumentSnapshot {
+            doc_id: doc_id.0,
+            path,
+            allowed_roots,
+        })
     }
 }

@@ -6,7 +6,15 @@ function hasRenderNonce(el: HTMLElement, renderNonce: string): boolean {
 }
 
 export function markMermaidNodes(container: HTMLElement, renderNonce: string) {
-  const mermaidBlocks = container.querySelectorAll<HTMLElement>("pre > code.language-mermaid[data-pmd-nonce]");
+  const mermaidBlocks = Array.from(
+    container.querySelectorAll<HTMLElement>("pre > code.language-mermaid[data-pmd-nonce]")
+  );
+  // Root-inclusive: when container itself is the <pre>, querySelectorAll above
+  // misses the direct child code element — check for it explicitly.
+  if (container.matches('pre')) {
+    const c = container.querySelector<HTMLElement>(':scope > code.language-mermaid[data-pmd-nonce]');
+    if (c) mermaidBlocks.push(c);
+  }
   mermaidBlocks.forEach((block) => {
     if (!hasRenderNonce(block, renderNonce)) return;
     const pre = block.parentElement;

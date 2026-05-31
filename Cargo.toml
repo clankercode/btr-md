@@ -30,5 +30,5 @@ tauri = { version = "2", features = ["protocol-asset", "custom-protocol"] }
 tauri-build = "2"
 tauri-plugin-dialog = "2"
 fantoccini = "0.21"
-tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "fs", "sync"] }
 tempfile = "3"

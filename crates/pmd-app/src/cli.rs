@@ -66,7 +66,7 @@ where
     // typically because the path does not exist), do not advertise the path
     // to downstream open/watch logic — those code paths assume the scope
     // covers it.
-    match scope.allow(&p) {
+    match scope.allow_file_and_parent(&p) {
         Ok(canon) => ParsedArgs {
             initial_path: Some(canon),
             list_themes,

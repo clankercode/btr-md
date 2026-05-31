@@ -30,6 +30,10 @@
   line-height: 1.2;
 }
 
+.pmd-preview [data-pmd-block-id] {
+  scroll-margin-top: calc(var(--pmd-chrome-h, 44px) + var(--pmd-space-4));
+}
+
 .pmd-preview h2 {
   font-size: var(--pmd-text-xl);
   font-weight: var(--pmd-font-semibold);
