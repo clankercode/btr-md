@@ -37,9 +37,27 @@ frontend `localStorage` session store.
   `mode`, and `fileState` (a `FileState` discriminated union including `dirty`
   and `disk_changed_dirty`). `register_doc` registers an untitled/in-memory doc;
   `request_open_file` admits a path (scope-checked) and opens it.
-- **State persistence precedent**: `state/recents.rs` persists a JSON list under
-  the **btr-md XDG dir** (`xdg::BaseDirectories::with_prefix("btr-md")`) using
-  `fs2` advisory file-locking. This is the pattern the session store follows.
+- **State persistence precedent**: `state/recents.rs` and `state/settings.rs`
+  persist **TOML** under the **btr-md XDG config dir** via
+  `xdg::BaseDirectories::with_prefix("btr-md").place_config_file(...)` using
+  `fs2` advisory file-locking. The session store reuses this **locking +
+  atomic-write** pattern (it persists JSON, not TOML — see Feature 2).
+- **Doc registry internals** (`crates/pmd-app/src/doc/registry.rs:24-32`,
+  `:75-90`): `DocEntry` holds `state: FileState`, `base_content: String` (the
+  *merge ancestor* — last loaded/saved text), and `path`. It **deliberately does
+  not store the live buffer text** — save/merge commands carry it in their
+  payload. `register(path, contents)` yields `Clean{base}` (path) or `Untitled`
+  (no path) **only** — there is no API to register a doc directly in a `Dirty` or
+  `DiskChangedDirty` state.
+- **Merge machinery** (`crates/pmd-app/src/cmd/doc.rs:205-230`): `three_way`
+  merges `base_content_of(doc_id)` (text), the live buffer, and current disk.
+  Reconstructing a dirty-with-conflict doc therefore requires the **baseline
+  text**, not just a hash.
+- **`FileState`** (`crates/pmd-app/src/doc/state.rs:90-127`): `Dirty{base,mem}`
+  (local edits, disk unchanged), `DiskChangedDirty{base,disk,mem}` (conflict);
+  `base`/`mem`/`disk` are `Digest`s. Untitled edits stay `Untitled`
+  (`:189-199`); the UI renders untitled as *not modified*
+  (`ui/src/doc_state.ts:61-65`).
 - **Admission/security**: `request_open_file` only admits paths already in scope
   or present in recents; `cmd::file` opens with `O_NOFOLLOW` on Unix. The
   session store must not become a path-admission bypass (see Security below).
@@ -99,15 +117,17 @@ A drag state machine on `document` events:
   Playwright drag simulation of real file drops over a webview is unreliable, so
   this is validated manually; the unit tests cover the decision logic.
 
-## Feature 2 — Backend session store (Rust)
+## Feature 2 — Backend session store + restore command (Rust)
 
 ### Module: `crates/pmd-app/src/state/session.rs`
 
-Persists the full session to `session.json` under the btr-md XDG **state** dir
-(`BaseDirectories::with_prefix("btr-md").place_state_file("session.json")`, with
-the same graceful fallback `recents.rs` uses if XDG resolution fails). Uses
-`fs2` advisory locking and atomic write (write to `session.json.tmp`, then
-`rename`), mirroring `recents.rs`.
+Persists the full session as **JSON** to `session.json` under the btr-md XDG
+**config dir** (`BaseDirectories::with_prefix("btr-md").place_config_file(
+"session.json")`, with the same graceful fallback `recents.rs`/`settings.rs` use
+if XDG resolution fails — return an empty session, never panic). Uses `fs2`
+advisory locking and atomic write (write `session.json.tmp`, then `rename`),
+mirroring the `recents.rs` IO pattern (recents serialises TOML; session uses
+`serde_json`).
 
 ### On-disk schema (serde)
 
@@ -115,108 +135,208 @@ the same graceful fallback `recents.rs` uses if XDG resolution fails). Uses
 struct Session {
     version: u32,                 // schema version, starts at 1
     docs: Vec<SessionDoc>,        // in tab order
-    active: Option<usize>,        // index into docs of the active tab, or None
+    active: Option<ActiveTab>,    // which tab was focused
     browser_tab: bool,            // whether the file-browser tab was open
-    active_is_browser: bool,      // browser tab was the active one
 }
 
+enum ActiveTab { Doc(usize), Browser }   // Doc -> index into `docs`
+
 struct SessionDoc {
-    draft_id: String,             // stable id, also identifies untitled docs across restarts
-    path: Option<String>,         // absolute path for saved-file docs; None for untitled
-    mode: String,                 // editor mode enum, serialized as today
-    dirty: bool,                  // buffer differs from last-saved/disk baseline
-    content: Option<String>,      // present iff dirty || path.is_none(); the buffer to restore
-    baseline_hash: Option<String>,// blake3 of the content that was last in sync with disk
-                                  // (for saved docs); used to detect on-disk change at restore
+    path: Option<String>,             // absolute path for saved docs; None for untitled
+    mode: String,                     // editor mode enum, serialized as today
+    // Present iff there are edits to preserve:
+    //   - untitled docs: always (the whole buffer)
+    //   - saved docs with unsaved edits (Dirty / DiskChangedDirty)
+    // Absent for clean saved docs (reopened from disk).
+    unsaved: Option<UnsavedBuffer>,
+}
+
+struct UnsavedBuffer {
+    content: String,                  // the live buffer text to restore
+    // For saved docs: the merge-ancestor text (DocEntry.base_content at save
+    // time), so restore can rebuild the exact merge baseline. None for untitled.
+    baseline_content: Option<String>,
 }
 ```
 
 Notes:
-- `content` is only stored when needed (untitled, or dirty saved file). A clean
-  saved-file doc stores just `path` + `mode` and is reopened from disk — keeping
-  the file small and avoiding stale copies.
-- `baseline_hash` records what the on-disk content was when the buffer was last
-  in sync, so restore can detect whether the file changed underneath us. `blake3`
-  is already a workspace dependency.
-- Sizes: markdown documents are small; inline `content` strings in one JSON file
-  are acceptable. No separate per-draft files (YAGNI).
+- No `draft_id`: untitled docs are restored **positionally** in tab order; there
+  is no cross-restart identity requirement (YAGNI — dropped per review).
+- A clean saved doc stores only `path` + `mode`; it is reopened from disk, so no
+  stale content copy is kept.
+- The *merge ancestor* is text (`baseline_content`), not a hash — the merge
+  machinery needs the actual baseline text (`cmd/doc.rs:205-230`). The
+  disk-vs-baseline comparison at restore is done by hashing both with the same
+  `Digest` the registry uses; no separate stored hash is needed.
+- Sizes: markdown documents are small; inline strings in one JSON file are fine.
+  No per-draft files (YAGNI).
+
+### Building the payload — who owns what
+
+The registry **does not hold live buffer text**, and the frontend **does not
+hold the merge baseline**. So `save_session` is split by ownership:
+
+- **Frontend supplies** (per open doc): the backend `doc_id`, `mode`, and — for
+  untitled/dirty docs — the **live buffer** snapshot (`content`); plus tab order,
+  active tab, browser flag. See Feature 3 for how buffers are snapshotted.
+- **Backend fills in** (in `save_session`, by `doc_id` lookup in the registry):
+  `path` and, for dirty saved docs, `baseline_content` (= `DocEntry.base_content`).
+  The backend derives dirty-ness from the registry `FileState`, so the frontend
+  cannot desync it.
+
+`save_session` payload (Tauri command input), one entry per open doc:
+`{ doc_id: u64, mode: String, content: Option<String> }` + `active`,
+`browser_tab`. The backend assembles `Session` and writes it.
 
 ### Tauri commands
 
-- `load_session() -> Session` — reads and parses; on missing/corrupt/unparseable
-  file returns `Session::default()` (empty) and logs a warning. Never panics.
-- `save_session(session: Session) -> Result<(), String>` — validates and writes
-  atomically under lock. Registered in `main.rs` command list.
+- `save_session(docs: Vec<SaveDocInput>, active: ActiveTab, browser_tab: bool)
+  -> Result<(), String>` — for each input, looks up the registry entry by
+  `doc_id` to get `path` + `FileState` + `base_content`; assembles `SessionDoc`
+  (omitting `unsaved` for clean saved docs); writes atomically under lock.
+  Unknown `doc_id` entries are skipped (tab closed mid-flush). Registered in
+  `main.rs`.
+- `load_session() -> Session` — reads + parses; missing/corrupt/unparseable →
+  `Session::default()` (empty), warn-logs, never panics, does not delete the file.
+- `restore_dirty_doc(app, state, path: PathBuf, content: String,
+  baseline_content: String, background: bool) -> Result<OpenedDoc, String>` —
+  the missing API for reconstructing a dirty/conflict doc authoritatively:
+  1. Canonicalise + run the **same admission gates as `request_open_file`**
+     (`cmd/file.rs:188-205`: already-scoped OR in recents OR under an allowed
+     dir; markdown-extension check). Reuse a shared admission helper extracted
+     from `request_open_file` (refactor, no behavior change).
+  2. Read current disk content. If the file is missing/unreadable → return `Err`
+     (frontend falls back to restoring as an untitled buffer with `content`).
+  3. Compute `base = Digest::of(&baseline_content)`, `mem = Digest::of(&content)`,
+     `disk = Digest::of(&disk_text)`.
+  4. State = `Dirty{base,mem}` if `disk == base`, else
+     `DiskChangedDirty{base, disk, mem}`.
+  5. Register via a new `DocRegistry::register_restored(path, base_content =
+     baseline_content, state) -> DocId` that inserts a `DocEntry` with an
+     explicit state + base text (the only new registry method). Start the watcher
+     (`watcher.set_target`) and honor `background` for save authority, exactly as
+     `register_opened` does.
+  6. Return `OpenedDoc` whose `contents` is the **live buffer** (`content`) so the
+     frontend seeds the editor with the unsaved text, and whose `state` is the
+     reconstructed `FileState`.
 
-### Security / admission
+### Security / admission (corrected)
 
-- The session store is **not** a trusted path-admission source by itself. On
-  restore, saved-file paths are opened through the **existing** admission flow:
-  the backend seeds restored paths into the recents/scope set the same way the
-  current localStorage restore relies on `request_open_file` admitting recents.
-  Concretely: a restored path is admitted only if it is already admissible
-  (in recents or scope). Paths that are no longer admissible are skipped, exactly
-  as today. This is asserted by a test.
-- Untitled docs carry only `content` (no path), so they pose no admission risk;
-  they are registered via `register_doc`.
+- `save_session` and `load_session` **never mutate scope or recents**. They only
+  read/write `session.json`.
+- Restore does **not** seed paths into scope/recents. Saved-clean docs are
+  reopened with the unchanged `request_open_file`; saved-dirty docs go through
+  `restore_dirty_doc`, which applies the **identical** admission gates. Because a
+  previously-opened path is already in the persisted recents list
+  (`recents.toml`), it is admissible on the next launch without any seeding.
+- A path that is no longer admissible (not scoped, not in recents, not under an
+  allowed dir) is **rejected** by the command and the frontend skips that doc —
+  same outcome as today. Asserted by a test.
+- Untitled docs carry only `content` (no path) and are registered via
+  `register_doc`; no admission risk.
 
 ### Tests (`pmd-app`)
 
-- Roundtrip: serialize → write → read → equal (incl. untitled + dirty docs).
-- Atomicity: a write does not corrupt an existing file if interrupted before
-  rename (tmp+rename invariant; test the rename path leaves no `.tmp`).
+- Session roundtrip: serialize → write → read → equal (untitled, clean-saved,
+  dirty-saved with `baseline_content`).
+- Atomicity: write leaves no `.tmp`; an existing valid file is not corrupted.
 - Corrupt/missing recovery: garbage `session.json` → `load_session` returns empty
-  default, file is not deleted unexpectedly.
-- Admission: a restored path that is not in recents/scope is not silently
-  admitted (mirrors `recents.rs` admission test style).
+  default; file not deleted.
+- `restore_dirty_doc` state reconstruction: `disk == baseline` → `Dirty`;
+  `disk != baseline` → `DiskChangedDirty` with the right `base`/`disk`/`mem`
+  digests and `base_content == baseline_content` (so a subsequent merge uses the
+  correct ancestor).
+- Admission: `restore_dirty_doc` with a non-admissible path returns `Err` and
+  does not register a doc (mirrors `recents.rs`/`request_open_file` admission
+  test style).
 
 ## Feature 3 — Frontend session restore (replaces localStorage)
 
+### Snapshotting buffers
+
+The current text of an open doc lives in two places (`ui/src/tabs.ts:21-24`,
+`ui/src/editor.ts`): the **active** tab's text is in the mounted CodeMirror
+editor; **inactive** tabs hold their last `editorState`. A `tabBuffer(tab)`
+helper returns the live text:
+
+- active doc → `editor.getValue()`;
+- inactive doc → `tab.editorState.doc.toString()`.
+
+`unsaved` content is sent only for docs the frontend knows carry edits — untitled
+tabs, and saved tabs whose `fileState.kind` is `dirty` or `disk_changed_dirty`
+(`ui/src/doc_state.ts`). Clean saved docs send `content: null`.
+
 ### Save
 
-Replace `saveSession`/`SESSION_KEY` (`main.ts:1025-1095`) with a backend-backed
-version (still debounced ~300ms, called from the same sites: tab add/close/
-switch, mode change, edit). It builds the `Session` payload:
+Replace `saveSession`/`SESSION_KEY`/`localStorage` (`main.ts:1025-1095`) with a
+backend-backed version. Still debounced (~300ms) and called from the existing
+sites (tab add/close/switch, mode change, base-dir change) **plus the edit
+handler** (`main.ts:618-625`), which currently does *not* trigger a session save
+— a `saveSession()` call is added there so dirty buffers are captured as they
+change.
 
-- For each tab in order: emit a `SessionDoc`.
-  - Saved-file doc, clean → `{path, mode, dirty:false}`.
-  - Saved-file doc, dirty → `{path, mode, dirty:true, content:<buffer>,
-    baseline_hash:<hash of last-synced disk content>}`.
-  - Untitled doc → `{path:null, draft_id, mode, dirty:true, content:<buffer>}`.
-- `active`, `browser_tab`, `active_is_browser` as today.
-- Persist via `invoke('save_session', { session })`.
+Payload per open doc: `{ doc_id, mode, content }` where `content =
+tabBuffer(tab)` for untitled/dirty docs else `null`; plus `active`
+(`{Doc:index}` or `Browser`) and `browser_tab`. Persist via
+`invoke('save_session', { docs, active, browserTab })`. The backend fills `path`
+and `baseline_content` (see Feature 2).
 
-A **flush on window close** is added: a `beforeunload` / Tauri close handler
-invokes a final synchronous-ish `save_session` (cancel the debounce and write
-immediately) so the last edits are not lost if the user quits within the debounce
-window.
+A **flush on window close** is added so edits inside the debounce window are not
+lost:
+
+- Add a `flush()` method to `ui/src/debounce.ts` (alongside the existing
+  `cancel()`) that runs the pending call immediately and returns its promise.
+- Use Tauri's window `onCloseRequested` (from `@tauri-apps/api/window`): prevent
+  the default close, `await flushSessionNow()` (which builds the payload and
+  awaits `save_session`), then programmatically close. This guarantees the final
+  write completes before exit — `beforeunload` cannot await async IPC reliably,
+  so `onCloseRequested` is the mechanism.
 
 ### Restore (`restoreSession`)
 
-For each `SessionDoc` in order:
+`invoke('load_session')` returns the `Session`; for each `SessionDoc` in order:
 
-- **Untitled** (`path === null`): recreate via `register_doc` with stored
-  `content`, add a tab titled "Untitled", mark dirty, restore `mode` and
-  `draft_id`.
-- **Saved, clean**: `openFile(path, {background:true})` (reopens from disk),
-  restore `mode`. If the path is no longer admissible, skip (as today).
-- **Saved, dirty**: open the doc, then restore the dirty buffer (`content`) into
-  the editor and mark dirty. Determine on-disk change by comparing current disk
-  content hash to `baseline_hash`:
-  - **Unchanged on disk** → plain `dirty` state with the restored buffer.
-  - **Changed on disk** → set `disk_changed_dirty` and route through the
-    **existing** merge/race machinery (the same path used when a file changes on
-    disk while the app runs). No new conflict UI is introduced.
+- **Untitled** (`path === null`, `unsaved` present): `register_doc` with
+  `unsaved.content`, add an "Untitled" tab, restore `mode`, seed the editor with
+  the content. (Untitled stays `FileState::Untitled`; the UI shows it unmodified,
+  unchanged from today — see "Untitled semantics" below.)
+- **Saved, clean** (`unsaved` absent): `openFile(path, {background:true})`
+  (reopens from disk), restore `mode`. Non-admissible path → skip (as today).
+- **Saved, dirty** (`unsaved` present, `path` set): call
+  `restore_dirty_doc({ path, content: unsaved.content, baselineContent:
+  unsaved.baseline_content, background:true })`. The backend reconstructs the
+  authoritative `FileState` (`dirty` or `disk_changed_dirty`) with the correct
+  merge baseline; the frontend seeds the editor with the returned live buffer and
+  reflects the returned `fileState`. If the command errors (file gone /
+  non-admissible), fall back to restoring the content as an **untitled** buffer
+  so unsaved work is never silently dropped.
 
-Restore the active tab / browser tab afterward, as today.
+After opening all docs, restore the active tab / browser tab from `active` /
+`browser_tab`. Per-doc failures are isolated (try/catch per doc) so one bad entry
+never aborts the whole restore.
+
+### Untitled semantics
+
+"Unsaved" in the session schema means "**has buffer content that must be
+persisted**" — it is **not** the `FileState` modified flag. Untitled docs are
+always persisted-with-content and remain `FileState::Untitled` on restore (the UI
+continues to render them as not-modified, matching `ui/src/doc_state.ts:61-65`).
+No change to the untitled state machine or its modified-indicator is made.
+
+### Tab model
+
+`restore_dirty_doc` and `register_doc` both return a `doc_id` that the tab store
+already tracks (`tab.docId`, used by `drop_doc`). No new tab field is required —
+`doc_id` is the identity used by `save_session`. (No `draftId` is added.)
 
 ### Migration
 
-- One-time read of the old `localStorage['pmd:session']` on first launch after
-  upgrade: if present and the backend session is empty, import paths+modes, then
-  remove the localStorage key. After that, the backend store is authoritative.
-  (Low-risk convenience; can be dropped if it complicates review — the worst case
-  without it is one lost session of saved-only paths on upgrade.)
+None. The previous `localStorage['pmd:session']` only ever stored saved-file
+paths; on first launch after upgrade the backend session is empty and the app
+opens to the welcome screen (or a CLI/`open-file` path). The one-time cost is a
+single lost session of *saved-only* paths, which is acceptable and avoids
+carrying dead migration code. The stale `localStorage` key is removed on first
+run.
 
 ## Architecture / data flow
 
@@ -224,14 +344,17 @@ Restore the active tab / browser tab afterward, as today.
  Drag over window ─▶ drag_overlay.ts ─(valid/reject)▶ overlay element
  Drop ─▶ main.ts open logic ─▶ openFile / register_doc ─▶ backend doc registry
 
- Edit / tab change ─▶ saveSession (debounced) ─▶ invoke save_session
-                                                       │
-                                                       ▼
-                                            state/session.rs  ──▶ session.json (XDG, locked, atomic)
- Launch ─▶ bootstrap ─▶ invoke load_session ─▶ restoreSession ─▶ tabs + editor
-                                   │ saved+dirty & disk changed
-                                   ▼
-                          existing disk_changed_dirty / merge machinery
+ Edit / tab change ─▶ saveSession (debounced) ─▶ invoke save_session(docs,active,browser)
+   (live buffers)                                       │ backend adds path + baseline_content
+                                                        ▼  (from registry, by doc_id)
+                                            state/session.rs  ──▶ session.json (XDG config, locked, atomic)
+ Window close ─▶ onCloseRequested ─▶ flushSessionNow ─▶ save_session ─▶ (then close)
+
+ Launch ─▶ bootstrap ─▶ load_session ─▶ restoreSession, per doc:
+            untitled ─▶ register_doc(content)
+            clean    ─▶ request_open_file (from disk)
+            dirty    ─▶ restore_dirty_doc(path, content, baseline_content)
+                            └─▶ Dirty | DiskChangedDirty (authoritative, correct merge ancestor)
 ```
 
 ## Components and responsibilities
@@ -239,9 +362,11 @@ Restore the active tab / browser tab afterward, as today.
 | Unit | Responsibility | Depends on |
 |---|---|---|
 | `ui/src/drag_overlay.ts` (new) | overlay element, drag counter, validity calc, show/hide | injected open callbacks |
-| `ui/src/main.ts` (edit) | wire overlay; replace session save/restore with backend calls | drag_overlay, tabs store, invoke |
-| `crates/pmd-app/src/state/session.rs` (new) | load/save Session to XDG json, locked+atomic | fs2, xdg, serde, blake3 |
-| `crates/pmd-app/src/cmd/*` + `main.rs` (edit) | register `load_session`/`save_session` commands | session.rs |
+| `ui/src/main.ts` (edit) | wire overlay; replace session save/restore with backend calls; `tabBuffer`; close-flush | drag_overlay, tabs store, invoke, tauri window |
+| `ui/src/debounce.ts` (edit) | add `flush()` | — |
+| `crates/pmd-app/src/state/session.rs` (new) | load/save Session JSON to XDG config, locked+atomic | fs2, xdg, serde_json |
+| `crates/pmd-app/src/doc/registry.rs` (edit) | `register_restored(path, base_content, state)` | FileState |
+| `crates/pmd-app/src/cmd/*` + `main.rs` (edit) | `save_session` (enrich by doc_id), `load_session`, `restore_dirty_doc`; shared admission helper | session.rs, registry, path_scope |
 | `ui/styles/*` (edit) | overlay styling, themed | CSS vars |
 
 ## Error handling
@@ -263,11 +388,14 @@ Restore the active tab / browser tab afterward, as today.
 
 ## Implementation plan / parallelism
 
-- **Task A (backend session store)** — `session.rs` + commands + tests.
-  Independent.
+- **Task A (backend session store + commands)** — `session.rs`, schema,
+  `register_restored`, shared admission helper, `save_session` / `load_session` /
+  `restore_dirty_doc`, command registration + tests. Independent.
 - **Task B (drag overlay)** — `drag_overlay.ts` + CSS + main.ts wiring + unit
   tests. Independent.
-- **Task C (frontend restore)** — replace session save/restore; depends on A.
+- **Task C (frontend restore)** — `tabBuffer`, replace session save/restore with
+  backend calls, `debounce.flush()`, `onCloseRequested` flush, restore dispatch.
+  Depends on A (its commands).
 
 Order: A ‖ B in parallel, then C. Each task is TDD (tests first where the harness
 allows). Per repo norms, builds/tests limited to 2 threads.
@@ -284,22 +412,36 @@ allows). Per repo norms, builds/tests limited to 2 threads.
   then), defaulting to valid when unknown; the real gate is the extension check
   on drop. Opens all dragged markdown files (first focused, rest background).
 - **Session store (backend, new source of truth)**: `state/session.rs` writes
-  `session.json` to the btr-md XDG dir using `fs2` locking + atomic temp+rename,
-  mirroring `recents.rs`. Schema stores per-doc path-or-null, stable `draft_id`,
-  mode, dirty flag, buffer `content` (only when untitled/dirty), and a `blake3`
-  `baseline_hash`. New `load_session`/`save_session` Tauri commands; corrupt/
-  missing → empty default, never panics.
-- **Restore (frontend)**: replaces the `localStorage` session. Recreates untitled
-  docs from stored buffers; reopens clean saved docs from disk; for dirty saved
-  docs restores the buffer and, when the file changed on disk (hash ≠ baseline),
-  routes through the **existing** `disk_changed_dirty`/merge machinery — no new
-  conflict UX. Adds a flush-on-close. One-time localStorage→backend migration.
-- **Security**: the session store is not a path-admission bypass — restored paths
-  are admitted only through the existing recents/scope flow; non-admissible paths
-  are skipped (asserted by test). Untitled docs carry only content.
+  `session.json` (JSON via `serde_json`) to the btr-md XDG **config dir** using
+  `fs2` locking + atomic temp+rename, reusing the `recents.rs` IO pattern. Schema
+  stores per-doc path-or-null, mode, and an optional `unsaved` buffer (live
+  `content` + the merge-ancestor `baseline_content` text) — present only for
+  untitled/dirty docs. No `draft_id` (untitled restored positionally).
+- **Ownership split**: the registry holds the merge baseline but not live text;
+  the frontend holds live text but not the baseline. So `save_session` takes
+  `{doc_id, mode, content}` from the frontend and the backend enriches each entry
+  with `path` + `baseline_content` by `doc_id` lookup, deriving dirtiness from the
+  registry `FileState` (frontend can't desync it).
+- **Authoritative dirty restore**: a new `restore_dirty_doc` command rebuilds a
+  saved-dirty doc in the registry with the correct `base_content` text and the
+  right `FileState` (`Dirty` if disk == baseline, else `DiskChangedDirty`), via a
+  new `register_restored` registry method — because `register` only yields
+  `Clean`/`Untitled` and the merge machinery needs baseline *text*, not a hash.
+  Reconstructing state in the frontend alone would desync save/merge.
+- **Restore (frontend)**: replaces `localStorage`. `tabBuffer(tab)` snapshots
+  live text (active = `editor.getValue()`, inactive = `editorState.doc`).
+  Untitled → `register_doc`; clean saved → `request_open_file` (from disk);
+  dirty saved → `restore_dirty_doc` (falls back to an untitled buffer if the file
+  is gone/non-admissible, never dropping unsaved work). `debounce.flush()` +
+  Tauri `onCloseRequested` guarantee a final save before exit.
+- **Security**: `save_session`/`load_session` never touch scope/recents; restore
+  seeds nothing. Restored paths are admissible only because they persist in
+  `recents.toml`; `restore_dirty_doc` applies the **same** admission gates as
+  `request_open_file`; non-admissible paths are rejected/skipped (asserted).
 - **Decisions (confirmed)**: persist to backend disk; reuse `disk_changed_dirty`
   on restore conflict; full-window overlay; show reject state for non-markdown.
-- **Parallelism**: Task A (backend store) ‖ Task B (overlay), then Task C
-  (frontend restore, depends on A). TDD per task; 2-thread build/test limit.
-- **Open question**: keep or drop the one-time localStorage→backend migration
-  (low risk; worst case is one lost session of saved-only paths on upgrade).
+- **Parallelism**: Task A (backend store + commands) ‖ Task B (overlay), then
+  Task C (frontend restore, depends on A). TDD per task; 2-thread build/test
+  limit.
+- **No migration**: the old localStorage session held only saved paths; dropping
+  it costs at most one session of saved-only paths on upgrade. Stale key removed.
