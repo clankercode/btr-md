@@ -28,11 +28,13 @@ import { createInsertMenu, type AlertType, type InsertMenuInstance } from './ins
 import { planFootnoteInsertion } from './footnotes.js';
 import { insertAtCursor, dispatchInsert } from './editor_insert.js';
 import { decorateTables } from './table_copy.js';
+import { reconcileBlocks, type BlockRef } from './block_reconcile.js';
 
 interface RenderResult {
   html: string;
   version: number;
   render_nonce: string;
+  blocks?: BlockRef[];
 }
 
 interface Settings {
@@ -590,14 +592,27 @@ async function processRenderQueue(): Promise<void> {
     const stillCurrent =
       tab && tab.kind === 'doc' && tab.renderSeq === item.seq && store.activeId() === item.tabId;
     if (stillCurrent) {
-      previewContent.innerHTML = result.html;
       previewContent.dataset.versionApplied = String(result.version);
       previewContent.dataset.pmdNonce = result.render_nonce;
-      markAllNodes(previewContent, result.render_nonce);
-      await renderMermaidNodes(previewContent, result.render_nonce);
-      await renderMathNodes(previewContent, result.render_nonce);
-      decorateCodeBlocks(previewContent);
-      decorateTables(previewContent, () => editor?.getValue() ?? '');
+      if (result.blocks && result.blocks.length > 0) {
+        const frag = document.createElement('div');
+        frag.innerHTML = result.html;
+        const changed = reconcileBlocks(previewContent, frag, result.blocks);
+        for (const node of changed) {
+          markAllNodes(node, result.render_nonce);
+          await renderMermaidNodes(node, result.render_nonce);
+          await renderMathNodes(node, result.render_nonce);
+          decorateCodeBlocks(node);
+          decorateTables(node, () => editor?.getValue() ?? '');
+        }
+      } else {
+        previewContent.innerHTML = result.html;
+        markAllNodes(previewContent, result.render_nonce);
+        await renderMermaidNodes(previewContent, result.render_nonce);
+        await renderMathNodes(previewContent, result.render_nonce);
+        decorateCodeBlocks(previewContent);
+        decorateTables(previewContent, () => editor?.getValue() ?? '');
+      }
     }
     item.resolve();
   } catch (e) {
