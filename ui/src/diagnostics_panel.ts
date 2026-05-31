@@ -1,4 +1,5 @@
 import type { DiagnosticsPresentation } from "./diagnostics.js";
+import type { DocumentIssue } from "./document_contracts.js";
 
 const SEVERITIES = ["error", "blocked", "warning", "info"] as const;
 
@@ -11,6 +12,7 @@ export interface DiagnosticsPanel {
 export function createDiagnosticsPanel(options: {
   onToggleExpanded(): void;
   onToggleInlineDetail(): void;
+  onPrimaryAction(action: string, issue: DocumentIssue): void;
 }): DiagnosticsPanel {
   const element = document.createElement("section");
   element.className = "pmd-diagnostics-shell";
@@ -85,10 +87,22 @@ export function createDiagnosticsPanel(options: {
         const message = document.createElement("p");
         message.textContent = issue.message;
         row.append(message);
+        const meta = document.createElement("small");
+        const lineRange = formatLineRange(issue);
+        meta.textContent = [lineRange, issue.category].filter(Boolean).join(" · ");
+        row.append(meta);
         if (issue.detail) {
           const detail = document.createElement("small");
           detail.textContent = issue.detail;
           row.append(detail);
+        }
+        if (issue.primary_action) {
+          const action = document.createElement("button");
+          action.type = "button";
+          action.className = "pmd-btn pmd-btn-ghost pmd-btn-sm";
+          action.textContent = actionLabel(issue.primary_action);
+          action.addEventListener("click", () => options.onPrimaryAction(issue.primary_action!, issue));
+          row.append(action);
         }
         groupEl.append(row);
       }
@@ -110,4 +124,18 @@ export function createDiagnosticsPanel(options: {
       element.removeAttribute("role");
     },
   };
+}
+
+function formatLineRange(issue: DocumentIssue): string | null {
+  if (issue.line_start === null) return null;
+  if (issue.line_end === null || issue.line_end === issue.line_start) {
+    return `Line ${issue.line_start}`;
+  }
+  return `Lines ${issue.line_start}-${issue.line_end}`;
+}
+
+function actionLabel(action: string): string {
+  if (action === "asset.grantFolder") return "Grant folder";
+  if (action === "asset.revokeGrant") return "Revoke grant";
+  return action;
 }

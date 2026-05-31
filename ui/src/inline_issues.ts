@@ -1,9 +1,10 @@
 import type { DocumentIssue } from "./document_contracts.js";
 
 const INLINE_CLASS = "pmd-inline-issue";
+const SUMMARY_CLASS = "pmd-inline-issues-summary";
 
 function existingIssues(root: ParentNode): HTMLElement[] {
-  return Array.from(root.querySelectorAll<HTMLElement>(`.${INLINE_CLASS}`));
+  return Array.from(root.querySelectorAll<HTMLElement>(`.${SUMMARY_CLASS}, .${INLINE_CLASS}`));
 }
 
 function targetForIssue(root: HTMLElement, issue: DocumentIssue): Element | null {
@@ -39,7 +40,7 @@ export function renderInlineIssues(previewRoot: HTMLElement, issues: DocumentIss
   if (issues.length === 0) return;
 
   const fallback = document.createElement("div");
-  fallback.className = "pmd-inline-issues-summary";
+  fallback.className = SUMMARY_CLASS;
   fallback.setAttribute("aria-label", "Inline issues");
 
   for (const issue of issues) {

@@ -240,6 +240,9 @@ const diagnosticsPanel = createDiagnosticsPanel({
     diagnosticsSettings.inlineDetail = !diagnosticsSettings.inlineDetail;
     rerenderCurrentDiagnostics();
   },
+  onPrimaryAction: (action) => {
+    void runDiagnosticPrimaryAction(action);
+  },
 });
 const trustPolicyPanel = createTrustPolicyPanel();
 document.body.append(diagnosticsPanel.element, trustPolicyPanel.element);
@@ -551,6 +554,15 @@ function runDiagnosticsAction(id: ActionId): boolean {
   if (id !== 'diagnostics.togglePanel') return false;
   toggleDiagnosticsPanel();
   return true;
+}
+
+async function runDiagnosticPrimaryAction(action: string): Promise<void> {
+  const spec = defaultActionSpecs.find((item) => item.id === action);
+  if (!spec) {
+    chrome.setStatus(action);
+    return;
+  }
+  await runAction(spec.id);
 }
 
 function applyDocumentDiagnostics(diagnostics: DocumentDiagnostics): void {
