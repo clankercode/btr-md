@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-MANIFEST="$ROOT_DIR/flatpak/md.btr.app.yml"
+MANIFEST="$ROOT_DIR/packaging/flatpak/md.btr.app.yml"
 BUILD_DIR="$ROOT_DIR/build-flatpak"
 
 if ! command -v flatpak-builder >/dev/null 2>&1; then

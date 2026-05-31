@@ -4,7 +4,10 @@
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>MIT</project_license>
   <name>btr.md</name>
-  <summary>better markdown — fast, secure markdown editor for Linux</summary>
+  <summary>Fast, secure markdown editor for Linux</summary>
+  <developer id="md.btr">
+    <name>btr.md</name>
+  </developer>
   <description>
     <p>btr.md (better markdown) is a fast, secure markdown editor built with Tauri. It offers:</p>
     <ul>
@@ -17,7 +20,28 @@
     </ul>
   </description>
   <launchable type="desktop-id">md.btr.app.desktop</launchable>
-  <!-- TODO(pre-release): add a real screenshot image before AppStream submission. -->
+  <!--
+    PLACEHOLDER SCREENSHOTS. The image URLs below are placeholders; the actual
+    PNGs are NOT committed yet. Capture them from a real `just run` build with
+    scripts/capture-screenshots.sh, upload to the screenshots host, then replace
+    these URLs (and crop/caption to taste) before AppStream / Flathub submission.
+    Filenames here MUST match what scripts/capture-screenshots.sh produces.
+  -->
+  <screenshots>
+    <screenshot type="default">
+      <caption>Live split-view markdown preview</caption>
+      <image>https://btr.md/screenshots/main.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>Mermaid diagrams and KaTeX math rendered inline</caption>
+      <image>https://btr.md/screenshots/diagrams.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>Theme picker with WCAG-compliant bundled themes</caption>
+      <image>https://btr.md/screenshots/themes.png</image>
+    </screenshot>
+  </screenshots>
+  <content_rating type="oars-1.1"/>
   <url type="homepage">https://btr.md</url>
   <provides>
     <binary>btr-md</binary>
