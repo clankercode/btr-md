@@ -5,7 +5,7 @@ import { mountEditor, type EditorHandle } from './editor.js';
 import { createChrome, type Mode } from './chrome.js';
 import { attachScrollSync } from './scroll_sync.js';
 import { markAllNodes, rerenderForThemeChange } from './theme_apply.js';
-import { renderMermaidNodes, setMermaidTheme } from './mermaid_runner.js';
+import { renderMermaidNodes, setMermaidGotoLine, setMermaidTheme } from './mermaid_runner.js';
 import { renderMathNodes } from './katex_runner.js';
 import { decorateCodeBlocks } from './code_blocks.js';
 import { openThemePicker, isPickerOpen, closeThemePicker, type ThemeInfo } from './picker.js';
@@ -1415,6 +1415,7 @@ async function processRenderQueue(): Promise<void> {
 async function ensureEditor(): Promise<void> {
   if (editor) return;
   editor = await mountEditor(editorPane, () => onActiveEdit());
+  setMermaidGotoLine((line) => editor?.gotoEditorLine(line));
   attachScrollSync(editor.view, previewPane);
   installOutlineCaretListeners();
 }
