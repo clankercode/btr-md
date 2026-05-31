@@ -34,7 +34,7 @@ Implementation workers should use `just check` for the default non-WebDriver gat
 
 ## Execution Status
 
-Updated 2026-05-31 after merging `dit-outline` into `feat/large-expansion`:
+Updated 2026-05-31 after rebasing and merging `dit-diagnostics-trust` into `master`:
 
 - Blocks 1-3, `dit-core-facts`: merged into `feat/large-expansion` as `d062d9c`, `a7cf6db`, and `5d87966`.
 - Block 4, app preview authority shell: merged as `2451545` with implementation commit `d66162f`; `ccc --yolo @cx-reviewer` returned `PASS` after the rebase.
@@ -48,7 +48,10 @@ Updated 2026-05-31 after merging `dit-outline` into `feat/large-expansion`:
 - Block 8, `dit-actions-keybindings`: merged back into `feat/large-expansion` as `8d47a6d`; root `just check` passed after merge, including 19 Playwright tests.
 - Block 9, UI facts store and outline panel: implemented as `ee87b8b`; `ccc --yolo @cx-reviewer` returned `PASS`.
 - Block 9, `dit-outline`: merged back into `feat/large-expansion`; root `just check` passed after merge, including 20 Playwright tests.
-- Next active workstream: Block 10, `dit-diagnostics-trust`, after the shared fact/action/validation/outline foundation.
+- Block 10, diagnostics panel, inline issues, and trust status: implemented through `work/dit-diagnostics-trust`, rebased onto `master` after the rebrand/incremental-rendering merge, and merged into `master` as `merge: diagnostics trust surfaces`.
+- Block 10 post-rebase integration fixed incremental render/facts/block reconciliation compatibility, stale/foreign diagnostics gating, and the incremental e2e render mock contract in `5bdc490`.
+- `ccc --yolo @cx-reviewer` returned `PASS` for Block 10 after the mock-contract fix; output log: `/home/xertrov/.local/state/ccc/runs/codex-1780193168118-1448701-0`.
+- Next active workstream: Block 11, `dit-asset-grants`, after the diagnostics/trust panel foundation.
 
 ## Operating Contract
 
@@ -5548,7 +5551,7 @@ git -C "$INTEGRATION_ROOT" merge --no-ff work/dit-outline
 
 This block must append `src/diagnostics.ts`, `src/diagnostics_panel.ts`, `src/inline_issues.ts`, `src/resource_policy.ts`, and `src/trust_policy_panel.ts` to `ui/tsconfig.json` `include` before the `npm run typecheck` gate.
 
-- [ ] **Step 10.1: Write diagnostics unit tests**
+- [x] **Step 10.1: Write diagnostics unit tests**
 
 Create `ui/src/diagnostics.test.ts` with these tests:
 
@@ -5622,7 +5625,7 @@ test("inline detail can be hidden while keeping one-line markers", () => {
 });
 ```
 
-- [ ] **Step 10.2: Write trust/resource tests**
+- [x] **Step 10.2: Write trust/resource tests**
 
 Create tests in `ui/src/resource_policy.test.ts` that assert:
 
@@ -5679,7 +5682,7 @@ test("external confirmation exposes normalized destination context", () => {
 });
 ```
 
-- [ ] **Step 10.3: Write e2e tests**
+- [x] **Step 10.3: Write e2e tests**
 
 Create tests in `ui/e2e/trust-policy.spec.cjs` for:
 
@@ -5851,7 +5854,7 @@ test('malformed frontmatter shows a warning and keeps preview content', async ({
 });
 ```
 
-- [ ] **Step 10.4: Implement diagnostics panel and inline issues**
+- [x] **Step 10.4: Implement diagnostics panel and inline issues**
 
 `ui/src/diagnostics.ts` owns pure presentation derivation:
 
@@ -5887,7 +5890,7 @@ export function deriveDiagnosticsPresentation(diagnostics: DocumentDiagnostics, 
 
 `ui/src/diagnostics_panel.ts` renders a labelled region when `panelVisible` is true and a compact button with counts when `collapsedIndicatorVisible` is true. `ui/src/inline_issues.ts` renders one-line actionable messages next to editor/source lines and backend-provided placeholders, with no raw unsafe URL attributes.
 
-- [ ] **Step 10.5: Implement trust status and panel**
+- [x] **Step 10.5: Implement trust status and panel**
 
 `ui/src/resource_policy.ts` owns trust derivation and external confirmation models:
 
@@ -6000,7 +6003,7 @@ listen<DocumentDiagnostics>("pmd://diagnostics-enriched", (event) => {
 
 Call `acceptRenderDiagnostics(result)` immediately after the existing render-result newest-wins guard accepts `result` and before any later outline/trust/grant UI reads diagnostics. This is the step that makes enriched diagnostics a full replacement for the current `(doc_id, version)` panel state, inline issues, and trust status. In the existing `ActionContext.run` body from Blocks 8 and 9, call `if (runDiagnosticsAction(id)) return;` alongside the outline action hook before falling through to existing action cases, so `diagnostics.togglePanel` and `Ctrl+Shift+M` replace the temporary Block 8 handler.
 
-- [ ] **Step 10.6: Verify**
+- [x] **Step 10.6: Verify**
 
 ```bash
 cd ui && npm run test:unit
@@ -6010,7 +6013,7 @@ cd ui && npm run test:e2e:playwright -- e2e/trust-policy.spec.cjs
 
 Expected: all commands pass.
 
-- [ ] **Step 10.7: Review, commit, and merge**
+- [x] **Step 10.7: Review, commit, and merge**
 
 ```bash
 ccc --yolo @cx-reviewer "Review diagnostics and trust UI for panel visibility rules, one-line inline actionability, security messaging, and accessibility. Return PASS or blockers."
