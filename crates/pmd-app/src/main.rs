@@ -1,3 +1,4 @@
+use pmd_app_lib::preview::link_activation::LinkActivationStore;
 use pmd_app_lib::{cli, cmd, path_scope::PathScope, AppState};
 use tauri::{Emitter, Manager};
 
@@ -29,8 +30,11 @@ fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .manage(state)
+        .manage(LinkActivationStore::default())
         .invoke_handler(tauri::generate_handler![
             cmd::render::render_cmd,
+            pmd_app_lib::preview::link_activation::prepare_link_activation,
+            pmd_app_lib::preview::link_activation::confirm_external_open,
             cmd::file::open_file,
             cmd::file::request_open_file,
             cmd::file::open_dialog,

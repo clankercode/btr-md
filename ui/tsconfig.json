@@ -29,6 +29,7 @@
     "src/counts.ts",
     "src/footnotes.ts",
     "src/table_copy.ts",
-    "src/insert_menu.ts"
+    "src/insert_menu.ts",
+    "src/link_activation.ts"
   ]
 }

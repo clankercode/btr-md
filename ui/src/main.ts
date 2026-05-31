@@ -29,6 +29,12 @@ import { planFootnoteInsertion } from './footnotes.js';
 import { insertAtCursor, dispatchInsert } from './editor_insert.js';
 import { decorateTables } from './table_copy.js';
 import { reconcileBlocks, type BlockRef } from './block_reconcile.js';
+import {
+  attachPreviewLinkActivation,
+  createExternalConfirmationDialog,
+  handleLinkActivationResponse,
+  type OpenedDocumentFromLink,
+} from './link_activation.js';
 
 interface RenderResult {
   doc_id: number;
@@ -94,6 +100,7 @@ interface OpenedDoc {
 
 const previewPane = document.getElementById('preview-pane') as HTMLElement;
 const previewContent = document.getElementById('pmd-content') as HTMLElement;
+const externalConfirmation = createExternalConfirmationDialog();
 const editorPane = document.createElement('div');
 editorPane.id = 'editor-pane';
 editorPane.className = 'pmd-editor-pane';
@@ -327,6 +334,53 @@ function showError(message: string): void {
 function docTabByDocId(docId: number): DocTab | undefined {
   return store.list().find((t): t is DocTab => t.kind === 'doc' && t.docId === docId);
 }
+
+function currentPreviewDoc(): { doc_id: number; version: number } | null {
+  const tab = store.activeDoc();
+  const version = Number(previewContent.dataset.versionApplied || '0');
+  if (!tab || !version) return null;
+  return { doc_id: tab.docId, version };
+}
+
+function scrollPreviewToBlock(blockId: string): void {
+  const escaped = typeof CSS !== 'undefined' && CSS.escape ? CSS.escape(blockId) : blockId;
+  const target = previewContent.querySelector(`#${escaped}, [data-pmd-block-id="${escaped}"]`);
+  if (target instanceof HTMLElement) target.scrollIntoView({ block: 'center' });
+}
+
+async function adoptOpenedDocumentFromLink(documentFromBackend: OpenedDocumentFromLink): Promise<void> {
+  const doc: OpenedDoc = {
+    doc_id: documentFromBackend.doc_id,
+    path: documentFromBackend.path,
+    contents: documentFromBackend.contents,
+    state: documentFromBackend.state as FileState,
+  };
+  const existing = store.findDocByPath(doc.path);
+  if (existing) {
+    invoke('drop_doc', { docId: doc.doc_id }).catch(() => {});
+    store.setActive(existing.id);
+    return;
+  }
+  await addDocTab(doc, { background: false });
+  loadRecentFiles();
+  chrome.setStatus('Ready');
+}
+
+attachPreviewLinkActivation(previewContent, {
+  currentDoc: currentPreviewDoc,
+  invoke,
+  handleResponse: (response, doc) =>
+    handleLinkActivationResponse({
+      response,
+      docId: doc.doc_id,
+      version: doc.version,
+      invoke,
+      scrollToBlock: scrollPreviewToBlock,
+      openDocument: adoptOpenedDocumentFromLink,
+      showMessage: (message) => chrome.setStatus(message),
+      externalConfirmation,
+    }).catch((error) => showError(`Link failed: ${String(error)}`)),
+});
 
 // ---------------------------------------------------------------------------
 // Drag & drop.
