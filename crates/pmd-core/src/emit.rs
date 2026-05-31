@@ -1,4 +1,4 @@
-use pulldown_cmark::{Alignment, Event, Options, Parser, Tag, TagEnd};
+use pulldown_cmark::{Alignment, Event, Parser, Tag, TagEnd};
 use serde::{Deserialize, Serialize};
 
 use crate::escape::escape_html;
@@ -11,7 +11,7 @@ pub struct RenderResult {
     pub render_nonce: String,
 }
 
-fn byte_to_line(md: &str) -> impl Fn(usize) -> u32 + '_ {
+pub(crate) fn byte_to_line(md: &str) -> impl Fn(usize) -> u32 + '_ {
     let starts: Vec<usize> = std::iter::once(0)
         .chain(md.match_indices('\n').map(|(i, _)| i + 1))
         .collect();
@@ -36,7 +36,7 @@ fn emit_image(html: &mut String, state: &ImageState) {
     html.push('>');
 }
 
-fn generate_render_nonce() -> String {
+pub(crate) fn generate_render_nonce() -> String {
     let mut bytes = [0u8; 16];
     getrandom::getrandom(&mut bytes).expect("secure render nonce generation failed");
     bytes.iter().map(|byte| format!("{byte:02x}")).collect()
@@ -419,17 +419,27 @@ fn emit_footnotes_section(
     html.push_str("</ol></section>");
 }
 
-pub fn render_string(md: &str) -> RenderResult {
-    let render_nonce = generate_render_nonce();
-    let to_line = byte_to_line(md);
-    let mut opts = Options::empty();
+pub(crate) fn parser_options() -> pulldown_cmark::Options {
+    let mut opts = pulldown_cmark::Options::empty();
     opts.insert(
-        Options::ENABLE_TABLES
-            | Options::ENABLE_TASKLISTS
-            | Options::ENABLE_STRIKETHROUGH
-            | Options::ENABLE_FOOTNOTES,
+        pulldown_cmark::Options::ENABLE_TABLES
+            | pulldown_cmark::Options::ENABLE_TASKLISTS
+            | pulldown_cmark::Options::ENABLE_STRIKETHROUGH
+            | pulldown_cmark::Options::ENABLE_FOOTNOTES,
     );
+    opts
+}
 
+/// Raw (pre-sanitize) emit of a markdown fragment. `data-src-*` line numbers are
+/// 1-based relative to `md`; trusted mermaid/math nodes carry `render_nonce`.
+pub struct FragmentRender {
+    pub html: String,
+    pub source_map: Vec<(u32, u32)>,
+}
+
+pub fn render_fragment(md: &str, render_nonce: &str) -> FragmentRender {
+    let to_line = byte_to_line(md);
+    let opts = parser_options();
     let parser = Parser::new_ext(md, opts).into_offset_iter();
 
     let mut html = String::new();
@@ -484,7 +494,7 @@ pub fn render_string(md: &str) -> RenderResult {
                     &mut alert_state,
                     &mut alert_buf,
                     &mut block_math,
-                    &render_nonce,
+                    render_nonce,
                 );
                 if matches!(tag, Tag::TableHead) {
                     in_table_head = true;
@@ -524,7 +534,7 @@ pub fn render_string(md: &str) -> RenderResult {
                     line,
                     in_table_head,
                     cell_alignment,
-                    &render_nonce,
+                    render_nonce,
                 );
                 block_stack.push((line, open_pos));
 
@@ -590,7 +600,7 @@ pub fn render_string(md: &str) -> RenderResult {
                                 &mut html,
                                 &alert_buf,
                                 &mut block_math,
-                                &render_nonce,
+                                render_nonce,
                             );
                         }
                         alert_buf.clear();
@@ -635,7 +645,7 @@ pub fn render_string(md: &str) -> RenderResult {
                 } else if in_code_block > 0 {
                     html.push_str(&escape_html(&t));
                 } else {
-                    emit_text_with_math(&mut html, &t, &mut block_math, &render_nonce);
+                    emit_text_with_math(&mut html, &t, &mut block_math, render_nonce);
                 }
             }
             Event::Code(t) => {
@@ -644,7 +654,7 @@ pub fn render_string(md: &str) -> RenderResult {
                     &mut alert_state,
                     &mut alert_buf,
                     &mut block_math,
-                    &render_nonce,
+                    render_nonce,
                 );
                 if let Some(state) = image_state.as_mut() {
                     state.alt.push_str(&t);
@@ -673,7 +683,7 @@ pub fn render_string(md: &str) -> RenderResult {
                         alert_buf.clear();
                         continue; // drop the break that followed the marker line
                     }
-                    emit_text_with_math(&mut html, &alert_buf, &mut block_math, &render_nonce);
+                    emit_text_with_math(&mut html, &alert_buf, &mut block_math, render_nonce);
                     alert_buf.clear();
                 }
                 if let Some(state) = image_state.as_mut() {
@@ -690,7 +700,7 @@ pub fn render_string(md: &str) -> RenderResult {
                     &mut alert_state,
                     &mut alert_buf,
                     &mut block_math,
-                    &render_nonce,
+                    render_nonce,
                 );
                 if let Some(state) = image_state.as_mut() {
                     state.alt.push(' ');
@@ -706,7 +716,7 @@ pub fn render_string(md: &str) -> RenderResult {
                     &mut alert_state,
                     &mut alert_buf,
                     &mut block_math,
-                    &render_nonce,
+                    render_nonce,
                 );
                 if image_state.is_none() {
                     html.push_str(&t);
@@ -720,7 +730,7 @@ pub fn render_string(md: &str) -> RenderResult {
                     &mut alert_state,
                     &mut alert_buf,
                     &mut block_math,
-                    &render_nonce,
+                    render_nonce,
                 );
                 if image_state.is_none() {
                     html.push_str(&t);
@@ -732,7 +742,7 @@ pub fn render_string(md: &str) -> RenderResult {
                     &mut alert_state,
                     &mut alert_buf,
                     &mut block_math,
-                    &render_nonce,
+                    render_nonce,
                 );
                 let n = *fn_numbers.entry(t.to_string()).or_insert_with(|| {
                     let n = next_fn_number;
@@ -769,11 +779,17 @@ pub fn render_string(md: &str) -> RenderResult {
         html.push_str(&escape_html(&math));
     }
     emit_footnotes_section(&mut html, footnotes, &fn_ref_counts);
-    let html = crate::sanitize::clean_with_render_nonce(&html, &render_nonce);
+    FragmentRender { html, source_map }
+}
+
+pub fn render_string(md: &str) -> RenderResult {
+    let render_nonce = generate_render_nonce();
+    let frag = render_fragment(md, &render_nonce);
+    let html = crate::sanitize::clean_with_render_nonce(&frag.html, &render_nonce);
     RenderResult {
         version: 0,
         html,
-        source_map,
+        source_map: frag.source_map,
         render_nonce,
     }
 }
