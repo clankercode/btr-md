@@ -14,44 +14,51 @@
 Ideas with High value and Low-to-Medium effort — best candidates for the next
 development slice.
 
-| # | Name | Value | Effort | Section |
-|---|------|-------|--------|---------|
-| 1 | **Sandboxed Link Handling** | High | Low | Security |
-| 2 | **Smart List Continuation** | High | Low | Authoring |
-| 3 | **Dependency Integrity Pinning** | High | Low | Security |
-| 4 | **Ammonia Allowlist Regression Tests** | High | Med | Security |
-| 5 | **PDF Export** | High | Low | Rendering |
-| 6 | **Crash Recovery / Draft Autosave** | High | Med | Security |
-| 7 | **Strict Image URL Validation** | High | Low | Security |
-| 8 | **Find-and-Replace with Regex** | High | Med | Authoring |
-| 9 | **CLI Flags for Headless Render** | High | Med | Power-user |
-| 10 | **Paste-as-Markdown from HTML** | High | Med | Authoring |
+**Status audited 2026-05-31** against the codebase. Legend: ✅ shipped · 🟡 partial · ⬜ not started.
+
+| # | Name | Value | Effort | Section | Status |
+|---|------|-------|--------|---------|--------|
+| 1 | **Sandboxed Link Handling** | High | Low | Security | ✅ `link_activation.ts` + `cmd/reveal.rs` |
+| 2 | **Smart List Continuation** | High | Low | Authoring | ⬜ |
+| 3 | **Dependency Integrity Pinning** | High | Low | Security | 🟡 no `checksums.toml` / `verify-vendor` |
+| 4 | **Ammonia Allowlist Regression Tests** | High | Med | Security | ✅ `pmd-core/tests/security.rs` |
+| 5 | **PDF Export** | High | Low | Rendering | ⬜ no print CSS / `window.print()` |
+| 6 | **Crash Recovery / Draft Autosave** | High | Med | Security | 🟡 autosave + session restore ✅; crash-recovery dir/UI ❌ |
+| 7 | **Strict Image URL Validation** | High | Low | Security | ✅ `preview/resource_policy.rs` |
+| 8 | **Find-and-Replace with Regex** | High | Med | Authoring | 🟡 find (incl. regex) ✅; **replace** ❌ |
+| 9 | **CLI Flags for Headless Render** | High | Med | Power-user | 🟡 `--list-themes`/`--open-dialog` ✅; `--render`/`--output` ❌ |
+| 10 | **Paste-as-Markdown from HTML** | High | Med | Authoring | ⬜ |
+
+> Also shipped since this backlog was written (not in the table above): Document
+> Outline/TOC, Reading-Time Estimate, Command Palette, Session Restore,
+> Keyboard-Navigable Theme Picker, Mermaid Diagram Caching, Frontmatter editor,
+> CSP hardening. See per-section notes below and `synthesis.md` for the v1 push.
 
 ---
 
 ## 1. Authoring / Editing Ergonomics
 
-| Name | Value | Effort |
-|------|-------|--------|
-| Find-and-Replace with Regex | High | Med |
-| Paste-as-Markdown from HTML | High | Med |
-| Image Paste / Drag-and-Drop Embed | High | Med |
-| Document Outline / TOC Panel | High | Med |
-| Snippet Library | High | Med |
-| Smart List Continuation | High | Low |
-| Markdown Formatting Shortcuts | High | Low |
-| Visual Table Editor | Med | High |
-| Bracket / Quote Auto-Close | Med | Low |
-| Focus / Distraction-Free Mode | Med | Low |
-| Typewriter Scroll | Med | Low |
-| Spell-Check Underlines | Med | Med |
-| Link Autocomplete from Headings | Med | Med |
-| Syntax Autocomplete (LaTeX / Markdown) | Med | Med |
-| Show Invisible Characters | Med | Low |
-| Reading-Time Estimate | Low | Low |
-| Writing Goal / Daily Target | Low | Low |
-| Scroll Past End | Low | Low |
-| RTL Writing Direction | Low | Low |
+| Name | Value | Effort | Status |
+|------|-------|--------|--------|
+| Find-and-Replace with Regex | High | Med | 🟡 find ✅, replace ❌ |
+| Paste-as-Markdown from HTML | High | Med | ⬜ |
+| Image Paste / Drag-and-Drop Embed | High | Med | 🟡 drag-to-open ✅, image embed ❌ |
+| Document Outline / TOC Panel | High | Med | ✅ `outline_panel.ts` |
+| Snippet Library | High | Med | ⬜ |
+| Smart List Continuation | High | Low | ⬜ |
+| Markdown Formatting Shortcuts | High | Low | ⬜ |
+| Visual Table Editor | Med | High | ⬜ |
+| Bracket / Quote Auto-Close | Med | Low | ⬜ |
+| Focus / Distraction-Free Mode | Med | Low | ⬜ |
+| Typewriter Scroll | Med | Low | ⬜ |
+| Spell-Check Underlines | Med | Med | ⬜ |
+| Link Autocomplete from Headings | Med | Med | ⬜ |
+| Syntax Autocomplete (LaTeX / Markdown) | Med | Med | ⬜ |
+| Show Invisible Characters | Med | Low | ⬜ |
+| Reading-Time Estimate | Low | Low | ✅ `stats_popover.ts` |
+| Writing Goal / Daily Target | Low | Low | ⬜ |
+| Scroll Past End | Low | Low | ⬜ |
+| RTL Writing Direction | Low | Low | ⬜ |
 
 ### Find-and-Replace with Regex
 **Description:** In-editor find/replace panel (Ctrl+H) supporting plain text and regex, with live match highlighting in both source and preview panes.
@@ -177,18 +184,18 @@ development slice.
 
 ## 2. Navigation & Organization
 
-| Name | Value | Effort |
-|------|-------|--------|
-| Reverse Scroll Sync (Preview → Editor) | High | Med |
-| Search Across Open Files | High | Med |
-| Wiki-Link / Backlink Support | High | High |
-| Recent Workspaces / Pinned Directories | Med | Low |
-| Split Panes (Horizontal Layout) | Med | Low |
-| Jump-to-Definition for References | Med | Med |
-| Document History / File Timeline | Med | High |
-| Heading-Level Promote / Demote | Med | Low |
-| Pinned Tabs | Low | Low |
-| Bookmark / Annotation Panel | Low | Med |
+| Name | Value | Effort | Status |
+|------|-------|--------|--------|
+| Reverse Scroll Sync (Preview → Editor) | High | Med | ⬜ forward sync only |
+| Search Across Open Files | High | Med | ⬜ single-doc find only |
+| Wiki-Link / Backlink Support | High | High | ⬜ |
+| Recent Workspaces / Pinned Directories | Med | Low | ⬜ recent files only |
+| Split Panes (Horizontal Layout) | Med | Low | ⬜ vertical split only |
+| Jump-to-Definition for References | Med | Med | ⬜ |
+| Document History / File Timeline | Med | High | ⬜ |
+| Heading-Level Promote / Demote | Med | Low | ⬜ |
+| Pinned Tabs | Low | Low | ⬜ |
+| Bookmark / Annotation Panel | Low | Med | ⬜ |
 
 ### Reverse Scroll Sync (Preview → Editor)
 **Description:** Clicking or scrolling in the preview pane moves the editor caret to the corresponding source line via the source-map, completing bi-directional sync.
@@ -254,21 +261,21 @@ development slice.
 
 ## 3. Rendering & Export
 
-| Name | Value | Effort |
-|------|-------|--------|
-| PDF Export | High | Low |
-| HTML Export (Self-Contained) | High | Med |
-| Presentation / Slides Mode | Med | Med |
-| Frontmatter Rendering in Preview | Med | Med |
-| Syntax-Highlight Theme Decoupling | Med | Med |
-| Print-Preview Mode | Med | Low |
-| Diagram Export (SVG/PNG) | Med | Med |
-| Mermaid Diagram Caching / Pre-render | Med | Med |
-| Math Macro Library | Med | Low |
-| Custom CSS per File or Workspace | Med | Med |
-| Pandoc Export Pipeline | Med | Low |
-| Export to EPUB | Low | High |
-| Share as Image (Social Card) | Low | Med |
+| Name | Value | Effort | Status |
+|------|-------|--------|--------|
+| PDF Export | High | Low | ⬜ |
+| HTML Export (Self-Contained) | High | Med | ⬜ |
+| Presentation / Slides Mode | Med | Med | ⬜ |
+| Frontmatter Rendering in Preview | Med | Med | ⬜ inspector panel ✅, preview card ❌ |
+| Syntax-Highlight Theme Decoupling | Med | Med | ⬜ |
+| Print-Preview Mode | Med | Low | ⬜ |
+| Diagram Export (SVG/PNG) | Med | Med | 🟡 SVG via zoom overlay ✅, PNG + right-click ❌ |
+| Mermaid Diagram Caching / Pre-render | Med | Med | ✅ `mermaid_runner.ts` |
+| Math Macro Library | Med | Low | ⬜ |
+| Custom CSS per File or Workspace | Med | Med | ⬜ |
+| Pandoc Export Pipeline | Med | Low | ⬜ |
+| Export to EPUB | Low | High | ⬜ |
+| Share as Image (Social Card) | Low | Med | ⬜ |
 
 ### PDF Export
 **Description:** Export the current document to PDF using WebKit's print API (`window.print()` with a print-specific CSS) triggered from a menu item or toolbar button.
@@ -352,18 +359,18 @@ development slice.
 
 ## 4. Collaboration / Sharing & Integrations
 
-| Name | Value | Effort |
-|------|-------|--------|
-| Pandoc Export Pipeline | Med | Low |
-| Git Commit / Stage from Editor | Med | Med |
-| Frontmatter / Metadata Editor | Med | Med |
-| Publish to Static Site (Hugo / Jekyll / Zola) | Med | Med |
-| Obsidian Vault Import | Med | High |
-| Watch-and-Sync (External Renderer) | Low | Low |
-| Snippet / Template Sharing via URL | Low | Med |
-| Mastodon / DEV.to Publish | Low | High |
-| Remote File Open (SFTP/SSH) | Low | High |
-| Share as Image (Social Card) | Low | Med |
+| Name | Value | Effort | Status |
+|------|-------|--------|--------|
+| Pandoc Export Pipeline | Med | Low | ⬜ |
+| Git Commit / Stage from Editor | Med | Med | ⬜ git-root detection only |
+| Frontmatter / Metadata Editor | Med | Med | ✅ `frontmatter_panel.ts` |
+| Publish to Static Site (Hugo / Jekyll / Zola) | Med | Med | ⬜ |
+| Obsidian Vault Import | Med | High | ⬜ |
+| Watch-and-Sync (External Renderer) | Low | Low | ⬜ |
+| Snippet / Template Sharing via URL | Low | Med | ⬜ |
+| Mastodon / DEV.to Publish | Low | High | ⬜ |
+| Remote File Open (SFTP/SSH) | Low | High | ⬜ |
+| Share as Image (Social Card) | Low | Med | ⬜ |
 
 > Note: Pandoc Export and Share as Image also appear in §3 (Rendering); listed here for discoverability.
 
@@ -419,20 +426,20 @@ development slice.
 
 ## 5. Power-User & Platform
 
-| Name | Value | Effort |
-|------|-------|--------|
-| Command Palette | High | Med |
-| Vim Keybindings Mode | High | Med |
-| Session Restore | High | Med |
-| CLI Flags for Headless Render | High | Med |
-| Large-File Performance Mode | Med | Low |
-| Per-File Settings Override | Med | Low |
-| Workspace / Project Settings File | Med | Med |
-| Accessibility: Screen Reader Landmarks | Med | Low |
-| Keyboard-Navigable Theme Picker | Med | Low |
-| Custom Protocol Handler (`preview-md://`) | Med | Med |
-| Emacs Keybindings Mode | Low | Low |
-| Performance Profiling Mode (Dev) | Low | Low |
+| Name | Value | Effort | Status |
+|------|-------|--------|--------|
+| Command Palette | High | Med | ✅ `command_overlay.ts` |
+| Vim Keybindings Mode | High | Med | ⬜ |
+| Session Restore | High | Med | ✅ `session_manager.ts` |
+| CLI Flags for Headless Render | High | Med | 🟡 `--list-themes`/`--open-dialog` ✅, `--render` ❌ |
+| Large-File Performance Mode | Med | Low | ⬜ |
+| Per-File Settings Override | Med | Low | ⬜ |
+| Workspace / Project Settings File | Med | Med | ⬜ |
+| Accessibility: Screen Reader Landmarks | Med | Low | 🟡 partial ARIA, no full audit |
+| Keyboard-Navigable Theme Picker | Med | Low | ✅ `picker.ts` |
+| Custom Protocol Handler (`preview-md://`) | Med | Med | ⬜ |
+| Emacs Keybindings Mode | Low | Low | ⬜ |
+| Performance Profiling Mode (Dev) | Low | Low | ⬜ |
 
 ### Command Palette
 **Description:** A fuzzy-search command palette (Ctrl+P or Ctrl+Shift+P) listing all commands, recent files, and settings toggles; replaces hunting through menus.
@@ -510,19 +517,19 @@ development slice.
 
 ## 6. Security & Robustness
 
-| Name | Value | Effort |
-|------|-------|--------|
-| Sandboxed Link Handling | High | Low |
-| Strict Image URL Validation | High | Low |
-| Dependency Integrity Pinning | High | Low |
-| Ammonia Allowlist Regression Tests | High | Med |
-| Crash Recovery / Draft Autosave | High | Med |
-| Mermaid `securityLevel: sandbox` | Med | High |
-| Content-Security-Policy Audit Tooling | Med | Low |
-| Untrusted-Mode for Received Files | Med | Med |
-| Safe Paste Guard | Med | Low |
-| Audit Log for File Operations | Low | Low |
-| Clipboard Write Guard | Low | Low |
+| Name | Value | Effort | Status |
+|------|-------|--------|--------|
+| Sandboxed Link Handling | High | Low | ✅ `link_activation.ts` |
+| Strict Image URL Validation | High | Low | ✅ `resource_policy.rs` |
+| Dependency Integrity Pinning | High | Low | 🟡 no `checksums.toml` / `verify-vendor` |
+| Ammonia Allowlist Regression Tests | High | Med | ✅ `pmd-core/tests/security.rs` |
+| Crash Recovery / Draft Autosave | High | Med | 🟡 autosave/session ✅, crash-recovery dir ❌ |
+| Mermaid `securityLevel: sandbox` | Med | High | ⬜ (parked v2) |
+| Content-Security-Policy Audit Tooling | Med | Low | 🟡 CSP hardcoded ✅, audit tooling ❌ |
+| Untrusted-Mode for Received Files | Med | Med | ⬜ |
+| Safe Paste Guard | Med | Low | ⬜ |
+| Audit Log for File Operations | Low | Low | ⬜ |
+| Clipboard Write Guard | Low | Low | ⬜ |
 
 ### Sandboxed Link Handling
 **Description:** Clicking a hyperlink in the preview opens it in the default browser via `xdg-open` rather than navigating the WebView; all `<a>` clicks are intercepted and the href is validated before dispatch.
