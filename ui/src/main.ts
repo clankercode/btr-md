@@ -933,6 +933,26 @@ function activeFrontmatter(): FrontmatterFact | null {
   return factsStore.current(active.docId)?.facts?.frontmatter ?? null;
 }
 
+function starterFrontmatterFact(): FrontmatterFact {
+  return {
+    format: 'yaml',
+    line_start: 1,
+    line_end: 2,
+    raw: '---\ntitle: \n---\n',
+    syntax: 'valid',
+    metadata: {
+      title: '',
+      description: null,
+      slug: null,
+      sidebar_label: null,
+      sidebar_position: null,
+      tags: [],
+      draft: null,
+      unknown: {},
+    },
+  };
+}
+
 function activeStructureCounts(): StructureCounts | null {
   const active = store.activeDoc();
   if (!active) return null;
@@ -942,10 +962,12 @@ function activeStructureCounts(): StructureCounts | null {
 function openFrontmatterInspector(x: number, y: number): void {
   if (!editor) return;
   const doc = editor.getValue();
+  let insertedStarter = false;
   if (!hasOpeningFence(doc)) {
     applyFrontmatterChange(insertBlockChange(doc, 'title', ''));
+    insertedStarter = true;
   }
-  openFrontmatterPanel(x, y, activeFrontmatter(), {
+  openFrontmatterPanel(x, y, activeFrontmatter() ?? (insertedStarter ? starterFrontmatterFact() : null), {
     onEditValue: (key, value) => {
       if (!editor) return;
       applyFrontmatterChange(editValueChange(editor.getValue(), key, value));
