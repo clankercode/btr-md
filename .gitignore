@@ -18,3 +18,5 @@ tests/screenshots/playwright/
 
 # Machine-local cargo build config (sccache)
 .cargo/config.toml
+.claude/worktrees/
+.claude/*.lock
