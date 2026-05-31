@@ -122,7 +122,7 @@ async function grantFolderInMockBackend(page, canonicalRoot) {
 }
 
 async function installTauriMock(page, options = {}) {
-  await page.addInitScript(({ initialPath, themes, renderHtml, renderDocId, renderVersion, renderFacts, renderDiagnostics, files: fixtureFiles, gitRoots, trustRoots }) => {
+  await page.addInitScript(({ initialPath, themes, renderHtml, renderDocId, renderVersion, renderFacts, renderDiagnostics, files: fixtureFiles, gitRoots, trustRoots, settings: settingsOverrides, dirListings }) => {
     let callbackId = 1;
     let nextDocId = 1;
     let nextGrantId = 1;
@@ -132,6 +132,7 @@ async function installTauriMock(page, options = {}) {
       '/work/tests/corpus/hello.md': '# Hello\n\nThis file was opened by the test harness.',
       ...(fixtureFiles ?? {}),
     };
+    let browserBaseDir = settingsOverrides?.browser_base_dir ?? null;
     const assetGrants = [];
     const trustRootDecisions = [...(trustRoots ?? [])];
 
@@ -429,7 +430,7 @@ async function installTauriMock(page, options = {}) {
         autosave_mode: 'off',
         autoreload_mode: 'when_clean',
         merge_strategy: 'raise_conflict',
-        browser_base_dir: null,
+        browser_base_dir: browserBaseDir,
         gist_enabled: false,
         diff_mode: 'none',
         dont_ask_default_handler: true,
@@ -464,6 +465,16 @@ async function installTauriMock(page, options = {}) {
           shortcutOverrides = structuredClone(args.overrides ?? {});
           return settingsPayload();
         }
+        if (cmd === 'list_dir') {
+          const listing = dirListings?.[args.dir];
+          if (listing) return structuredClone(listing);
+          return { dir: args.dir, entries: [] };
+        }
+        if (cmd === 'set_workspace_root') {
+          browserBaseDir = args.path;
+          return args.path;
+        }
+        if (cmd === 'pick_base_dir') return browserBaseDir ?? settingsOverrides?.browser_base_dir ?? null;
         if (cmd === 'default_handler_status') return { status: 'unknown', platform: 'linux' };
         if (cmd === 'get_initial_path') return initialPath ?? null;
         if (cmd === 'get_open_dialog_on_start') return false;
@@ -609,6 +620,8 @@ async function installTauriMock(page, options = {}) {
     files: options.files ?? null,
     gitRoots: options.gitRoots ?? [],
     trustRoots: options.trustRoots ?? [],
+    settings: options.settings ?? {},
+    dirListings: options.dirListings ?? {},
   });
 }
 

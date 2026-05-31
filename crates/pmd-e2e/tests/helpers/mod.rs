@@ -12,6 +12,196 @@ const WEBDRIVER_ADDR: &str = "127.0.0.1:4444";
 const APPLICATION_PATH: &str = "/work/target/release/btr-md";
 
 #[allow(dead_code)]
+pub struct ProbedApp {
+    session: WebDriverSession,
+    app_url: String,
+}
+
+#[allow(dead_code)]
+pub async fn spawn_app_with_network_probe() -> Result<ProbedApp> {
+    let session = WebDriverSession::with_args(&["/work/tests/corpus/hello.md"])?;
+    session.wait_for_selector(".cm-editor", Duration::from_secs(5))?;
+    install_network_probe(&session)?;
+    let app_url = session.url()?;
+    Ok(ProbedApp { session, app_url })
+}
+
+#[allow(dead_code)]
+impl ProbedApp {
+    pub async fn open_markdown(&self, markdown: &str) -> Result<()> {
+        let script = r#"
+            const markdown = arguments[0];
+            const done = arguments[arguments.length - 1];
+            const view = document.querySelector('.cm-editor')?.view
+                ?? document.querySelector('.cm-editor')?.cmView?.view;
+            if (!view) { done({ ok: false, error: 'no-editor' }); return; }
+            view.dispatch({
+                changes: { from: 0, to: view.state.doc.length, insert: markdown }
+            });
+            setTimeout(() => done({ ok: true }), 350);
+        "#;
+        let value = self.session.js_object(script, &[json!(markdown)])?;
+        if value.get("ok").and_then(Value::as_bool).unwrap_or(false) {
+            Ok(())
+        } else {
+            Err(anyhow!("open markdown failed: {value}"))
+        }
+    }
+
+    pub async fn wait_for_text(&self, text: &str) -> Result<()> {
+        let needle = text.to_owned();
+        self.session
+            .wait_for_condition(&format!("text `{text}`"), Duration::from_secs(5), || {
+                let source = self.session.source()?;
+                Ok(source.contains(&needle))
+            })
+    }
+
+    pub async fn network_requests(&self) -> Vec<String> {
+        read_string_array(&self.session, "window.__pmdNetworkRequests").unwrap_or_default()
+    }
+
+    pub async fn image_load_attempts(&self) -> Vec<String> {
+        read_string_array(&self.session, "window.__pmdImageLoadAttempts").unwrap_or_default()
+    }
+
+    pub async fn external_open_log(&self) -> Vec<String> {
+        read_string_array(&self.session, "window.__pmdExternalOpenLog").unwrap_or_default()
+    }
+
+    pub async fn click_preview_link(&self, label: &str) -> Result<()> {
+        let script = r#"
+            const label = arguments[0];
+            const done = arguments[arguments.length - 1];
+            const links = Array.from(document.querySelectorAll('#preview-pane a, .pmd-preview a'));
+            const link = links.find((node) => node.textContent?.trim() === label);
+            if (!link) { done({ ok: false, error: 'missing-link' }); return; }
+            link.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, button: 0 }));
+            setTimeout(() => done({ ok: true }), 100);
+        "#;
+        let value = self.session.js_object(script, &[json!(label)])?;
+        if value.get("ok").and_then(Value::as_bool).unwrap_or(false) {
+            Ok(())
+        } else {
+            Err(anyhow!("click preview link failed: {value}"))
+        }
+    }
+
+    pub async fn confirm_external_link(&self) -> Result<()> {
+        let script = r#"
+            const done = arguments[arguments.length - 1];
+            const root = document.querySelector('[data-testid="confirm-external-open"]');
+            const button = root?.querySelector('[data-action="confirm"]');
+            if (!button) { done({ ok: false, error: 'missing-confirm-button' }); return; }
+            button.click();
+            setTimeout(() => done({ ok: true }), 100);
+        "#;
+        let value = self.session.js_object(script, &[])?;
+        if value.get("ok").and_then(Value::as_bool).unwrap_or(false) {
+            Ok(())
+        } else {
+            Err(anyhow!("confirm external link failed: {value}"))
+        }
+    }
+
+    pub async fn current_webview_url(&self) -> Result<String> {
+        self.session.url()
+    }
+
+    pub fn app_url(&self) -> String {
+        self.app_url.clone()
+    }
+}
+
+impl Drop for ProbedApp {
+    fn drop(&mut self) {
+        let _ = webdriver_request("DELETE", &format!("/session/{}", self.session.id), None);
+    }
+}
+
+fn install_network_probe(session: &WebDriverSession) -> Result<()> {
+    let script = r#"
+        const done = arguments[arguments.length - 1];
+        if (window.__pmdProbeInstalled) { done(true); return; }
+        window.__pmdProbeInstalled = true;
+        window.__pmdNetworkRequests = [];
+        window.__pmdImageLoadAttempts = [];
+        window.__pmdExternalOpenLog = [];
+
+        const originalFetch = window.fetch?.bind(window);
+        if (originalFetch) {
+            window.fetch = (input, init) => {
+                const url = typeof input === 'string' ? input : input?.url;
+                if (url) window.__pmdNetworkRequests.push(String(url));
+                return originalFetch(input, init);
+            };
+        }
+
+        const originalSetAttribute = Element.prototype.setAttribute;
+        Element.prototype.setAttribute = function(name, value) {
+            if (this instanceof HTMLImageElement && String(name).toLowerCase() === 'src') {
+                window.__pmdImageLoadAttempts.push(String(value));
+            }
+            return originalSetAttribute.call(this, name, value);
+        };
+
+        const src = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, 'src');
+        if (src?.set) {
+            Object.defineProperty(HTMLImageElement.prototype, 'src', {
+                configurable: true,
+                get: src.get,
+                set(value) {
+                    window.__pmdImageLoadAttempts.push(String(value));
+                    return src.set.call(this, value);
+                },
+            });
+        }
+
+        const observer = new MutationObserver((records) => {
+            for (const record of records) {
+                for (const node of record.addedNodes) {
+                    if (!(node instanceof Element)) continue;
+                    const images = node instanceof HTMLImageElement
+                        ? [node]
+                        : Array.from(node.querySelectorAll('img'));
+                    for (const img of images) {
+                        const value = img.getAttribute('src') || img.currentSrc || '';
+                        if (value) window.__pmdImageLoadAttempts.push(value);
+                    }
+                }
+            }
+        });
+        observer.observe(document.documentElement, { childList: true, subtree: true });
+
+        document.addEventListener('pmd-external-open', (event) => {
+            const url = event.detail?.url;
+            if (url) window.__pmdExternalOpenLog.push(String(url));
+        });
+        done(true);
+    "#;
+    session.execute_script(script, &[])?;
+    Ok(())
+}
+
+fn read_string_array(session: &WebDriverSession, expression: &str) -> Result<Vec<String>> {
+    let script = r#"
+        const expression = arguments[0];
+        const done = arguments[arguments.length - 1];
+        const value = Function(`return (${expression})`)();
+        done(Array.isArray(value) ? value : []);
+    "#;
+    let value = session.execute_script(script, &[json!(expression)])?;
+    let array = value
+        .as_array()
+        .ok_or_else(|| anyhow!("script did not return array: {value}"))?;
+    Ok(array
+        .iter()
+        .filter_map(Value::as_str)
+        .map(ToOwned::to_owned)
+        .collect())
+}
+
+#[allow(dead_code)]
 pub struct WebDriverSession {
     pub id: String,
 }

@@ -1228,13 +1228,17 @@ body[data-state="welcome"] #split-resizer {
   display: flex;
   align-items: center;
   gap: var(--pmd-space-2);
+  min-height: 28px;
   padding: 2px 8px;
   cursor: pointer;
   white-space: nowrap;
 }
 
-.pmd-browser-row:hover {
+.pmd-browser-row:hover,
+.pmd-browser-row:focus-visible {
   background: var(--pmd-bg-muted);
+  outline: 2px solid var(--pmd-accent);
+  outline-offset: -2px;
 }
 
 .pmd-browser-row.selected {
@@ -1547,7 +1551,7 @@ body[data-state="welcome"] #split-resizer {
   width: min(720px, calc(100vw - 32px));
   max-height: min(78vh, 680px);
   transform: translateX(-50%);
-  overflow: hidden;
+  overflow: auto;
   border: 1px solid var(--pmd-border);
   border-radius: var(--pmd-radius-md);
   background: var(--pmd-bg-elevated);
@@ -1592,7 +1596,8 @@ body[data-state="welcome"] #split-resizer {
 .pmd-command-row:hover,
 .pmd-command-row:focus-visible {
   background: var(--pmd-bg-muted);
-  outline: none;
+  outline: 2px solid var(--pmd-accent);
+  outline-offset: -2px;
 }
 
 .pmd-shortcut-row {
@@ -1699,7 +1704,8 @@ body[data-state="welcome"] #split-resizer {
 .pmd-outline-item:hover,
 .pmd-outline-item:focus-visible {
   background: var(--pmd-bg-muted);
-  outline: none;
+  outline: 2px solid var(--pmd-accent);
+  outline-offset: -2px;
 }
 
 .pmd-outline-item[aria-selected='true'] {
@@ -1717,6 +1723,8 @@ body[data-state="welcome"] #split-resizer {
   top: calc(var(--pmd-chrome-h, 44px) + var(--pmd-space-3));
   left: var(--pmd-space-4);
   max-width: min(360px, calc(100vw - 32px));
+  max-height: min(56vh, 520px);
+  overflow: auto;
   color: var(--pmd-fg);
 }
 
@@ -1769,6 +1777,8 @@ body[data-state="welcome"] #split-resizer {
   right: var(--pmd-space-4);
   bottom: calc(24px + var(--pmd-space-4));
   width: min(440px, calc(100vw - 32px));
+  max-height: min(56vh, 520px);
+  overflow: auto;
   color: var(--pmd-fg);
 }
 

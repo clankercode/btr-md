@@ -1,6 +1,7 @@
 pub mod cli;
 pub mod cmd;
 pub mod doc;
+pub mod navigation_policy;
 pub mod path_scope;
 pub mod preview;
 pub mod state;

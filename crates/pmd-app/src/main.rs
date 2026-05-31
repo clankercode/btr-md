@@ -1,7 +1,9 @@
 use pmd_app_lib::preview::link_activation::LinkActivationStore;
 use pmd_app_lib::preview::render_pipeline::ValidationWorker;
-use pmd_app_lib::{cli, cmd, path_scope::PathScope, AppState};
-use tauri::{Emitter, Manager};
+use pmd_app_lib::{cli, cmd, navigation_policy::NavigationGate, path_scope::PathScope, AppState};
+use std::sync::Arc;
+use tauri::webview::NewWindowResponse;
+use tauri::{Emitter, Manager, WebviewUrl, WebviewWindowBuilder};
 
 fn main() {
     let scope = PathScope::new();
@@ -88,6 +90,18 @@ fn main() {
             cmd::session::restore_dirty_doc,
         ])
         .setup(move |app| {
+            let navigation_gate = Arc::new(NavigationGate::new(
+                "tauri://localhost".parse().expect("valid app shell URL"),
+            ));
+            let navigation_gate_for_callback = Arc::clone(&navigation_gate);
+            WebviewWindowBuilder::new(app, "main", WebviewUrl::App("index.html".into()))
+                .title("btr-md — better markdown")
+                .inner_size(1100.0, 720.0)
+                .decorations(true)
+                .on_navigation(move |url| navigation_gate_for_callback.should_allow_navigation(url))
+                .on_new_window(|_, _| NewWindowResponse::Deny)
+                .build()?;
+
             pmd_app_lib::preview::grants::init_grant_store(app.asset_protocol_scope());
             match pmd_app_lib::preview::trust_roots::init_trust_root_store(
                 pmd_app_lib::preview::trust_roots::trust_root_settings_path(),

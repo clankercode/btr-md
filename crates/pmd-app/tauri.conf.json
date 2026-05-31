@@ -20,15 +20,7 @@
     ]
   },
   "app": {
-    "windows": [
-      {
-        "label": "main",
-        "title": "btr-md — better markdown",
-        "width": 1100,
-        "height": 720,
-        "decorations": true
-      }
-    ],
+    "windows": [],
     "security": {
       "csp": "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: asset: http://asset.localhost; connect-src 'self' ipc: http://ipc.localhost; object-src 'none'; frame-src 'none'; base-uri 'self'",
       "assetProtocol": {

@@ -36,12 +36,47 @@ export function createFileBrowser(deps: FileBrowserDeps): FileBrowserInstance {
   const el = document.createElement("div");
   el.className = "pmd-browser";
 
+  async function activateRow(entry: DirEntry, background: boolean): Promise<void> {
+    if (entry.is_dir) {
+      await model.toggleDir(entry.path);
+      return;
+    }
+    model.select(entry.path);
+    if (entry.is_markdown) deps.onOpenFile(entry.path, { background });
+  }
+
+  async function handleTreeKeydown(event: KeyboardEvent, entry: DirEntry): Promise<void> {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      await activateRow(entry, event.shiftKey);
+      return;
+    }
+    if (!entry.is_dir) return;
+    if (event.key === "ArrowRight" && !model.expanded().has(entry.path)) {
+      event.preventDefault();
+      await model.expand(entry.path);
+    } else if (event.key === "ArrowLeft" && model.expanded().has(entry.path)) {
+      event.preventDefault();
+      model.collapse(entry.path);
+    }
+  }
+
   function renderRow(entry: DirEntry, depth: number): HTMLElement {
     const row = document.createElement("div");
     row.className = "pmd-browser-row";
     row.style.paddingLeft = `${8 + depth * 16}px`;
     row.dataset.path = entry.path;
-    if (entry.path === model.selected()) row.classList.add("selected");
+    row.tabIndex = 0;
+    row.setAttribute("role", "treeitem");
+    row.setAttribute("aria-level", String(depth + 1));
+    row.setAttribute("aria-label", entry.name);
+    if (entry.is_dir) row.setAttribute("aria-expanded", String(model.expanded().has(entry.path)));
+    if (entry.path === model.selected()) {
+      row.classList.add("selected");
+      row.setAttribute("aria-selected", "true");
+    } else {
+      row.setAttribute("aria-selected", "false");
+    }
     if (entry.path === model.activeFile()) row.classList.add("pmd-browser-active");
     if (!entry.is_dir && !entry.is_markdown) row.classList.add("pmd-browser-nonmd");
 
@@ -63,7 +98,7 @@ export function createFileBrowser(deps: FileBrowserDeps): FileBrowserInstance {
     row.appendChild(name);
 
     if (entry.is_dir) {
-      row.addEventListener("click", () => model.toggleDir(entry.path));
+      row.addEventListener("click", () => { void model.toggleDir(entry.path); });
       row.addEventListener("contextmenu", (e) => {
         e.preventDefault();
         openContextMenu(e.clientX, e.clientY, [
@@ -86,6 +121,7 @@ export function createFileBrowser(deps: FileBrowserDeps): FileBrowserInstance {
         deps.onOpenFile(entry.path, { background: e.shiftKey });
       });
     }
+    row.addEventListener("keydown", (event) => { void handleTreeKeydown(event, entry); });
     return row;
   }
 
@@ -134,6 +170,7 @@ export function createFileBrowser(deps: FileBrowserDeps): FileBrowserInstance {
     up.type = "button";
     up.textContent = "↑";
     up.title = "Go up to parent folder";
+    up.setAttribute("aria-label", "Go up to parent folder");
     up.addEventListener("click", async () => {
       const { parentOf } = await import("./workspace.js");
       const parent = parentOf(dir);
@@ -172,6 +209,7 @@ export function createFileBrowser(deps: FileBrowserDeps): FileBrowserInstance {
     const tree = document.createElement("div");
     tree.className = "pmd-browser-tree";
     tree.setAttribute("role", "tree");
+    tree.setAttribute("aria-label", "File browser");
     renderEntries(root, 0, tree);
     el.appendChild(tree);
   }
