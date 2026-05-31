@@ -261,6 +261,30 @@
   font-size: var(--pmd-text-sm);
 }
 
+.pmd-mermaid-error-message {
+  margin: 0 0 var(--pmd-space-2);
+  font-weight: var(--pmd-font-medium);
+}
+
+.pmd-mermaid-error-goto {
+  margin-bottom: var(--pmd-space-2);
+  padding: 0;
+  font: inherit;
+  color: var(--pmd-accent, #2563eb);
+  background: none;
+  border: none;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.pmd-mermaid-error-source {
+  margin: 0;
+  color: var(--pmd-fg);
+  font-family: var(--pmd-font-mono, monospace);
+  font-size: var(--pmd-text-xs);
+  white-space: pre-wrap;
+}
+
 .pmd-math-error {
   background: var(--pmd-error-bg, #fef2f2);
   color: var(--pmd-error, #ef4444);

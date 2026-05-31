@@ -976,6 +976,36 @@ body[data-state="welcome"] #split-resizer {
   opacity: 1;
 }
 
+.pmd-mermaid-copy {
+  position: absolute;
+  top: var(--pmd-space-2);
+  right: 6.5rem;
+  z-index: 2;
+  padding: var(--pmd-space-1) var(--pmd-space-3);
+  font-family: inherit;
+  font-size: var(--pmd-text-xs);
+  font-weight: var(--pmd-font-medium);
+  line-height: 1;
+  color: var(--pmd-fg);
+  background: var(--pmd-bg-elevated);
+  border: 1px solid var(--pmd-border);
+  border-radius: var(--pmd-radius-md);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity var(--pmd-transition-base), background var(--pmd-transition-fast), border-color var(--pmd-transition-fast);
+}
+
+.pmd-mermaid-copy:hover {
+  background: var(--pmd-border);
+  border-color: var(--pmd-border-strong);
+}
+
+.pmd-mermaid:hover .pmd-mermaid-copy,
+.pmd-mermaid:focus-within .pmd-mermaid-copy,
+.pmd-mermaid-copy:focus-visible {
+  opacity: 1;
+}
+
 .pmd-mermaid-overlay {
   position: fixed;
   inset: 0;
