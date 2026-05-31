@@ -115,6 +115,17 @@ export function createTabBar(store: TabStore, handlers: TabBarHandlers): TabBarI
     close.textContent = '×';
     close.title = 'Close tab';
     close.setAttribute('aria-label', `Close ${tab.title}`);
+    // Keep the tab's select/drag from eating the gesture; close on pointerup so
+    // it still fires even if a re-render swaps the button between a click's
+    // pointerdown and pointerup (which would strand a plain `click` listener).
+    close.addEventListener('pointerdown', (e) => e.stopPropagation());
+    close.addEventListener('pointerup', (e) => {
+      if (e.button !== 0) return;
+      e.stopPropagation();
+      handlers.onClose(tab.id);
+    });
+    // Belt-and-braces for environments that deliver only `click` (e.g. keyboard
+    // activation of the button): `closeTab` is idempotent on an already-closed id.
     close.addEventListener('click', (e) => {
       e.stopPropagation();
       handlers.onClose(tab.id);
@@ -122,6 +133,18 @@ export function createTabBar(store: TabStore, handlers: TabBarHandlers): TabBarI
     tabEl.appendChild(close);
 
     tabEl.addEventListener('click', () => handlers.onSelect(tab.id));
+    // Middle-click closes the tab (standard browser/editor behaviour). The close
+    // arrives as `auxclick`; suppress the Linux middle-click paste/autoscroll on
+    // the preceding pointerdown.
+    tabEl.addEventListener('pointerdown', (e) => {
+      if (e.button === 1) e.preventDefault();
+    });
+    tabEl.addEventListener('auxclick', (e) => {
+      if (e.button !== 1) return;
+      e.preventDefault();
+      e.stopPropagation();
+      handlers.onClose(tab.id);
+    });
     tabEl.addEventListener('keydown', (event) => {
       if (event.key === 'ArrowRight') {
         event.preventDefault();
