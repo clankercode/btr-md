@@ -34,6 +34,8 @@
     "src/link_activation.ts",
     "src/document_contracts.ts",
     "src/document_facts_store.ts",
+    "src/diagnostics.ts",
+    "src/resource_policy.ts",
     "src/outline_panel.ts",
     "src/actions.ts",
     "src/keybindings.ts",
