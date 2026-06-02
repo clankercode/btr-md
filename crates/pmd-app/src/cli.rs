@@ -158,6 +158,35 @@ where
     }
 }
 
+/// Extract the file-path arguments from a forwarded `argv` (todo #7).
+///
+/// Used by the single-instance plugin callback: when a second `btr-md <file>`
+/// is launched, its argv is handed to the already-running primary instead of
+/// opening a new window. Skips `argv[0]` (the program name), drops flags and
+/// the value of value-taking flags (`--render`/`--output`), and resolves any
+/// relative path against the forwarding process's `cwd`.
+pub fn forwarded_paths(argv: &[String], cwd: &str) -> Vec<PathBuf> {
+    let mut out = Vec::new();
+    let mut iter = argv.iter().skip(1);
+    while let Some(arg) = iter.next() {
+        match arg.as_str() {
+            "--render" | "--output" => {
+                iter.next(); // consume the flag's value
+            }
+            a if a.starts_with("--") => {}
+            path => {
+                let pb = PathBuf::from(path);
+                out.push(if pb.is_absolute() {
+                    pb
+                } else {
+                    PathBuf::from(cwd).join(pb)
+                });
+            }
+        }
+    }
+    out
+}
+
 fn flag_value(flag: &str, value: &str) -> PathBuf {
     if value.is_empty() || value.starts_with("--") {
         eprintln!("{flag} requires a path argument");

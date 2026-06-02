@@ -78,6 +78,24 @@ fn user_theme_dir() -> Option<PathBuf> {
     })
 }
 
+/// `$XDG_DATA_HOME/btr-md/themes` (≈ `~/.local/share/btr-md/themes`) — where a
+/// user-level install (`just install`) places the bundled themes, alongside the
+/// desktop files. Without this a locally-installed binary finds no themes
+/// (todo #2): its resource dir has none and the `/usr/share` system dirs are
+/// only populated by a system package.
+fn user_data_theme_dir() -> Option<PathBuf> {
+    if let Some(data_home) = std::env::var_os("XDG_DATA_HOME") {
+        return Some(PathBuf::from(data_home).join("btr-md").join("themes"));
+    }
+    std::env::var_os("HOME").map(|home| {
+        PathBuf::from(home)
+            .join(".local")
+            .join("share")
+            .join("btr-md")
+            .join("themes")
+    })
+}
+
 fn appdir_theme_dir() -> Option<PathBuf> {
     std::env::var_os("APPDIR").map(|appdir| {
         PathBuf::from(appdir)
@@ -96,6 +114,11 @@ pub fn find_theme_roots(resource_dir: Option<&Path>) -> Vec<PathBuf> {
     // order, keeping picker entries aligned with set_theme resolution.
     if let Some(user_themes) = user_theme_dir() {
         push_existing_dir(&mut dirs, user_themes);
+    }
+
+    // Themes installed by a user-level `just install` (todo #2).
+    if let Some(data_themes) = user_data_theme_dir() {
+        push_existing_dir(&mut dirs, data_themes);
     }
 
     if let Some(resource_dir) = resource_dir {

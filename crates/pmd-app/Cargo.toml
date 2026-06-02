@@ -35,6 +35,7 @@ xdg.workspace = true
 blake3.workspace = true
 diffy.workspace = true
 tauri-plugin-dialog.workspace = true
+tauri-plugin-single-instance.workspace = true
 tokio.workspace = true
 htmd = { version = "0.5.4", default-features = false }
 

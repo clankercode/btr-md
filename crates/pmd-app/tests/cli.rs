@@ -170,3 +170,36 @@ fn run_headless_render_missing_input_errors() {
     let err = cli::run_headless_render(&missing, None, false).unwrap_err();
     assert!(err.contains("failed to read"));
 }
+
+#[test]
+fn forwarded_paths_extracts_files_and_skips_flags() {
+    let argv: Vec<String> = ["btr-md", "--open-dialog", "/abs/a.md", "rel/b.md"]
+        .iter()
+        .map(|s| s.to_string())
+        .collect();
+    let paths = cli::forwarded_paths(&argv, "/work");
+    assert_eq!(
+        paths,
+        vec![
+            std::path::PathBuf::from("/abs/a.md"),
+            std::path::PathBuf::from("/work/rel/b.md"),
+        ]
+    );
+}
+
+#[test]
+fn forwarded_paths_consumes_value_flag_arguments() {
+    let argv: Vec<String> = ["btr-md", "--output", "out.html", "--render", "in.md", "real.md"]
+        .iter()
+        .map(|s| s.to_string())
+        .collect();
+    // out.html and in.md are flag values, not files to open; only real.md is.
+    let paths = cli::forwarded_paths(&argv, "/work");
+    assert_eq!(paths, vec![std::path::PathBuf::from("/work/real.md")]);
+}
+
+#[test]
+fn forwarded_paths_empty_when_only_program_name() {
+    let argv = vec!["btr-md".to_string()];
+    assert!(cli::forwarded_paths(&argv, "/work").is_empty());
+}

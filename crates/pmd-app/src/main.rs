@@ -41,6 +41,28 @@ fn main() {
     };
 
     tauri::Builder::default()
+        // Single-instance (todo #7): a second `btr-md <file>` launch forwards
+        // its file arguments to the already-running window instead of opening a
+        // new app instance. MUST be the first plugin registered.
+        .plugin(tauri_plugin_single_instance::init(|app, argv, cwd| {
+            let state = app.state::<AppState>();
+            for path in cli::forwarded_paths(&argv, &cwd) {
+                match state.scope.allow_file_and_parent(&path) {
+                    Ok(canon) => {
+                        let _ = app.emit("open-file", canon.to_string_lossy().to_string());
+                    }
+                    Err(e) => eprintln!(
+                        "[btr-md] ignoring forwarded path {}: {e}",
+                        path.display()
+                    ),
+                }
+            }
+            if let Some(win) = app.get_webview_window("main") {
+                let _ = win.unminimize();
+                let _ = win.show();
+                let _ = win.set_focus();
+            }
+        }))
         .plugin(tauri_plugin_dialog::init())
         .manage(state)
         .manage(LinkActivationStore::default())
