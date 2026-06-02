@@ -1,6 +1,23 @@
-import mermaid from 'mermaid';
 import { addMermaidExpandButton, makeCopySourceButton } from './mermaid_zoom.js';
 import { selfAndDescendants } from './dom_scope.js';
+
+// Mermaid plus its diagram libraries (cytoscape, dagre, d3, …) are several MB —
+// by far the largest part of the app bundle. They are loaded lazily the first
+// time a document actually contains a diagram, so a plain Markdown file never
+// pays their parse cost at startup (todo #8). `loadMermaid` caches the module.
+type MermaidMod = (typeof import('mermaid'))['default'];
+let mermaidMod: MermaidMod | null = null;
+let mermaidPromise: Promise<MermaidMod> | null = null;
+
+function loadMermaid(): Promise<MermaidMod> {
+  if (!mermaidPromise) {
+    mermaidPromise = import('mermaid').then((m) => {
+      mermaidMod = m.default;
+      return mermaidMod;
+    });
+  }
+  return mermaidPromise;
+}
 
 let initialised = false;
 let currentThemeVars: Record<string, string> = {};
@@ -70,7 +87,8 @@ function shallowEqual(a: Record<string, string>, b: Record<string, string>): boo
   return aKeys.every((key) => a[key] === b[key]);
 }
 
-export function ensureInit(vars?: Record<string, string>) {
+export async function ensureInit(vars?: Record<string, string>) {
+  const mermaid = await loadMermaid();
   let shouldInitialize = !initialised;
   if (vars) {
     if (!shallowEqual(currentThemeVars, vars)) {
@@ -92,15 +110,17 @@ export function ensureInit(vars?: Record<string, string>) {
 }
 
 export async function renderMermaidNodes(root: HTMLElement, renderNonce: string) {
-  ensureInit(latestThemeVars);
   const targets = collectMermaidTargets(root, renderNonce);
+  if (targets.length === 0) return; // no diagrams → never load mermaid
+  await ensureInit(latestThemeVars);
   for (const target of targets) {
     await renderMermaidNode(target, renderNonce);
   }
 }
 
 export async function renderMermaidNode(target: HTMLElement, renderNonce?: string) {
-  ensureInit(latestThemeVars);
+  const mermaid = await loadMermaid();
+  await ensureInit(latestThemeVars);
   const container = ensureMermaidContainer(target, renderNonce);
   if (!container) return;
   const source = container.dataset.mermaidSource ?? "";

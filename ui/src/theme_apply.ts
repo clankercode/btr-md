@@ -1,4 +1,4 @@
-import { ensureInit, renderMermaidNode } from './mermaid_runner.js';
+import { renderMermaidNode } from './mermaid_runner.js';
 import { renderMathNode } from './katex_runner.js';
 
 function hasRenderNonce(el: HTMLElement, renderNonce: string): boolean {
@@ -56,7 +56,9 @@ export async function rerenderForThemeChange(
   root: HTMLElement,
   ctx: { vars: Record<string, string> }
 ) {
-  ensureInit(ctx.vars);
+  // Mermaid re-init happens inside renderMermaidNode (with the active theme
+  // vars), so we don't eagerly load mermaid here — a math-only document never
+  // pulls in the diagram libraries on a theme change (todo #8).
   const renderNonce = root.dataset.pmdNonce ?? '';
   const targets = Array.from(root.querySelectorAll<HTMLElement>('.pmd-mermaid[data-mermaid-source][data-pmd-nonce], .pmd-math[data-math-source][data-pmd-nonce]'))
     .filter((target) => hasRenderNonce(target, renderNonce));

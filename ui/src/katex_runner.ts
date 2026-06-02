@@ -1,4 +1,21 @@
-import katex from 'katex';
+// KaTeX (~540 KB) is loaded lazily the first time a document actually contains
+// math, so it never inflates app-startup parse time (todo #8). Cached after the
+// first load; `renderMathNodes` awaits the load before rendering, and the
+// synchronous `renderMathNode` no-ops until it is ready (math is theme-
+// independent, so a theme-triggered re-render that arrives early loses nothing).
+type Katex = (typeof import('katex'))['default'];
+let katexMod: Katex | null = null;
+let katexPromise: Promise<Katex> | null = null;
+
+function loadKatex(): Promise<Katex> {
+  if (!katexPromise) {
+    katexPromise = import('katex').then((m) => {
+      katexMod = m.default;
+      return katexMod;
+    });
+  }
+  return katexPromise;
+}
 
 // Rendered-HTML cache keyed by (display mode + source). The preview DOM is
 // rebuilt on every render; without caching, every math node re-runs katex on
@@ -27,8 +44,14 @@ export function renderMathNode(el: HTMLElement, renderNonce?: string) {
     el.classList.remove("pmd-math-error");
     return;
   }
+  if (!katexMod) {
+    // KaTeX not loaded yet — kick off the load; the awaiting renderMathNodes (or
+    // the next render) will paint this node once it resolves.
+    void loadKatex();
+    return;
+  }
   try {
-    const html = katex.renderToString(source, {
+    const html = katexMod.renderToString(source, {
       trust: false,
       strict: "warn",
       displayMode,
@@ -42,8 +65,10 @@ export function renderMathNode(el: HTMLElement, renderNonce?: string) {
 }
 
 // Only nodes that `markMathNodes` flagged for this render nonce are rendered.
-export function renderMathNodes(root: HTMLElement, renderNonce: string) {
+export async function renderMathNodes(root: HTMLElement, renderNonce: string) {
   const blocks = root.querySelectorAll<HTMLElement>(".pmd-math[data-math-source][data-pmd-nonce]");
+  if (blocks.length === 0) return; // no math → never load KaTeX
+  await loadKatex();
   for (const block of blocks) {
     renderMathNode(block, renderNonce);
   }
