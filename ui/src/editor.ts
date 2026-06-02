@@ -23,6 +23,7 @@ import {
   toggleList,
 } from './editor_format.js';
 import { listEnter } from './editor_list.js';
+import { editorIndent, editorDedent } from './editor_indent.js';
 
 // One EditorView is reused across all document tabs; each tab owns a live
 // `EditorState` (held in memory by the tab store, never serialized). Switching
@@ -193,6 +194,9 @@ function formattingKeymap() {
       // Smart list continuation: returns false on non-list lines so the
       // default Enter (newline) binding from basicSetup still runs.
       { key: 'Enter', run: listEnter },
+      // Tab / Shift-Tab: list-aware indent/outdent + literal indentation inside
+      // code blocks. Always consumes the key so focus never leaves the editor.
+      { key: 'Tab', run: editorIndent, shift: editorDedent, preventDefault: true },
     ])
   );
 }
