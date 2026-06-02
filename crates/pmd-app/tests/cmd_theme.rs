@@ -55,6 +55,28 @@ fn find_theme_roots_includes_appimage_appdir_share_path() {
 }
 
 #[test]
+fn find_theme_roots_includes_xdg_data_home_install_path() {
+    let _guard = process_env_lock();
+    let temp = tempfile::tempdir().expect("data home");
+    let data_theme_root = temp.path().join("btr-md/themes");
+    std::fs::create_dir_all(&data_theme_root).expect("create data theme root");
+    let previous = std::env::var_os("XDG_DATA_HOME");
+    std::env::set_var("XDG_DATA_HOME", temp.path());
+
+    let roots = find_theme_roots(None);
+
+    if let Some(previous) = previous {
+        std::env::set_var("XDG_DATA_HOME", previous);
+    } else {
+        std::env::remove_var("XDG_DATA_HOME");
+    }
+    assert!(
+        roots.iter().any(|root| root == &data_theme_root),
+        "expected XDG_DATA_HOME theme root in {roots:?}"
+    );
+}
+
+#[test]
 fn find_theme_roots_discovers_workspace_themes_from_crate_dir() {
     let _guard = process_env_lock();
     let previous_cwd = std::env::current_dir().expect("current dir");

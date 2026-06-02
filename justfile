@@ -6,7 +6,7 @@ run:
     just build-ui && cargo run -p pmd-app -j 2
 
 build-ui:
-    cd ui && npx esbuild src/main.ts --bundle --outfile=dist/bundle.js --format=esm --platform=browser --loader:.css=file
+    cd ui && npx esbuild src/main.ts --bundle --outdir=dist --entry-names=bundle --splitting --format=esm --platform=browser --loader:.css=file
 
 watch:
     cargo watch -j 2 -x 'run -p pmd-app -j 2'
@@ -66,6 +66,8 @@ package-smoke:
     bash -n scripts/package-appimage.sh
     bash -n scripts/package-flatpak.sh
     bash -n scripts/capture-screenshots.sh
+    bash -n scripts/install-themes.sh
+    bash -n scripts/install-desktop-files.sh
     test -f packaging/linux/btr-md.1
     test -f packaging/flatpak/md.btr.app.yml
     test -d themes
@@ -73,6 +75,19 @@ package-smoke:
 # install (local desktop integration)
 install-desktop:
     ./scripts/install-desktop-files.sh
+
+# install bundled themes to ~/.local/share/btr-md/themes (todo #2)
+install-themes:
+    ./scripts/install-themes.sh
+
+# full local install: build UI, compile + install the btr-md binary to
+# ~/.cargo/bin, then install desktop files and themes (todo #2, #3)
+install:
+    just build-ui
+    cargo install --path crates/pmd-app --bin btr-md --jobs 2
+    ./scripts/install-desktop-files.sh
+    ./scripts/install-themes.sh
+    @echo "Installed btr-md to ~/.cargo/bin (ensure it is on your PATH)."
 
 # lint / format / pre-PR
 fmt:

@@ -28,6 +28,7 @@ import { computeCounts } from './counts.js';
 import { createInsertMenu, type AlertType, type InsertMenuInstance } from './insert_menu.js';
 import { planFootnoteInsertion } from './footnotes.js';
 import { insertAtCursor, dispatchInsert } from './editor_insert.js';
+import { htmlContainsList } from './clipboard_paste.js';
 import { decorateTables } from './table_copy.js';
 import { installDragOverlay } from './drag_overlay.js';
 import { type LoadedSession } from './session.js';
@@ -1648,6 +1649,22 @@ function installEditorPasteHandlers(dom: HTMLElement): void {
           return;
         }
       }
+    }
+    // List paste (todo #5): a list copied as HTML loses its bullet markers in
+    // the plain-text flavour CodeMirror would otherwise insert. Convert the
+    // HTML to Markdown so the markers survive. Only triggers on real list HTML;
+    // plain-text clipboards fall through to the normal paste.
+    const html = e.clipboardData?.getData('text/html');
+    if (htmlContainsList(html) && editor) {
+      e.preventDefault();
+      void (async () => {
+        try {
+          const markdown = await pasteHtmlAsMarkdown(html as string);
+          insertAtCursor(editor.view, markdown.replace(/\s+$/, ''));
+        } catch (err) {
+          showError(`Paste failed: ${String(err)}`);
+        }
+      })();
     }
   });
 }

@@ -742,8 +742,11 @@
   min-width: 0;
   height: 100%;
   overflow: auto;
-  border-right: 1px solid var(--pmd-border, #2a2a2a);
-  background: var(--pmd-surface, #1b1b1b);
+  border-right: 1px solid var(--pmd-border);
+  /* Themed panel surface; fall back to the elevated background so the sidebar
+     is never a hardcoded dark slab in light theme. */
+  background: var(--pmd-surface, var(--pmd-bg-elevated));
+  color: var(--pmd-fg);
 }
 #sidebar-resizer { flex: 0 0 auto; }
 body[data-sidebar="off"] #pmd-sidebar,
@@ -1846,6 +1849,32 @@ body[data-sidebar="on"] .pmd-trust-panel {
 
 .pmd-trust-status {
   padding: 0 var(--pmd-space-3);
+}
+
+/* "Safe Preview" is the normal, all-clear state — keep it unobtrusive (todo #4)
+   so it does not sit as a heavy pill over the top-left of the preview. It reads
+   as a faint, small label that brightens to a full control on hover/focus. The
+   "Content Blocked" state below stays prominent because it needs attention. */
+.pmd-trust-panel[data-trust-status='Safe Preview'] .pmd-trust-status {
+  min-height: 0;
+  padding: 1px var(--pmd-space-2);
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+  color: var(--pmd-fg-subtle);
+  font-size: var(--pmd-text-xs, 0.72rem);
+  opacity: 0.55;
+  transition: opacity 120ms ease, color 120ms ease, background-color 120ms ease,
+    border-color 120ms ease;
+}
+
+.pmd-trust-panel[data-trust-status='Safe Preview'] .pmd-trust-status:hover,
+.pmd-trust-panel[data-trust-status='Safe Preview'] .pmd-trust-status:focus-visible {
+  opacity: 1;
+  color: var(--pmd-fg-muted);
+  background: var(--pmd-bg-elevated);
+  border-color: var(--pmd-border);
+  box-shadow: var(--pmd-shadow-sm);
 }
 
 .pmd-trust-panel[data-trust-status='Content Blocked'] .pmd-trust-status {
