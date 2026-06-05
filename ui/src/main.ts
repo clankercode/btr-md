@@ -1627,6 +1627,9 @@ async function processRenderQueue(): Promise<void> {
   } catch (e) {
     item.reject(e);
   } finally {
+    // Clear any pending edit-centre that flush did not consume (rejected or
+    // superseded render) so it never carries into a later unrelated render.
+    scrollSync?.cancelPendingEditCenter();
     rendering = false;
     processRenderQueue();
   }

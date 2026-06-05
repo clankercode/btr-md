@@ -59,11 +59,14 @@ export interface ScrollSyncHandle {
    *  No-op unless `getMode()==='split'` (so a flag never goes stale across a
    *  mode change). */
   notifyEdit(): void;
-  /** Called by `main.ts` from the post-render success block. If an edit is
-   *  pending, clears the flag and (when still in split mode) recentres on the
-   *  current cursor line. Clearing happens regardless of mode so the flag can
-   *  never carry over to an unrelated later render. */
+  /** Called by `main.ts` from the post-render *success* block (DOM fresh). If
+   *  an edit is pending and still in split mode, recentres on the current
+   *  cursor line; disarms either way. */
   flushPendingEditCenter(): void;
+  /** Called by `main.ts` from the render `finally` (covers rejected and
+   *  superseded renders): disarms without centring, so a pending request can
+   *  never carry over to a later unrelated render. */
+  cancelPendingEditCenter(): void;
   detach(): void;
 }
 
@@ -133,6 +136,10 @@ A single `click` listener on `previewPane`:
 - In `onActiveEdit()`: `scrollSync?.notifyEdit()`.
 - In `processRenderQueue`'s post-render success block (after `findController
   .refreshPreview()` etc.): `scrollSync?.flushPendingEditCenter()`.
+- In `processRenderQueue`'s `finally`: `scrollSync?.cancelPendingEditCenter()`
+  — disarms after a rejected or superseded render (a render whose result is no
+  longer `stillCurrent`, e.g. a tab switch) so a pending centre never fires on
+  the wrong document.
 
 ## Module boundaries / testability
 
@@ -150,6 +157,9 @@ run under `node:test` with no DOM shim. New file `ui/src/scroll_sync.test.ts`:
   range, fallback to `{ line: srcStart, col: 0 }`.
 - `wordAt(text: string, offset: number): string` — extract the word at an offset
   in a string (the DOM glue passes `textNode.data` + the caret offset).
+- `createEditCenterGate(): EditCenterGate` — the DOM-free `arm`/`flush`/`cancel`
+  state machine behind the LHS-edit trigger; both `flush` and `cancel` disarm,
+  so a pending centre can never survive a render attempt.
 
 The thin DOM/CodeMirror glue (`centerPreviewOnLine`'s `querySelectorAll` + depth
 walk, the click handler's caret resolution and `view.dispatch`) wraps these pure

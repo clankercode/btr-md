@@ -1,6 +1,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { wordAt, resolveSourcePosition, pickBlockForLine } from './scroll_sync.ts';
+import {
+  wordAt,
+  resolveSourcePosition,
+  pickBlockForLine,
+  createEditCenterGate,
+} from './scroll_sync.ts';
 
 // --- wordAt -----------------------------------------------------------------
 
@@ -109,4 +114,35 @@ test('pickBlockForLine: NaN end treated as single line', () => {
   const idx = pickBlockForLine([{ start: 4, end: NaN, depth: 1 }], 4);
   assert.equal(idx, 0);
   assert.equal(pickBlockForLine([{ start: 4, end: NaN, depth: 1 }], 5), -1);
+});
+
+// --- createEditCenterGate ---------------------------------------------------
+
+test('editCenterGate: arm in split then flush in split centres once', () => {
+  const g = createEditCenterGate();
+  g.arm(true);
+  assert.equal(g.flush(true), true);
+  // Disarmed after flush — a later render must not recentre.
+  assert.equal(g.flush(true), false);
+});
+
+test('editCenterGate: never arms when edit happened outside split', () => {
+  const g = createEditCenterGate();
+  g.arm(false);
+  assert.equal(g.flush(true), false);
+});
+
+test('editCenterGate: flush while not in split disarms without centring', () => {
+  const g = createEditCenterGate();
+  g.arm(true);
+  assert.equal(g.flush(false), false);
+  // Switching back to split for a later unrelated render must not recentre.
+  assert.equal(g.flush(true), false);
+});
+
+test('editCenterGate: cancel (rejected/superseded render) disarms without centring', () => {
+  const g = createEditCenterGate();
+  g.arm(true);
+  g.cancel();
+  assert.equal(g.flush(true), false);
 });

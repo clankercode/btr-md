@@ -19,11 +19,14 @@ export interface ScrollSyncHandle {
   /** Mark that a user edit happened; the next settled render recentres.
    *  No-op unless currently in split mode (so the flag never goes stale). */
   notifyEdit(): void;
-  /** Called from the post-render success hook: clears the pending flag
-   *  (unconditionally, so it can never carry into a later unrelated render)
-   *  and, if it was set and we are still in split mode, recentres on the
-   *  current cursor line. */
+  /** Called from the post-render *success* hook (DOM is fresh): clears the
+   *  pending flag and, if it was set and we are still in split mode, recentres
+   *  on the current cursor line. */
   flushPendingEditCenter(): void;
+  /** Called from the render `finally` (covers rejected / superseded renders):
+   *  clears the pending flag without centring, so it can never carry over to a
+   *  later unrelated render. */
+  cancelPendingEditCenter(): void;
   detach(): void;
 }
 
@@ -122,6 +125,37 @@ export function pickBlockForLine(blocks: BlockDesc[], line: number): number {
   return best;
 }
 
+/** One-shot gate for the LHS-edit -> RHS-centre trigger. DOM-free so the
+ *  arm/flush/cancel state machine is unit-testable. "Armed" means a user edit
+ *  in split mode is awaiting the next settled render; `flush`/`cancel` both
+ *  disarm, so a pending request can never survive a render attempt. */
+export interface EditCenterGate {
+  /** Arm only when `active` (i.e. in split mode); otherwise leave unchanged. */
+  arm(active: boolean): void;
+  /** Disarm and report whether a centre should happen now (`armed && active`).
+   *  Called on a successful render. */
+  flush(active: boolean): boolean;
+  /** Disarm without centring. Called on rejected / superseded renders. */
+  cancel(): void;
+}
+
+export function createEditCenterGate(): EditCenterGate {
+  let armed = false;
+  return {
+    arm: (active) => {
+      if (active) armed = true;
+    },
+    flush: (active) => {
+      const center = armed && active;
+      armed = false;
+      return center;
+    },
+    cancel: () => {
+      armed = false;
+    },
+  };
+}
+
 // ---------------------------------------------------------------------------
 // DOM / CodeMirror glue (verified manually on `just run`; see CLAUDE.md note
 // on why the mocked-Chromium e2e suite cannot exercise it).
@@ -182,7 +216,7 @@ const SKIP_SELECTOR = 'a,button,input,textarea,select,[contenteditable],[role="b
 
 export function attachScrollSync(opts: ScrollSyncOptions): ScrollSyncHandle {
   const { view, previewPane, previewContent, getMode } = opts;
-  let editPending = false;
+  const editGate = createEditCenterGate();
 
   const centerPreviewOnLine = (line: number): void => {
     const blocks = collectBlocks(previewContent);
@@ -227,14 +261,15 @@ export function attachScrollSync(opts: ScrollSyncOptions): ScrollSyncHandle {
   return {
     centerPreviewOnLine,
     notifyEdit: () => {
-      if (getMode() === 'split') editPending = true;
+      editGate.arm(getMode() === 'split');
     },
     flushPendingEditCenter: () => {
-      const wasPending = editPending;
-      editPending = false;
-      if (!wasPending || getMode() !== 'split') return;
+      if (!editGate.flush(getMode() === 'split')) return;
       const head = view.state.selection.main.head;
       centerPreviewOnLine(view.state.doc.lineAt(head).number);
+    },
+    cancelPendingEditCenter: () => {
+      editGate.cancel();
     },
     detach: () => {
       previewPane.removeEventListener('click', onClick);
