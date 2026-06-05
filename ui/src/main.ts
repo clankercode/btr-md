@@ -3,7 +3,7 @@ import { listen } from '@tauri-apps/api/event';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { mountEditor, type EditorHandle } from './editor.js';
 import { createChrome, type Mode } from './chrome.js';
-import { attachScrollSync } from './scroll_sync.js';
+import { attachScrollSync, type ScrollSyncHandle } from './scroll_sync.js';
 import { markAllNodes, rerenderForThemeChange } from './theme_apply.js';
 import { renderMermaidNodes, setMermaidGotoLine, setMermaidTheme } from './mermaid_runner.js';
 import { renderMathNodes } from './katex_runner.js';
@@ -523,6 +523,7 @@ function applyDiffMode(): void {
 }
 
 let editor: EditorHandle | null = null;
+let scrollSync: ScrollSyncHandle | null = null;
 let fileBrowser: FileBrowserInstance | null = null;
 let currentMode: Mode = 'split';
 let autosaveMode: AutosaveMode = 'off';
@@ -1618,6 +1619,9 @@ async function processRenderQueue(): Promise<void> {
       findController.refreshPreview();
       applyOutlineRender(result);
       void refreshActiveAssetGrants();
+      // The DOM is now fresh: if this render followed a user edit in split
+      // mode, recentre the preview on the edited block (scroll sync, LHS->RHS).
+      scrollSync?.flushPendingEditCenter();
     }
     item.resolve();
   } catch (e) {
@@ -1636,7 +1640,12 @@ async function ensureEditor(): Promise<void> {
   if (editor) return;
   editor = await mountEditor(editorPane, () => onActiveEdit());
   setMermaidGotoLine((line) => editor?.gotoEditorLine(line));
-  attachScrollSync(editor.view, previewPane);
+  scrollSync = attachScrollSync({
+    view: editor.view,
+    previewPane,
+    previewContent,
+    getMode: () => currentMode,
+  });
   installOutlineCaretListeners();
   installEditorPasteHandlers(editor.view.dom);
 }
@@ -1721,6 +1730,7 @@ const scheduleRenderDebounced = debounce(() => {
 function onActiveEdit(): void {
   const tab = store.activeDoc();
   if (!tab || !editor) return;
+  scrollSync?.notifyEdit();
   scheduleRenderDebounced();
   sendDocEdited(tab.docId, editor.getValue());
   scheduleIdleAutosave();
