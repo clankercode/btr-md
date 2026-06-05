@@ -38,7 +38,14 @@ pub(crate) fn plan_blocks(md: &str) -> Option<Vec<BlockSlice>> {
             Event::Start(Tag::FootnoteDefinition(_)) => return None,
             Event::Start(_) => {
                 if depth == 0 {
-                    cur_start = range.start;
+                    // Snap to the start of the line: pulldown-cmark reports an
+                    // indented code block's offset *after* its 4-space indent,
+                    // so slicing at `range.start` would drop the indentation and
+                    // the block would re-render in isolation as a paragraph. At
+                    // depth 0 the only same-line prefix before a block start is
+                    // (in)significant leading whitespace, so snapping is always
+                    // safe and keeps the slice render byte-identical to full.
+                    cur_start = line_start(md, range.start);
                 }
                 depth += 1;
             }
@@ -54,10 +61,11 @@ pub(crate) fn plan_blocks(md: &str) -> Option<Vec<BlockSlice>> {
             }
             Event::Rule => {
                 if depth == 0 {
+                    let start = line_start(md, range.start);
                     blocks.push(BlockSlice {
-                        start: range.start,
+                        start,
                         end: range.end,
-                        start_line: to_line(range.start),
+                        start_line: to_line(start),
                     });
                 }
             }
@@ -65,6 +73,12 @@ pub(crate) fn plan_blocks(md: &str) -> Option<Vec<BlockSlice>> {
         }
     }
     Some(blocks)
+}
+
+/// Byte offset of the start of the line containing `offset` (one past the
+/// previous `\n`, or 0).
+fn line_start(md: &str, offset: usize) -> usize {
+    md[..offset].rfind('\n').map_or(0, |nl| nl + 1)
 }
 
 /// Conservative detection of reference-style link/image definitions, including

@@ -201,6 +201,17 @@ fn incremental_equals_full_with_frontmatter() {
 }
 
 #[test]
+fn incremental_equals_full_indented_code_block() {
+    // Regression (proptest minimal input "    A\n"): an indented code block's
+    // pulldown-cmark start offset points past the 4-space indent, so the block
+    // slice must be snapped back to the line start or it re-renders in
+    // isolation as a paragraph instead of <pre><code>.
+    assert_equiv("    A\n");
+    assert_equiv("para\n\n    indented code\n    second line\n\nafter\n");
+    assert_equiv("       deep indent\n"); // 7 spaces -> code with 3-space content
+}
+
+#[test]
 fn malformed_unclosed_frontmatter_does_not_desync_manifest() {
     // While typing frontmatter (no closing fence yet) the manifest must still
     // align with emitted root elements.
