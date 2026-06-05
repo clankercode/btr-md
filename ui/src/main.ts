@@ -1619,17 +1619,16 @@ async function processRenderQueue(): Promise<void> {
       findController.refreshPreview();
       applyOutlineRender(result);
       void refreshActiveAssetGrants();
-      // The DOM is now fresh: if this render followed a user edit in split
-      // mode, recentre the preview on the edited block (scroll sync, LHS->RHS).
-      scrollSync?.flushPendingEditCenter();
+      // The DOM is now fresh: if this render followed a user edit to this same
+      // doc in split mode, recentre the preview on the edited block (scroll
+      // sync, LHS->RHS). Keyed on doc id, so it is disarmed only here on a
+      // successful current render — never by a superseded/rejected one.
+      scrollSync?.flushPendingEditCenter(result.doc_id);
     }
     item.resolve();
   } catch (e) {
     item.reject(e);
   } finally {
-    // Clear any pending edit-centre that flush did not consume (rejected or
-    // superseded render) so it never carries into a later unrelated render.
-    scrollSync?.cancelPendingEditCenter();
     rendering = false;
     processRenderQueue();
   }
@@ -1733,7 +1732,7 @@ const scheduleRenderDebounced = debounce(() => {
 function onActiveEdit(): void {
   const tab = store.activeDoc();
   if (!tab || !editor) return;
-  scrollSync?.notifyEdit();
+  scrollSync?.notifyEdit(tab.docId);
   scheduleRenderDebounced();
   sendDocEdited(tab.docId, editor.getValue());
   scheduleIdleAutosave();

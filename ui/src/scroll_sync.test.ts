@@ -118,31 +118,51 @@ test('pickBlockForLine: NaN end treated as single line', () => {
 
 // --- createEditCenterGate ---------------------------------------------------
 
-test('editCenterGate: arm in split then flush in split centres once', () => {
+test('editCenterGate: arm for a doc then settle that doc in split centres once', () => {
   const g = createEditCenterGate();
-  g.arm(true);
-  assert.equal(g.flush(true), true);
-  // Disarmed after flush — a later render must not recentre.
-  assert.equal(g.flush(true), false);
+  g.arm(7);
+  assert.equal(g.settle(7, true), true);
+  // Disarmed after settle — a later render of the same doc must not recentre.
+  assert.equal(g.settle(7, true), false);
 });
 
-test('editCenterGate: never arms when edit happened outside split', () => {
+test('editCenterGate: idle (never armed) settle does not centre', () => {
   const g = createEditCenterGate();
-  g.arm(false);
-  assert.equal(g.flush(true), false);
+  assert.equal(g.settle(7, true), false);
 });
 
-test('editCenterGate: flush while not in split disarms without centring', () => {
+test('editCenterGate: arm(null) (edit outside split) does not centre', () => {
   const g = createEditCenterGate();
-  g.arm(true);
-  assert.equal(g.flush(false), false);
-  // Switching back to split for a later unrelated render must not recentre.
-  assert.equal(g.flush(true), false);
+  g.arm(null);
+  assert.equal(g.settle(7, true), false);
 });
 
-test('editCenterGate: cancel (rejected/superseded render) disarms without centring', () => {
+test('editCenterGate: settle for a different doc disarms without centring', () => {
+  // Armed for doc 7, but a render for doc 9 lands first (e.g. tab switch).
   const g = createEditCenterGate();
-  g.arm(true);
-  g.cancel();
-  assert.equal(g.flush(true), false);
+  g.arm(7);
+  assert.equal(g.settle(9, true), false);
+  // The stale arming for 7 is gone — a later render of 7 must not recentre.
+  assert.equal(g.settle(7, true), false);
+});
+
+test('editCenterGate: settle while not in split disarms without centring', () => {
+  const g = createEditCenterGate();
+  g.arm(7);
+  assert.equal(g.settle(7, false), false);
+  assert.equal(g.settle(7, true), false);
+});
+
+test('editCenterGate: a later arm overrides an earlier unsettled one', () => {
+  const g = createEditCenterGate();
+  g.arm(7);
+  g.arm(9);
+  assert.equal(g.settle(7, true), false); // 7 was superseded by 9
+});
+
+test('editCenterGate: reset disarms', () => {
+  const g = createEditCenterGate();
+  g.arm(7);
+  g.reset();
+  assert.equal(g.settle(7, true), false);
 });

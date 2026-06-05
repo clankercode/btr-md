@@ -55,18 +55,17 @@ export interface ScrollSyncHandle {
   /** Centre the RHS preview on the most-specific block at 1-based editor `line`.
    *  No-op if no tagged block matches. */
   centerPreviewOnLine(line: number): void;
-  /** Mark that a user edit happened; the next settled render will recentre.
-   *  No-op unless `getMode()==='split'` (so a flag never goes stale across a
-   *  mode change). */
-  notifyEdit(): void;
-  /** Called by `main.ts` from the post-render *success* block (DOM fresh). If
-   *  an edit is pending and still in split mode, recentres on the current
-   *  cursor line; disarms either way. */
-  flushPendingEditCenter(): void;
-  /** Called by `main.ts` from the render `finally` (covers rejected and
-   *  superseded renders): disarms without centring, so a pending request can
-   *  never carry over to a later unrelated render. */
-  cancelPendingEditCenter(): void;
+  /** Mark that a user edit to `docId` happened; the next settled render of that
+   *  same doc recentres. No-op (disarms) unless `getMode()==='split'`. */
+  notifyEdit(docId: number): void;
+  /** Called by `main.ts` from the post-render *success* block (DOM fresh) with
+   *  the rendered doc id. Always disarms; recentres on the current cursor line
+   *  only when the rendered doc matches the armed doc and still in split mode.
+   *  Keying on `docId` makes the trigger race-free — a superseded/rejected
+   *  render never reaches this hook, so it cannot drop a newer edit's pending
+   *  centre, and a render for a different doc (after a tab switch) disarms
+   *  without centring the wrong document. */
+  flushPendingEditCenter(docId: number): void;
   detach(): void;
 }
 
@@ -108,15 +107,19 @@ A single `click` listener on `previewPane`:
 ### Trigger B — LHS edit → RHS centre (debounced after render)
 
 - `onActiveEdit()` (the existing per-edit callback in `main.ts`) calls
-  `handle.notifyEdit()`, which sets an internal `editCenterPending` flag **only
-  when already in split mode**. Programmatic renders (theme change, tab switch,
-  reload) do not set it, so they never trigger recentring.
+  `handle.notifyEdit(tab.docId)`, which arms an internal doc-keyed gate **only
+  when already in split mode** (otherwise it disarms). Programmatic renders
+  (theme change, tab switch, reload) do not arm it, so they never trigger
+  recentring.
 - In `processRenderQueue`'s post-render success block (where the DOM is freshly
-  reconciled), `main.ts` calls `handle.flushPendingEditCenter()`. That method
-  clears the flag unconditionally (so a pending flag can never survive into a
-  later unrelated render) and, if it was set **and** `getMode()==='split'`,
-  calls `centerPreviewOnLine(<current cursor line>)`. This rides the existing
-  ~180ms render debounce, so it is naturally debounced and coalesces keystrokes.
+  reconciled), `main.ts` calls `handle.flushPendingEditCenter(result.doc_id)`.
+  That always disarms the gate and, when the rendered doc matches the armed doc
+  **and** `getMode()==='split'`, calls `centerPreviewOnLine(<current cursor
+  line>)`. Because the gate is keyed on the doc id and disarmed only here on a
+  *successful current* render, a superseded/rejected render (which never reaches
+  this hook) cannot drop a newer edit's pending centre — no `finally` cancel is
+  needed and there is no race. This rides the existing ~180ms render debounce,
+  so it is naturally debounced and coalesces keystrokes.
 - `centerPreviewOnLine(line)` collects descriptors from
   `previewContent.querySelectorAll('[data-src-start]')` — each `{ el, start,
   end, depth }` where `depth` is the element's DOM nesting depth within
@@ -133,13 +136,11 @@ A single `click` listener on `previewPane`:
 
 - Update the `attachScrollSync(...)` call (line ~1627) to the new options
   object; capture the returned handle.
-- In `onActiveEdit()`: `scrollSync?.notifyEdit()`.
+- In `onActiveEdit()`: `scrollSync?.notifyEdit(tab.docId)`.
 - In `processRenderQueue`'s post-render success block (after `findController
-  .refreshPreview()` etc.): `scrollSync?.flushPendingEditCenter()`.
-- In `processRenderQueue`'s `finally`: `scrollSync?.cancelPendingEditCenter()`
-  — disarms after a rejected or superseded render (a render whose result is no
-  longer `stillCurrent`, e.g. a tab switch) so a pending centre never fires on
-  the wrong document.
+  .refreshPreview()` etc.): `scrollSync?.flushPendingEditCenter(result.doc_id)`.
+  No `finally` hook is required — the doc-keyed gate is disarmed only by this
+  successful-current-render path.
 
 ## Module boundaries / testability
 
@@ -157,9 +158,13 @@ run under `node:test` with no DOM shim. New file `ui/src/scroll_sync.test.ts`:
   range, fallback to `{ line: srcStart, col: 0 }`.
 - `wordAt(text: string, offset: number): string` — extract the word at an offset
   in a string (the DOM glue passes `textNode.data` + the caret offset).
-- `createEditCenterGate(): EditCenterGate` — the DOM-free `arm`/`flush`/`cancel`
-  state machine behind the LHS-edit trigger; both `flush` and `cancel` disarm,
-  so a pending centre can never survive a render attempt.
+- `createEditCenterGate(): EditCenterGate` — the DOM-free doc-keyed
+  `arm`/`settle`/`reset` state machine behind the LHS-edit trigger. `arm(docId |
+  null)` records the edited doc (null = not split); `settle(renderedDocId,
+  split)` always disarms and returns whether to centre (armed doc ===
+  rendered doc, in split); `reset()` force-disarms on detach. Keying on the doc
+  id is what removes the race — disarming happens only on a successful current
+  render, never on a stale one.
 
 The thin DOM/CodeMirror glue (`centerPreviewOnLine`'s `querySelectorAll` + depth
 walk, the click handler's caret resolution and `view.dispatch`) wraps these pure
@@ -180,8 +185,9 @@ module is typechecked by `just check` (the list enumerates unit-tested modules;
 - Out-of-range line/column → the module clamps both (line to `[1, doc.lines]`,
   column to the target line length) **before** building the dispatch position,
   because CodeMirror's `dispatch` does not clamp (unlike `gotoEditorLine`).
-- A pending edit-centre flag is cleared on every `flushPendingEditCenter()` call
-  regardless of mode, so it can never recentre on an unrelated later render.
+- The edit-centre gate is keyed on doc id and disarmed only on a successful
+  current render, so a rejected or superseded render can neither drop a newer
+  edit's pending centre nor recentre an unrelated later render / wrong document.
 
 ## Out of scope
 
@@ -196,7 +202,7 @@ module is typechecked by `just check` (the list enumerates unit-tested modules;
 |------|--------|
 | `ui/src/scroll_sync.ts` | Full rewrite to the new API + pure helpers |
 | `ui/src/scroll_sync.test.ts` | New — `node:test` unit tests for the pure helpers |
-| `ui/src/main.ts` | New `attachScrollSync` call; `notifyEdit()` in `onActiveEdit`; `flushPendingEditCenter()` in post-render hook |
+| `ui/src/main.ts` | New `attachScrollSync` call; `notifyEdit(tab.docId)` in `onActiveEdit`; `flushPendingEditCenter(result.doc_id)` in post-render success hook |
 | `ui/tsconfig.json` | Add `src/scroll_sync.ts` to the scoped `include` list |
 
 No Rust changes.

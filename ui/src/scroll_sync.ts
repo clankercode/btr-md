@@ -16,17 +16,18 @@ export interface ScrollSyncHandle {
   /** Centre the RHS preview on the most-specific block at 1-based editor
    *  `line`. No-op if no tagged block matches. */
   centerPreviewOnLine(line: number): void;
-  /** Mark that a user edit happened; the next settled render recentres.
-   *  No-op unless currently in split mode (so the flag never goes stale). */
-  notifyEdit(): void;
-  /** Called from the post-render *success* hook (DOM is fresh): clears the
-   *  pending flag and, if it was set and we are still in split mode, recentres
-   *  on the current cursor line. */
-  flushPendingEditCenter(): void;
-  /** Called from the render `finally` (covers rejected / superseded renders):
-   *  clears the pending flag without centring, so it can never carry over to a
-   *  later unrelated render. */
-  cancelPendingEditCenter(): void;
+  /** Mark that a user edit to `docId` happened; the next settled render of that
+   *  same doc recentres. No-op unless currently in split mode (so a pending
+   *  centre never goes stale). */
+  notifyEdit(docId: number): void;
+  /** Called from the post-render *success* hook (DOM is fresh) with the doc id
+   *  that was just rendered. Disarms, and recentres on the current cursor line
+   *  only when the rendered doc matches the armed doc and we are still in split
+   *  mode. Keying on `docId` means a superseded/stale render (which never
+   *  reaches this hook) cannot drop a newer edit's pending centre, and a render
+   *  for a *different* doc (e.g. after a tab switch) disarms without centring
+   *  rather than centring the wrong document. */
+  flushPendingEditCenter(docId: number): void;
   detach(): void;
 }
 
@@ -125,33 +126,37 @@ export function pickBlockForLine(blocks: BlockDesc[], line: number): number {
   return best;
 }
 
-/** One-shot gate for the LHS-edit -> RHS-centre trigger. DOM-free so the
- *  arm/flush/cancel state machine is unit-testable. "Armed" means a user edit
- *  in split mode is awaiting the next settled render; `flush`/`cancel` both
- *  disarm, so a pending request can never survive a render attempt. */
+/** One-shot, doc-keyed gate for the LHS-edit -> RHS-centre trigger. DOM-free so
+ *  the state machine is unit-testable. "Armed" holds the doc id whose next
+ *  settled render should recentre (or null = idle). Keying on the doc id (not a
+ *  bare flag) is what makes the trigger race-free: it is disarmed only when a
+ *  *successful current* render reaches `settle`, so a stale/superseded render
+ *  (which never calls `settle`) cannot drop a newer edit's pending centre, and
+ *  a render for a different doc disarms without a wrong-document centre. */
 export interface EditCenterGate {
-  /** Arm only when `active` (i.e. in split mode); otherwise leave unchanged. */
-  arm(active: boolean): void;
-  /** Disarm and report whether a centre should happen now (`armed && active`).
-   *  Called on a successful render. */
-  flush(active: boolean): boolean;
-  /** Disarm without centring. Called on rejected / superseded renders. */
-  cancel(): void;
+  /** Arm for `docId`, or disarm when `docId` is null (edit happened outside
+   *  split mode). */
+  arm(docId: number | null): void;
+  /** On a successful current render of `renderedDocId` while `split`. Always
+   *  disarms; returns whether to centre (armed for this same doc, in split). */
+  settle(renderedDocId: number, split: boolean): boolean;
+  /** Force-disarm (e.g. on detach). */
+  reset(): void;
 }
 
 export function createEditCenterGate(): EditCenterGate {
-  let armed = false;
+  let armed: number | null = null;
   return {
-    arm: (active) => {
-      if (active) armed = true;
+    arm: (docId) => {
+      armed = docId;
     },
-    flush: (active) => {
-      const center = armed && active;
-      armed = false;
-      return center;
+    settle: (renderedDocId, split) => {
+      const armedDoc = armed;
+      armed = null;
+      return armedDoc !== null && split && armedDoc === renderedDocId;
     },
-    cancel: () => {
-      armed = false;
+    reset: () => {
+      armed = null;
     },
   };
 }
@@ -260,18 +265,16 @@ export function attachScrollSync(opts: ScrollSyncOptions): ScrollSyncHandle {
 
   return {
     centerPreviewOnLine,
-    notifyEdit: () => {
-      editGate.arm(getMode() === 'split');
+    notifyEdit: (docId) => {
+      editGate.arm(getMode() === 'split' ? docId : null);
     },
-    flushPendingEditCenter: () => {
-      if (!editGate.flush(getMode() === 'split')) return;
+    flushPendingEditCenter: (docId) => {
+      if (!editGate.settle(docId, getMode() === 'split')) return;
       const head = view.state.selection.main.head;
       centerPreviewOnLine(view.state.doc.lineAt(head).number);
     },
-    cancelPendingEditCenter: () => {
-      editGate.cancel();
-    },
     detach: () => {
+      editGate.reset();
       previewPane.removeEventListener('click', onClick);
     },
   };
