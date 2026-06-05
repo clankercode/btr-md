@@ -77,13 +77,43 @@ const MD_NODE_CLASS: Record<string, string> = {
   StrikethroughMark: 'cm-md-mark',
 };
 
+// Leading YAML/TOML frontmatter byte range, or null. The Lezer markdown parser
+// has no notion of frontmatter, so it mis-parses the lines as a SetextHeading
+// (a `description: ...` line followed by the closing `---` underline) — which
+// our decorations would then render huge/bold. We detect the region ourselves
+// and (a) suppress markdown styling inside it, (b) give it a dim metadata look.
+// While the closing fence is still being typed, the region extends to EOF so
+// nothing flashes as a heading mid-edit.
+function frontmatterRange(doc: any): { from: number; to: number } | null {
+  if (doc.lines < 1) return null;
+  // Tolerate trailing whitespace / a stray CR, matching the backend's
+  // `trim_end` fence parsing (crates/pmd-core/src/facts/frontmatter.rs).
+  const first = (doc.line(1).text as string).trimEnd();
+  const fence = first === '---' ? '---' : first === '+++' ? '+++' : null;
+  if (!fence) return null;
+  for (let n = 2; n <= doc.lines; n++) {
+    if ((doc.line(n).text as string).trimEnd() === fence) {
+      return { from: 0, to: doc.line(n).to };
+    }
+  }
+  return { from: 0, to: doc.length };
+}
+
 function buildMarkdownDecorations(view: EditorView) {
   const marks: any[] = [];
+  const fm = frontmatterRange(view.state.doc);
   for (const { from, to } of view.visibleRanges) {
+    if (fm) {
+      const s = Math.max(from, fm.from);
+      const e = Math.min(to, fm.to);
+      if (e > s) marks.push(Decoration.mark({ class: 'cm-md-frontmatter' }).range(s, e));
+    }
     syntaxTree(view.state).iterate({
       from,
       to,
       enter: (node: any) => {
+        // Inside frontmatter: skip markdown styling (no setext-heading look).
+        if (fm && node.from >= fm.from && node.from < fm.to) return;
         const cls = MD_NODE_CLASS[node.name];
         if (cls) {
           marks.push(Decoration.mark({ class: cls }).range(node.from, node.to));
@@ -168,6 +198,11 @@ const editorTheme = EditorView.theme({
   '.cm-md-h5': { fontSize: '1.05em', fontWeight: '700' },
   '.cm-md-h6': { fontSize: '1em', fontWeight: '700' },
   '.cm-md-mark': { opacity: '0.5' },
+  // Frontmatter: a calm, dim metadata block — never heading-sized.
+  '.cm-md-frontmatter': {
+    color: 'var(--pmd-fg-muted)',
+    fontStyle: 'italic',
+  },
 });
 
 // Markdown formatting + smart-list keymap (Slice A, features #2/#3).

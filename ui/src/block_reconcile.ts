@@ -3,16 +3,31 @@ export interface BlockRef {
   base_line: number;
 }
 
+// Thrown by reconcileBlocks when the block manifest does not align 1:1 with the
+// fragment's root elements. The caller treats this as a signal to fall back to a
+// full innerHTML replace rather than risk a garbled / frozen preview.
+export class ReconcileDesyncError extends Error {}
+
 // Reconcile #pmd-content's direct children (keyed by data-pmd-block) against a
 // freshly-parsed detached fragment. Returns the list of nodes that were newly
 // inserted or replaced (for scoped post-processing). Unchanged-key nodes are
 // kept in place (preserving rendered mermaid/katex); if their base_line shifted,
 // their descendants' data-src-* are patched in place.
+//
+// Invariant: `blocks[i]` corresponds to `fragment.children[i]`. The backend
+// emits exactly one manifest entry per root element; if that ever breaks
+// (count mismatch) we throw ReconcileDesyncError so the caller can rebuild the
+// whole preview instead of indexing past the end of the fragment.
 export function reconcileBlocks(
   live: HTMLElement,
   fragment: HTMLElement,
   blocks: BlockRef[],
 ): HTMLElement[] {
+  if (fragment.children.length !== blocks.length) {
+    throw new ReconcileDesyncError(
+      `block manifest (${blocks.length}) != fragment roots (${fragment.children.length})`,
+    );
+  }
   const liveByKey = new Map<string, HTMLElement[]>();
   for (const child of Array.from(live.children)) {
     const k = (child as HTMLElement).dataset.pmdBlock;

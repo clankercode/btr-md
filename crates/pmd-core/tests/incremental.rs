@@ -172,3 +172,45 @@ fn falls_back_on_tab_separated_list_reference_definition() {
 fn incremental_equals_full_tab_separated_list_ref_def() {
     assert_equiv("-\t[x]: https://e.com\n\nsee [x]\n");
 }
+
+// Regression: the block manifest must have exactly one entry per top-level HTML
+// element. Frontmatter is a top-level `plan_blocks` block but renders to EMPTY
+// html (metadata events are dropped), so it must NOT produce a manifest entry —
+// otherwise the UI reconcile's manifest<->fragment index alignment breaks (the
+// preview renders garbage then freezes).
+fn count_block_attrs(html: &str) -> usize {
+    html.matches(" data-pmd-block=\"").count()
+}
+
+#[test]
+fn frontmatter_block_does_not_desync_manifest() {
+    let md = "---\nname: x\ndescription: \"y\"\n---\n\nBody one.\n\nBody two.\n";
+    let r = render_incremental(md);
+    assert_eq!(
+        r.blocks.len(),
+        count_block_attrs(&r.html),
+        "manifest len must equal number of root elements; manifest={:?} html={}",
+        r.blocks,
+        r.html
+    );
+}
+
+#[test]
+fn incremental_equals_full_with_frontmatter() {
+    assert_equiv("---\ntitle: My Doc\ndraft: true\n---\n\n# Body\n\nHello.\n");
+}
+
+#[test]
+fn malformed_unclosed_frontmatter_does_not_desync_manifest() {
+    // While typing frontmatter (no closing fence yet) the manifest must still
+    // align with emitted root elements.
+    let md = "---\nname: persist-before-compact\ndescription: \"Instructions.\"\n";
+    let r = render_incremental(md);
+    assert_eq!(
+        r.blocks.len(),
+        count_block_attrs(&r.html),
+        "manifest len must equal root-element count for unclosed frontmatter; manifest={:?} html={}",
+        r.blocks,
+        r.html
+    );
+}

@@ -248,6 +248,15 @@ pub fn render_incremental(md: &str) -> crate::emit::RenderResult {
     let mut blocks_manifest = Vec::<crate::emit::BlockRef>::new();
     for b in &blocks {
         let cb = render_block_cached(&md[b.start..b.end]);
+        // A top-level block can render to empty HTML — notably frontmatter,
+        // whose metadata events `render_fragment` drops entirely. Such a block
+        // produces no DOM element, so it must NOT claim a manifest slot: the UI
+        // reconcile aligns manifest[i] with the i-th root element by index, and
+        // an empty block would shift every subsequent block (garbled preview
+        // then freeze). It has no source-map entries either, so skipping is safe.
+        if cb.html.trim().is_empty() {
+            continue;
+        }
         let base = b.start_line - 1;
         let key = blake3::hash(&md.as_bytes()[b.start..b.end])
             .to_hex()

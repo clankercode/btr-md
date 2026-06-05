@@ -33,7 +33,7 @@ import { decorateTables } from './table_copy.js';
 import { installDragOverlay } from './drag_overlay.js';
 import { type LoadedSession } from './session.js';
 import { createSessionManager } from './session_manager.js';
-import { reconcileBlocks, type BlockRef } from './block_reconcile.js';
+import { reconcileBlocks, ReconcileDesyncError, type BlockRef } from './block_reconcile.js';
 import {
   createActionRegistry,
   defaultActionSpecs,
@@ -1576,29 +1576,41 @@ async function processRenderQueue(): Promise<void> {
     if (stillCurrent) {
       previewContent.dataset.versionApplied = String(result.version);
       previewContent.dataset.pmdNonce = result.render_nonce;
-      if (result.blocks && result.blocks.length > 0) {
-        const frag = document.createElement('div');
-        frag.innerHTML = result.html;
-        const changed = reconcileBlocks(previewContent, frag, result.blocks);
-        for (const node of changed) {
-          markAllNodes(node, result.render_nonce);
-          await renderMermaidNodes(node, result.render_nonce);
-          await renderMathNodes(node, result.render_nonce);
-          decorateCodeBlocks(node);
-          decorateTables(node, () => editor?.getValue() ?? '');
-        }
-        // Refresh the nonce on all kept (unchanged) nodes so that a later
-        // theme change (rerenderForThemeChange) does not skip them — it
-        // filters by the current root nonce.
-        previewContent.querySelectorAll<HTMLElement>('[data-pmd-nonce]')
-          .forEach((el) => { el.dataset.pmdNonce = result.render_nonce; });
-      } else {
+      // Full-document replace + decorate. Used for the non-incremental path and
+      // as the safety fallback when block reconcile detects a desync.
+      const fullReplace = async () => {
         previewContent.innerHTML = result.html;
         markAllNodes(previewContent, result.render_nonce);
         await renderMermaidNodes(previewContent, result.render_nonce);
         await renderMathNodes(previewContent, result.render_nonce);
         decorateCodeBlocks(previewContent);
         decorateTables(previewContent, () => editor?.getValue() ?? '');
+      };
+      if (result.blocks && result.blocks.length > 0) {
+        try {
+          const frag = document.createElement('div');
+          frag.innerHTML = result.html;
+          const changed = reconcileBlocks(previewContent, frag, result.blocks);
+          for (const node of changed) {
+            markAllNodes(node, result.render_nonce);
+            await renderMermaidNodes(node, result.render_nonce);
+            await renderMathNodes(node, result.render_nonce);
+            decorateCodeBlocks(node);
+            decorateTables(node, () => editor?.getValue() ?? '');
+          }
+          // Refresh the nonce on all kept (unchanged) nodes so that a later
+          // theme change (rerenderForThemeChange) does not skip them — it
+          // filters by the current root nonce.
+          previewContent.querySelectorAll<HTMLElement>('[data-pmd-nonce]')
+            .forEach((el) => { el.dataset.pmdNonce = result.render_nonce; });
+        } catch (err) {
+          // A desync (or any reconcile failure) must never wedge the preview:
+          // rebuild the whole thing from scratch so updates keep flowing.
+          if (!(err instanceof ReconcileDesyncError)) console.error('reconcile failed:', err);
+          await fullReplace();
+        }
+      } else {
+        await fullReplace();
       }
       // Single post-render hook covering both reconcile and full-replace
       // branches: refresh the preview-find overlay against the new DOM. Wrapped
