@@ -1621,9 +1621,11 @@ async function processRenderQueue(): Promise<void> {
       void refreshActiveAssetGrants();
       // The DOM is now fresh: if this render followed a user edit to this same
       // doc in split mode, recentre the preview on the edited block (scroll
-      // sync, LHS->RHS). Keyed on doc id, so it is disarmed only here on a
-      // successful current render — never by a superseded/rejected one.
-      scrollSync?.flushPendingEditCenter(result.doc_id);
+      // sync, LHS->RHS). Keyed on (doc id, version), so only a render newer
+      // than the edit settles it — an in-flight pre-edit render that lands in
+      // the debounce gap, a superseded/rejected render, or a different-doc
+      // render never wrongly consume or fire it.
+      scrollSync?.flushPendingEditCenter(result.doc_id, result.version);
     }
     item.resolve();
   } catch (e) {
@@ -1732,7 +1734,10 @@ const scheduleRenderDebounced = debounce(() => {
 function onActiveEdit(): void {
   const tab = store.activeDoc();
   if (!tab || !editor) return;
-  scrollSync?.notifyEdit(tab.docId);
+  // baseVersion = latest version scheduled before this edit; the edit's own
+  // (debounced) render will be strictly newer, which is how the scroll-sync
+  // gate distinguishes it from an in-flight pre-edit render.
+  scrollSync?.notifyEdit(tab.docId, currentVersion);
   scheduleRenderDebounced();
   sendDocEdited(tab.docId, editor.getValue());
   scheduleIdleAutosave();

@@ -117,52 +117,63 @@ test('pickBlockForLine: NaN end treated as single line', () => {
 });
 
 // --- createEditCenterGate ---------------------------------------------------
+// Signature: arm(docId|null, baseVersion); settle(renderedDocId, renderedVersion, split).
 
-test('editCenterGate: arm for a doc then settle that doc in split centres once', () => {
+test('editCenterGate: arm at base v3 then settle same doc at newer v4 centres once', () => {
   const g = createEditCenterGate();
-  g.arm(7);
-  assert.equal(g.settle(7, true), true);
+  g.arm(7, 3);
+  assert.equal(g.settle(7, 4, true), true);
   // Disarmed after settle — a later render of the same doc must not recentre.
-  assert.equal(g.settle(7, true), false);
+  assert.equal(g.settle(7, 5, true), false);
 });
 
 test('editCenterGate: idle (never armed) settle does not centre', () => {
   const g = createEditCenterGate();
-  assert.equal(g.settle(7, true), false);
+  assert.equal(g.settle(7, 4, true), false);
 });
 
 test('editCenterGate: arm(null) (edit outside split) does not centre', () => {
   const g = createEditCenterGate();
-  g.arm(null);
-  assert.equal(g.settle(7, true), false);
+  g.arm(null, 3);
+  assert.equal(g.settle(7, 4, true), false);
+});
+
+test('editCenterGate: stale in-flight pre-edit render (version <= base) does NOT consume the gate', () => {
+  // Armed at base v5; an in-flight render scheduled before the edit lands at v5
+  // (or older). It must not centre AND must leave the gate armed so the real
+  // edit render (v6) still centres. This is the debounce-gap race.
+  const g = createEditCenterGate();
+  g.arm(7, 5);
+  assert.equal(g.settle(7, 5, true), false); // equal version -> stale, no consume
+  assert.equal(g.settle(7, 6, true), true); // the real edit render still centres
 });
 
 test('editCenterGate: settle for a different doc disarms without centring', () => {
-  // Armed for doc 7, but a render for doc 9 lands first (e.g. tab switch).
+  // Armed for doc 7, but a current render for doc 9 lands (e.g. tab switch).
   const g = createEditCenterGate();
-  g.arm(7);
-  assert.equal(g.settle(9, true), false);
-  // The stale arming for 7 is gone — a later render of 7 must not recentre.
-  assert.equal(g.settle(7, true), false);
+  g.arm(7, 3);
+  assert.equal(g.settle(9, 4, true), false);
+  // The arming for 7 is gone — a later render of 7 must not recentre.
+  assert.equal(g.settle(7, 5, true), false);
 });
 
-test('editCenterGate: settle while not in split disarms without centring', () => {
+test('editCenterGate: qualifying render while not in split disarms without centring', () => {
   const g = createEditCenterGate();
-  g.arm(7);
-  assert.equal(g.settle(7, false), false);
-  assert.equal(g.settle(7, true), false);
+  g.arm(7, 3);
+  assert.equal(g.settle(7, 4, false), false);
+  assert.equal(g.settle(7, 5, true), false); // consumed by the v4 render
 });
 
-test('editCenterGate: a later arm overrides an earlier unsettled one', () => {
+test('editCenterGate: a later arm replaces an earlier unsettled one', () => {
   const g = createEditCenterGate();
-  g.arm(7);
-  g.arm(9);
-  assert.equal(g.settle(7, true), false); // 7 was superseded by 9
+  g.arm(7, 3);
+  g.arm(9, 8); // re-armed (e.g. switched to doc 9 and edited it)
+  assert.equal(g.settle(9, 9, true), true); // the latest arming wins
 });
 
 test('editCenterGate: reset disarms', () => {
   const g = createEditCenterGate();
-  g.arm(7);
+  g.arm(7, 3);
   g.reset();
-  assert.equal(g.settle(7, true), false);
+  assert.equal(g.settle(7, 4, true), false);
 });

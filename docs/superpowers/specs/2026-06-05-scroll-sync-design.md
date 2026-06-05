@@ -55,17 +55,21 @@ export interface ScrollSyncHandle {
   /** Centre the RHS preview on the most-specific block at 1-based editor `line`.
    *  No-op if no tagged block matches. */
   centerPreviewOnLine(line: number): void;
-  /** Mark that a user edit to `docId` happened; the next settled render of that
-   *  same doc recentres. No-op (disarms) unless `getMode()==='split'`. */
-  notifyEdit(docId: number): void;
+  /** Mark that a user edit to `docId` happened; `baseVersion` is the latest
+   *  render version scheduled *before* this edit (the edit's own render is
+   *  strictly newer). The next settled render of that same doc with a newer
+   *  version recentres. No-op (disarms) unless `getMode()==='split'`. */
+  notifyEdit(docId: number, baseVersion: number): void;
   /** Called by `main.ts` from the post-render *success* block (DOM fresh) with
-   *  the rendered doc id. Always disarms; recentres on the current cursor line
-   *  only when the rendered doc matches the armed doc and still in split mode.
-   *  Keying on `docId` makes the trigger race-free — a superseded/rejected
-   *  render never reaches this hook, so it cannot drop a newer edit's pending
-   *  centre, and a render for a different doc (after a tab switch) disarms
-   *  without centring the wrong document. */
-  flushPendingEditCenter(docId: number): void;
+   *  the rendered doc id + version. Recentres on the current cursor line only
+   *  when the render matches the armed doc, is newer than `baseVersion`, and
+   *  still in split mode. Keying on (doc id, version) makes the trigger
+   *  race-free: a different-doc render (tab switch) disarms without a wrong-doc
+   *  centre; an in-flight *pre-edit* render of the same doc that lands in the
+   *  debounce gap is older-or-equal, so it neither centres nor consumes the
+   *  gate — the real (newer) edit render still centres; a superseded/rejected
+   *  render never reaches this hook at all. */
+  flushPendingEditCenter(docId: number, version: number): void;
   detach(): void;
 }
 
@@ -107,19 +111,25 @@ A single `click` listener on `previewPane`:
 ### Trigger B — LHS edit → RHS centre (debounced after render)
 
 - `onActiveEdit()` (the existing per-edit callback in `main.ts`) calls
-  `handle.notifyEdit(tab.docId)`, which arms an internal doc-keyed gate **only
-  when already in split mode** (otherwise it disarms). Programmatic renders
-  (theme change, tab switch, reload) do not arm it, so they never trigger
-  recentring.
+  `handle.notifyEdit(tab.docId, currentVersion)`, which arms an internal
+  (doc id, version)-keyed gate **only when already in split mode** (otherwise it
+  disarms). `currentVersion` is the latest version scheduled before this edit;
+  the edit's own debounced render gets a strictly newer version. Programmatic
+  renders (theme change, tab switch, reload) do not arm it, so they never
+  trigger recentring.
 - In `processRenderQueue`'s post-render success block (where the DOM is freshly
-  reconciled), `main.ts` calls `handle.flushPendingEditCenter(result.doc_id)`.
-  That always disarms the gate and, when the rendered doc matches the armed doc
-  **and** `getMode()==='split'`, calls `centerPreviewOnLine(<current cursor
-  line>)`. Because the gate is keyed on the doc id and disarmed only here on a
-  *successful current* render, a superseded/rejected render (which never reaches
-  this hook) cannot drop a newer edit's pending centre — no `finally` cancel is
-  needed and there is no race. This rides the existing ~180ms render debounce,
-  so it is naturally debounced and coalesces keystrokes.
+  reconciled), `main.ts` calls
+  `handle.flushPendingEditCenter(result.doc_id, result.version)`. It centres on
+  the current cursor line only when the rendered doc matches the armed doc, the
+  version is newer than the edit's `baseVersion`, **and** `getMode()==='split'`.
+  Because the gate keys on (doc id, version) and is consumed only by a
+  qualifying render: a superseded/rejected render (never reaches this hook)
+  can't drop the pending centre; an in-flight *pre-edit* render of the same doc
+  that lands in the debounce gap is older-or-equal so it neither centres nor
+  consumes the gate (the real edit render still centres); a different-doc render
+  disarms without a wrong-doc centre. No `finally` cancel is needed and there is
+  no race. This rides the existing ~180ms render debounce, so recentring is
+  naturally debounced and coalesces keystrokes.
 - `centerPreviewOnLine(line)` collects descriptors from
   `previewContent.querySelectorAll('[data-src-start]')` — each `{ el, start,
   end, depth }` where `depth` is the element's DOM nesting depth within
@@ -136,11 +146,12 @@ A single `click` listener on `previewPane`:
 
 - Update the `attachScrollSync(...)` call (line ~1627) to the new options
   object; capture the returned handle.
-- In `onActiveEdit()`: `scrollSync?.notifyEdit(tab.docId)`.
+- In `onActiveEdit()`: `scrollSync?.notifyEdit(tab.docId, currentVersion)`.
 - In `processRenderQueue`'s post-render success block (after `findController
-  .refreshPreview()` etc.): `scrollSync?.flushPendingEditCenter(result.doc_id)`.
-  No `finally` hook is required — the doc-keyed gate is disarmed only by this
-  successful-current-render path.
+  .refreshPreview()` etc.):
+  `scrollSync?.flushPendingEditCenter(result.doc_id, result.version)`. No
+  `finally` hook is required — the (doc id, version)-keyed gate is consumed
+  only by a qualifying successful-current-render.
 
 ## Module boundaries / testability
 
@@ -158,13 +169,15 @@ run under `node:test` with no DOM shim. New file `ui/src/scroll_sync.test.ts`:
   range, fallback to `{ line: srcStart, col: 0 }`.
 - `wordAt(text: string, offset: number): string` — extract the word at an offset
   in a string (the DOM glue passes `textNode.data` + the caret offset).
-- `createEditCenterGate(): EditCenterGate` — the DOM-free doc-keyed
-  `arm`/`settle`/`reset` state machine behind the LHS-edit trigger. `arm(docId |
-  null)` records the edited doc (null = not split); `settle(renderedDocId,
-  split)` always disarms and returns whether to centre (armed doc ===
-  rendered doc, in split); `reset()` force-disarms on detach. Keying on the doc
-  id is what removes the race — disarming happens only on a successful current
-  render, never on a stale one.
+- `createEditCenterGate(): EditCenterGate` — the DOM-free
+  `arm`/`settle`/`reset` state machine behind the LHS-edit trigger, keyed on
+  (doc id, version). `arm(docId | null, baseVersion)` records the edited doc and
+  the pre-edit version (null doc = not split); `settle(renderedDocId,
+  renderedVersion, split)` centres only on a same-doc, newer-than-base render in
+  split, consuming the gate only on such a qualifying render (a different-doc
+  render disarms; an older-or-equal same-doc render is a no-op); `reset()`
+  force-disarms on detach. Keying on (doc, version) removes the debounce-gap
+  race where an in-flight pre-edit render could otherwise consume the gate.
 
 The thin DOM/CodeMirror glue (`centerPreviewOnLine`'s `querySelectorAll` + depth
 walk, the click handler's caret resolution and `view.dispatch`) wraps these pure
@@ -185,9 +198,10 @@ module is typechecked by `just check` (the list enumerates unit-tested modules;
 - Out-of-range line/column → the module clamps both (line to `[1, doc.lines]`,
   column to the target line length) **before** building the dispatch position,
   because CodeMirror's `dispatch` does not clamp (unlike `gotoEditorLine`).
-- The edit-centre gate is keyed on doc id and disarmed only on a successful
-  current render, so a rejected or superseded render can neither drop a newer
-  edit's pending centre nor recentre an unrelated later render / wrong document.
+- The edit-centre gate is keyed on (doc id, version) and consumed only by a
+  qualifying successful-current render, so a rejected, superseded, or in-flight
+  pre-edit render can neither drop a newer edit's pending centre nor recentre an
+  unrelated later render / wrong document.
 
 ## Out of scope
 
@@ -202,7 +216,7 @@ module is typechecked by `just check` (the list enumerates unit-tested modules;
 |------|--------|
 | `ui/src/scroll_sync.ts` | Full rewrite to the new API + pure helpers |
 | `ui/src/scroll_sync.test.ts` | New — `node:test` unit tests for the pure helpers |
-| `ui/src/main.ts` | New `attachScrollSync` call; `notifyEdit(tab.docId)` in `onActiveEdit`; `flushPendingEditCenter(result.doc_id)` in post-render success hook |
+| `ui/src/main.ts` | New `attachScrollSync` call; `notifyEdit(tab.docId, currentVersion)` in `onActiveEdit`; `flushPendingEditCenter(result.doc_id, result.version)` in post-render success hook |
 | `ui/tsconfig.json` | Add `src/scroll_sync.ts` to the scoped `include` list |
 
 No Rust changes.

@@ -16,18 +16,20 @@ export interface ScrollSyncHandle {
   /** Centre the RHS preview on the most-specific block at 1-based editor
    *  `line`. No-op if no tagged block matches. */
   centerPreviewOnLine(line: number): void;
-  /** Mark that a user edit to `docId` happened; the next settled render of that
-   *  same doc recentres. No-op unless currently in split mode (so a pending
-   *  centre never goes stale). */
-  notifyEdit(docId: number): void;
+  /** Mark that a user edit to `docId` happened; `baseVersion` is the latest
+   *  render version scheduled *before* this edit (the edit's own render will be
+   *  strictly newer). The next settled render of that same doc with a newer
+   *  version recentres. No-op (disarms) unless currently in split mode. */
+  notifyEdit(docId: number, baseVersion: number): void;
   /** Called from the post-render *success* hook (DOM is fresh) with the doc id
-   *  that was just rendered. Disarms, and recentres on the current cursor line
-   *  only when the rendered doc matches the armed doc and we are still in split
-   *  mode. Keying on `docId` means a superseded/stale render (which never
-   *  reaches this hook) cannot drop a newer edit's pending centre, and a render
+   *  and version that were just rendered. Recentres on the current cursor line
+   *  only when this render matches the armed doc, is newer than the edit's
+   *  `baseVersion`, and we are still in split mode. A render that is *older or
+   *  equal* (an in-flight pre-edit render that finished in the debounce gap)
+   *  leaves the gate armed so the real edit render can still centre; a render
    *  for a *different* doc (e.g. after a tab switch) disarms without centring
-   *  rather than centring the wrong document. */
-  flushPendingEditCenter(docId: number): void;
+   *  the wrong document. */
+  flushPendingEditCenter(docId: number, version: number): void;
   detach(): void;
 }
 
@@ -126,34 +128,46 @@ export function pickBlockForLine(blocks: BlockDesc[], line: number): number {
   return best;
 }
 
-/** One-shot, doc-keyed gate for the LHS-edit -> RHS-centre trigger. DOM-free so
- *  the state machine is unit-testable. "Armed" holds the doc id whose next
- *  settled render should recentre (or null = idle). Keying on the doc id (not a
- *  bare flag) is what makes the trigger race-free: it is disarmed only when a
- *  *successful current* render reaches `settle`, so a stale/superseded render
- *  (which never calls `settle`) cannot drop a newer edit's pending centre, and
- *  a render for a different doc disarms without a wrong-document centre. */
+/** One-shot gate for the LHS-edit -> RHS-centre trigger, keyed on (doc id,
+ *  version). DOM-free so the state machine is unit-testable. "Armed" holds the
+ *  doc being edited and the latest render version that predates the edit; only
+ *  a render of that same doc with a *newer* version may settle and centre.
+ *
+ *  Keying on both is what makes the trigger race-free:
+ *   - a render for a different doc (tab switch) disarms without a wrong-doc
+ *     centre;
+ *   - an in-flight pre-edit render of the *same* doc that finishes in the
+ *     debounce gap is older-or-equal, so it does NOT consume the gate — the
+ *     real edit render (newer version) still centres. */
 export interface EditCenterGate {
-  /** Arm for `docId`, or disarm when `docId` is null (edit happened outside
-   *  split mode). */
-  arm(docId: number | null): void;
-  /** On a successful current render of `renderedDocId` while `split`. Always
-   *  disarms; returns whether to centre (armed for this same doc, in split). */
-  settle(renderedDocId: number, split: boolean): boolean;
+  /** Arm for `docId` at `baseVersion` (the edit's render will be newer), or
+   *  disarm when `docId` is null (edit happened outside split mode). */
+  arm(docId: number | null, baseVersion: number): void;
+  /** On a successful current render of `renderedDocId` at `renderedVersion`
+   *  while `split`. Returns whether to centre. Consumes the gate only on a
+   *  qualifying render (same doc, newer version); a different-doc render
+   *  disarms without centring; an older-or-equal same-doc render is a no-op
+   *  that leaves the gate armed. */
+  settle(renderedDocId: number, renderedVersion: number, split: boolean): boolean;
   /** Force-disarm (e.g. on detach). */
   reset(): void;
 }
 
 export function createEditCenterGate(): EditCenterGate {
-  let armed: number | null = null;
+  let armed: { docId: number; baseVersion: number } | null = null;
   return {
-    arm: (docId) => {
-      armed = docId;
+    arm: (docId, baseVersion) => {
+      armed = docId === null ? null : { docId, baseVersion };
     },
-    settle: (renderedDocId, split) => {
-      const armedDoc = armed;
+    settle: (renderedDocId, renderedVersion, split) => {
+      if (!armed) return false;
+      if (renderedDocId !== armed.docId) {
+        armed = null; // a different doc became current (e.g. tab switch)
+        return false;
+      }
+      if (renderedVersion <= armed.baseVersion) return false; // stale pre-edit render
       armed = null;
-      return armedDoc !== null && split && armedDoc === renderedDocId;
+      return split;
     },
     reset: () => {
       armed = null;
@@ -265,11 +279,11 @@ export function attachScrollSync(opts: ScrollSyncOptions): ScrollSyncHandle {
 
   return {
     centerPreviewOnLine,
-    notifyEdit: (docId) => {
-      editGate.arm(getMode() === 'split' ? docId : null);
+    notifyEdit: (docId, baseVersion) => {
+      editGate.arm(getMode() === 'split' ? docId : null, baseVersion);
     },
-    flushPendingEditCenter: (docId) => {
-      if (!editGate.settle(docId, getMode() === 'split')) return;
+    flushPendingEditCenter: (docId, version) => {
+      if (!editGate.settle(docId, version, getMode() === 'split')) return;
       const head = view.state.selection.main.head;
       centerPreviewOnLine(view.state.doc.lineAt(head).number);
     },
