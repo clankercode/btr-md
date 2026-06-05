@@ -55,8 +55,15 @@ export interface ScrollSyncHandle {
   /** Centre the RHS preview on the most-specific block at 1-based editor `line`.
    *  No-op if no tagged block matches. */
   centerPreviewOnLine(line: number): void;
-  /** Mark that a user edit happened; the next settled render will recentre. */
+  /** Mark that a user edit happened; the next settled render will recentre.
+   *  No-op unless `getMode()==='split'` (so a flag never goes stale across a
+   *  mode change). */
   notifyEdit(): void;
+  /** Called by `main.ts` from the post-render success block. If an edit is
+   *  pending, clears the flag and (when still in split mode) recentres on the
+   *  current cursor line. Clearing happens regardless of mode so the flag can
+   *  never carry over to an unrelated later render. */
+  flushPendingEditCenter(): void;
   detach(): void;
 }
 
@@ -88,25 +95,35 @@ A single `click` listener on `previewPane`:
    lines `[srcStart..srcEnd]` for the word; on first match place the cursor at
    that line+column. If the word is empty or not found, place the cursor at the
    start of `srcStart`.
-7. `view.dispatch({ selection: { anchor: pos }, scrollIntoView: true })` then
+7. **Clamp** the resolved line to `[1, doc.lines]` and the column to the target
+   line's length **before** computing the document position — CodeMirror's
+   `dispatch` does not clamp out-of-range positions (only `gotoEditorLine`
+   clamps, and we are not routing through it). Then
+   `view.dispatch({ selection: { anchor: pos }, scrollIntoView: true })` and
    `view.focus()`.
 
 ### Trigger B — LHS edit → RHS centre (debounced after render)
 
 - `onActiveEdit()` (the existing per-edit callback in `main.ts`) calls
-  `handle.notifyEdit()`, which sets an internal `editCenterPending` flag. **Only
-  this path sets it** — programmatic renders (theme change, tab switch, reload)
-  do not, so they never trigger recentring.
+  `handle.notifyEdit()`, which sets an internal `editCenterPending` flag **only
+  when already in split mode**. Programmatic renders (theme change, tab switch,
+  reload) do not set it, so they never trigger recentring.
 - In `processRenderQueue`'s post-render success block (where the DOM is freshly
-  reconciled), if `editCenterPending` **and** `getMode()==='split'`, call
-  `centerPreviewOnLine(<current cursor line>)` and clear the flag. This rides
-  the existing ~180ms render debounce, so it is naturally debounced and
-  coalesces keystrokes.
-- `centerPreviewOnLine(line)` (`findBlockForLine`): among
-  `previewContent.querySelectorAll('[data-src-start]')`, pick the **most
-  specific** block containing `line` — largest `srcStart ≤ line`, tie-broken by
-  smallest span (`srcEnd - srcStart`), tolerant of empty `srcEnd`. Then
-  `el.scrollIntoView({ block: 'center', inline: 'nearest' })`, which scrolls the
+  reconciled), `main.ts` calls `handle.flushPendingEditCenter()`. That method
+  clears the flag unconditionally (so a pending flag can never survive into a
+  later unrelated render) and, if it was set **and** `getMode()==='split'`,
+  calls `centerPreviewOnLine(<current cursor line>)`. This rides the existing
+  ~180ms render debounce, so it is naturally debounced and coalesces keystrokes.
+- `centerPreviewOnLine(line)` collects descriptors from
+  `previewContent.querySelectorAll('[data-src-start]')` — each `{ el, start,
+  end, depth }` where `depth` is the element's DOM nesting depth within
+  `previewContent` — and delegates block selection to the pure `pickBlockForLine`
+  helper. **Most specific** = largest `start ≤ line` that still covers it
+  (`end ≥ line`, with empty/NaN `end` treated as `start`), tie-broken by
+  **greatest DOM `depth`** (so a `td`/`th`/`li` wins over its enclosing
+  `table`/`tr`/`ul` when they share a source range — smallest line-span alone
+  cannot disambiguate equal ranges). The chosen element gets
+  `scrollIntoView({ block: 'center', inline: 'nearest' })`, which scrolls the
   nearest scroll container (`previewPane`).
 
 ### `main.ts` wiring changes
@@ -114,24 +131,35 @@ A single `click` listener on `previewPane`:
 - Update the `attachScrollSync(...)` call (line ~1627) to the new options
   object; capture the returned handle.
 - In `onActiveEdit()`: `scrollSync?.notifyEdit()`.
-- In `processRenderQueue` post-render block: the edit-driven recentre call.
+- In `processRenderQueue`'s post-render success block (after `findController
+  .refreshPreview()` etc.): `scrollSync?.flushPendingEditCenter()`.
 
 ## Module boundaries / testability
 
-Pure (or jsdom-only) helpers, unit-tested with vitest
-(`ui/src/scroll_sync.test.ts`):
+The repo's UI unit tests use **`node:test`** (`npm run test:unit` →
+`node --test src/*.test.ts`); there is no vitest or jsdom dependency. The pure
+helpers therefore take **plain strings / descriptor arrays — no DOM** — so they
+run under `node:test` with no DOM shim. New file `ui/src/scroll_sync.test.ts`:
 
-- `findBlockForLine(content: HTMLElement, line: number): HTMLElement | null` —
-  most-specific-block selection; tolerant of missing `data-src-end`.
+- `pickBlockForLine(blocks: { start: number; end: number; depth: number }[],
+  line: number): number` — returns the index of the most-specific block (largest
+  `start ≤ line` covering `line`, tie-broken by greatest `depth`), or `-1`.
+  Tolerant of `NaN`/missing `end`.
 - `resolveSourcePosition(srcText: string, srcStart: number, srcEnd: number,
   word: string): { line: number; col: number }` — word search within a line
-  range, fallback to line start.
-- `wordAtCaret(node: Text, offset: number): string` — extract the word at an
-  offset in a text node.
+  range, fallback to `{ line: srcStart, col: 0 }`.
+- `wordAt(text: string, offset: number): string` — extract the word at an offset
+  in a string (the DOM glue passes `textNode.data` + the caret offset).
 
-The click→dispatch path (real CodeMirror + WebKit caret APIs) and the
-post-render recentre (real rendered tables/code) are **verified manually on
-`just run`** — not claimed as e2e-covered.
+The thin DOM/CodeMirror glue (`centerPreviewOnLine`'s `querySelectorAll` + depth
+walk, the click handler's caret resolution and `view.dispatch`) wraps these pure
+helpers. That glue — plus the post-render recentre over real rendered
+tables/code — is **verified manually on `just run`**; the mocked-Chromium e2e
+suite can't reach it (per CLAUDE.md), so it is not claimed as e2e-covered.
+
+`ui/tsconfig.json`'s scoped `include` list gains `src/scroll_sync.ts` so the new
+module is typechecked by `just check` (the list enumerates unit-tested modules;
+`table_copy.ts` is the precedent).
 
 ## Error handling
 
@@ -139,7 +167,11 @@ post-render recentre (real rendered tables/code) are **verified manually on
 - Caret APIs absent or returning null → fall back to the block start line; never
   throw.
 - No tagged block found for a line → `centerPreviewOnLine` is a silent no-op.
-- Out-of-range lines are clamped by the editor's existing dispatch (doc bounds).
+- Out-of-range line/column → the module clamps both (line to `[1, doc.lines]`,
+  column to the target line length) **before** building the dispatch position,
+  because CodeMirror's `dispatch` does not clamp (unlike `gotoEditorLine`).
+- A pending edit-centre flag is cleared on every `flushPendingEditCenter()` call
+  regardless of mode, so it can never recentre on an unrelated later render.
 
 ## Out of scope
 
@@ -152,9 +184,10 @@ post-render recentre (real rendered tables/code) are **verified manually on
 
 | File | Change |
 |------|--------|
-| `ui/src/scroll_sync.ts` | Full rewrite to the new API + helpers |
-| `ui/src/scroll_sync.test.ts` | New — unit tests for the pure helpers |
-| `ui/src/main.ts` | New `attachScrollSync` call; `notifyEdit()` in `onActiveEdit`; recentre in post-render hook |
+| `ui/src/scroll_sync.ts` | Full rewrite to the new API + pure helpers |
+| `ui/src/scroll_sync.test.ts` | New — `node:test` unit tests for the pure helpers |
+| `ui/src/main.ts` | New `attachScrollSync` call; `notifyEdit()` in `onActiveEdit`; `flushPendingEditCenter()` in post-render hook |
+| `ui/tsconfig.json` | Add `src/scroll_sync.ts` to the scoped `include` list |
 
 No Rust changes.
 
@@ -166,14 +199,17 @@ No Rust changes.
   the clicked word via caret APIs; map to the deepest `[data-src-start]` block;
   best-effort search the block's source line range for the word to set
   line+column (fallback: block start); dispatch cursor move + `scrollIntoView`.
-- **LHS edit → RHS:** `onActiveEdit` flags a pending recentre; the existing
-  debounced render's post-render hook centres the most-specific block at the
-  cursor line via `scrollIntoView({block:'center'})`. Programmatic renders are
-  excluded.
+- **LHS edit → RHS:** `onActiveEdit` flags a pending recentre (only in split
+  mode); the existing debounced render's post-render hook
+  (`flushPendingEditCenter`) clears the flag and centres the most-specific block
+  (deepest matching DOM element) at the cursor line via
+  `scrollIntoView({block:'center'})`. Programmatic renders are excluded and a
+  stale flag can never carry over.
 - **Data available:** renderer already tags block-level source line ranges
   (down to table cells / list items); no inline offsets and no Rust changes.
-- **Testing:** pure helpers (`findBlockForLine`, `resolveSourcePosition`,
-  `wordAtCaret`) get vitest unit tests; the CodeMirror/WebKit/real-render glue
-  is verified by hand on `just run` (the mocked-Chromium e2e suite can't reach
-  it, per CLAUDE.md).
+- **Testing:** DOM-free pure helpers (`pickBlockForLine`,
+  `resolveSourcePosition`, `wordAt`) get `node:test` unit tests (the repo's UI
+  test runner; no vitest/jsdom); the CodeMirror/WebKit/real-render glue is
+  verified by hand on `just run` (the mocked-Chromium e2e suite can't reach it,
+  per CLAUDE.md).
 - **Open questions:** none blocking.
