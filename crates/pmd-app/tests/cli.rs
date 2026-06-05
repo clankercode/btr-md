@@ -31,6 +31,45 @@ fn parse_args_still_admits_single_initial_file() {
 }
 
 #[test]
+fn parse_args_admits_nonexistent_initial_file_for_creation() {
+    // Opening a path that doesn't exist yet (parent dir present) must still be
+    // advertised + scoped, so the renderer can create it on open instead of
+    // erroring.
+    let temp = tempfile::tempdir().expect("tempdir");
+    let path = temp.path().join("new.md");
+    let scope = PathScope::new();
+
+    let parsed = cli::parse_args([path.to_string_lossy().to_string()], &scope);
+
+    let expected = temp.path().canonicalize().unwrap().join("new.md");
+    assert_eq!(parsed.initial_path, Some(expected.clone()));
+    // The (not-yet-existing) target is admitted into scope.
+    assert!(scope.check_canonical(&expected));
+}
+
+#[test]
+fn parse_args_admits_nonexistent_initial_file_with_missing_parent_dirs() {
+    // A target whose parent dirs don't exist yet is still admitted + scoped
+    // (resolved against the nearest existing ancestor). Creating those parent
+    // dirs is confirmed via a native dialog when the renderer actually opens it.
+    let temp = tempfile::tempdir().expect("tempdir");
+    let path = temp.path().join("a").join("b").join("new.md");
+    let scope = PathScope::new();
+
+    let parsed = cli::parse_args([path.to_string_lossy().to_string()], &scope);
+
+    let expected = temp
+        .path()
+        .canonicalize()
+        .unwrap()
+        .join("a")
+        .join("b")
+        .join("new.md");
+    assert_eq!(parsed.initial_path, Some(expected.clone()));
+    assert!(scope.check_canonical(&expected));
+}
+
+#[test]
 fn parse_args_recognizes_render_flag() {
     let scope = PathScope::new();
 
@@ -189,10 +228,12 @@ fn forwarded_paths_extracts_files_and_skips_flags() {
 
 #[test]
 fn forwarded_paths_consumes_value_flag_arguments() {
-    let argv: Vec<String> = ["btr-md", "--output", "out.html", "--render", "in.md", "real.md"]
-        .iter()
-        .map(|s| s.to_string())
-        .collect();
+    let argv: Vec<String> = [
+        "btr-md", "--output", "out.html", "--render", "in.md", "real.md",
+    ]
+    .iter()
+    .map(|s| s.to_string())
+    .collect();
     // out.html and in.md are flag values, not files to open; only real.md is.
     let paths = cli::forwarded_paths(&argv, "/work");
     assert_eq!(paths, vec![std::path::PathBuf::from("/work/real.md")]);

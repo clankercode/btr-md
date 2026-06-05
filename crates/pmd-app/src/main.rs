@@ -47,14 +47,21 @@ fn main() {
         .plugin(tauri_plugin_single_instance::init(|app, argv, cwd| {
             let state = app.state::<AppState>();
             for path in cli::forwarded_paths(&argv, &cwd) {
-                match state.scope.allow_file_and_parent(&path) {
+                // Existing files admit their parent dir (siblings browsable); a
+                // not-yet-existing target is still admitted (resolved against
+                // its nearest existing ancestor) so the renderer creates it on
+                // open, mirroring the initial-path handling in `cli::parse_args`.
+                let admitted = if path.exists() {
+                    state.scope.allow_file_and_parent(&path)
+                } else {
+                    PathScope::resolve_creatable(&path)
+                        .map(|(canon, _missing)| state.scope.allow_canonical(&canon))
+                };
+                match admitted {
                     Ok(canon) => {
                         let _ = app.emit("open-file", canon.to_string_lossy().to_string());
                     }
-                    Err(e) => eprintln!(
-                        "[btr-md] ignoring forwarded path {}: {e}",
-                        path.display()
-                    ),
+                    Err(e) => eprintln!("[btr-md] ignoring forwarded path {}: {e}", path.display()),
                 }
             }
             if let Some(win) = app.get_webview_window("main") {

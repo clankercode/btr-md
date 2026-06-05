@@ -24,8 +24,15 @@
 //! given by Tauri events (the `open-file` emit, recents picks, drag/drop). We
 //! admit a path only when it is already in the scope (re-open) or appears in
 //! the persisted recents list (the user previously chose it through a trusted
-//! entry point). Anything else is rejected; new files must go through
-//! `open_dialog`, which is OS-mediated and cannot be triggered by markup.
+//! entry point). Anything else is rejected; brand-new paths must arrive through
+//! a trusted origin (`open_dialog` or CLI argv) before they can be opened.
+//!
+//! A target that passes the gates but does **not exist on disk** is *created*
+//! rather than refused: an empty file is written and opened. This is the same
+//! authority an existing-file open would have (the gates already proved the
+//! user may read/write there), so it admits no new write capability. Creating
+//! missing *parent directories* is confirmed first via a native OS dialog that
+//! names every directory to be created.
 //!
 //! ## TOCTOU
 //!
@@ -177,12 +184,13 @@ pub async fn open_file(
 /// Run the user-open admission gates on `path` and return the **admitted
 /// canonical path** (now permanently in scope) on success.
 ///
-/// Shared by `request_open_file` and `restore_dirty_doc` so both apply the
-/// identical security policy: a markdown-extension check (before and after
-/// canonicalisation, to defeat symlink-to-non-markdown swaps), file existence,
-/// then the three admission gates — already-scoped, present in recents, OR
-/// within a folder the user admitted via the file-browser picker. Anything else
-/// is rejected; new paths must go through the OS-mediated `open_dialog`.
+/// Used by `restore_dirty_doc`, which reconciles in-memory edits against the
+/// file's current disk content and therefore *requires the file to exist*.
+/// Applies the same security policy as the open path: a markdown-extension
+/// check (before and after canonicalisation, to defeat symlink-to-non-markdown
+/// swaps), file existence, then the three admission gates. The renderer's
+/// regular open path (`request_open_file`) uses [`plan_open_or_create`] instead,
+/// which tolerates a missing file and creates it.
 pub(crate) fn admit_open_path(state: &crate::AppState, path: &Path) -> Result<PathBuf, String> {
     if !is_markdown_path(path) {
         return Err(format!(
@@ -204,20 +212,92 @@ pub(crate) fn admit_open_path(state: &crate::AppState, path: &Path) -> Result<Pa
             canon.display()
         ));
     }
+    check_admission_gates(state, &canon)?;
+    Ok(state.scope.allow_canonical(&canon))
+}
 
-    // Admission gates: already-scoped, in recents, OR within a folder the user
-    // admitted via the file-browser picker (Phase 2 third gate).
-    let already_scoped = state.scope.check_canonical(&canon);
-    let in_recents = crate::state::recents::contains_canonical_eq(&canon);
-    let under_allowed_dir = state.scope.is_within_allowed_dir(&canon);
+/// The three admission gates shared by every renderer-supplied open: a path is
+/// admissible only when it is already-scoped, present in recents, OR within a
+/// folder the user admitted via the file-browser picker (Phase 2 third gate).
+/// Anything else is rejected; new paths must arrive through a trusted origin
+/// (the OS dialog, CLI argv) before they can be opened.
+fn check_admission_gates(state: &crate::AppState, canon: &Path) -> Result<(), String> {
+    let already_scoped = state.scope.check_canonical(canon);
+    let in_recents = crate::state::recents::contains_canonical_eq(canon);
+    let under_allowed_dir = state.scope.is_within_allowed_dir(canon);
     if !already_scoped && !in_recents && !under_allowed_dir {
         return Err(format!(
             "request_open_file: {} is not in scope, recents, or an allowed folder; use the file dialog to open new paths",
             canon.display()
         ));
     }
+    Ok(())
+}
 
-    Ok(state.scope.allow_canonical(&canon))
+/// Outcome of admitting a renderer-supplied open path that may not yet exist.
+/// The canonical target is admitted into the scope; the command layer is then
+/// responsible for any filesystem effects (`missing_dirs` creation, touching
+/// the empty file) and the user confirmation that gates them.
+pub(crate) struct OpenOrCreatePlan {
+    /// Admitted canonical target (in scope on return).
+    pub canon: PathBuf,
+    /// True if the file already exists on disk; false means it must be created.
+    pub exists: bool,
+    /// Canonical ancestor directories that must be created first, outermost-first.
+    pub missing_dirs: Vec<PathBuf>,
+}
+
+/// Admit a renderer-supplied open path, tolerating a not-yet-existing file.
+///
+/// Shares the markdown-extension and admission-gate policy with
+/// [`admit_open_path`], but instead of rejecting a missing file it resolves a
+/// creatable canonical target (see [`crate::path_scope::PathScope::resolve_creatable`])
+/// and reports what would have to be created. The path is held to the same
+/// admission gates as an existing open, so a missing file is only creatable
+/// where the user could already open one — within scope, recents, or an
+/// admitted folder. This is pure w.r.t. the filesystem (it never creates
+/// anything); the caller performs the effects after confirming with the user.
+pub(crate) fn plan_open_or_create(
+    state: &crate::AppState,
+    path: &Path,
+) -> Result<OpenOrCreatePlan, String> {
+    if !is_markdown_path(path) {
+        return Err(format!(
+            "request_open_file refuses non-markdown extension: {}",
+            path.display()
+        ));
+    }
+
+    if path.exists() {
+        let canon = crate::path_scope::PathScope::canonicalise(path).map_err(|e| e.to_string())?;
+        if !is_markdown_path(&canon) {
+            return Err(format!(
+                "request_open_file refuses canonical non-markdown target: {}",
+                canon.display()
+            ));
+        }
+        check_admission_gates(state, &canon)?;
+        return Ok(OpenOrCreatePlan {
+            canon: state.scope.allow_canonical(&canon),
+            exists: true,
+            missing_dirs: Vec::new(),
+        });
+    }
+
+    let (canon, missing_dirs) =
+        crate::path_scope::PathScope::resolve_creatable(path).map_err(|e| e.to_string())?;
+    if !is_markdown_path(&canon) {
+        return Err(format!(
+            "request_open_file refuses canonical non-markdown target: {}",
+            canon.display()
+        ));
+    }
+    check_admission_gates(state, &canon)?;
+    Ok(OpenOrCreatePlan {
+        canon: state.scope.allow_canonical(&canon),
+        exists: false,
+        missing_dirs,
+    })
 }
 
 #[tauri::command]
@@ -228,7 +308,48 @@ pub async fn request_open_file(
     path: PathBuf,
     background: Option<bool>,
 ) -> Result<OpenedDoc, String> {
-    let canon = admit_open_path(&state, &path)?;
+    let plan = plan_open_or_create(&state, &path)?;
+    let canon = plan.canon;
+
+    if !plan.exists {
+        // Opening a path that doesn't exist yet: create an empty file there so
+        // the user lands in an editable buffer instead of an error. Creating
+        // missing parent directories is a bigger commitment, so confirm it with
+        // a native dialog that names exactly what will be created.
+        if !plan.missing_dirs.is_empty() {
+            let listing = plan
+                .missing_dirs
+                .iter()
+                .map(|d| format!("  {}", d.display()))
+                .collect::<Vec<_>>()
+                .join("\n");
+            let confirmed = app
+                .dialog()
+                .message(format!(
+                    "{} does not exist. Create it and the following directories?\n\n{listing}",
+                    canon.display()
+                ))
+                .title("Create new file")
+                .buttons(tauri_plugin_dialog::MessageDialogButtons::OkCancelCustom(
+                    "Create".into(),
+                    "Cancel".into(),
+                ))
+                .blocking_show();
+            if !confirmed {
+                return Err("open cancelled: file creation declined".to_string());
+            }
+            if let Some(parent) = canon.parent() {
+                std::fs::create_dir_all(parent).map_err(|e| e.to_string())?;
+            }
+        }
+        std::fs::write(&canon, "").map_err(|e| e.to_string())?;
+        // The parent dir now exists; admit it so siblings are browsable, exactly
+        // as a trusted file-open would (best-effort, mirrors `open_dialog`).
+        if let Some(parent) = canon.parent() {
+            let _ = state.scope.allow_dir(parent);
+        }
+    }
+
     let contents = std::fs::read_to_string(&canon).map_err(|e| e.to_string())?;
     try_push_recent(&canon);
     let foreground = !background.unwrap_or(false);
@@ -310,5 +431,98 @@ pub async fn save_dialog(
         Ok(Some(canon))
     } else {
         Ok(None)
+    }
+}
+
+#[cfg(test)]
+mod plan_tests {
+    use super::plan_open_or_create;
+    use crate::state::config_env_lock;
+
+    /// Fresh AppState with a temp XDG_CONFIG_HOME so recents starts empty and a
+    /// single admitted base dir. Returns (guard, state, base_dir).
+    fn fixture() -> (
+        std::sync::MutexGuard<'static, ()>,
+        crate::AppState,
+        tempfile::TempDir,
+    ) {
+        let lock = config_env_lock();
+        let cfg = tempfile::tempdir().expect("cfg dir");
+        std::env::set_var("XDG_CONFIG_HOME", cfg.path());
+        // Leak the cfg dir for the test's lifetime by forgetting it is fine, but
+        // we keep `base` separate so the admitted dir is what we control.
+        let base = tempfile::tempdir().expect("base dir");
+        let state = crate::AppState::new(None);
+        state.scope.allow_dir(base.path()).expect("admit base");
+        std::mem::forget(cfg);
+        (lock, state, base)
+    }
+
+    #[test]
+    fn missing_file_under_allowed_dir_is_creatable_with_no_missing_dirs() {
+        let (_lock, state, base) = fixture();
+        let target = base.path().join("fresh.md");
+
+        let plan = plan_open_or_create(&state, &target).expect("admitted");
+
+        assert!(!plan.exists, "file does not exist yet");
+        assert!(plan.missing_dirs.is_empty(), "parent dir exists");
+        assert_eq!(
+            plan.canon,
+            base.path().canonicalize().unwrap().join("fresh.md")
+        );
+        // The target was admitted into scope by the plan.
+        assert!(state.scope.check_canonical(&plan.canon));
+    }
+
+    #[test]
+    fn missing_file_with_missing_parent_dirs_lists_them() {
+        let (_lock, state, base) = fixture();
+        let target = base.path().join("notes").join("2026").join("fresh.md");
+
+        let plan = plan_open_or_create(&state, &target).expect("admitted");
+
+        assert!(!plan.exists);
+        let base_canon = base.path().canonicalize().unwrap();
+        assert_eq!(
+            plan.missing_dirs,
+            vec![
+                base_canon.join("notes"),
+                base_canon.join("notes").join("2026")
+            ]
+        );
+    }
+
+    #[test]
+    fn existing_file_reports_exists_and_no_creation() {
+        let (_lock, state, base) = fixture();
+        let target = base.path().join("there.md");
+        std::fs::write(&target, "hi").expect("write");
+
+        let plan = plan_open_or_create(&state, &target).expect("admitted");
+
+        assert!(plan.exists);
+        assert!(plan.missing_dirs.is_empty());
+    }
+
+    #[test]
+    fn non_admissible_missing_path_is_rejected() {
+        let (_lock, state, _base) = fixture();
+        // A different temp dir that was never admitted.
+        let outside = tempfile::tempdir().expect("outside");
+        let target = outside.path().join("nope.md");
+
+        assert!(
+            plan_open_or_create(&state, &target).is_err(),
+            "missing file outside any allowed dir must be rejected"
+        );
+    }
+
+    #[test]
+    fn non_markdown_extension_is_rejected() {
+        let (_lock, state, base) = fixture();
+        let target = base.path().join("fresh.txt");
+
+        assert!(plan_open_or_create(&state, &target).is_err());
     }
 }

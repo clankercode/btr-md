@@ -131,11 +131,21 @@ where
     }
 
     let p = paths.remove(0);
-    // If scoping fails (e.g. the parent directory cannot be canonicalised,
-    // typically because the path does not exist), do not advertise the path
-    // to downstream open/watch logic — those code paths assume the scope
-    // covers it.
-    match scope.allow_file_and_parent(&p) {
+    // Admit the initial path so the renderer can open it. An existing file is
+    // admitted together with its parent dir (siblings browsable). A path that
+    // does not exist yet is still admitted — the renderer creates it on open
+    // (confirming any missing parent dirs via a dialog) — by resolving a
+    // creatable canonical target against the nearest existing ancestor and
+    // scoping just that file. Only an unresolvable path (e.g. no file name, or
+    // cwd unavailable for a relative input) is dropped, since downstream
+    // open/watch logic assumes the scope covers the advertised path.
+    let admitted = if p.exists() {
+        scope.allow_file_and_parent(&p)
+    } else {
+        crate::path_scope::PathScope::resolve_creatable(&p)
+            .map(|(canon, _missing)| scope.allow_canonical(&canon))
+    };
+    match admitted {
         Ok(canon) => ParsedArgs {
             initial_path: Some(canon),
             list_themes,

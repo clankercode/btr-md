@@ -126,6 +126,19 @@ impl PathScope {
         canonicalise(p)
     }
 
+    /// Resolve a (possibly not-yet-existing) path into its canonical target plus
+    /// the ancestor directories that would have to be created to open it.
+    ///
+    /// Where [`canonicalise`](Self::canonicalise) requires the *immediate*
+    /// parent to exist, this walks up to the nearest existing ancestor,
+    /// canonicalises that, and re-appends the missing tail. The returned
+    /// `missing_dirs` are the canonical directories that do not yet exist,
+    /// ordered outermost-first (ready for sequential `create_dir`); the target
+    /// file itself is never included. Does NOT mutate the scope.
+    pub fn resolve_creatable(p: &std::path::Path) -> std::io::Result<(PathBuf, Vec<PathBuf>)> {
+        resolve_creatable(p)
+    }
+
     // --- directory allowlist (Phase 2) ---
 
     /// Admit a directory (and, transitively, its descendants) into the scope.
@@ -239,9 +252,84 @@ fn canonicalise(p: &std::path::Path) -> std::io::Result<PathBuf> {
     }
 }
 
+/// Resolve a path that may not yet exist (and whose parent dirs may not exist
+/// either) into `(canonical_target, missing_dirs)`. Relative inputs are
+/// resolved against the current working directory. See
+/// [`PathScope::resolve_creatable`] for the contract.
+fn resolve_creatable(p: &std::path::Path) -> std::io::Result<(PathBuf, Vec<PathBuf>)> {
+    use std::io::{Error, ErrorKind};
+    if p.file_name().is_none() {
+        return Err(Error::new(ErrorKind::InvalidInput, "path has no file name"));
+    }
+    let abs = if p.is_absolute() {
+        p.to_path_buf()
+    } else {
+        std::env::current_dir()?.join(p)
+    };
+
+    // Walk up to the nearest existing ancestor, recording the missing tail
+    // components (leaf-first).
+    let mut tail: Vec<std::ffi::OsString> = Vec::new();
+    let mut cursor = abs.as_path();
+    let existing = loop {
+        if cursor.exists() {
+            break cursor;
+        }
+        match (cursor.file_name(), cursor.parent()) {
+            (Some(name), Some(parent)) => {
+                tail.push(name.to_os_string());
+                cursor = parent;
+            }
+            _ => {
+                return Err(Error::new(
+                    ErrorKind::NotFound,
+                    "no existing ancestor directory",
+                ))
+            }
+        }
+    };
+
+    let mut canon = std::fs::canonicalize(existing)?;
+    // Re-append outermost-first; every component except the final file name is
+    // a directory that must be created.
+    tail.reverse();
+    let last = tail.len().saturating_sub(1);
+    let mut missing_dirs = Vec::new();
+    for (i, comp) in tail.into_iter().enumerate() {
+        canon.push(comp);
+        if i < last {
+            missing_dirs.push(canon.clone());
+        }
+    }
+    Ok((canon, missing_dirs))
+}
+
 #[cfg(test)]
 mod tests {
     use super::PathScope;
+
+    #[test]
+    fn resolve_creatable_existing_parent_has_no_missing_dirs() {
+        let dir = tempfile::tempdir().expect("dir");
+        let target = dir.path().join("new.md");
+
+        let (canon, missing) = PathScope::resolve_creatable(&target).expect("resolve");
+
+        assert_eq!(canon, dir.path().canonicalize().unwrap().join("new.md"));
+        assert!(missing.is_empty(), "parent exists -> nothing to create");
+    }
+
+    #[test]
+    fn resolve_creatable_lists_missing_dirs_outermost_first() {
+        let dir = tempfile::tempdir().expect("dir");
+        let base = dir.path().canonicalize().unwrap();
+        let target = base.join("a").join("b").join("new.md");
+
+        let (canon, missing) = PathScope::resolve_creatable(&target).expect("resolve");
+
+        assert_eq!(canon, base.join("a").join("b").join("new.md"));
+        assert_eq!(missing, vec![base.join("a"), base.join("a").join("b")]);
+    }
 
     #[test]
     fn allows_existing_file() {
