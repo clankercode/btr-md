@@ -1,8 +1,8 @@
 const { test, expect } = require('playwright/test');
 const { appUrl, installTauriMock } = require('./helpers.cjs');
 
-async function installBlockRenderMock(page) {
-  await installTauriMock(page);
+async function installBlockRenderMock(page, options = {}) {
+  await installTauriMock(page, options);
   await page.addInitScript(() => {
     const internals = window.__TAURI_INTERNALS__;
     const orig = internals.invoke.bind(internals);
@@ -264,4 +264,37 @@ test('inserting a line above shifts data-src on an unchanged block without recre
   });
   expect(result.probe).toBe('last');
   expect(Number(result.srcStart)).toBeGreaterThan(2);
+});
+
+test('opening a populated file (first render via reconcile) clears the "Loading..." placeholder', async ({ page }) => {
+  // Regression: #pmd-content ships with a literal "Loading..." text node in
+  // index.html. The full-replace render path clears it, but the block-reconcile
+  // path only removed *element* children, stranding the placeholder as a
+  // trailing text node. Reproduce by making the FIRST render a populated file
+  // (so it goes through reconcile while the placeholder is still present).
+  await installBlockRenderMock(page, {
+    files: { '/work/notes.md': 'Alpha block\n\nBeta block' },
+  });
+  await page.goto(appUrl());
+
+  // Sanity: the placeholder is present before any document render.
+  expect(await page.evaluate(() => document.querySelector('#pmd-content')?.textContent)).toContain(
+    'Loading',
+  );
+
+  await page.evaluate((path) => window.__pmdOpenPathForTest(path), '/work/notes.md');
+  await waitForPreviewChildCount(page, 2);
+
+  // The placeholder text node must be gone, and no non-element (text/comment)
+  // nodes should linger as direct children of the preview root.
+  expect(await page.evaluate(() => document.querySelector('#pmd-content')?.textContent)).not.toContain(
+    'Loading',
+  );
+  const strayNodeCount = await page.evaluate(
+    () =>
+      Array.from(document.querySelector('#pmd-content')?.childNodes ?? []).filter(
+        (n) => n.nodeType !== Node.ELEMENT_NODE,
+      ).length,
+  );
+  expect(strayNodeCount).toBe(0);
 });

@@ -62,9 +62,15 @@ export function reconcileBlocks(
     }
   }
 
-  const desiredSet = new Set(desired);
-  for (const child of Array.from(live.children)) {
-    if (!desiredSet.has(child as HTMLElement)) child.remove();
+  const desiredSet = new Set<Node>(desired);
+  // Remove every child NODE that isn't a desired block — not just element
+  // children. `live` ships with a literal "Loading..." text node (index.html's
+  // #pmd-content placeholder); iterating `live.children` skipped it, so the
+  // first reconcile render stranded it as a trailing text node ("...Loading").
+  // Iterating childNodes clears text/comment nodes too, so reconcile fully owns
+  // the preview root's contents.
+  for (const child of Array.from(live.childNodes)) {
+    if (!desiredSet.has(child)) child.remove();
   }
   let ref: Node | null = live.firstChild;
   for (const node of desired) {
