@@ -11,7 +11,7 @@ export interface ChromeState {
 export interface ChromeInstance {
   el: HTMLElement;
   setMode: (mode: Mode) => void;
-  setFilename: (filename: string | null) => void;
+  setFilename: (filename: string | null, tooltip?: string | null) => void;
   setModified: (modified: boolean) => void;
   setStatus: (text: string) => void;
   setCounts: (counts: Counts | null) => void;
@@ -358,9 +358,9 @@ export function createChrome(parent: HTMLElement): ChromeInstance {
   return {
     el: container,
     setMode,
-    setFilename: (filename: string | null) => {
+    setFilename: (filename: string | null, tooltip?: string | null) => {
       filenameEl.textContent = filename || '';
-      filenameEl.title = filename || '';
+      filenameEl.title = tooltip || filename || '';
     },
     setModified: (modified: boolean) => {
       modifiedDot.toggleAttribute('data-modified', modified);

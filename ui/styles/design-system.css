@@ -95,9 +95,10 @@
   --pmd-info: #3b82f6;
   --pmd-info-bg: #eff6ff;
 
-  /* Selection — a translucent accent tint so selected text keeps its own
-     colour (overlaid, not recoloured) and stays readable on any background. */
-  --pmd-selection-bg: rgba(14, 165, 233, 0.25);
+  /* Selection — strong enough to support inverted selected text, including
+     CodeMirror's active line where native selection colour does not help. */
+  --pmd-selection-bg: #0369a1;
+  --pmd-selection-fg: #ffffff;
 
   /* Focus */
   --pmd-focus-ring: #0ea5e9;
@@ -157,8 +158,9 @@
   --pmd-info: #60a5fa;
   --pmd-info-bg: #1e3a5f;
 
-  /* Selection — translucent accent tint (see light theme note). */
-  --pmd-selection-bg: rgba(56, 189, 248, 0.30);
+  /* Selection — strong enough to support inverted selected text. */
+  --pmd-selection-bg: #7dd3fc;
+  --pmd-selection-fg: #020617;
 
   /* Focus */
   --pmd-focus-ring: #38bdf8;
@@ -243,8 +245,8 @@ code, pre, kbd {
    -------------------------------------------- */
 
 ::selection {
-  /* Background only — never recolour the text (keeps contrast in every theme). */
   background-color: var(--pmd-selection-bg);
+  color: var(--pmd-selection-fg);
 }
 
 /* --------------------------------------------

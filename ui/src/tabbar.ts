@@ -86,8 +86,10 @@ export function createTabBar(store: TabStore, handlers: TabBarHandlers): TabBarI
     tabEl.dataset.kind = tab.kind;
     tabEl.setAttribute('role', 'tab');
     tabEl.setAttribute('aria-selected', String(active));
+    tabEl.title = tab.kind === 'doc' && tab.filePath ? tab.filePath : tab.title;
     tabEl.tabIndex = active ? 0 : -1;
     if (active) tabEl.toggleAttribute('data-active', true);
+    if (tab.kind === 'doc') tabEl.dataset.pinned = String(tab.pinned);
 
     const icon = document.createElement('span');
     icon.className = 'pmd-tab-icon';
@@ -98,7 +100,7 @@ export function createTabBar(store: TabStore, handlers: TabBarHandlers): TabBarI
     const label = document.createElement('span');
     label.className = 'pmd-tab-label pmd-truncate';
     label.textContent = tab.title;
-    label.title = tab.title;
+    label.title = tab.kind === 'doc' && tab.filePath ? tab.filePath : tab.title;
     tabEl.appendChild(label);
 
     if (isModifiedTab(tab)) {
@@ -187,6 +189,12 @@ export function createTabBar(store: TabStore, handlers: TabBarHandlers): TabBarI
 
     requestAnimationFrame(measureChrome);
   }
+
+  el.addEventListener('dblclick', (event) => {
+    const target = event.target as HTMLElement | null;
+    if (target?.closest('.pmd-tab, .pmd-newtab-btn, button')) return;
+    handlers.onNewTab(event.shiftKey);
+  });
 
   store.onChange(render);
   render();

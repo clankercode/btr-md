@@ -253,8 +253,15 @@ async function revealActiveFile(filePath: string): Promise<void> {
 const browserDeps = {
   model: workspace,
   pickBaseDir: () => invoke<string | null>('pick_base_dir'),
-  onOpenFile: (path: string, opts: { background: boolean }) =>
-    openFile(path, { background: opts.background }),
+  onOpenFile: (
+    path: string,
+    opts: { background: boolean; pinned?: boolean; replacePreview?: boolean },
+  ) =>
+    openFile(path, {
+      background: opts.background,
+      pinned: opts.pinned,
+      replacePreview: opts.replacePreview,
+    }),
   setRoot: setWorkspaceRoot,
   revealInFolder: (path: string) => {
     void invoke('reveal_in_folder', { path });
@@ -263,7 +270,7 @@ const browserDeps = {
     invoke<string>('rename_path', { path, newName }),
 };
 
-const sidebarBrowser = createFileBrowser(browserDeps);
+const sidebarBrowser = createFileBrowser({ ...browserDeps, openOnSingleClick: true });
 sidebarEl.appendChild(sidebarBrowser.el);
 
 const SPLIT_RATIO_KEY = 'pmd:split-ratio';
@@ -347,12 +354,7 @@ const tabBar: TabBarInstance = createTabBar(store, {
   onSelect: (id) => store.setActive(id),
   onClose: (id) => closeTab(id),
   onNewTab: (shift) => {
-    if (shift) {
-      const t = store.addEmpty({ background: true });
-      tabBar.triggerHighlight(t.id);
-    } else {
-      store.addEmpty();
-    }
+    void newFile({ background: shift });
   },
 });
 // Tab strip lives inside `.pmd-chrome`, below the toolbar.
@@ -1734,6 +1736,9 @@ const scheduleRenderDebounced = debounce(() => {
 function onActiveEdit(): void {
   const tab = store.activeDoc();
   if (!tab || !editor) return;
+  if (!tab.pinned) {
+    store.updateDoc(tab.id, { pinned: true });
+  }
   // baseVersion = latest version scheduled before this edit; the edit's own
   // (debounced) render will be strictly newer, which is how the scroll-sync
   // gate distinguishes it from an in-flight pre-edit render.
@@ -1879,7 +1884,7 @@ async function activateDocTab(tab: DocTab): Promise<void> {
   trustPolicyPanel.setTrustContext(tab.trustContext);
   void refreshActiveAssetGrants();
   invoke('set_active_doc', { docId: tab.docId }).catch(() => {});
-  chrome.setFilename(tab.filePath ? basename(tab.filePath) : 'Untitled');
+  chrome.setFilename(tab.filePath ? basename(tab.filePath) : 'Untitled', tab.filePath ?? 'Untitled');
   applyMode(tab.mode);
   refreshChrome(tab.fileState);
   await scheduleRender();
@@ -1924,7 +1929,7 @@ function renderBrowserBody(): void {
 
 async function addDocTab(
   doc: OpenedDoc,
-  opts: { background: boolean; title?: string; baseContent?: string }
+  opts: { background: boolean; title?: string; baseContent?: string; pinned?: boolean }
 ): Promise<DocTab> {
   await ensureEditor();
   const editorState = editor!.createState(doc.contents);
@@ -1942,22 +1947,29 @@ async function addDocTab(
       editorState,
       trustContext: doc.trust_context,
     },
-    { background: opts.background }
+    { background: opts.background, pinned: opts.pinned }
   );
   saveSession();
   return tab;
 }
 
-async function newFile(): Promise<void> {
+async function newFile(opts: { background?: boolean } = {}): Promise<DocTab | null> {
   try {
     const reg = await invoke<{ doc_id: number; state: FileState; trust_context: DocumentTrustContext | null }>('register_doc', {
       path: null,
       contents: '',
     });
-    await addDocTab({ doc_id: reg.doc_id, path: '', contents: '', state: reg.state, trust_context: reg.trust_context }, { background: false });
+    const background = opts.background ?? false;
+    const tab = await addDocTab(
+      { doc_id: reg.doc_id, path: '', contents: '', state: reg.state, trust_context: reg.trust_context },
+      { background, pinned: true },
+    );
+    if (background) tabBar.triggerHighlight(tab.id);
     chrome.setStatus('Ready');
+    return tab;
   } catch (e) {
     showError(`New file failed: ${String(e)}`);
+    return null;
   }
 }
 
@@ -1980,10 +1992,53 @@ async function openFileDialog(): Promise<void> {
   }
 }
 
-async function openFile(path: string, opts: { background?: boolean } = {}): Promise<void> {
+function previewTabCandidate(): DocTab | null {
+  return store.list().find((tab): tab is DocTab => tab.kind === 'doc' && !tab.pinned) ?? null;
+}
+
+async function replacePreviewTab(tab: DocTab, doc: OpenedDoc, pinned: boolean): Promise<DocTab> {
+  await ensureEditor();
+  const oldDocId = tab.docId;
+  const filePath = doc.path || null;
+  const patch: Partial<DocTab> = {
+    docId: doc.doc_id,
+    filePath,
+    title: filePath ? basename(filePath) : 'Untitled',
+    mode: currentMode,
+    fileState: doc.state,
+    baseContent: doc.contents,
+    editorState: editor!.createState(doc.contents),
+    cachedHtml: null,
+    scrollEditor: 0,
+    scrollPreview: 0,
+    renderSeq: 0,
+    reloadPending: false,
+    trustContext: doc.trust_context,
+    pinned,
+  };
+  store.updateDoc(tab.id, patch);
+  const updated = store.get(tab.id);
+  if (!updated || updated.kind !== 'doc') return tab;
+  if (store.activeId() === updated.id) {
+    await activateDocTab(updated);
+    if (updated.filePath) void revealActiveFile(updated.filePath);
+  } else {
+    store.setActive(updated.id);
+  }
+  invoke('drop_doc', { docId: oldDocId }).catch(() => {});
+  saveSession();
+  return updated;
+}
+
+async function openFile(
+  path: string,
+  opts: { background?: boolean; pinned?: boolean; replacePreview?: boolean } = {},
+): Promise<void> {
   const background = opts.background ?? false;
+  const pinned = opts.pinned ?? true;
   const existing = store.findDocByPath(path);
   if (existing) {
+    if (pinned && !existing.pinned) store.updateDoc(existing.id, { pinned: true });
     if (background) tabBar.triggerHighlight(existing.id);
     else store.setActive(existing.id);
     return;
@@ -1993,11 +2048,15 @@ async function openFile(path: string, opts: { background?: boolean } = {}): Prom
     const existing2 = store.findDocByPath(doc.path);
     if (existing2) {
       invoke('drop_doc', { docId: doc.doc_id }).catch(() => {});
+      if (pinned && !existing2.pinned) store.updateDoc(existing2.id, { pinned: true });
       if (background) tabBar.triggerHighlight(existing2.id);
       else store.setActive(existing2.id);
       return;
     }
-    const tab = await addDocTab(doc, { background });
+    const preview = opts.replacePreview ? previewTabCandidate() : null;
+    const tab = preview
+      ? await replacePreviewTab(preview, doc, pinned)
+      : await addDocTab(doc, { background, pinned });
     if (background) tabBar.triggerHighlight(tab.id);
     loadRecentFiles();
     chrome.setStatus('Ready');
@@ -2029,7 +2088,7 @@ async function saveCurrentDoc(forceSaveAs = false): Promise<void> {
     const state = await invoke<FileState>('save_doc', { docId: tab.docId, contents, path });
     if (path) {
       store.updateDoc(tab.id, { filePath: path, title: basename(path) });
-      chrome.setFilename(basename(path));
+      chrome.setFilename(basename(path), path);
       updateFileOps();
       saveSession();
       // Keep the workspace active-file highlight in sync with the new path.

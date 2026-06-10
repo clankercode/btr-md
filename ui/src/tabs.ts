@@ -32,6 +32,8 @@ export interface DocTab {
   renderSeq: number;
   reloadPending: boolean;
   trustContext: DocumentTrustContext | null;
+  /** False for the single-click sidebar preview tab; true once opened normally. */
+  pinned: boolean;
 }
 
 export interface EmptyTab {
@@ -65,7 +67,7 @@ export interface TabStore {
   active(): Tab | undefined;
   activeId(): TabId | null;
   activeDoc(): DocTab | undefined;
-  addDoc(spec: NewDocTab, opts?: { background?: boolean }): DocTab;
+  addDoc(spec: NewDocTab, opts?: { background?: boolean; pinned?: boolean }): DocTab;
   addEmpty(opts?: { background?: boolean }): EmptyTab;
   /** Add (or focus the existing) browser tab. */
   addBrowser(opts?: { background?: boolean }): BrowserTab;
@@ -97,7 +99,7 @@ export function createTabStore(): TabStore {
     notifyChange();
   }
 
-  function addDoc(spec: NewDocTab, opts?: { background?: boolean }): DocTab {
+  function addDoc(spec: NewDocTab, opts?: { background?: boolean; pinned?: boolean }): DocTab {
     const tab: DocTab = {
       kind: 'doc',
       id: nextId++,
@@ -114,6 +116,7 @@ export function createTabStore(): TabStore {
       renderSeq: 0,
       reloadPending: false,
       trustContext: spec.trustContext,
+      pinned: opts?.pinned ?? true,
     };
     tabs.push(tab);
     if (!opts?.background) setActive(tab.id);

@@ -147,6 +147,34 @@ const markdownDecorations = ViewPlugin.fromClass(
   }
 );
 
+function buildSelectionTextDecorations(view: EditorView) {
+  const marks: any[] = [];
+  for (const range of view.state.selection.ranges) {
+    if (range.empty) continue;
+    marks.push(Decoration.mark({ class: 'cm-pmd-selectedText' }).range(range.from, range.to));
+  }
+  return Decoration.set(marks, true);
+}
+
+const selectionTextDecorations = ViewPlugin.fromClass(
+  class {
+    decorations: any;
+
+    constructor(view: EditorView) {
+      this.decorations = buildSelectionTextDecorations(view);
+    }
+
+    update(update: any) {
+      if (update.selectionSet || update.docChanged || update.viewportChanged) {
+        this.decorations = buildSelectionTextDecorations(update.view);
+      }
+    }
+  },
+  {
+    decorations: (v: any) => v.decorations,
+  }
+);
+
 // Module-level so they are shared across every per-tab state.
 let programmaticDepth = 0;
 let wrapEnabled = true;
@@ -203,6 +231,8 @@ const editorTheme = EditorView.theme({
     color: 'var(--pmd-fg-muted)',
     fontStyle: 'italic',
   },
+  '.cm-pmd-selectedText': { color: 'var(--pmd-selection-fg)' },
+  '.cm-pmd-selectedText *': { color: 'var(--pmd-selection-fg)' },
 });
 
 // Markdown formatting + smart-list keymap (Slice A, features #2/#3).
@@ -245,6 +275,7 @@ function buildExtensions() {
     diffCompartment.of([]),
     searchCompartment.of(searchExtension()),
     markdownDecorations,
+    selectionTextDecorations,
     EditorView.updateListener.of((update: any) => {
       // Fire only for genuine user edits — never for programmatic sets
       // (open/reload/merge/`setValueProgrammatic`) or full state swaps.

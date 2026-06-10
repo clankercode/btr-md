@@ -1160,6 +1160,10 @@ body[data-state="welcome"] #split-resizer {
   border-color: var(--pmd-border);
 }
 
+.pmd-tab[data-pinned='false'] .pmd-tab-label {
+  font-style: italic;
+}
+
 .pmd-tab-icon {
   opacity: 0.8;
   font-size: 0.9em;

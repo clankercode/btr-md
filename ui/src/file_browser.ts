@@ -15,10 +15,15 @@ export interface DirListing {
 
 export interface FileBrowserDeps {
   model: WorkspaceModel;
+  /** Single-click markdown files as a replaceable preview tab (sidebar only). */
+  openOnSingleClick?: boolean;
   /** OS folder picker; resolves to the chosen canonical dir or null. */
   pickBaseDir: () => Promise<string | null>;
   /** Open a file. `background` => open without switching, then highlight. */
-  onOpenFile: (path: string, opts: { background: boolean }) => void;
+  onOpenFile: (
+    path: string,
+    opts: { background: boolean; pinned?: boolean; replacePreview?: boolean },
+  ) => void;
   /** Set the workspace root to a folder already within a grant; resolves false
    *  if rejected (caller then falls back to the picker). */
   setRoot: (path: string) => Promise<boolean>;
@@ -120,6 +125,7 @@ export function createFileBrowser(deps: FileBrowserDeps): FileBrowserInstance {
     row.className = "pmd-browser-row";
     row.style.paddingLeft = `${8 + depth * 16}px`;
     row.dataset.path = entry.path;
+    row.title = entry.path;
     row.tabIndex = 0;
     row.setAttribute("role", "treeitem");
     row.setAttribute("aria-level", String(depth + 1));
@@ -151,6 +157,7 @@ export function createFileBrowser(deps: FileBrowserDeps): FileBrowserInstance {
     const name = document.createElement("span");
     name.className = "pmd-browser-name pmd-truncate";
     name.textContent = entry.name;
+    name.title = entry.path;
     row.appendChild(name);
 
     if (entry.is_dir) {
@@ -175,10 +182,19 @@ export function createFileBrowser(deps: FileBrowserDeps): FileBrowserInstance {
         ]);
       });
     } else {
-      row.addEventListener("click", () => model.select(entry.path));
+      row.addEventListener("click", () => {
+        model.select(entry.path);
+        if (deps.openOnSingleClick && entry.is_markdown) {
+          deps.onOpenFile(entry.path, {
+            background: false,
+            pinned: false,
+            replacePreview: true,
+          });
+        }
+      });
       row.addEventListener("dblclick", (e) => {
         if (!entry.is_markdown) return;
-        deps.onOpenFile(entry.path, { background: e.shiftKey });
+        deps.onOpenFile(entry.path, { background: e.shiftKey, pinned: true });
       });
       row.addEventListener("contextmenu", (e) => {
         e.preventDefault();

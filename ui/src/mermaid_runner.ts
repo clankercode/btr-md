@@ -101,6 +101,7 @@ export async function ensureInit(vars?: Record<string, string>) {
       startOnLoad: false,
       theme: "base",
       securityLevel: "strict",
+      suppressErrorRendering: true,
       themeVariables: currentThemeVars,
     });
     // Cached SVGs bake in the previous theme's colours; drop them on re-init.
@@ -133,7 +134,7 @@ export async function renderMermaidNode(target: HTMLElement, renderNonce?: strin
   }
   try {
     const id = freshMermaidId();
-    const { svg } = await mermaid.render(id, source);
+    const { svg } = await mermaid.render(id, source, container);
     cacheSvg(source, { svg, id });
     // The freshly-rendered svg already carries a unique id, so insert verbatim
     // this once; later hits re-id via reIdSvg().
