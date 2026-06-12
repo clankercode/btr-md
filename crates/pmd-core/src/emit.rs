@@ -190,10 +190,45 @@ fn emit_open_tag(
     }
 }
 
-fn find_block_math_delimiter(text: &str) -> Option<usize> {
-    text.as_bytes().windows(2).position(|pair| pair == b"$$")
+/// Math-scanning state, carried across pulldown text events. A single
+/// `$…$`/`$$…$$` span can be split into several `Event::Text` pieces: an escaped
+/// punctuation char (`\;`, `\,`, `\{` …) ends one text event and starts the
+/// next, and pulldown drops the backslash byte from both. So math content is
+/// never reassembled from text events — it is sliced raw from the original `md`
+/// source by byte offset (`content_start`), which preserves backslash-escapes
+/// verbatim so KaTeX receives `\;` rather than a stripped `;`.
+#[derive(Clone, Copy)]
+enum MathScan {
+    None,
+    /// Inside `$$ … $$`. Offsets are byte positions into the source `md`.
+    Block { content_start: usize, delim_start: usize },
+    /// Inside `$ … $`.
+    Inline { content_start: usize, delim_start: usize },
 }
 
+/// First `$` at or after `start`; the bool is `true` when it begins a `$$`
+/// (block) delimiter rather than a lone `$` (inline).
+fn find_math_open(text: &str, start: usize) -> Option<(usize, bool)> {
+    let bytes = text.as_bytes();
+    let mut idx = start;
+    while idx < bytes.len() {
+        if bytes[idx] == b'$' {
+            return Some((idx, bytes.get(idx + 1) == Some(&b'$')));
+        }
+        idx += 1;
+    }
+    None
+}
+
+/// Position of the next `$$` at or after `start`.
+fn find_block_math_delimiter(text: &str, start: usize) -> Option<usize> {
+    text.as_bytes()[start..]
+        .windows(2)
+        .position(|pair| pair == b"$$")
+        .map(|i| i + start)
+}
+
+/// Position of the next lone `$` (not part of a `$$`) at or after `start`.
 fn find_inline_math_delimiter(text: &str, start: usize) -> Option<usize> {
     let bytes = text.as_bytes();
     let mut idx = start;
@@ -209,23 +244,13 @@ fn find_inline_math_delimiter(text: &str, start: usize) -> Option<usize> {
     None
 }
 
-fn emit_inline_math_text(html: &mut String, text: &str, render_nonce: &str) {
-    let mut cursor = 0;
-    while let Some(open) = find_inline_math_delimiter(text, cursor) {
-        let math_start = open + 1;
-        let Some(close) = find_inline_math_delimiter(text, math_start) else {
-            break;
-        };
-        html.push_str(&escape_html(&text[cursor..open]));
-        html.push_str(&format!(
-            "<span class=\"math-inline\"><code class=\"language-math\" data-pmd-nonce=\"{}\">",
-            escape_html(render_nonce)
-        ));
-        html.push_str(&escape_html(&text[math_start..close]));
-        html.push_str("</code></span>");
-        cursor = close + 1;
-    }
-    html.push_str(&escape_html(&text[cursor..]));
+fn emit_inline_math(html: &mut String, math: &str, render_nonce: &str) {
+    html.push_str(&format!(
+        "<span class=\"math-inline\"><code class=\"language-math\" data-pmd-nonce=\"{}\">",
+        escape_html(render_nonce)
+    ));
+    html.push_str(&escape_html(math));
+    html.push_str("</code></span>");
 }
 
 fn emit_block_math(html: &mut String, math: &str, render_nonce: &str) {
@@ -237,32 +262,93 @@ fn emit_block_math(html: &mut String, math: &str, render_nonce: &str) {
     html.push_str("</code></span>");
 }
 
-fn emit_text_with_math(
+/// Scan one text segment for `$`/`$$` math, updating `state` across calls.
+/// `seg` is a pulldown `Event::Text` payload and equals `md[src_start..]` for its
+/// own length (escapes split events, so no event spans an escape). Non-math text
+/// is emitted from `seg` (escapes already resolved by pulldown); math content is
+/// sliced raw from `md` so KaTeX sees backslash-escapes verbatim.
+fn feed_math(
     html: &mut String,
-    text: &str,
-    block_math: &mut Option<String>,
+    seg: &str,
+    src_start: usize,
+    md: &str,
+    state: &mut MathScan,
     render_nonce: &str,
 ) {
-    let mut remaining = text;
+    let mut cursor = 0usize;
     loop {
-        if let Some(buffer) = block_math {
-            let Some(close) = find_block_math_delimiter(remaining) else {
-                buffer.push_str(remaining);
-                return;
-            };
-            buffer.push_str(&remaining[..close]);
-            let math = block_math.take().unwrap();
-            emit_block_math(html, &math, render_nonce);
-            remaining = &remaining[close + 2..];
-        } else {
-            let Some(open) = find_block_math_delimiter(remaining) else {
-                emit_inline_math_text(html, remaining, render_nonce);
-                return;
-            };
-            emit_inline_math_text(html, &remaining[..open], render_nonce);
-            *block_math = Some(String::new());
-            remaining = &remaining[open + 2..];
+        match *state {
+            MathScan::None => match find_math_open(seg, cursor) {
+                None => {
+                    html.push_str(&escape_html(&seg[cursor..]));
+                    return;
+                }
+                Some((idx, is_block)) => {
+                    html.push_str(&escape_html(&seg[cursor..idx]));
+                    let delim_len = if is_block { 2 } else { 1 };
+                    let delim_start = src_start + idx;
+                    let content_start = delim_start + delim_len;
+                    *state = if is_block {
+                        MathScan::Block { content_start, delim_start }
+                    } else {
+                        MathScan::Inline { content_start, delim_start }
+                    };
+                    cursor = idx + delim_len;
+                }
+            },
+            MathScan::Block { content_start, .. } => {
+                match find_block_math_delimiter(seg, cursor) {
+                    None => return,
+                    Some(idx) => {
+                        emit_block_math(html, &md[content_start..src_start + idx], render_nonce);
+                        *state = MathScan::None;
+                        cursor = idx + 2;
+                    }
+                }
+            }
+            MathScan::Inline { content_start, .. } => {
+                match find_inline_math_delimiter(seg, cursor) {
+                    None => return,
+                    Some(idx) => {
+                        emit_inline_math(html, &md[content_start..src_start + idx], render_nonce);
+                        *state = MathScan::None;
+                        cursor = idx + 1;
+                    }
+                }
+            }
         }
+    }
+}
+
+/// Emit an unterminated math span as literal source: no closing delimiter was
+/// found before the containing block ended. `end` is the byte offset in `md`
+/// where that block ends.
+fn flush_math(html: &mut String, md: &str, state: &mut MathScan, end: usize) {
+    let delim_start = match *state {
+        MathScan::None => return,
+        MathScan::Block { delim_start, .. } | MathScan::Inline { delim_start, .. } => delim_start,
+    };
+    let end = end.clamp(delim_start, md.len());
+    html.push_str(&escape_html(&md[delim_start..end]));
+    *state = MathScan::None;
+}
+
+/// Joined plain text of a buffered alert first line, for marker detection.
+fn alert_buf_text(alert_buf: &[(String, usize)]) -> String {
+    alert_buf.iter().map(|(s, _)| s.as_str()).collect()
+}
+
+/// Emit a buffered alert first line through the math scanner (it was not a
+/// `[!TYPE]` marker after all).
+fn emit_alert_buf(
+    html: &mut String,
+    alert_buf: &[(String, usize)],
+    md: &str,
+    state: &mut MathScan,
+    render_nonce: &str,
+) {
+    for (seg, src) in alert_buf {
+        feed_math(html, seg, *src, md, state, render_nonce);
     }
 }
 
@@ -365,15 +451,14 @@ enum AlertScan {
 fn flush_alert_marker(
     html: &mut String,
     alert_state: &mut AlertScan,
-    alert_buf: &mut String,
-    block_math: &mut Option<String>,
+    alert_buf: &mut Vec<(String, usize)>,
+    math: &mut MathScan,
+    md: &str,
     render_nonce: &str,
 ) {
     if matches!(alert_state, AlertScan::ScanningMarker { .. }) {
-        if !alert_buf.is_empty() {
-            emit_text_with_math(html, alert_buf, block_math, render_nonce);
-            alert_buf.clear();
-        }
+        emit_alert_buf(html, alert_buf, md, math, render_nonce);
+        alert_buf.clear();
         *alert_state = AlertScan::None;
     }
 }
@@ -473,7 +558,7 @@ pub fn render_fragment(md: &str, render_nonce: &str) -> FragmentRender {
     let mut in_table_head = false;
     let mut table_alignments: Vec<Alignment> = Vec::new();
     let mut table_cell_index = 0;
-    let mut block_math: Option<String> = None;
+    let mut math = MathScan::None;
     // Depth of currently-open fenced/indented code blocks. While positive,
     // Event::Text content is emitted verbatim — no math delimiter parsing —
     // because `$E=mc^2$` inside a code fence is literal source, not math.
@@ -487,7 +572,9 @@ pub fn render_fragment(md: &str, render_nonce: &str) -> FragmentRender {
     // GitHub-alert detection (buffered: the blockquote open tag is rewritten in
     // place once its first paragraph's leading text is inspected).
     let mut alert_state = AlertScan::None;
-    let mut alert_buf = String::new();
+    // Each entry is one buffered first-line text event: (resolved text, source
+    // byte offset) so the math scanner can slice raw `$…$` content from `md`.
+    let mut alert_buf: Vec<(String, usize)> = Vec::new();
     // Footnotes: number ids by first reference; collect definition bodies into a
     // back-linked section emitted at the end. `fn_def_start` marks where the
     // current definition's body began in `html` so it can be split off.
@@ -536,7 +623,8 @@ pub fn render_fragment(md: &str, render_nonce: &str) -> FragmentRender {
                     &mut html,
                     &mut alert_state,
                     &mut alert_buf,
-                    &mut block_math,
+                    &mut math,
+                    md,
                     render_nonce,
                 );
                 if matches!(tag, Tag::TableHead) {
@@ -642,7 +730,7 @@ pub fn render_fragment(md: &str, render_nonce: &str) -> FragmentRender {
                         para_open_pos,
                     } = alert_state
                     {
-                        if let Some(kind) = parse_alert_marker(&alert_buf) {
+                        if let Some(kind) = parse_alert_marker(&alert_buf_text(&alert_buf)) {
                             apply_alert(
                                 &mut html,
                                 &mut block_stack,
@@ -650,17 +738,24 @@ pub fn render_fragment(md: &str, render_nonce: &str) -> FragmentRender {
                                 para_open_pos,
                                 kind,
                             );
-                        } else if !alert_buf.is_empty() {
-                            emit_text_with_math(
-                                &mut html,
-                                &alert_buf,
-                                &mut block_math,
-                                render_nonce,
-                            );
+                        } else {
+                            emit_alert_buf(&mut html, &alert_buf, md, &mut math, render_nonce);
                         }
                         alert_buf.clear();
                     }
                     alert_state = AlertScan::None;
+                }
+                // An unterminated `$`/`$$` cannot survive past the inline content
+                // of its block: emit it as literal source so it does not consume
+                // the next block's text.
+                if matches!(
+                    tag_end,
+                    TagEnd::Paragraph
+                        | TagEnd::Heading(_)
+                        | TagEnd::TableCell
+                        | TagEnd::Item
+                ) {
+                    flush_math(&mut html, md, &mut math, range.end);
                 }
                 if matches!(tag_end, TagEnd::TableHead) {
                     in_table_head = false;
@@ -694,7 +789,7 @@ pub fn render_fragment(md: &str, render_nonce: &str) -> FragmentRender {
                 // While scanning a blockquote's first line, buffer its text so
                 // the (multi-token) `[!TYPE]` marker can be reassembled.
                 if matches!(alert_state, AlertScan::ScanningMarker { .. }) {
-                    alert_buf.push_str(&t);
+                    alert_buf.push((t.to_string(), range.start));
                     continue;
                 }
                 if let Some(state) = image_state.as_mut() {
@@ -702,7 +797,7 @@ pub fn render_fragment(md: &str, render_nonce: &str) -> FragmentRender {
                 } else if in_code_block > 0 {
                     html.push_str(&escape_html(&t));
                 } else {
-                    emit_text_with_math(&mut html, &t, &mut block_math, render_nonce);
+                    feed_math(&mut html, &t, range.start, md, &mut math, render_nonce);
                 }
             }
             Event::Code(t) => {
@@ -710,7 +805,8 @@ pub fn render_fragment(md: &str, render_nonce: &str) -> FragmentRender {
                     &mut html,
                     &mut alert_state,
                     &mut alert_buf,
-                    &mut block_math,
+                    &mut math,
+                    md,
                     render_nonce,
                 );
                 if let Some(state) = image_state.as_mut() {
@@ -729,7 +825,7 @@ pub fn render_fragment(md: &str, render_nonce: &str) -> FragmentRender {
                 } = alert_state
                 {
                     alert_state = AlertScan::None;
-                    if let Some(kind) = parse_alert_marker(&alert_buf) {
+                    if let Some(kind) = parse_alert_marker(&alert_buf_text(&alert_buf)) {
                         apply_alert(
                             &mut html,
                             &mut block_stack,
@@ -740,39 +836,40 @@ pub fn render_fragment(md: &str, render_nonce: &str) -> FragmentRender {
                         alert_buf.clear();
                         continue; // drop the break that followed the marker line
                     }
-                    emit_text_with_math(&mut html, &alert_buf, &mut block_math, render_nonce);
+                    emit_alert_buf(&mut html, &alert_buf, md, &mut math, render_nonce);
                     alert_buf.clear();
                 }
                 if let Some(state) = image_state.as_mut() {
                     state.alt.push(' ');
-                } else if let Some(buffer) = &mut block_math {
-                    buffer.push('\n');
-                } else {
+                } else if matches!(math, MathScan::None) {
                     html.push(' ');
                 }
+                // Inside an open math span the newline is captured by the raw
+                // `md` slice, so emit nothing here.
             }
             Event::HardBreak => {
                 flush_alert_marker(
                     &mut html,
                     &mut alert_state,
                     &mut alert_buf,
-                    &mut block_math,
+                    &mut math,
+                    md,
                     render_nonce,
                 );
                 if let Some(state) = image_state.as_mut() {
                     state.alt.push(' ');
-                } else if let Some(buffer) = &mut block_math {
-                    buffer.push('\n');
-                } else {
+                } else if matches!(math, MathScan::None) {
                     html.push_str("<br>");
                 }
+                // Inside open math the newline is part of the raw `md` slice.
             }
             Event::Html(t) => {
                 flush_alert_marker(
                     &mut html,
                     &mut alert_state,
                     &mut alert_buf,
-                    &mut block_math,
+                    &mut math,
+                    md,
                     render_nonce,
                 );
                 if image_state.is_none() {
@@ -786,7 +883,8 @@ pub fn render_fragment(md: &str, render_nonce: &str) -> FragmentRender {
                     &mut html,
                     &mut alert_state,
                     &mut alert_buf,
-                    &mut block_math,
+                    &mut math,
+                    md,
                     render_nonce,
                 );
                 if image_state.is_none() {
@@ -798,7 +896,8 @@ pub fn render_fragment(md: &str, render_nonce: &str) -> FragmentRender {
                     &mut html,
                     &mut alert_state,
                     &mut alert_buf,
-                    &mut block_math,
+                    &mut math,
+                    md,
                     render_nonce,
                 );
                 let n = *fn_numbers.entry(t.to_string()).or_insert_with(|| {
@@ -832,10 +931,7 @@ pub fn render_fragment(md: &str, render_nonce: &str) -> FragmentRender {
             }
         }
     }
-    if let Some(math) = block_math {
-        html.push_str("$$");
-        html.push_str(&escape_html(&math));
-    }
+    flush_math(&mut html, md, &mut math, md.len());
     emit_footnotes_section(&mut html, footnotes, &fn_ref_counts, render_nonce);
     FragmentRender {
         html,

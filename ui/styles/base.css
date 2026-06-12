@@ -106,6 +106,26 @@
   border-radius: 0;
 }
 
+/* Display math: the emitter wraps `$$…$$` in `<code class="math-block">`, which
+   KaTeX fills with a block-level `.katex-display` (its own `margin: 1em 0`).
+   Left as inline code, the tinted code background + padding render as thin
+   rectangular "caps" on the empty lines above and below the centred equation.
+   Strip the inline-code chrome and let the equation be a transparent block. */
+.pmd-preview code.math-block,
+.pmd-preview .pmd-math.math-display {
+  display: block;
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
+  font-size: inherit;
+}
+
+/* The emitter's wrapper span around block math is inline by default; make it a
+   block so the equation occupies its own lines without the span's inline box. */
+.pmd-preview span:has(> code.math-block) {
+  display: block;
+}
+
 .pmd-preview blockquote {
   margin: var(--pmd-space-4) 0;
   padding: var(--pmd-space-3) var(--pmd-space-4);

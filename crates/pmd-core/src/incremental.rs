@@ -59,15 +59,13 @@ pub(crate) fn plan_blocks(md: &str) -> Option<Vec<BlockSlice>> {
                     });
                 }
             }
-            Event::Rule => {
-                if depth == 0 {
-                    let start = line_start(md, range.start);
-                    blocks.push(BlockSlice {
-                        start,
-                        end: range.end,
-                        start_line: to_line(start),
-                    });
-                }
+            Event::Rule if depth == 0 => {
+                let start = line_start(md, range.start);
+                blocks.push(BlockSlice {
+                    start,
+                    end: range.end,
+                    start_line: to_line(start),
+                });
             }
             _ => {}
         }

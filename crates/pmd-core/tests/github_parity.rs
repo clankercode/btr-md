@@ -129,19 +129,16 @@ fn raw_html_security_deviations_are_sanitized() {
     assert!(!html.contains("src="), "remote image src survived: {html}");
 }
 
-/// Lock the documented KaTeX fidelity gap: pulldown-cmark consumes `\,` as a
-/// punctuation escape before our math emitter sees it.
+/// Math content is sliced raw from the source, so a LaTeX command like `\,`
+/// reaches KaTeX verbatim even though pulldown-cmark would otherwise consume the
+/// backslash as a punctuation escape.
 #[test]
-fn math_thin_space_escape_is_consumed_before_katex() {
+fn math_backslash_escape_survives_to_katex() {
     let md = std::fs::read_to_string(fixture_dir().join("06-math.md")).unwrap();
     assert!(md.contains(r"\,dx"), "fixture lost thin-space math command");
     let html = emit::render_string(&md).html;
     assert!(
-        html.contains(r"e^{-x^2},dx"),
-        "thin-space escape was not consumed as documented: {html}"
-    );
-    assert!(
-        !html.contains(r"\,dx"),
-        "thin-space escape unexpectedly survived: {html}"
+        html.contains(r"e^{-x^2}\,dx"),
+        "backslash escape was stripped before katex: {html}"
     );
 }
