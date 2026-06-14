@@ -530,6 +530,9 @@ function applySplitLockVisibility(): void {
 async function setSplitScrollLock(enabled: boolean): Promise<void> {
   splitScrollLocked = enabled;
   applySplitLockVisibility();
+  // When enabling the lock, immediately align the panes so they snap into
+  // sync instead of waiting for the next user scroll.
+  if (enabled) scrollMirror?.alignNow();
   try {
     await invoke('set_split_scroll_locked', { enabled });
   } catch (e) {
@@ -1707,6 +1710,7 @@ async function ensureEditor(): Promise<void> {
     previewPane,
     previewContent,
     getMode: () => currentMode,
+    onBeforeClick: () => scrollMirror?.suspendForMs(),
   });
   // Continuous split-view scroll coupling (block-anchored mirror). Listeners
   // are always installed; the gate inside `attachScrollMirror` checks
@@ -1963,9 +1967,7 @@ async function activateDocTab(tab: DocTab): Promise<void> {
   applyDiffMode();
   // Suspend the mirror briefly so the two programmatic scrollTop writes
   // below do not loop the mirror back and rewrite the restored positions.
-  // The mirror's `suspendForOneFrame` clears after ~50ms; the next genuine
-  // user scroll lands well past that.
-  scrollMirror?.suspendForOneFrame();
+  scrollMirror?.suspendForMs();
   editor.view.scrollDOM.scrollTop = tab.scrollEditor;
   previewPane.scrollTop = tab.scrollPreview;
   editor.focus();

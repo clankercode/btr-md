@@ -11,6 +11,7 @@
 // docs/superpowers/specs/2026-06-05-scroll-sync-design.md.
 
 import type { EditorView } from '@codemirror/view';
+import { collectBlocks, pickBlockForLine } from './scroll_pure.ts';
 
 export interface ScrollSyncHandle {
   /** Centre the RHS preview on the most-specific block at 1-based editor
@@ -41,6 +42,11 @@ export interface ScrollSyncOptions {
   previewContent: HTMLElement;
   /** Current view mode; sync is active only when this returns `'split'`. */
   getMode: () => string;
+  /** Optional callback fired just before the click handler moves the editor
+   *  cursor. Use this to suppress the scroll mirror for the editor scroll
+   *  that follows — without it, the mirror would immediately re-scroll the
+   *  preview away from the click position. */
+  onBeforeClick?: () => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -95,37 +101,6 @@ export function resolveSourcePosition(
     if (idx >= 0) return { line: n, col: idx };
   }
   return fallback;
-}
-
-export interface BlockDesc {
-  /** 1-based start line. */
-  start: number;
-  /** 1-based inclusive end line; `NaN` (or `< start`) means single line. */
-  end: number;
-  /** DOM nesting depth within the preview content root. */
-  depth: number;
-}
-
-/** Index of the most-specific block covering `line`: the largest `start` that
- *  still covers the line (`start <= line <= effectiveEnd`), tie-broken by
- *  greatest DOM `depth` (so a cell/row/list-item wins over an enclosing
- *  table/list sharing the same source range). Returns -1 if none cover it. */
-export function pickBlockForLine(blocks: BlockDesc[], line: number): number {
-  let best = -1;
-  for (let i = 0; i < blocks.length; i += 1) {
-    const b = blocks[i]!;
-    const end = Number.isFinite(b.end) && b.end >= b.start ? b.end : b.start;
-    if (b.start > line || line > end) continue;
-    if (best === -1) {
-      best = i;
-      continue;
-    }
-    const cur = blocks[best]!;
-    if (b.start > cur.start || (b.start === cur.start && b.depth >= cur.depth)) {
-      best = i;
-    }
-  }
-  return best;
 }
 
 /** Map a 0..1 click-Y ratio to the editor's `scrollTop` that would place a
@@ -205,25 +180,6 @@ export function createEditCenterGate(): EditCenterGate {
 // on why the mocked-Chromium e2e suite cannot exercise it).
 // ---------------------------------------------------------------------------
 
-interface TaggedBlock {
-  el: HTMLElement;
-  desc: BlockDesc;
-}
-
-function collectBlocks(content: HTMLElement): TaggedBlock[] {
-  const out: TaggedBlock[] = [];
-  content.querySelectorAll<HTMLElement>('[data-src-start]').forEach((el) => {
-    const start = Number(el.dataset.srcStart);
-    if (!Number.isFinite(start)) return;
-    const endRaw = el.dataset.srcEnd;
-    const end = endRaw !== undefined && endRaw !== '' ? Number(endRaw) : NaN;
-    let depth = 0;
-    for (let p = el.parentElement; p && p !== content; p = p.parentElement) depth += 1;
-    out.push({ el, desc: { start, end, depth } });
-  });
-  return out;
-}
-
 /** Resolve the word under the pointer via the caret-from-point APIs
  *  (`caretRangeFromPoint` on WebKit/Chromium, `caretPositionFromPoint`
  *  elsewhere). Returns '' when unavailable or not over a text node. */
@@ -259,7 +215,7 @@ function wordAtPoint(doc: Document, x: number, y: number): string {
 const SKIP_SELECTOR = 'a,button,input,textarea,select,[contenteditable],[role="button"]';
 
 export function attachScrollSync(opts: ScrollSyncOptions): ScrollSyncHandle {
-  const { view, previewPane, previewContent, getMode } = opts;
+  const { view, previewPane, previewContent, getMode, onBeforeClick } = opts;
   const editGate = createEditCenterGate();
 
   const centerPreviewOnLine = (line: number): void => {
@@ -320,6 +276,7 @@ export function attachScrollSync(opts: ScrollSyncOptions): ScrollSyncHandle {
       paneRect.height > 0
         ? Math.max(0, Math.min(1, (ev.clientY - paneRect.top) / paneRect.height))
         : 0.5;
+    onBeforeClick?.();
     moveCursorTo(resolveSourcePosition(view.state.doc.toString(), start, end, word), ratio);
     view.focus();
   };

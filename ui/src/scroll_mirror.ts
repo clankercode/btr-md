@@ -22,65 +22,12 @@
 // destination side bails, and a single rAF clears the flag. This is enough
 // for a chain like "user scrolls editor → mirror scrolls preview → preview
 // scroll listener fires → bails" without the cycle ever running twice in a
-// frame. For programmatic restores (tab activation) callers can use
-// `suspendForOneFrame()` to skip the next ~50ms of scroll events on both
-// panes.
+// frame. For programmatic restores (tab activation, click→cursor) callers
+// can use `suspendForMs()` to skip scroll events for a configurable window.
 
 import type { EditorView } from '@codemirror/view';
-
-// These two helpers are duplicated from `scroll_sync.ts` (rather than
-// imported from it) so that `node --test` can load this module directly:
-// `scroll_sync.ts` carries a type-only `@codemirror/view` import that Node
-// strips, and any runtime import from it (`./scroll_sync.js`) would need a
-// compiled `.js` file on disk. Keeping the helpers in this file lets the
-// test runner load `./scroll_mirror.ts` standalone via its `.ts` extension.
-interface BlockDesc {
-  /** 1-based start line. */
-  start: number;
-  /** 1-based inclusive end line; `NaN` (or `< start`) means single line. */
-  end: number;
-  /** DOM nesting depth within the preview content root. */
-  depth: number;
-}
-
-interface RawTaggedBlock {
-  el: HTMLElement;
-  desc: BlockDesc;
-}
-
-function collectBlocks(content: HTMLElement): RawTaggedBlock[] {
-  const out: RawTaggedBlock[] = [];
-  content.querySelectorAll<HTMLElement>('[data-src-start]').forEach((el) => {
-    const start = Number(el.dataset.srcStart);
-    if (!Number.isFinite(start)) return;
-    const endRaw = el.dataset.srcEnd;
-    const end = endRaw !== undefined && endRaw !== '' ? Number(endRaw) : NaN;
-    let depth = 0;
-    for (let p = el.parentElement; p && p !== content; p = p.parentElement) depth += 1;
-    out.push({ el, desc: { start, end, depth } });
-  });
-  return out;
-}
-
-/** Most-specific block covering `line`: largest `start <= line` that still
- *  covers it, tie-broken by greatest DOM `depth`. -1 if none cover it. */
-function pickBlockForLine(blocks: BlockDesc[], line: number): number {
-  let best = -1;
-  for (let i = 0; i < blocks.length; i += 1) {
-    const b = blocks[i]!;
-    const end = Number.isFinite(b.end) && b.end >= b.start ? b.end : b.start;
-    if (b.start > line || line > end) continue;
-    if (best === -1) {
-      best = i;
-      continue;
-    }
-    const cur = blocks[best]!;
-    if (b.start > cur.start || (b.start === cur.start && b.depth >= cur.depth)) {
-      best = i;
-    }
-  }
-  return best;
-}
+import type { BlockDesc } from './scroll_pure.js';
+import { collectBlocks, pickBlockForLine } from './scroll_pure.ts';
 
 export interface ScrollMirrorOptions {
   view: EditorView;
@@ -96,9 +43,14 @@ export interface ScrollMirrorOptions {
 
 export interface ScrollMirrorHandle {
   detach(): void;
-  /** Briefly suspend the mirror; for callers that programmatically restore
-   *  scroll positions (e.g. tab activation). Cleared after ~50ms. */
-  suspendForOneFrame(): void;
+  /** Suspend the mirror for `ms` milliseconds. During this window, all
+   *  scroll events on both panes are ignored by the mirror. Use this for
+   *  programmatic scroll restores (e.g. tab activation, click→cursor)
+   *  that should not trigger the mirror. Default: 50ms. */
+  suspendForMs(ms?: number): void;
+  /** Immediately align the preview to the editor's current top line.
+   *  Used when enabling the lock so the panes snap into sync right away. */
+  alignNow(): void;
 }
 
 interface TaggedBlock {
@@ -129,20 +81,36 @@ function collectPreviewBlocks(content: HTMLElement): TaggedBlock[] {
     const end = endRaw !== undefined && endRaw !== '' ? Number(endRaw) : NaN;
     let depth = 0;
     for (let p = el.parentElement; p && p !== content; p = p.parentElement) depth += 1;
-    out.push({ el, desc: { start, end, depth }, rect: () => el.getBoundingClientRect() });
+    // Cache the rect at collection time so pickTopBlockIndex doesn't force
+    // repeated layout recalculations inside a scroll handler.
+    const cached = el.getBoundingClientRect();
+    out.push({ el, desc: { start, end, depth }, rect: () => cached });
   });
   return out;
 }
 
 /** Wrap a programmatic-scroll action so the mirror's feedback guard is set
- *  before the scroll and cleared on the next frame. */
-function withMirrorGuard(mirroring: { value: boolean }, action: () => void): void {
+ *  before the scroll and cleared on the next frame. Uses `requestAnimationFrame`
+ *  by default; pass a custom `schedule` (e.g. a synchronous callback) for
+ *  testing in environments without rAF (node:test). */
+function withMirrorGuard(
+  mirroring: { value: boolean },
+  action: () => void,
+  schedule: (cb: () => void) => void = requestAnimationFrame,
+): void {
   mirroring.value = true;
-  action();
-  requestAnimationFrame(() => {
-    mirroring.value = false;
-  });
+  try {
+    action();
+  } finally {
+    schedule(() => {
+      mirroring.value = false;
+    });
+  }
 }
+
+/** Test-only re-export so `scroll_mirror.test.ts` can exercise the guard
+ *  without reaching into private internals. */
+export { withMirrorGuard as withMirrorGuardForTest };
 
 export function attachScrollMirror(opts: ScrollMirrorOptions): ScrollMirrorHandle {
   const { view, previewPane, previewContent, getMode, isEnabled } = opts;
@@ -185,8 +153,15 @@ export function attachScrollMirror(opts: ScrollMirrorOptions): ScrollMirrorHandl
       line,
     );
     if (idx < 0) return;
+    // Compute scrollTop directly instead of scrollIntoView, which can
+    // accidentally scroll ancestor containers if anything between the
+    // matched block and previewPane is scrollable.
+    const el = blocks[idx]!.el;
+    const elRect = el.getBoundingClientRect();
+    const paneRect = previewPane.getBoundingClientRect();
+    const offset = elRect.top - paneRect.top + previewPane.scrollTop;
     withMirrorGuard(mirroring, () => {
-      blocks[idx]!.el.scrollIntoView({ block: 'start', inline: 'nearest' });
+      previewPane.scrollTop = offset;
     });
   };
 
@@ -256,8 +231,12 @@ export function attachScrollMirror(opts: ScrollMirrorOptions): ScrollMirrorHandl
       if (editorRaf) cancelAnimationFrame(editorRaf);
       if (previewRaf) cancelAnimationFrame(previewRaf);
     },
-    suspendForOneFrame: () => {
-      suspendUntil = performance.now() + 50;
+    suspendForMs: (ms = 50) => {
+      suspendUntil = performance.now() + ms;
+    },
+    alignNow: () => {
+      const line = topLineFromEditor();
+      if (line !== null) mirrorEditorToPreview(line);
     },
   };
 }

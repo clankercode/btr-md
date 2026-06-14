@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { pickTopBlockIndex } from './scroll_mirror.ts';
+import { pickTopBlockIndex, withMirrorGuardForTest as withMirrorGuard } from './scroll_mirror.ts';
 
 // Minimal stand-in for a TaggedBlock: only `rect().top` is consulted.
 function blockAt(top: number): { rect: () => { top: number } } {
@@ -44,4 +44,37 @@ test('pickTopBlockIndex: stops at the first out-of-order block (assumed DOM orde
   const blocks = [blockAt(10), blockAt(20), blockAt(150)];
   // paneTopY = 50; block 2 (top=150) is below the pane top → bail → 1.
   assert.equal(pickTopBlockIndex(blocks, 50), 1);
+});
+
+// --- withMirrorGuard --------------------------------------------------------
+// Bug: if `action()` throws, the rAF to clear the flag is never scheduled
+// and `mirroring.value` stays true forever, permanently disabling the mirror.
+// We pass a synchronous scheduler so the tests work in node:test (no rAF).
+
+const syncSchedule = (cb: () => void) => cb();
+
+test('withMirrorGuard: sets mirroring flag during action, clears after', () => {
+  const mirroring = { value: false };
+  withMirrorGuard(mirroring, () => {
+    assert.equal(mirroring.value, true, 'flag should be true during action');
+  }, syncSchedule);
+  // After the action completes, the synchronous scheduler has already cleared.
+  assert.equal(mirroring.value, false, 'flag should be false after action');
+});
+
+test('withMirrorGuard: error propagates and flag is reset', () => {
+  const mirroring = { value: false };
+  let threw = false;
+  try {
+    withMirrorGuard(mirroring, () => {
+      throw new Error('boom');
+    }, syncSchedule);
+  } catch {
+    threw = true;
+  }
+  assert.equal(threw, true, 'action error should propagate');
+  // RED until try/finally fix: without it, the flag stays true because the
+  // scheduler callback was never registered. With the fix, the finally block
+  // ensures the scheduler runs even after a throw.
+  assert.equal(mirroring.value, false, 'mirroring flag should be reset after throw');
 });

@@ -3,10 +3,10 @@ import assert from 'node:assert/strict';
 import {
   wordAt,
   resolveSourcePosition,
-  pickBlockForLine,
   createEditCenterGate,
   targetScrollTopForRatio,
 } from './scroll_sync.ts';
+import { pickBlockForLine } from './scroll_pure.ts';
 
 // --- wordAt -----------------------------------------------------------------
 
