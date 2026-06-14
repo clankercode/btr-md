@@ -30,7 +30,10 @@ fn block_math_single_line_escape_survives() {
         html.contains(r"x = y \; z"),
         "escape stripped from single-line block math: {html}"
     );
-    assert!(html.contains("math-block"), "block math did not render: {html}");
+    assert!(
+        html.contains("math-block"),
+        "block math did not render: {html}"
+    );
 }
 
 #[test]
@@ -74,7 +77,10 @@ fn unterminated_inline_dollar_is_literal_not_swallowed() {
 fn plain_inline_math_without_escapes_still_renders() {
     let html = render(r"see $E = mc^2$ here");
     assert!(html.contains("E = mc^2"), "plain inline math broke: {html}");
-    assert!(html.contains("language-math"), "no math span emitted: {html}");
+    assert!(
+        html.contains("language-math"),
+        "no math span emitted: {html}"
+    );
 }
 
 #[test]

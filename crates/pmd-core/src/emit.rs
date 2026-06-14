@@ -201,9 +201,15 @@ fn emit_open_tag(
 enum MathScan {
     None,
     /// Inside `$$ … $$`. Offsets are byte positions into the source `md`.
-    Block { content_start: usize, delim_start: usize },
+    Block {
+        content_start: usize,
+        delim_start: usize,
+    },
     /// Inside `$ … $`.
-    Inline { content_start: usize, delim_start: usize },
+    Inline {
+        content_start: usize,
+        delim_start: usize,
+    },
 }
 
 /// First `$` at or after `start`; the bool is `true` when it begins a `$$`
@@ -289,23 +295,27 @@ fn feed_math(
                     let delim_start = src_start + idx;
                     let content_start = delim_start + delim_len;
                     *state = if is_block {
-                        MathScan::Block { content_start, delim_start }
+                        MathScan::Block {
+                            content_start,
+                            delim_start,
+                        }
                     } else {
-                        MathScan::Inline { content_start, delim_start }
+                        MathScan::Inline {
+                            content_start,
+                            delim_start,
+                        }
                     };
                     cursor = idx + delim_len;
                 }
             },
-            MathScan::Block { content_start, .. } => {
-                match find_block_math_delimiter(seg, cursor) {
-                    None => return,
-                    Some(idx) => {
-                        emit_block_math(html, &md[content_start..src_start + idx], render_nonce);
-                        *state = MathScan::None;
-                        cursor = idx + 2;
-                    }
+            MathScan::Block { content_start, .. } => match find_block_math_delimiter(seg, cursor) {
+                None => return,
+                Some(idx) => {
+                    emit_block_math(html, &md[content_start..src_start + idx], render_nonce);
+                    *state = MathScan::None;
+                    cursor = idx + 2;
                 }
-            }
+            },
             MathScan::Inline { content_start, .. } => {
                 match find_inline_math_delimiter(seg, cursor) {
                     None => return,
@@ -750,10 +760,7 @@ pub fn render_fragment(md: &str, render_nonce: &str) -> FragmentRender {
                 // the next block's text.
                 if matches!(
                     tag_end,
-                    TagEnd::Paragraph
-                        | TagEnd::Heading(_)
-                        | TagEnd::TableCell
-                        | TagEnd::Item
+                    TagEnd::Paragraph | TagEnd::Heading(_) | TagEnd::TableCell | TagEnd::Item
                 ) {
                     flush_math(&mut html, md, &mut math, range.end);
                 }

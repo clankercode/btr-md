@@ -493,9 +493,10 @@ function applyGistVisibility(): void {
   if (gistBtn) gistBtn.style.display = gistEnabled ? '' : 'none';
 }
 
-function setPreviewZoom(value: number): void {
-  previewZoom = Math.max(0.5, Math.min(2, value));
-  previewContent.style.fontSize = `${previewZoom}rem`;
+function setZoom(value: number): void {
+  zoom = Math.max(0.5, Math.min(2, value));
+  previewContent.style.fontSize = `${zoom}rem`;
+  document.documentElement.style.setProperty('--pmd-editor-font-size', `${zoom * 14}px`);
 }
 
 /** Drive the editor/mono font CSS var from a chosen family (any installed font,
@@ -535,7 +536,7 @@ let gistEnabled = false;
 let diffMode: DiffMode = 'none';
 let gistBtn: HTMLButtonElement | null = null;
 let shortcutOverrides: ShortcutOverrides = {};
-let previewZoom = 1;
+let zoom = 1;
 
 function enabledActionIds(): Set<ActionId> {
   return new Set(defaultActionSpecs.map((action) => action.id));
@@ -574,13 +575,13 @@ async function runAction(id: ActionId): Promise<void> {
       await getCurrentWindow().close();
       return;
     case 'view.zoomIn':
-      setPreviewZoom(previewZoom + 0.1);
+      setZoom(zoom + 0.1);
       return;
     case 'view.zoomOut':
-      setPreviewZoom(previewZoom - 0.1);
+      setZoom(zoom - 0.1);
       return;
     case 'view.zoomReset':
-      setPreviewZoom(1);
+      setZoom(1);
       return;
     case 'view.cycleMode':
       cycleMode();
@@ -729,6 +730,13 @@ installActionHotkeys({
   getOverrides: () => shortcutOverrides,
   isEnabled: isActionAvailable,
 });
+
+appContainer.addEventListener('wheel', (e: WheelEvent) => {
+  if (!(e.ctrlKey || e.metaKey)) return;
+  if ((e.target as HTMLElement).closest('.pmd-mermaid-overlay')) return;
+  e.preventDefault();
+  setZoom(zoom + (e.deltaY < 0 ? 0.1 : -0.1));
+}, { passive: false });
 
 function basename(p: string): string {
   return p.split('/').pop() || p;

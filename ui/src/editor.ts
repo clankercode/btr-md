@@ -186,7 +186,7 @@ const searchCompartment = new Compartment();
 const editorTheme = EditorView.theme({
   '&': {
     height: '100%',
-    fontSize: '14px',
+    fontSize: 'var(--pmd-editor-font-size, 14px)',
     backgroundColor: 'var(--pmd-bg)',
     color: 'var(--pmd-fg)',
   },
