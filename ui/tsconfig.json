@@ -57,6 +57,7 @@
     "src/find_replace.ts",
     "src/export_document.ts",
     "src/image_embed.ts",
-    "src/scroll_sync.ts"
+    "src/scroll_sync.ts",
+    "src/scroll_mirror.ts"
   ]
 }

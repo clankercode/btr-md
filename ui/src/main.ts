@@ -4,6 +4,7 @@ import { getCurrentWindow } from '@tauri-apps/api/window';
 import { mountEditor, type EditorHandle } from './editor.js';
 import { createChrome, type Mode } from './chrome.js';
 import { attachScrollSync, type ScrollSyncHandle } from './scroll_sync.js';
+import { attachScrollMirror, type ScrollMirrorHandle } from './scroll_mirror.js';
 import { markAllNodes, rerenderForThemeChange } from './theme_apply.js';
 import { renderMermaidNodes, setMermaidGotoLine, setMermaidTheme } from './mermaid_runner.js';
 import { renderMathNodes } from './katex_runner.js';
@@ -116,6 +117,7 @@ interface Settings {
   dont_ask_default_handler: boolean;
   mono_font: string | null;
   shortcut_overrides: ShortcutOverrides;
+  split_scroll_locked: boolean;
 }
 
 declare global {
@@ -476,6 +478,23 @@ if (toolbarEl instanceof HTMLElement) {
   gistBtn.addEventListener('click', () => openGist());
   toolbarEl.appendChild(gistBtn);
 
+  // Split-view scroll-lock toggle. Visible only while a document tab is in
+  // split mode; the [data-active] flag reflects the current on/off state.
+  // The CSS animates the show/hide via max-width + padding (zero-reflow, same
+  // pattern as .pmd-reload-btn / .pmd-merge-btn) so toggling mode does not
+  // shove the surrounding toolbar buttons around.
+  splitLockBtn = document.createElement('button');
+  splitLockBtn.className = 'pmd-btn pmd-btn-ghost pmd-btn-sm pmd-split-lock-btn';
+  splitLockBtn.type = 'button';
+  splitLockBtn.textContent = '\u21F5';
+  splitLockBtn.title = 'Lock split scroll (off)';
+  splitLockBtn.setAttribute('aria-label', 'Toggle split-view scroll lock');
+  splitLockBtn.setAttribute('aria-pressed', 'false');
+  splitLockBtn.addEventListener('click', () => {
+    void setSplitScrollLock(!splitScrollLocked);
+  });
+  toolbarEl.appendChild(splitLockBtn);
+
   const sidebarToggleBtn = document.createElement('button');
   sidebarToggleBtn.className = 'pmd-btn pmd-btn-ghost pmd-btn-sm';
   sidebarToggleBtn.type = 'button';
@@ -491,6 +510,31 @@ if (toolbarEl instanceof HTMLElement) {
 
 function applyGistVisibility(): void {
   if (gistBtn) gistBtn.style.display = gistEnabled ? '' : 'none';
+}
+
+/** Show/hide the lock button (split mode + doc tab) and reflect on/off state
+ *  via `data-active` and `aria-pressed`. */
+function applySplitLockVisibility(): void {
+  if (!splitLockBtn) return;
+  const visible = currentMode === 'split' && store.activeDoc() !== undefined;
+  if (visible) splitLockBtn.setAttribute('data-visible', '');
+  else splitLockBtn.removeAttribute('data-visible');
+  if (splitScrollLocked) splitLockBtn.setAttribute('data-active', '');
+  else splitLockBtn.removeAttribute('data-active');
+  splitLockBtn.title = splitScrollLocked
+    ? 'Unlock split scroll (on)'
+    : 'Lock split scroll (off)';
+  splitLockBtn.setAttribute('aria-pressed', splitScrollLocked ? 'true' : 'false');
+}
+
+async function setSplitScrollLock(enabled: boolean): Promise<void> {
+  splitScrollLocked = enabled;
+  applySplitLockVisibility();
+  try {
+    await invoke('set_split_scroll_locked', { enabled });
+  } catch (e) {
+    console.error('set_split_scroll_locked failed:', e);
+  }
 }
 
 function setZoom(value: number): void {
@@ -527,6 +571,7 @@ function applyDiffMode(): void {
 
 let editor: EditorHandle | null = null;
 let scrollSync: ScrollSyncHandle | null = null;
+let scrollMirror: ScrollMirrorHandle | null = null;
 let fileBrowser: FileBrowserInstance | null = null;
 let currentMode: Mode = 'split';
 let autosaveMode: AutosaveMode = 'off';
@@ -535,8 +580,10 @@ let browserBaseDir: string | null = null;
 let gistEnabled = false;
 let diffMode: DiffMode = 'none';
 let gistBtn: HTMLButtonElement | null = null;
+let splitLockBtn: HTMLButtonElement | null = null;
 let shortcutOverrides: ShortcutOverrides = {};
 let zoom = 1;
+let splitScrollLocked = false;
 
 function enabledActionIds(): Set<ActionId> {
   return new Set(defaultActionSpecs.map((action) => action.id));
@@ -1477,6 +1524,7 @@ function applyMode(mode: Mode): void {
   currentMode = mode;
   const t = store.activeDoc();
   if (t) store.updateDoc(t.id, { mode });
+  applySplitLockVisibility();
 }
 
 function cycleMode(): void {
@@ -1660,6 +1708,17 @@ async function ensureEditor(): Promise<void> {
     previewContent,
     getMode: () => currentMode,
   });
+  // Continuous split-view scroll coupling (block-anchored mirror). Listeners
+  // are always installed; the gate inside `attachScrollMirror` checks
+  // `isEnabled()` and `getMode()` on every scroll event, so a mode change or
+  // a toggle of the setting takes effect immediately without re-attaching.
+  scrollMirror = attachScrollMirror({
+    view: editor.view,
+    previewPane,
+    previewContent,
+    getMode: () => currentMode,
+    isEnabled: () => splitScrollLocked,
+  });
   installOutlineCaretListeners();
   installEditorPasteHandlers(editor.view.dom);
 }
@@ -1840,6 +1899,10 @@ store.onActivate((prev, next) => {
     prev.scrollEditor = editor.view.scrollDOM.scrollTop;
     prev.scrollPreview = previewPane.scrollTop;
   }
+  // A non-doc tab (empty/browser) hides the lock button; a doc tab in split
+  // mode shows it. Mode/active-tab changes also need the lock button
+  // visibility refreshed (it is also refreshed from `applyMode`).
+  applySplitLockVisibility();
   if (!next) {
     document.body.dataset.tabkind = 'empty';
     factsStore.setActiveDoc(null);
@@ -1898,6 +1961,11 @@ async function activateDocTab(tab: DocTab): Promise<void> {
   await scheduleRender();
   chrome.setCounts(computeCounts(editor.getValue()));
   applyDiffMode();
+  // Suspend the mirror briefly so the two programmatic scrollTop writes
+  // below do not loop the mirror back and rewrite the restored positions.
+  // The mirror's `suspendForOneFrame` clears after ~50ms; the next genuine
+  // user scroll lands well past that.
+  scrollMirror?.suspendForOneFrame();
   editor.view.scrollDOM.scrollTop = tab.scrollEditor;
   previewPane.scrollTop = tab.scrollPreview;
   editor.focus();
@@ -2326,7 +2394,9 @@ async function bootstrap(): Promise<void> {
     gistEnabled = settings.gist_enabled === true;
     if (settings.diff_mode) diffMode = settings.diff_mode;
     shortcutOverrides = settings.shortcut_overrides ?? {};
+    splitScrollLocked = settings.split_scroll_locked === true;
     applyGistVisibility();
+    applySplitLockVisibility();
     if (settings.mono_font) applyMonoFont(settings.mono_font);
     if (settings.active_theme) await applyTheme(settings.active_theme);
     await applyAutoSwitchTheme(settings);

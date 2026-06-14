@@ -40,6 +40,11 @@ pub struct Settings {
     pub mono_font: Option<String>,
     #[serde(default)]
     pub shortcut_overrides: BTreeMap<String, Vec<String>>,
+    /// Whether the editor and the preview in split view are locked to scroll
+    /// together. When `true`, scrolling either pane scrolls the other to the
+    /// same source line. UI-only state; no other behaviour depends on it.
+    #[serde(default)]
+    pub split_scroll_locked: bool,
 }
 
 /// Read the current settings from disk, falling back to defaults if the file is

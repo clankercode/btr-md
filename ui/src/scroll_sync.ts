@@ -128,6 +128,31 @@ export function pickBlockForLine(blocks: BlockDesc[], line: number): number {
   return best;
 }
 
+/** Map a 0..1 click-Y ratio to the editor's `scrollTop` that would place a
+ *  block at `blockTop` (Y within the editor's content area, in CSS pixels) at
+ *  the requested fraction of the visible viewport.
+ *
+ *   - `ratio = 0`   → put the block at the top of the viewport.
+ *   - `ratio = 0.5` → put the block in the middle.
+ *   - `ratio = 1`   → put the block at the bottom.
+ *
+ *  The result is clamped to `[0, maxScroll]` so out-of-range ratios and
+ *  over-scroll requests stay inside the editor. `maxScroll` should be
+ *  `Math.max(0, scrollHeight - clientHeight)`; passing a negative value is
+ *  tolerated and yields 0.
+ *
+ *  Pure so it is unit-testable in `node:test` without a DOM. */
+export function targetScrollTopForRatio(
+  blockTop: number,
+  viewportH: number,
+  ratio: number,
+  maxScroll: number,
+): number {
+  const r = Math.max(0, Math.min(1, ratio));
+  const target = blockTop - r * viewportH;
+  return Math.max(0, Math.min(Math.max(0, maxScroll), target));
+}
+
 /** One-shot gate for the LHS-edit -> RHS-centre trigger, keyed on (doc id,
  *  version). DOM-free so the state machine is unit-testable. "Armed" holds the
  *  doc being edited and the latest render version that predates the edit; only
@@ -248,13 +273,29 @@ export function attachScrollSync(opts: ScrollSyncOptions): ScrollSyncHandle {
   };
 
   // Place the editor cursor, clamping line+column (CodeMirror's dispatch does
-  // not clamp out-of-range positions).
-  const moveCursorTo = (pos: SourcePos): void => {
+  // not clamp out-of-range positions). `ratio` is the 0..1 click-Y ratio within
+  // the preview pane; the editor is scrolled so the cursor lands at the same
+  // fraction of its own viewport (falls back to 0.5 = centred if NaN).
+  //
+  // We avoid CodeMirror's `scrollIntoView: true` shorthand (which only does
+  // minimal "keep in view" scrolling and is what makes the cursor end up at
+  // unpredictable Y). Instead we dispatch the selection without auto-scroll,
+  // then read `view.lineBlockAt(anchor).top` (the line's absolute Y in the
+  // content area — `lineBlockAt` works for positions outside the current
+  // viewport via the height map) and set `scrollDOM.scrollTop` to the target
+  // ratio directly.
+  const moveCursorTo = (pos: SourcePos, ratio: number): void => {
     const doc = view.state.doc;
     const line = Math.max(1, Math.min(doc.lines, pos.line));
     const lineObj = doc.line(line);
     const col = Math.max(0, Math.min(lineObj.length, pos.col));
-    view.dispatch({ selection: { anchor: lineObj.from + col }, scrollIntoView: true });
+    const anchor = lineObj.from + col;
+    view.dispatch({ selection: { anchor } });
+    const r = Number.isFinite(ratio) ? ratio : 0.5;
+    const block = view.lineBlockAt(anchor);
+    const viewportH = view.scrollDOM.clientHeight;
+    const max = Math.max(0, view.scrollDOM.scrollHeight - viewportH);
+    view.scrollDOM.scrollTop = targetScrollTopForRatio(block.top, viewportH, r, max);
   };
 
   const onClick = (ev: MouseEvent): void => {
@@ -271,7 +312,15 @@ export function attachScrollSync(opts: ScrollSyncOptions): ScrollSyncHandle {
     const endRaw = block.dataset.srcEnd;
     const end = endRaw !== undefined && endRaw !== '' ? Number(endRaw) : start;
     const word = wordAtPoint(previewPane.ownerDocument, ev.clientX, ev.clientY);
-    moveCursorTo(resolveSourcePosition(view.state.doc.toString(), start, end, word));
+    // Click-Y ratio: where in the preview pane did the click land? The editor
+    // is scrolled so the resolved source position lands at the same fraction.
+    // Falls back to 0.5 (centred) if the pane has no measurable height.
+    const paneRect = previewPane.getBoundingClientRect();
+    const ratio =
+      paneRect.height > 0
+        ? Math.max(0, Math.min(1, (ev.clientY - paneRect.top) / paneRect.height))
+        : 0.5;
+    moveCursorTo(resolveSourcePosition(view.state.doc.toString(), start, end, word), ratio);
     view.focus();
   };
 

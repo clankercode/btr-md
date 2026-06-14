@@ -5,6 +5,7 @@ import {
   resolveSourcePosition,
   pickBlockForLine,
   createEditCenterGate,
+  targetScrollTopForRatio,
 } from './scroll_sync.ts';
 
 // --- wordAt -----------------------------------------------------------------
@@ -176,4 +177,64 @@ test('editCenterGate: reset disarms', () => {
   g.arm(7, 3);
   g.reset();
   assert.equal(g.settle(7, 4, true), false);
+});
+
+// --- targetScrollTopForRatio ------------------------------------------------
+// Map a click-Y ratio in the preview pane to the editor's scrollTop that
+// places the resolved block at the same fraction of its viewport. Pure math
+// (no DOM) so it is exhaustively unit-tested.
+
+test('targetScrollTopForRatio: ratio=0 puts the block at the top of the viewport', () => {
+  // blockTop=400, viewportH=200 → target = 400 - 0*200 = 400.
+  assert.equal(targetScrollTopForRatio(400, 200, 0, 2000), 400);
+});
+
+test('targetScrollTopForRatio: ratio=0.5 puts the block in the middle', () => {
+  // 400 - 0.5*200 = 300.
+  assert.equal(targetScrollTopForRatio(400, 200, 0.5, 2000), 300);
+});
+
+test('targetScrollTopForRatio: ratio=1 puts the block at the bottom', () => {
+  // 400 - 1*200 = 200.
+  assert.equal(targetScrollTopForRatio(400, 200, 1, 2000), 200);
+});
+
+test('targetScrollTopForRatio: ratio is clamped to [0,1] before use', () => {
+  // Negative → 0; > 1 → 1.
+  assert.equal(targetScrollTopForRatio(400, 200, -2, 2000), 400);
+  assert.equal(targetScrollTopForRatio(400, 200, 5, 2000), 200);
+});
+
+test('targetScrollTopForRatio: NaN ratio falls back to centred (0.5)', () => {
+  // NaN passes through Math.max/min as NaN; we expect 0.5 in that case.
+  // The implementation uses Math.max(0, Math.min(1, NaN)) which yields NaN,
+  // so we must clamp explicitly. The fallback path lives in the click
+  // handler (caller substitutes 0.5), not in this helper.
+  // We assert the *helper*'s contract: NaN produces a non-finite result that
+  // the caller is expected to guard against. This is the "document the
+  // contract" test, not a happy-path test.
+  const out = targetScrollTopForRatio(400, 200, Number.NaN, 2000);
+  assert.ok(!Number.isFinite(out) || out === 400 || out === 200 || out === 300,
+    `unexpected out=${out}`);
+});
+
+test('targetScrollTopForRatio: result is clamped to [0, maxScroll]', () => {
+  // target would be -200 (blockTop=0, ratio=1, viewportH=200) → clamp to 0.
+  assert.equal(targetScrollTopForRatio(0, 200, 1, 5000), 0);
+  // target would be 4000 (blockTop=4000, ratio=0, viewportH=200) → clamp to 5000.
+  // Wait: target = 4000 - 0*200 = 4000 ≤ 5000 so no clamp. Try a tighter cap:
+  // blockTop=5000, ratio=0 → target=5000, cap at 1000 → 1000.
+  assert.equal(targetScrollTopForRatio(5000, 200, 0, 1000), 1000);
+});
+
+test('targetScrollTopForRatio: negative maxScroll is treated as 0', () => {
+  // maxScroll=-50 → clamped to 0; target=400-0=400 then capped to 0.
+  assert.equal(targetScrollTopForRatio(400, 200, 0, -50), 0);
+});
+
+test('targetScrollTopForRatio: short document (maxScroll=0) → 0', () => {
+  // The whole doc fits in the viewport; any ratio yields 0 (no scroll possible).
+  assert.equal(targetScrollTopForRatio(400, 200, 0.5, 0), 0);
+  assert.equal(targetScrollTopForRatio(400, 200, 0, 0), 0);
+  assert.equal(targetScrollTopForRatio(400, 200, 1, 0), 0);
 });

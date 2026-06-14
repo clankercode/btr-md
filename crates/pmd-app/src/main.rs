@@ -123,6 +123,7 @@ fn main() {
             cmd::settings::set_dont_ask_default_handler,
             cmd::settings::set_mono_font,
             cmd::settings::set_shortcut_overrides,
+            cmd::settings::set_split_scroll_locked,
             cmd::settings::get_recent_files,
             cmd::settings::clear_recent_files,
             cmd::file::get_initial_path,

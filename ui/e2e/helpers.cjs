@@ -441,6 +441,7 @@ async function installTauriMock(page, options = {}) {
         dont_ask_default_handler: true,
         mono_font: null,
         shortcut_overrides: shortcutOverrides,
+        split_scroll_locked: false,
       };
     }
 

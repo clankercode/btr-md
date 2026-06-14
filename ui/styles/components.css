@@ -1117,6 +1117,43 @@ body[data-state="welcome"] #split-resizer {
 }
 
 /* --------------------------------------------
+   16b. Split-view scroll lock toolbar button.
+   -------------------------------------------- */
+
+/* Hidden by default; visible only when a document tab is in split mode and
+   the user has the lock enabled or the button is mounted for them to toggle.
+   Same collapse pattern as `.pmd-reload-btn` / `.pmd-merge-btn` so the
+   surrounding toolbar buttons do not reflow when this one animates in or
+   out. The transition lives on max-width + padding + opacity (the element
+   is always in the DOM). */
+.pmd-split-lock-btn {
+  max-width: 0;
+  opacity: 0;
+  padding-left: 0;
+  padding-right: 0;
+  overflow: hidden;
+  pointer-events: none;
+  white-space: nowrap;
+  transition: max-width 180ms ease, opacity 180ms ease, padding 180ms ease,
+    background-color 120ms ease, color 120ms ease;
+}
+
+.pmd-split-lock-btn[data-visible] {
+  max-width: 4rem;
+  opacity: 1;
+  padding-left: var(--pmd-space-3);
+  padding-right: var(--pmd-space-3);
+  pointer-events: auto;
+}
+
+/* On-state: a subtle accent background + slightly stronger foreground so the
+   user can tell at a glance that the lock is engaged. */
+.pmd-split-lock-btn[data-active] {
+  background-color: var(--pmd-bg-elevated);
+  color: var(--pmd-accent);
+}
+
+/* --------------------------------------------
    17. Tab bar (multi-tab) + file browser
    -------------------------------------------- */
 
