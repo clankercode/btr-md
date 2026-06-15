@@ -183,15 +183,41 @@ pub fn load_session() -> Session {
     if body.trim().is_empty() {
         return Session::default();
     }
+    // Try v2 first; fall back to migrating a v1 flat session.
     match serde_json::from_str::<Session>(&body) {
-        Ok(s) => s,
-        Err(e) => {
-            eprintln!(
-                "[btr-md] session.json is malformed ({}); starting with an empty session",
-                e
-            );
-            Session::default()
-        }
+        Ok(s) if s.version >= 2 => s,
+        _ => match serde_json::from_str::<V1Session>(&body) {
+            Ok(v1) => migrate_v1(v1),
+            Err(e) => {
+                eprintln!("[btr-md] session.json is malformed ({e}); starting empty");
+                Session::default()
+            }
+        },
+    }
+}
+
+/// v1 on-disk shape, kept only to migrate old sessions forward.
+#[derive(Deserialize)]
+struct V1Session {
+    #[serde(default)]
+    docs: Vec<SessionDoc>,
+    #[serde(default)]
+    active: Option<ActiveTab>,
+    #[serde(default)]
+    browser_tab: bool,
+}
+
+fn migrate_v1(v1: V1Session) -> Session {
+    Session {
+        version: SESSION_VERSION,
+        windows: vec![SessionWindow {
+            label: "main".into(),
+            geometry: WindowGeometry::default(),
+            docs: v1.docs,
+            active: v1.active,
+            browser_tab: v1.browser_tab,
+        }],
+        focused_label: Some("main".into()),
     }
 }
 
@@ -421,5 +447,35 @@ mod tests {
             session_path().exists(),
             "corrupt session.json must not be deleted"
         );
+    }
+
+    #[test]
+    fn loads_and_migrates_a_v1_flat_session_into_one_window() {
+        let _lock = config_env_lock();
+        let _config_home = ConfigHomeGuard::new();
+        // A literal v1 payload (flat docs/active/browser_tab, version 1).
+        let v1 = r#"{
+          "version": 1,
+          "docs": [
+            {"path": null, "mode": "source", "unsaved": {"content": "draft"}},
+            {"path": "/tmp/clean.md", "mode": "preview"}
+          ],
+          "active": {"doc": 1},
+          "browser_tab": true
+        }"#;
+        if let Some(parent) = session_path().parent() {
+            std::fs::create_dir_all(parent).unwrap();
+        }
+        std::fs::write(session_path(), v1).unwrap();
+
+        let s = load_session();
+        assert_eq!(s.version, SESSION_VERSION);
+        assert_eq!(s.windows.len(), 1);
+        let w = &s.windows[0];
+        assert_eq!(w.label, "main");
+        assert_eq!(w.docs.len(), 2);
+        assert_eq!(w.active, Some(ActiveTab::Doc(1)));
+        assert!(w.browser_tab);
+        assert_eq!(s.focused_label.as_deref(), Some("main"));
     }
 }
