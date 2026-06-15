@@ -32,7 +32,7 @@ import { insertAtCursor, dispatchInsert } from './editor_insert.js';
 import { htmlContainsList } from './clipboard_paste.js';
 import { decorateTables } from './table_copy.js';
 import { installDragOverlay } from './drag_overlay.js';
-import { type LoadedSession } from './session.js';
+import { type LoadedWindowSession } from './session.js';
 import { createSessionManager } from './session_manager.js';
 import { reconcileBlocks, ReconcileDesyncError, type BlockRef } from './block_reconcile.js';
 import {
@@ -2440,10 +2440,18 @@ async function bootstrap(): Promise<void> {
   // No CLI file: try to restore the previous session from the backend.
   let restored = false;
   try {
-    const session = await invoke<LoadedSession>('load_session');
-    restored = await sessionManager.restoreSession(session);
+    const label = getCurrentWindow().label;
+    const w = await invoke<LoadedWindowSession | null>('get_window_session', { label });
+    if (w) {
+      restored = await sessionManager.restoreSession({
+        version: 2,
+        docs: w.docs,
+        active: w.active,
+        browser_tab: w.browser_tab,
+      });
+    }
   } catch (e) {
-    console.error('Session restore failed:', e);
+    console.error('Window session restore failed:', e);
   }
 
   if (!restored) {

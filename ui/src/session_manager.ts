@@ -64,13 +64,37 @@ export function createSessionManager(deps: SessionManagerDeps): SessionManager {
     return buildSavePayload(snapshots, activeIndex);
   }
 
+  /** Read this window's geometry in LOGICAL pixels (the Rust window builder
+   *  works in logical px; Tauri's outerPosition/innerSize return physical px,
+   *  so convert via the scale factor). */
+  async function readGeometry() {
+    const w = getCurrentWindow();
+    const sf = await w.scaleFactor();
+    const [pos, size, maximized] = await Promise.all([
+      w.outerPosition(),
+      w.innerSize(),
+      w.isMaximized(),
+    ]);
+    const lp = pos.toLogical(sf);
+    const ls = size.toLogical(sf);
+    return {
+      x: Math.round(lp.x),
+      y: Math.round(lp.y),
+      width: Math.round(ls.width),
+      height: Math.round(ls.height),
+      maximized,
+    };
+  }
+
   async function doSaveSession(): Promise<void> {
+    const label = getCurrentWindow().label;
     const { docs, active, browserTab } = buildSessionPayloadFromStore();
     try {
-      await invoke('save_session', { docs, active, browserTab });
+      const geometry = await readGeometry();
+      await invoke('save_window_session', { input: { label, geometry, docs, active, browserTab } });
     } catch (e) {
       // Same fault-tolerance as the old localStorage catch: never block the UI.
-      console.error('save_session failed:', e);
+      console.error('save_window_session failed:', e);
     }
   }
 
@@ -165,6 +189,11 @@ export function createSessionManager(deps: SessionManagerDeps): SessionManager {
           await flushSessionNow();
         } catch (e) {
           console.error('Session flush on close failed:', e);
+        }
+        try {
+          await invoke('window_closing', { label: getCurrentWindow().label });
+        } catch (e) {
+          console.error('window_closing failed:', e);
         }
         void getCurrentWindow().destroy();
       })
