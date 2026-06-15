@@ -1711,6 +1711,7 @@ async function ensureEditor(): Promise<void> {
     previewContent,
     getMode: () => currentMode,
     onBeforeClick: () => scrollMirror?.suspendForMs(),
+    onBeforePreviewCenter: () => scrollMirror?.suspendForMs(),
   });
   // Continuous split-view scroll coupling (block-anchored mirror). Listeners
   // are always installed; the gate inside `attachScrollMirror` checks

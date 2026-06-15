@@ -47,6 +47,10 @@ export interface ScrollSyncOptions {
    *  that follows — without it, the mirror would immediately re-scroll the
    *  preview away from the click position. */
   onBeforeClick?: () => void;
+  /** Optional callback fired just before edit-settle logic scrolls the preview.
+   *  Use this to suppress continuous mirror feedback for programmatic preview
+   *  scrolls that are not user intent. */
+  onBeforePreviewCenter?: () => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -215,7 +219,7 @@ function wordAtPoint(doc: Document, x: number, y: number): string {
 const SKIP_SELECTOR = 'a,button,input,textarea,select,[contenteditable],[role="button"]';
 
 export function attachScrollSync(opts: ScrollSyncOptions): ScrollSyncHandle {
-  const { view, previewPane, previewContent, getMode, onBeforeClick } = opts;
+  const { view, previewPane, previewContent, getMode, onBeforeClick, onBeforePreviewCenter } = opts;
   const editGate = createEditCenterGate();
 
   const centerPreviewOnLine = (line: number): void => {
@@ -225,6 +229,7 @@ export function attachScrollSync(opts: ScrollSyncOptions): ScrollSyncHandle {
       line,
     );
     if (idx < 0) return;
+    onBeforePreviewCenter?.();
     blocks[idx]!.el.scrollIntoView({ block: 'center', inline: 'nearest' });
   };
 
