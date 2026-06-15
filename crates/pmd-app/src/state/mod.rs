@@ -1,6 +1,7 @@
 pub mod recents;
 pub mod session;
 pub mod settings;
+pub mod window_session;
 
 /// A single process-wide lock guarding tests that mutate `XDG_CONFIG_HOME`.
 ///
