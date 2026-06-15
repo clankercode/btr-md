@@ -38,6 +38,7 @@ fn main() {
         open_dialog_on_start: std::sync::Mutex::new(args.open_dialog),
         docs: pmd_app_lib::doc::DocRegistry::new(),
         watcher: pmd_app_lib::watcher::WatcherSet::new(),
+        sessions: pmd_app_lib::state::window_session::SessionStore::new(),
     };
 
     tauri::Builder::default()
@@ -129,7 +130,9 @@ fn main() {
             cmd::file::get_initial_path,
             cmd::file::get_open_dialog_on_start,
             cmd::window::set_window_title,
-            cmd::session::save_session,
+            cmd::window::save_window_session,
+            cmd::window::get_window_session,
+            cmd::window::window_closing,
             cmd::session::load_session,
             cmd::session::restore_dirty_doc,
         ])

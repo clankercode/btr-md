@@ -20,9 +20,7 @@ use serde::Deserialize;
 
 use crate::cmd::file::{admit_open_path, try_push_recent, OpenedDoc};
 use crate::doc::state::{Digest, FileState};
-use crate::state::session::{
-    ActiveTab, Session, SessionDoc, SessionWindow, UnsavedBuffer, WindowGeometry, SESSION_VERSION,
-};
+use crate::state::session::{Session, SessionDoc, UnsavedBuffer};
 
 /// Per-doc input the frontend sends for `save_session`: the backend `doc_id`,
 /// the editor `mode`, and the live buffer `content` for **every** open doc.
@@ -42,7 +40,7 @@ pub struct SaveDocInput {
 /// Build a [`SessionDoc`] for one input by enriching it from the registry.
 /// Returns `None` for unknown `doc_id`s (tab closed mid-flush) so they are
 /// skipped.
-fn build_session_doc(state: &crate::AppState, input: SaveDocInput) -> Option<SessionDoc> {
+pub(crate) fn build_session_doc(state: &crate::AppState, input: SaveDocInput) -> Option<SessionDoc> {
     let doc = crate::doc::state::DocId(input.doc_id);
     if !state.docs.contains(doc) {
         return None;
@@ -74,35 +72,6 @@ fn build_session_doc(state: &crate::AppState, input: SaveDocInput) -> Option<Ses
         mode: input.mode,
         unsaved,
     })
-}
-
-/// Persist the full session. Enriches each input by `doc_id` lookup, decides
-/// clean/dirty by content comparison, and writes atomically under lock.
-#[tauri::command]
-pub async fn save_session(
-    state: tauri::State<'_, crate::AppState>,
-    docs: Vec<SaveDocInput>,
-    active: Option<ActiveTab>,
-    browser_tab: bool,
-) -> Result<(), String> {
-    let docs = docs
-        .into_iter()
-        .filter_map(|input| build_session_doc(&state, input))
-        .collect();
-    // Pre-multiwindow shape: persist everything under the single `main` window.
-    // Phase 6 replaces this with a per-window payload.
-    let session = Session {
-        version: SESSION_VERSION,
-        windows: vec![SessionWindow {
-            label: "main".into(),
-            geometry: WindowGeometry::default(),
-            docs,
-            active,
-            browser_tab,
-        }],
-        focused_label: Some("main".into()),
-    };
-    crate::state::session::save_session(&session).map_err(|e| e.to_string())
 }
 
 /// Read the persisted session. Missing/corrupt input yields an empty default.
