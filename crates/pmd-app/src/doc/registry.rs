@@ -9,12 +9,17 @@
 //!
 //! Each document is *owned* by exactly one window (`owner_window`), and each
 //! window has its own *active* document (the `active` map, keyed by window
-//! label). The save command authorises writes against the owning window's
-//! active slot plus ownership (`owns`) and path + scope checks — a background
-//! document, or a document owned by another window, can never be written.
-//! `set_active(window, doc)` is called on every tab activation. This is the
-//! single, type-backed expression of the per-window "write only to the active
-//! file you own" invariant.
+//! label). The save command authorises writes against the calling window's
+//! active slot — `is_active(window.label(), doc)` — plus path + scope checks.
+//! It does not call `owns` directly; it relies on the load-bearing invariant
+//! **active ⊆ owns**: a window's active slot is only ever set to a doc it owns,
+//! because every `set_active(window, doc)` call site passes the owning window's
+//! label (and `set_active_doc` rejects non-owners). So "active for this window"
+//! implies "owned by this window", and a background doc — or one owned by
+//! another window — can never be written. The other doc-mutating commands
+//! (`set_active_doc`, `doc_edited`, `pull_from_disk`, `resolve_disk_change`,
+//! `drop_doc`) gate on `owns` explicitly. This is the type-backed expression of
+//! the per-window "write only to the active file you own" invariant.
 
 use std::collections::HashMap;
 use std::path::PathBuf;
