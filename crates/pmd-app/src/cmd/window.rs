@@ -95,7 +95,11 @@ mod routing_tests {
     }
     #[test]
     fn new_file_forwards_to_mru() {
-        let r = route_launch(&[PathBuf::from("/tmp/new.md")], |_| None, Some("main".into()));
+        let r = route_launch(
+            &[PathBuf::from("/tmp/new.md")],
+            |_| None,
+            Some("main".into()),
+        );
         assert_eq!(r, LaunchRoute::ForwardTo("main".into()));
     }
     #[test]

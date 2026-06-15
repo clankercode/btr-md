@@ -138,7 +138,9 @@ fn register_opened(
     foreground: bool,
 ) -> Result<OpenedDoc, String> {
     let contents_ui = contents.clone();
-    let (doc_id, fstate) = state.docs.register(window_label, Some(canon.clone()), contents);
+    let (doc_id, fstate) = state
+        .docs
+        .register(window_label, Some(canon.clone()), contents);
     if foreground {
         state.docs.set_active(window_label, doc_id);
     }

@@ -520,7 +520,9 @@ fn open_markdown_from_backend(
     let canon = state.scope.allow_canonical(&canon);
     let contents = std::fs::read_to_string(&canon).map_err(|e| e.to_string())?;
     let contents_ui = contents.clone();
-    let (doc_id, file_state) = state.docs.register(window_label, Some(canon.clone()), contents);
+    let (doc_id, file_state) = state
+        .docs
+        .register(window_label, Some(canon.clone()), contents);
     state.watcher.set_target(app.clone(), doc_id, canon.clone());
     let applied = crate::preview::trust_roots::apply_remembered_trust_for_document_global(
         window_label,

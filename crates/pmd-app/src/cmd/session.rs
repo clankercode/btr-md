@@ -40,7 +40,10 @@ pub struct SaveDocInput {
 /// Build a [`SessionDoc`] for one input by enriching it from the registry.
 /// Returns `None` for unknown `doc_id`s (tab closed mid-flush) so they are
 /// skipped.
-pub(crate) fn build_session_doc(state: &crate::AppState, input: SaveDocInput) -> Option<SessionDoc> {
+pub(crate) fn build_session_doc(
+    state: &crate::AppState,
+    input: SaveDocInput,
+) -> Option<SessionDoc> {
     let doc = crate::doc::state::DocId(input.doc_id);
     if !state.docs.contains(doc) {
         return None;
@@ -108,9 +111,12 @@ pub async fn restore_dirty_doc(
         FileState::DiskChangedDirty { base, mem, disk }
     };
 
-    let doc_id = state
-        .docs
-        .register_restored(window.label(), canon.clone(), baseline_content, fstate.clone());
+    let doc_id = state.docs.register_restored(
+        window.label(),
+        canon.clone(),
+        baseline_content,
+        fstate.clone(),
+    );
 
     // Honor save authority exactly like `register_opened`: a background restore
     // starts the watcher but does NOT steal active-doc save authority.
@@ -206,8 +212,12 @@ mod tests {
         let reg = crate::doc::DocRegistry::new();
         let baseline = "ancestor body".to_string();
         let st = reconstruct(&baseline, "edits", "external");
-        let id =
-            reg.register_restored("main", PathBuf::from("/tmp/x.md"), baseline.clone(), st.clone());
+        let id = reg.register_restored(
+            "main",
+            PathBuf::from("/tmp/x.md"),
+            baseline.clone(),
+            st.clone(),
+        );
         assert_eq!(reg.base_content_of(id).as_deref(), Some(baseline.as_str()));
         assert_eq!(reg.state_of(id), Some(st));
     }
