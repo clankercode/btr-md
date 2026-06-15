@@ -21,6 +21,7 @@ export interface ChromeInstance {
   setRecentFiles: (files: string[]) => void;
   setFileOpsEnabled: (enabled: boolean) => void;
   focusMenu: () => void;
+  onCloseTab: (handler: () => void) => void;
   onCopyPath: (handler: () => void) => void;
   onCopyFilename: (handler: () => void) => void;
   onCopyUrl: (handler: () => void) => void;
@@ -79,6 +80,24 @@ export function createChrome(parent: HTMLElement): ChromeInstance {
 
   fileMenuWrapper.appendChild(fileMenuBtn);
   fileMenuWrapper.appendChild(fileDropdown);
+
+  // Close active tab — separate from the path-based file ops so it stays
+  // enabled even for unsaved buffers (no file path).
+  const closeTabHandlers: (() => void)[] = [];
+  const closeItem = document.createElement('li');
+  closeItem.className = 'pmd-dropdown-item';
+  closeItem.setAttribute('role', 'menuitem');
+  closeItem.textContent = 'Close';
+  closeItem.addEventListener('click', () => {
+    closeDropdown();
+    closeTabHandlers.forEach((h) => h());
+  });
+  fileOpsList.appendChild(closeItem);
+
+  const closeDivider = document.createElement('li');
+  closeDivider.className = 'pmd-dropdown-divider';
+  closeDivider.setAttribute('role', 'separator');
+  fileOpsList.appendChild(closeDivider);
 
   // Quick file ops (disabled when there is no file path).
   const fileOpHandlers: Record<string, (() => void)[]> = {
@@ -434,6 +453,9 @@ export function createChrome(parent: HTMLElement): ChromeInstance {
     focusMenu: () => {
       fileDropdown.style.display = 'block';
       fileMenuBtn.focus();
+    },
+    onCloseTab: (handler: () => void) => {
+      closeTabHandlers.push(handler);
     },
     onCopyPath: (handler: () => void) => {
       fileOpHandlers.copyPath.push(handler);
