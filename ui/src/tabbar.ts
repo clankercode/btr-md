@@ -4,7 +4,12 @@
 // effect.
 
 import { uiForState, assertNever } from './doc_state.js';
+import { openContextMenu } from './context_menu.js';
+import { buildTabContextItems } from './tab_context_menu.js';
 import type { Tab, TabId, TabStore } from './tabs.js';
+
+// Re-exported for callers/tests that reach the builder via the tab-bar module.
+export { buildTabContextItems };
 
 const HIGHLIGHT_CLASS = 'pmd-tab-highlight';
 
@@ -135,6 +140,16 @@ export function createTabBar(store: TabStore, handlers: TabBarHandlers): TabBarI
     tabEl.appendChild(close);
 
     tabEl.addEventListener('click', () => handlers.onSelect(tab.id));
+    // Right-click context menu: close this tab, plus a disabled Move-to-New-Window
+    // affordance (functional move lands in a later phase).
+    tabEl.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      openContextMenu(
+        e.clientX,
+        e.clientY,
+        buildTabContextItems({ onClose: () => handlers.onClose(tab.id) })
+      );
+    });
     // Middle-click closes the tab (standard browser/editor behaviour). The close
     // arrives as `auxclick`; suppress the Linux middle-click paste/autoscroll on
     // the preceding pointerdown.
