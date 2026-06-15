@@ -163,13 +163,16 @@ fn build_slot<R: Runtime>(app: AppHandle<R>, doc: DocId, path: &Path) -> Option<
 
             let state = worker_app.state::<crate::AppState>();
             if let Some(new_state) = state.docs.on_disk_event(doc, disk_event) {
-                let _ = worker_app.emit(
-                    "doc_state_changed",
-                    DocStateChanged {
-                        doc_id: doc,
-                        state: new_state,
-                    },
-                );
+                let payload = DocStateChanged {
+                    doc_id: doc,
+                    state: new_state,
+                };
+                // targeted: only the window that owns this doc
+                if let Some(label) = state.docs.owner_of(doc) {
+                    if let Some(win) = worker_app.get_webview_window(&label) {
+                        let _ = win.emit("doc_state_changed", payload);
+                    }
+                }
             }
         }
     });
