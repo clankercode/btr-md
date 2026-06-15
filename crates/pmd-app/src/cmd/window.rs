@@ -1,12 +1,29 @@
+use std::sync::atomic::{AtomicU64, Ordering};
+
 use serde::Deserialize;
-use tauri::Window;
+use tauri::{Manager, Window};
 
 use crate::cmd::session::{build_session_doc, SaveDocInput};
 use crate::state::session::{ActiveTab, SessionWindow, WindowGeometry};
 
+static NEXT_WINDOW: AtomicU64 = AtomicU64::new(2); // "main" is window 1
+
 #[tauri::command]
 pub fn set_window_title(window: Window, title: String) -> Result<(), String> {
     window.set_title(&title).map_err(|e| e.to_string())
+}
+
+/// Create a fresh empty window (Rust-side). Returns its label.
+#[tauri::command]
+pub fn new_window(app: tauri::AppHandle) -> Result<String, String> {
+    let n = NEXT_WINDOW.fetch_add(1, Ordering::Relaxed);
+    let label = format!("w-{n}");
+    let gate = app
+        .state::<std::sync::Arc<crate::navigation_policy::NavigationGate>>()
+        .inner()
+        .clone();
+    crate::build_window(&app, &label, None, gate).map_err(|e| e.to_string())?;
+    Ok(label)
 }
 
 /// One window's live slice as sent by the frontend for `save_window_session`.

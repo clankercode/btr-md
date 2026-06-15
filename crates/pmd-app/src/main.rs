@@ -2,8 +2,7 @@ use pmd_app_lib::preview::link_activation::LinkActivationStore;
 use pmd_app_lib::preview::render_pipeline::ValidationWorker;
 use pmd_app_lib::{cli, cmd, navigation_policy::NavigationGate, path_scope::PathScope, AppState};
 use std::sync::Arc;
-use tauri::webview::{DownloadEvent, NewWindowResponse};
-use tauri::{Emitter, Manager, WebviewUrl, WebviewWindowBuilder};
+use tauri::{Emitter, Manager};
 
 fn main() {
     let scope = PathScope::new();
@@ -130,6 +129,7 @@ fn main() {
             cmd::file::get_initial_path,
             cmd::file::get_open_dialog_on_start,
             cmd::window::set_window_title,
+            cmd::window::new_window,
             cmd::window::save_window_session,
             cmd::window::get_window_session,
             cmd::window::window_closing,
@@ -140,21 +140,33 @@ fn main() {
             let navigation_gate = Arc::new(NavigationGate::new(
                 "tauri://localhost".parse().expect("valid app shell URL"),
             ));
-            let navigation_gate_for_callback = Arc::clone(&navigation_gate);
-            WebviewWindowBuilder::new(app, "main", WebviewUrl::App("index.html".into()))
-                .title("btr-md — better markdown")
-                .inner_size(1100.0, 720.0)
-                .decorations(true)
-                .on_navigation(move |url| navigation_gate_for_callback.should_allow_navigation(url))
-                .on_new_window(|_, _| NewWindowResponse::Deny)
-                .on_download(|webview, event| {
-                    if let DownloadEvent::Requested { url, .. } = event {
-                        let _ = webview.emit("pmd://download-denied", url.to_string());
-                        return false;
+            // Make the gate retrievable by the `new_window` command.
+            app.manage(navigation_gate.clone());
+
+            // Restore spawner: replay persisted windows on a plain launch;
+            // otherwise open a single "main" window (initial-path or empty).
+            let session = pmd_app_lib::state::session::load_session();
+            app.state::<AppState>().sessions.seed(session.clone());
+
+            let handle = app.handle();
+            let restoring = args.initial_path.is_none() && !session.windows.is_empty();
+            if restoring {
+                for w in &session.windows {
+                    pmd_app_lib::build_window(
+                        handle,
+                        &w.label,
+                        Some(&w.geometry),
+                        navigation_gate.clone(),
+                    )?;
+                }
+                if let Some(focus) = &session.focused_label {
+                    if let Some(win) = app.get_webview_window(focus) {
+                        let _ = win.set_focus();
                     }
-                    false
-                })
-                .build()?;
+                }
+            } else {
+                pmd_app_lib::build_window(handle, "main", None, navigation_gate.clone())?;
+            }
 
             pmd_app_lib::preview::grants::init_grant_store(app.asset_protocol_scope());
             match pmd_app_lib::preview::trust_roots::init_trust_root_store(

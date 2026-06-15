@@ -8,6 +8,47 @@ pub mod state;
 pub mod watcher;
 
 use std::path::PathBuf;
+use std::sync::Arc;
+use tauri::webview::{DownloadEvent, NewWindowResponse};
+use tauri::{Emitter, WebviewUrl, WebviewWindowBuilder};
+
+/// Build a webview window with optional restored geometry. Used by startup
+/// (restore spawner) and the `new_window` command so window config lives in one
+/// place. Geometry position is best-effort on Wayland.
+pub fn build_window(
+    app: &tauri::AppHandle,
+    label: &str,
+    geometry: Option<&state::session::WindowGeometry>,
+    navigation_gate: Arc<navigation_policy::NavigationGate>,
+) -> tauri::Result<tauri::WebviewWindow> {
+    let gate = Arc::clone(&navigation_gate);
+    let mut b = WebviewWindowBuilder::new(app, label, WebviewUrl::App("index.html".into()))
+        .title("btr-md — better markdown")
+        .decorations(true)
+        .on_navigation(move |url| gate.should_allow_navigation(url))
+        .on_new_window(|_, _| NewWindowResponse::Deny)
+        .on_download(|webview, event| {
+            if let DownloadEvent::Requested { url, .. } = event {
+                let _ = webview.emit("pmd://download-denied", url.to_string());
+            }
+            false
+        });
+    match geometry {
+        Some(g) => {
+            b = b
+                .inner_size(g.width as f64, g.height as f64)
+                .position(g.x as f64, g.y as f64);
+        }
+        None => {
+            b = b.inner_size(1100.0, 720.0);
+        }
+    }
+    let win = b.build()?;
+    if matches!(geometry, Some(g) if g.maximized) {
+        let _ = win.maximize();
+    }
+    Ok(win)
+}
 
 /// Shared application state.
 ///
