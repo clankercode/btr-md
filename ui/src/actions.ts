@@ -17,6 +17,8 @@ export type ActionId =
   | "file.save"
   | "file.saveAs"
   | "file.closeTab"
+  | "window.new"
+  | "window.closeAll"
   | "app.quit"
   | "edit.find"
   | "edit.replace"
@@ -83,6 +85,7 @@ export const DEFAULT_ACTION_SHORTCUTS: Record<string, string[]> = {
   "file.save": ["Ctrl+S"],
   "file.saveAs": ["Shift+Ctrl+S"],
   "file.closeTab": ["Ctrl+W"],
+  "window.new": ["Ctrl+Shift+N"],
   "app.quit": ["Ctrl+Q"],
   "edit.find": ["Ctrl+F"],
   "edit.replace": ["Ctrl+H"],
@@ -105,6 +108,7 @@ export const DEFAULT_ACTION_SHORTCUTS: Record<string, string[]> = {
 };
 
 export const NO_DEFAULT_ACTION_IDS: ActionId[] = [
+  "window.closeAll",
   "file.revealInFolder",
   "file.openDefaultApp",
   "file.copyPath",
@@ -155,6 +159,8 @@ export const defaultActionSpecs: ActionSpec[] = [
   spec("file.save", "Save", "File", "Save the active file"),
   spec("file.saveAs", "Save as", "File", "Save the active file to a new path"),
   spec("file.closeTab", "Close tab", "File", "Close the active tab"),
+  spec("window.new", "New Window", "File", "Open a new window"),
+  spec("window.closeAll", "Close All Windows", "File", "Close every open window (restored next launch)"),
   spec("app.quit", "Quit", "File", "Quit preview-md"),
   spec("edit.find", "Find", "Edit", "Find text in the editor"),
   spec("edit.replace", "Find and replace", "Edit", "Find and replace text in the source editor"),

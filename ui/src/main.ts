@@ -621,6 +621,14 @@ async function runAction(id: ActionId): Promise<void> {
       if (id !== null) closeTab(id);
       return;
     }
+    case 'window.new':
+      await invoke('new_window');
+      return;
+    case 'window.closeAll': {
+      const { getAllWindows } = await import('@tauri-apps/api/window');
+      for (const w of await getAllWindows()) await w.close();
+      return;
+    }
     case 'app.quit':
       await getCurrentWindow().close();
       return;
