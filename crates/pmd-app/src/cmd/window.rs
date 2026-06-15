@@ -42,6 +42,69 @@ pub fn reserve_window_labels<I: IntoIterator<Item = String>>(existing: I) {
     NEXT_WINDOW.fetch_max(next_after(existing), Ordering::Relaxed);
 }
 
+#[derive(Debug, PartialEq, Eq)]
+pub enum LaunchRoute {
+    NewWindow,
+    ReuseWindow(String), // file already open here -> focus + activate
+    ForwardTo(String),   // open file as a new tab in this window
+}
+
+/// Decide where a forwarded launch goes.
+/// `paths` empty -> bare relaunch -> new window.
+/// else if a path is already open -> reuse that owner window.
+/// else -> forward to the MRU-focused live window (None live -> new window).
+pub fn route_launch(
+    paths: &[std::path::PathBuf],
+    owner_of_path: impl Fn(&std::path::Path) -> Option<String>,
+    mru_live: Option<String>,
+) -> LaunchRoute {
+    if paths.is_empty() {
+        return LaunchRoute::NewWindow;
+    }
+    for p in paths {
+        if let Some(owner) = owner_of_path(p) {
+            return LaunchRoute::ReuseWindow(owner);
+        }
+    }
+    match mru_live {
+        Some(label) => LaunchRoute::ForwardTo(label),
+        None => LaunchRoute::NewWindow,
+    }
+}
+
+#[cfg(test)]
+mod routing_tests {
+    use super::*;
+    use std::path::{Path, PathBuf};
+    #[test]
+    fn bare_relaunch_opens_new_window() {
+        assert_eq!(
+            route_launch(&[], |_| None, Some("main".into())),
+            LaunchRoute::NewWindow
+        );
+    }
+    #[test]
+    fn already_open_file_reuses_owner() {
+        let open = PathBuf::from("/tmp/a.md");
+        let r = route_launch(
+            &[open],
+            |p| (p == Path::new("/tmp/a.md")).then(|| "w-2".to_string()),
+            Some("main".into()),
+        );
+        assert_eq!(r, LaunchRoute::ReuseWindow("w-2".into()));
+    }
+    #[test]
+    fn new_file_forwards_to_mru() {
+        let r = route_launch(&[PathBuf::from("/tmp/new.md")], |_| None, Some("main".into()));
+        assert_eq!(r, LaunchRoute::ForwardTo("main".into()));
+    }
+    #[test]
+    fn new_file_with_no_live_window_opens_new() {
+        let r = route_launch(&[PathBuf::from("/tmp/new.md")], |_| None, None);
+        assert_eq!(r, LaunchRoute::NewWindow);
+    }
+}
+
 /// One window's live slice as sent by the frontend for `save_window_session`.
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]

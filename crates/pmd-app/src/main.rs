@@ -46,28 +46,62 @@ fn main() {
         // new app instance. MUST be the first plugin registered.
         .plugin(tauri_plugin_single_instance::init(|app, argv, cwd| {
             let state = app.state::<AppState>();
+            // Collect successfully-admitted canonical paths; route them as a
+            // batch (never a global emit — that would open in every window).
+            let mut admitted: Vec<std::path::PathBuf> = Vec::new();
             for path in cli::forwarded_paths(&argv, &cwd) {
                 // Existing files admit their parent dir (siblings browsable); a
                 // not-yet-existing target is still admitted (resolved against
                 // its nearest existing ancestor) so the renderer creates it on
                 // open, mirroring the initial-path handling in `cli::parse_args`.
-                let admitted = if path.exists() {
+                let result = if path.exists() {
                     state.scope.allow_file_and_parent(&path)
                 } else {
                     PathScope::resolve_creatable(&path)
                         .map(|(canon, _missing)| state.scope.allow_canonical(&canon))
                 };
-                match admitted {
-                    Ok(canon) => {
-                        let _ = app.emit("open-file", canon.to_string_lossy().to_string());
-                    }
+                match result {
+                    Ok(canon) => admitted.push(canon),
                     Err(e) => eprintln!("[btr-md] ignoring forwarded path {}: {e}", path.display()),
                 }
             }
-            if let Some(win) = app.get_webview_window("main") {
-                let _ = win.unminimize();
-                let _ = win.show();
-                let _ = win.set_focus();
+
+            let live: Vec<String> = app.webview_windows().keys().cloned().collect();
+            let live_refs: Vec<&str> = live.iter().map(|s| s.as_str()).collect();
+            let mru_live = state
+                .mru
+                .lock()
+                .unwrap_or_else(|p| p.into_inner())
+                .most_recent(&live_refs);
+            let route = cmd::window::route_launch(
+                &admitted,
+                |p| state.docs.find_by_path(p).map(|(_, owner)| owner),
+                mru_live,
+            );
+            match route {
+                cmd::window::LaunchRoute::NewWindow => {
+                    let _ = cmd::window::new_window(app.clone());
+                }
+                cmd::window::LaunchRoute::ReuseWindow(label) => {
+                    if let Some(win) = app.get_webview_window(&label) {
+                        let _ = win.unminimize();
+                        let _ = win.show();
+                        let _ = win.set_focus();
+                        for p in &admitted {
+                            let _ = win.emit("activate-doc", p.to_string_lossy().to_string());
+                        }
+                    }
+                }
+                cmd::window::LaunchRoute::ForwardTo(label) => {
+                    if let Some(win) = app.get_webview_window(&label) {
+                        let _ = win.unminimize();
+                        let _ = win.show();
+                        let _ = win.set_focus();
+                        for p in &admitted {
+                            let _ = win.emit("open-file", p.to_string_lossy().to_string());
+                        }
+                    }
+                }
             }
         }))
         .plugin(tauri_plugin_dialog::init())
@@ -195,7 +229,9 @@ fn main() {
             // The watcher + registry entry for the initial file are created by
             // the frontend's open flow; here we only nudge it to open.
             if let Some(ref p) = args.initial_path {
-                let _ = app.emit("open-file", p.to_string_lossy().to_string());
+                if let Some(win) = app.get_webview_window("main") {
+                    let _ = win.emit("open-file", p.to_string_lossy().to_string());
+                }
             }
             // Re-admit the persisted file-browser base directory (a previously
             // user-trusted folder) so the browser tab works after a restart.
