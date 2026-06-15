@@ -82,6 +82,37 @@ export function buildSavePayload(
 }
 
 // ---------------------------------------------------------------------------
+// save_window_session payload (per-window save — Tauri args are camelCased).
+// ---------------------------------------------------------------------------
+
+export interface WindowGeometry {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  maximized: boolean;
+}
+
+export interface SaveWindowPayload {
+  label: string;
+  geometry: WindowGeometry;
+  docs: SaveDocInput[];
+  active: ActiveTab;
+  browserTab: boolean;
+}
+
+/** Wrap a per-window tab slice into the save_window_session payload. */
+export function buildWindowPayload(
+  label: string,
+  geometry: WindowGeometry,
+  tabs: TabSnapshot[],
+  activeIndex: number,
+): SaveWindowPayload {
+  const { docs, active, browserTab } = buildSavePayload(tabs, activeIndex);
+  return { label, geometry, docs, active, browserTab };
+}
+
+// ---------------------------------------------------------------------------
 // load_session result (Tauri command OUTPUT — fields are snake_case).
 // ---------------------------------------------------------------------------
 
@@ -98,6 +129,15 @@ export interface SessionDoc {
 
 export interface LoadedSession {
   version: number;
+  docs: SessionDoc[];
+  active: ActiveTab;
+  browser_tab: boolean;
+}
+
+/** One window's slice of a loaded session (snake_case from the backend). */
+export interface LoadedWindowSession {
+  label: string;
+  geometry: WindowGeometry;
   docs: SessionDoc[];
   active: ActiveTab;
   browser_tab: boolean;
