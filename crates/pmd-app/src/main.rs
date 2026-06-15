@@ -1,7 +1,6 @@
 use pmd_app_lib::preview::link_activation::LinkActivationStore;
 use pmd_app_lib::preview::render_pipeline::ValidationWorker;
-use pmd_app_lib::{cli, cmd, navigation_policy::NavigationGate, path_scope::PathScope, AppState};
-use std::sync::Arc;
+use pmd_app_lib::{cli, cmd, path_scope::PathScope, AppState};
 use tauri::{Emitter, Manager};
 
 fn main() {
@@ -137,27 +136,20 @@ fn main() {
             cmd::session::restore_dirty_doc,
         ])
         .setup(move |app| {
-            let navigation_gate = Arc::new(NavigationGate::new(
-                "tauri://localhost".parse().expect("valid app shell URL"),
-            ));
-            // Make the gate retrievable by the `new_window` command.
-            app.manage(navigation_gate.clone());
-
             // Restore spawner: replay persisted windows on a plain launch;
             // otherwise open a single "main" window (initial-path or empty).
+            // Each window builds its own NavigationGate internally.
             let session = pmd_app_lib::state::session::load_session();
             app.state::<AppState>().sessions.seed(session.clone());
+            // Prevent `new_window` from minting a label that collides with a
+            // restored window (e.g. another `w-2`). Safe to call always.
+            cmd::window::reserve_window_labels(session.windows.iter().map(|w| w.label.clone()));
 
             let handle = app.handle();
             let restoring = args.initial_path.is_none() && !session.windows.is_empty();
             if restoring {
                 for w in &session.windows {
-                    pmd_app_lib::build_window(
-                        handle,
-                        &w.label,
-                        Some(&w.geometry),
-                        navigation_gate.clone(),
-                    )?;
+                    pmd_app_lib::build_window(handle, &w.label, Some(&w.geometry))?;
                 }
                 if let Some(focus) = &session.focused_label {
                     if let Some(win) = app.get_webview_window(focus) {
@@ -165,7 +157,7 @@ fn main() {
                     }
                 }
             } else {
-                pmd_app_lib::build_window(handle, "main", None, navigation_gate.clone())?;
+                pmd_app_lib::build_window(handle, "main", None)?;
             }
 
             pmd_app_lib::preview::grants::init_grant_store(app.asset_protocol_scope());

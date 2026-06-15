@@ -15,13 +15,18 @@ use tauri::{Emitter, WebviewUrl, WebviewWindowBuilder};
 /// Build a webview window with optional restored geometry. Used by startup
 /// (restore spawner) and the `new_window` command so window config lives in one
 /// place. Geometry position is best-effort on Wayland.
+///
+/// Each window gets its OWN [`navigation_policy::NavigationGate`]: the gate is a
+/// one-shot that admits exactly the first shell load, so sharing one across
+/// windows would deny every window past the first (blank webview).
 pub fn build_window(
     app: &tauri::AppHandle,
     label: &str,
     geometry: Option<&state::session::WindowGeometry>,
-    navigation_gate: Arc<navigation_policy::NavigationGate>,
 ) -> tauri::Result<tauri::WebviewWindow> {
-    let gate = Arc::clone(&navigation_gate);
+    let gate = Arc::new(navigation_policy::NavigationGate::new(
+        "tauri://localhost".parse().expect("valid app shell URL"),
+    ));
     let mut b = WebviewWindowBuilder::new(app, label, WebviewUrl::App("index.html".into()))
         .title("btr-md — better markdown")
         .decorations(true)

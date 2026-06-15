@@ -1,7 +1,7 @@
 use std::sync::atomic::{AtomicU64, Ordering};
 
 use serde::Deserialize;
-use tauri::{Manager, Window};
+use tauri::Window;
 
 use crate::cmd::session::{build_session_doc, SaveDocInput};
 use crate::state::session::{ActiveTab, SessionWindow, WindowGeometry};
@@ -18,12 +18,28 @@ pub fn set_window_title(window: Window, title: String) -> Result<(), String> {
 pub fn new_window(app: tauri::AppHandle) -> Result<String, String> {
     let n = NEXT_WINDOW.fetch_add(1, Ordering::Relaxed);
     let label = format!("w-{n}");
-    let gate = app
-        .state::<std::sync::Arc<crate::navigation_policy::NavigationGate>>()
-        .inner()
-        .clone();
-    crate::build_window(&app, &label, None, gate).map_err(|e| e.to_string())?;
+    crate::build_window(&app, &label, None).map_err(|e| e.to_string())?;
     Ok(label)
+}
+
+/// Pure computation: the lowest `new_window` counter value that won't collide
+/// with any already-restored label. "main" is window 1; restored labels look
+/// like "w-{N}". Returns one past the highest restored N (min 2, so an empty
+/// session keeps the initial counter).
+fn next_after<I: IntoIterator<Item = String>>(existing: I) -> u64 {
+    let mut max_n = 1u64;
+    for label in existing {
+        if let Some(n) = label.strip_prefix("w-").and_then(|s| s.parse::<u64>().ok()) {
+            max_n = max_n.max(n);
+        }
+    }
+    max_n + 1
+}
+
+/// Ensure `new_window` never reuses a label already restored from the session.
+/// Bump the global counter past the highest restored `w-{N}`.
+pub fn reserve_window_labels<I: IntoIterator<Item = String>>(existing: I) {
+    NEXT_WINDOW.fetch_max(next_after(existing), Ordering::Relaxed);
 }
 
 /// One window's live slice as sent by the frontend for `save_window_session`.
@@ -85,6 +101,25 @@ pub fn window_closing(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn next_after_bumps_past_highest_restored() {
+        assert_eq!(
+            next_after(["w-2", "w-5", "main", "garbage"].map(String::from)),
+            6
+        );
+    }
+
+    #[test]
+    fn next_after_empty_session_keeps_initial_counter() {
+        assert_eq!(next_after(std::iter::empty::<String>()), 2);
+    }
+
+    #[test]
+    fn next_after_ignores_main_and_non_window_labels() {
+        assert_eq!(next_after(["main", "browser", "w-x"].map(String::from)), 2);
+    }
+
     #[test]
     fn window_slice_input_deserializes_camelcase() {
         let json = r#"{"label":"w-2","geometry":{"x":1,"y":2,"width":800,"height":600,"maximized":false},
