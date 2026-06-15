@@ -1464,9 +1464,11 @@ async function copyToClipboard(text: string, label: string): Promise<void> {
 function updateFileOps(): void {
   chrome.setFileOpsEnabled(activeFilePath() !== null);
 }
-chrome.onCloseTab(() => {
-  const id = store.activeId();
-  if (id !== null) closeTab(id);
+chrome.onCloseWindow(() => {
+  void getCurrentWindow().close();
+});
+chrome.onCloseAllWindows(() => {
+  void runAction('window.closeAll');
 });
 chrome.onCopyPath(() => {
   const p = activeFilePath();

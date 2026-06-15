@@ -179,6 +179,37 @@
   animation: slideDown 150ms ease-out;
   list-style: none;
   margin: 0;
+  /* Never run off-screen: cap to the viewport height and scroll the overflow. */
+  max-height: calc(100vh - 60px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* Collapsible submenu (e.g. Recent files): a toggle row + a nested list that is
+   hidden until expanded, keeping the menu compact. */
+.pmd-submenu-toggle {
+  justify-content: space-between;
+  width: 100%;
+  background: none;
+  border: none;
+  text-align: left;
+  font: inherit;
+}
+
+.pmd-submenu-caret {
+  color: var(--pmd-fg-muted);
+  font-size: var(--pmd-text-xs);
+}
+
+.pmd-submenu-list {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 0 var(--pmd-space-2);
+  display: none;
+}
+
+.pmd-submenu-list[data-open] {
+  display: block;
 }
 
 .pmd-dropdown-menu[data-align="end"] {

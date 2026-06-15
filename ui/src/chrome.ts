@@ -21,7 +21,8 @@ export interface ChromeInstance {
   setRecentFiles: (files: string[]) => void;
   setFileOpsEnabled: (enabled: boolean) => void;
   focusMenu: () => void;
-  onCloseTab: (handler: () => void) => void;
+  onCloseWindow: (handler: () => void) => void;
+  onCloseAllWindows: (handler: () => void) => void;
   onCopyPath: (handler: () => void) => void;
   onCopyFilename: (handler: () => void) => void;
   onCopyUrl: (handler: () => void) => void;
@@ -69,30 +70,67 @@ export function createChrome(parent: HTMLElement): ChromeInstance {
   // recents section that `setRecentFiles` rebuilds independently.
   const fileOpsList = document.createElement('ul');
   fileOpsList.className = 'pmd-file-ops';
-  const recentsLabel = document.createElement('div');
-  recentsLabel.className = 'pmd-dropdown-label';
-  recentsLabel.textContent = 'Recent files';
+  // Recent files live in a collapsible submenu (collapsed by default) so they
+  // don't dominate the menu height; the list scrolls within the viewport-capped
+  // dropdown when there are many entries.
+  const recentsToggle = document.createElement('button');
+  recentsToggle.type = 'button';
+  recentsToggle.className = 'pmd-dropdown-item pmd-submenu-toggle';
+  recentsToggle.setAttribute('role', 'menuitem');
+  recentsToggle.setAttribute('aria-expanded', 'false');
+  const recentsToggleLabel = document.createElement('span');
+  recentsToggleLabel.textContent = 'Recent files';
+  const recentsCaret = document.createElement('span');
+  recentsCaret.className = 'pmd-submenu-caret';
+  recentsCaret.setAttribute('aria-hidden', 'true');
+  recentsCaret.textContent = '▸';
+  recentsToggle.append(recentsToggleLabel, recentsCaret);
+
   const recentsList = document.createElement('ul');
-  recentsList.className = 'pmd-recents-list';
+  recentsList.className = 'pmd-recents-list pmd-submenu-list';
+
+  const setRecentsOpen = (open: boolean): void => {
+    recentsToggle.setAttribute('aria-expanded', String(open));
+    recentsList.toggleAttribute('data-open', open);
+    recentsCaret.textContent = open ? '▾' : '▸';
+  };
+  recentsToggle.addEventListener('click', (e) => {
+    e.stopPropagation();
+    setRecentsOpen(!recentsList.hasAttribute('data-open'));
+  });
+
   fileDropdown.appendChild(fileOpsList);
-  fileDropdown.appendChild(recentsLabel);
+  fileDropdown.appendChild(recentsToggle);
   fileDropdown.appendChild(recentsList);
 
   fileMenuWrapper.appendChild(fileMenuBtn);
   fileMenuWrapper.appendChild(fileDropdown);
 
-  // Close active tab — separate from the path-based file ops so it stays
-  // enabled even for unsaved buffers (no file path).
-  const closeTabHandlers: (() => void)[] = [];
+  // Window controls — separate from the path-based file ops so they stay
+  // enabled even for unsaved buffers (no file path). "Close Window" closes the
+  // current window; "Close All Windows" quits the app, preserving the whole
+  // workspace for next launch.
+  const closeWindowHandlers: (() => void)[] = [];
+  const closeAllWindowsHandlers: (() => void)[] = [];
   const closeItem = document.createElement('li');
   closeItem.className = 'pmd-dropdown-item';
   closeItem.setAttribute('role', 'menuitem');
-  closeItem.textContent = 'Close';
+  closeItem.textContent = 'Close Window';
   closeItem.addEventListener('click', () => {
     closeDropdown();
-    closeTabHandlers.forEach((h) => h());
+    closeWindowHandlers.forEach((h) => h());
   });
   fileOpsList.appendChild(closeItem);
+
+  const closeAllItem = document.createElement('li');
+  closeAllItem.className = 'pmd-dropdown-item';
+  closeAllItem.setAttribute('role', 'menuitem');
+  closeAllItem.textContent = 'Close All Windows';
+  closeAllItem.addEventListener('click', () => {
+    closeDropdown();
+    closeAllWindowsHandlers.forEach((h) => h());
+  });
+  fileOpsList.appendChild(closeAllItem);
 
   const closeDivider = document.createElement('li');
   closeDivider.className = 'pmd-dropdown-divider';
@@ -284,6 +322,7 @@ export function createChrome(parent: HTMLElement): ChromeInstance {
 
   function closeDropdown() {
     fileDropdown.style.display = 'none';
+    setRecentsOpen(false);
   }
 
   function toggleDropdown() {
@@ -454,8 +493,11 @@ export function createChrome(parent: HTMLElement): ChromeInstance {
       fileDropdown.style.display = 'block';
       fileMenuBtn.focus();
     },
-    onCloseTab: (handler: () => void) => {
-      closeTabHandlers.push(handler);
+    onCloseWindow: (handler: () => void) => {
+      closeWindowHandlers.push(handler);
+    },
+    onCloseAllWindows: (handler: () => void) => {
+      closeAllWindowsHandlers.push(handler);
     },
     onCopyPath: (handler: () => void) => {
       fileOpHandlers.copyPath.push(handler);
