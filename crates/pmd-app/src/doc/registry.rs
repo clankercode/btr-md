@@ -7,11 +7,14 @@
 //!
 //! # Save authority
 //!
-//! Exactly one document is the *active* one ([`DocRegistry::active`]). The save
-//! command authorises writes against `active` (plus path + scope checks) — a
-//! background document can never be written. `set_active` is called on every
-//! tab activation. This is the single, type-backed expression of the old
-//! "write only to the active file" invariant.
+//! Each document is *owned* by exactly one window (`owner_window`), and each
+//! window has its own *active* document (the `active` map, keyed by window
+//! label). The save command authorises writes against the owning window's
+//! active slot plus ownership (`owns`) and path + scope checks — a background
+//! document, or a document owned by another window, can never be written.
+//! `set_active(window, doc)` is called on every tab activation. This is the
+//! single, type-backed expression of the per-window "write only to the active
+//! file you own" invariant.
 
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -37,6 +40,7 @@ pub struct DocEntry {
     pub state: FileState,
     pub base_content: String,
     pub path: Option<PathBuf>,
+    pub owner_window: String,
 }
 
 /// A disk change observed by the watcher.
@@ -50,7 +54,7 @@ pub enum DiskEvent {
 pub struct DocRegistry {
     docs: Mutex<HashMap<DocId, DocEntry>>,
     next_id: AtomicU64,
-    active: Mutex<Option<DocId>>,
+    active: Mutex<HashMap<String, DocId>>,
 }
 
 impl Default for DocRegistry {
@@ -64,7 +68,7 @@ impl DocRegistry {
         Self {
             docs: Mutex::new(HashMap::new()),
             next_id: AtomicU64::new(1),
-            active: Mutex::new(None),
+            active: Mutex::new(HashMap::new()),
         }
     }
 
@@ -78,7 +82,12 @@ impl DocRegistry {
 
     /// Register a freshly-opened (`path = Some`) or brand-new (`path = None`,
     /// untitled) document. Returns its id and initial state.
-    pub fn register(&self, path: Option<PathBuf>, contents: String) -> (DocId, FileState) {
+    pub fn register(
+        &self,
+        owner: &str,
+        path: Option<PathBuf>,
+        contents: String,
+    ) -> (DocId, FileState) {
         let id = self.mint_id();
         let state = match &path {
             Some(_) => FileState::Clean {
@@ -90,6 +99,7 @@ impl DocRegistry {
             state: state.clone(),
             base_content: contents,
             path,
+            owner_window: owner.to_string(),
         };
         self.lock().insert(id, entry);
         (id, state)
@@ -103,6 +113,7 @@ impl DocRegistry {
     /// 3-way merge needs, not a hash. The only restore-specific registry API.
     pub fn register_restored(
         &self,
+        owner: &str,
         path: PathBuf,
         base_content: String,
         state: FileState,
@@ -112,6 +123,7 @@ impl DocRegistry {
             state,
             base_content,
             path: Some(path),
+            owner_window: owner.to_string(),
         };
         self.lock().insert(id, entry);
         id
@@ -247,32 +259,55 @@ impl DocRegistry {
 
     pub fn drop_doc(&self, doc: DocId) -> Option<DocEntry> {
         let removed = self.lock().remove(&doc);
-        // If we dropped the active doc, clear the active slot.
+        // Clear the dropped doc from every window's active slot.
         let mut active = self.active.lock().unwrap_or_else(|p| p.into_inner());
-        if *active == Some(doc) {
-            *active = None;
-        }
+        active.retain(|_, &mut d| d != doc);
         removed
     }
 
-    // --- active-doc save authority ---
+    // --- per-window active-doc save authority ---
 
-    pub fn set_active(&self, doc: DocId) {
-        let mut active = self.active.lock().unwrap_or_else(|p| p.into_inner());
-        *active = Some(doc);
+    pub fn set_active(&self, window: &str, doc: DocId) {
+        self.active
+            .lock()
+            .unwrap_or_else(|p| p.into_inner())
+            .insert(window.to_string(), doc);
     }
 
-    pub fn clear_active(&self) {
-        let mut active = self.active.lock().unwrap_or_else(|p| p.into_inner());
-        *active = None;
+    pub fn clear_active(&self, window: &str) {
+        self.active
+            .lock()
+            .unwrap_or_else(|p| p.into_inner())
+            .remove(window);
     }
 
-    pub fn active(&self) -> Option<DocId> {
-        *self.active.lock().unwrap_or_else(|p| p.into_inner())
+    pub fn active_for(&self, window: &str) -> Option<DocId> {
+        self.active
+            .lock()
+            .unwrap_or_else(|p| p.into_inner())
+            .get(window)
+            .copied()
     }
 
-    pub fn is_active(&self, doc: DocId) -> bool {
-        self.active() == Some(doc)
+    pub fn is_active(&self, window: &str, doc: DocId) -> bool {
+        self.active_for(window) == Some(doc)
+    }
+
+    // --- per-window ownership ---
+
+    pub fn owner_of(&self, doc: DocId) -> Option<String> {
+        self.lock().get(&doc).map(|e| e.owner_window.clone())
+    }
+
+    pub fn owns(&self, window: &str, doc: DocId) -> bool {
+        self.owner_of(doc).as_deref() == Some(window)
+    }
+
+    pub fn find_by_path(&self, path: &std::path::Path) -> Option<(DocId, String)> {
+        self.lock()
+            .iter()
+            .find(|(_, e)| e.path.as_deref() == Some(path))
+            .map(|(id, e)| (*id, e.owner_window.clone()))
     }
 
     // --- snapshot accessors for the command layer ---
@@ -311,5 +346,59 @@ impl DocRegistry {
             path,
             allowed_roots,
         })
+    }
+}
+
+#[cfg(test)]
+mod ownership_tests {
+    use super::*;
+
+    #[test]
+    fn registered_doc_records_owner_and_per_window_active() {
+        let reg = DocRegistry::new();
+        let (a, _) = reg.register("main", None, "a".into());
+        let (b, _) = reg.register("w-2", None, "b".into());
+        assert_eq!(reg.owner_of(a).as_deref(), Some("main"));
+        assert_eq!(reg.owner_of(b).as_deref(), Some("w-2"));
+        reg.set_active("main", a);
+        reg.set_active("w-2", b);
+        assert!(reg.is_active("main", a));
+        assert!(reg.is_active("w-2", b));
+        assert!(!reg.is_active("main", b));
+        assert!(!reg.is_active("w-2", a));
+    }
+
+    #[test]
+    fn owns_gates_cross_window_mutation() {
+        let reg = DocRegistry::new();
+        let (a, _) = reg.register("main", None, "a".into());
+        assert!(reg.owns("main", a));
+        assert!(!reg.owns("w-2", a));
+    }
+
+    #[test]
+    fn drop_clears_active_for_owning_window_only() {
+        let reg = DocRegistry::new();
+        let (a, _) = reg.register("main", None, "a".into());
+        reg.set_active("main", a);
+        reg.drop_doc(a);
+        assert!(!reg.is_active("main", a));
+        assert!(reg.active_for("main").is_none());
+    }
+
+    #[test]
+    fn find_by_path_returns_doc_and_owner() {
+        let reg = DocRegistry::new();
+        let p = std::path::PathBuf::from("/tmp/x.md");
+        let id = reg.register_restored(
+            "w-2",
+            p.clone(),
+            "base".into(),
+            FileState::Clean {
+                base: Digest::of("base"),
+            },
+        );
+        assert_eq!(reg.find_by_path(&p), Some((id, "w-2".to_string())));
+        assert_eq!(reg.find_by_path(std::path::Path::new("/tmp/none.md")), None);
     }
 }
