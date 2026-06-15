@@ -230,7 +230,7 @@ fn serde_round_trips_with_snake_case_tags() {
 fn registry_lifecycle_round_trip() {
     let reg = DocRegistry::new();
     let path = std::path::PathBuf::from("/tmp/doc.md");
-    let (id, st) = reg.register(Some(path), "hello".to_string());
+    let (id, st) = reg.register("main", Some(path), "hello".to_string());
     assert_eq!(st, FileState::Clean { base: d("hello") });
 
     assert_eq!(
@@ -258,7 +258,7 @@ fn registry_lifecycle_round_trip() {
 #[test]
 fn registry_disk_and_sync() {
     let reg = DocRegistry::new();
-    let (id, _) = reg.register(Some("/tmp/x.md".into()), "base".to_string());
+    let (id, _) = reg.register("main", Some("/tmp/x.md".into()), "base".to_string());
     assert_eq!(
         reg.on_disk_event(id, DiskEvent::Modified(d("changed"))),
         Some(FileState::DiskChangedClean {
@@ -278,21 +278,21 @@ fn only_the_active_doc_is_a_save_target() {
     // The primitive `save_doc` enforces: a write is only authorised for the
     // active document. Background docs are never writable.
     let reg = DocRegistry::new();
-    let (a, _) = reg.register(Some("/tmp/a.md".into()), "a".to_string());
-    let (b, _) = reg.register(Some("/tmp/b.md".into()), "b".to_string());
+    let (a, _) = reg.register("main", Some("/tmp/a.md".into()), "a".to_string());
+    let (b, _) = reg.register("main", Some("/tmp/b.md".into()), "b".to_string());
 
-    reg.set_active(a);
-    assert!(reg.is_active(a));
-    assert!(!reg.is_active(b), "a background doc must not be writable");
+    reg.set_active("main", a);
+    assert!(reg.is_active("main", a));
+    assert!(!reg.is_active("main", b), "a background doc must not be writable");
 
-    reg.set_active(b);
-    assert!(reg.is_active(b));
-    assert!(!reg.is_active(a), "activation moves save authority");
+    reg.set_active("main", b);
+    assert!(reg.is_active("main", b));
+    assert!(!reg.is_active("main", a), "activation moves save authority");
 
     // dropping the active doc clears authority entirely.
     reg.drop_doc(b);
-    assert!(!reg.is_active(b));
-    assert_eq!(reg.active(), None);
+    assert!(!reg.is_active("main", b));
+    assert_eq!(reg.active_for("main"), None);
 }
 
 #[test]

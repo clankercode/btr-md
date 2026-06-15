@@ -42,9 +42,9 @@ fn preview_snapshot_uses_requested_doc_path_and_allowed_root() {
     let second_path = second_dir.join("second.md");
 
     let registry = DocRegistry::new();
-    let (first_id, _) = registry.register(Some(first_path.clone()), String::new());
-    let (second_id, _) = registry.register(Some(second_path.clone()), String::new());
-    registry.set_active(first_id);
+    let (first_id, _) = registry.register("main", Some(first_path.clone()), String::new());
+    let (second_id, _) = registry.register("main", Some(second_path.clone()), String::new());
+    registry.set_active("main", first_id);
 
     let snapshot = registry.preview_snapshot(second_id.0).unwrap();
 
@@ -59,7 +59,7 @@ fn preview_snapshot_uses_requested_doc_path_and_allowed_root() {
 #[test]
 fn preview_snapshot_leaves_untitled_docs_without_allowed_roots() {
     let registry = DocRegistry::new();
-    let (doc_id, _) = registry.register(None, String::new());
+    let (doc_id, _) = registry.register("main", None, String::new());
 
     let snapshot = registry.preview_snapshot(doc_id.0).unwrap();
 
@@ -82,7 +82,7 @@ fn preview_snapshot_errors_when_file_parent_cannot_be_canonicalized() {
     let temp = tempfile::tempdir().unwrap();
     let missing_path = temp.path().join("missing").join("doc.md");
     let registry = DocRegistry::new();
-    let (doc_id, _) = registry.register(Some(missing_path), String::new());
+    let (doc_id, _) = registry.register("main", Some(missing_path), String::new());
 
     let error = registry.preview_snapshot(doc_id.0).unwrap_err();
 

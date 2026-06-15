@@ -163,16 +163,19 @@ fn build_slot<R: Runtime>(app: AppHandle<R>, doc: DocId, path: &Path) -> Option<
 
             let state = worker_app.state::<crate::AppState>();
             if let Some(new_state) = state.docs.on_disk_event(doc, disk_event) {
-                let payload = DocStateChanged {
-                    doc_id: doc,
-                    state: new_state,
-                };
-                // targeted: only the window that owns this doc
-                if let Some(label) = state.docs.owner_of(doc) {
-                    if let Some(win) = worker_app.get_webview_window(&label) {
-                        let _ = win.emit("doc_state_changed", payload);
-                    }
-                }
+                // Global emit is effectively window-scoped: a doc is owned by
+                // exactly one window, and each frontend's `doc_state_changed`
+                // handler no-ops for docs absent from its own tab store
+                // (`setStateByDocId`), so only the owning window reacts. This
+                // avoids needing a live window handle (which may not exist yet,
+                // e.g. during startup or in tests).
+                let _ = worker_app.emit(
+                    "doc_state_changed",
+                    DocStateChanged {
+                        doc_id: doc,
+                        state: new_state,
+                    },
+                );
             }
         }
     });
