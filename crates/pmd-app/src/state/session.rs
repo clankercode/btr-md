@@ -22,30 +22,72 @@ use std::{
 };
 
 /// Current on-disk schema version. Bump when the shape changes incompatibly.
-pub const SESSION_VERSION: u32 = 1;
+pub const SESSION_VERSION: u32 = 2;
 
-/// The full persisted session.
+/// The full persisted session: one entry per open window.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Session {
-    /// Schema version, starts at 1.
+    /// Schema version.
     pub version: u32,
-    /// Open documents, in tab order.
-    pub docs: Vec<SessionDoc>,
-    /// Which tab was focused (a doc index or the file-browser tab).
+    /// Open windows, in creation order.
     #[serde(default)]
-    pub active: Option<ActiveTab>,
-    /// Whether the file-browser tab was open.
+    pub windows: Vec<SessionWindow>,
+    /// Label of the window that had focus at save time.
     #[serde(default)]
-    pub browser_tab: bool,
+    pub focused_label: Option<String>,
 }
 
 impl Default for Session {
     fn default() -> Self {
         Self {
             version: SESSION_VERSION,
-            docs: Vec::new(),
-            active: None,
-            browser_tab: false,
+            windows: Vec::new(),
+            focused_label: None,
+        }
+    }
+}
+
+/// One window's persisted state.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct SessionWindow {
+    /// Stable window label (`main`, `w-2`, …).
+    pub label: String,
+    /// Window geometry to restore.
+    #[serde(default)]
+    pub geometry: WindowGeometry,
+    /// Open documents in tab order.
+    #[serde(default)]
+    pub docs: Vec<SessionDoc>,
+    /// Which tab was focused in this window.
+    #[serde(default)]
+    pub active: Option<ActiveTab>,
+    /// Whether the file-browser tab was open in this window.
+    #[serde(default)]
+    pub browser_tab: bool,
+}
+
+/// Persisted window geometry. Position is best-effort on Wayland (size +
+/// maximized restore reliably; x/y may be ignored by the compositor).
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct WindowGeometry {
+    pub x: i32,
+    pub y: i32,
+    pub width: u32,
+    pub height: u32,
+    #[serde(default)]
+    pub maximized: bool,
+}
+
+impl Default for WindowGeometry {
+    fn default() -> Self {
+        // Mirrors main.rs's historical inner_size(1100, 720); position 0,0 means
+        // "let the WM place it" in practice on the first window.
+        Self {
+            x: 0,
+            y: 0,
+            width: 1100,
+            height: 720,
+            maximized: false,
         }
     }
 }
@@ -225,9 +267,18 @@ mod tests {
         }
     }
 
-    fn sample_session() -> Session {
-        Session {
-            version: SESSION_VERSION,
+    /// A window carrying the untitled / clean / dirty doc trio, used by the
+    /// roundtrip tests.
+    fn sample_window() -> SessionWindow {
+        SessionWindow {
+            label: "main".into(),
+            geometry: WindowGeometry {
+                x: 100,
+                y: 80,
+                width: 1100,
+                height: 720,
+                maximized: false,
+            },
             docs: vec![
                 // untitled: content, no baseline.
                 SessionDoc {
@@ -259,6 +310,14 @@ mod tests {
         }
     }
 
+    fn sample_session() -> Session {
+        Session {
+            version: SESSION_VERSION,
+            windows: vec![sample_window()],
+            focused_label: Some("main".into()),
+        }
+    }
+
     #[test]
     fn roundtrips_untitled_clean_and_dirty_docs() {
         let _lock = config_env_lock();
@@ -271,9 +330,29 @@ mod tests {
     }
 
     #[test]
-    fn clean_doc_omits_unsaved_in_serialized_json() {
-        let session = Session {
+    fn v2_session_roundtrips_windows_and_focused_label() {
+        let _lock = config_env_lock();
+        let _config_home = ConfigHomeGuard::new();
+        let original = Session {
             version: SESSION_VERSION,
+            windows: vec![
+                sample_window(),
+                SessionWindow {
+                    label: "w-2".into(),
+                    ..sample_window()
+                },
+            ],
+            focused_label: Some("w-2".into()),
+        };
+        save_session(&original).expect("save");
+        assert_eq!(load_session(), original);
+    }
+
+    #[test]
+    fn clean_doc_omits_unsaved_in_serialized_json() {
+        let window = SessionWindow {
+            label: "main".into(),
+            geometry: WindowGeometry::default(),
             docs: vec![SessionDoc {
                 path: Some("/tmp/clean.md".into()),
                 mode: "source".into(),
@@ -282,7 +361,7 @@ mod tests {
             active: None,
             browser_tab: false,
         };
-        let json = serde_json::to_string(&session).expect("serialize");
+        let json = serde_json::to_string(&window).expect("serialize");
         assert!(
             !json.contains("unsaved"),
             "clean doc must omit `unsaved`: {json}"
@@ -301,13 +380,18 @@ mod tests {
         // parseable throughout (atomic rename never leaves a torn file).
         let second = Session {
             version: SESSION_VERSION,
-            docs: vec![SessionDoc {
-                path: Some("/tmp/only.md".into()),
-                mode: "preview".into(),
-                unsaved: None,
+            windows: vec![SessionWindow {
+                label: "main".into(),
+                geometry: WindowGeometry::default(),
+                docs: vec![SessionDoc {
+                    path: Some("/tmp/only.md".into()),
+                    mode: "preview".into(),
+                    unsaved: None,
+                }],
+                active: Some(ActiveTab::Browser),
+                browser_tab: false,
             }],
-            active: Some(ActiveTab::Browser),
-            browser_tab: false,
+            focused_label: Some("main".into()),
         };
         save_session(&second).expect("second save");
         assert!(!tmp_path().exists(), "no leftover .tmp after rewrite");

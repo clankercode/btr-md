@@ -20,7 +20,9 @@ use serde::Deserialize;
 
 use crate::cmd::file::{admit_open_path, try_push_recent, OpenedDoc};
 use crate::doc::state::{Digest, FileState};
-use crate::state::session::{ActiveTab, Session, SessionDoc, UnsavedBuffer, SESSION_VERSION};
+use crate::state::session::{
+    ActiveTab, Session, SessionDoc, SessionWindow, UnsavedBuffer, WindowGeometry, SESSION_VERSION,
+};
 
 /// Per-doc input the frontend sends for `save_session`: the backend `doc_id`,
 /// the editor `mode`, and the live buffer `content` for **every** open doc.
@@ -87,11 +89,18 @@ pub async fn save_session(
         .into_iter()
         .filter_map(|input| build_session_doc(&state, input))
         .collect();
+    // Pre-multiwindow shape: persist everything under the single `main` window.
+    // Phase 6 replaces this with a per-window payload.
     let session = Session {
         version: SESSION_VERSION,
-        docs,
-        active,
-        browser_tab,
+        windows: vec![SessionWindow {
+            label: "main".into(),
+            geometry: WindowGeometry::default(),
+            docs,
+            active,
+            browser_tab,
+        }],
+        focused_label: Some("main".into()),
     };
     crate::state::session::save_session(&session).map_err(|e| e.to_string())
 }
