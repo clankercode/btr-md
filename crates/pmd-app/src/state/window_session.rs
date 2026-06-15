@@ -23,6 +23,10 @@ pub struct SessionStore {
 struct State {
     windows: Vec<SessionWindow>,
     focused: Option<String>,
+    /// Set once the app is intentionally quitting (Close All / Quit). While set,
+    /// `window_closing` preserves every window instead of pruning, so the whole
+    /// workspace restores next launch even though the windows close one-by-one.
+    quitting: bool,
 }
 
 impl Default for SessionStore {
@@ -63,11 +67,23 @@ impl SessionStore {
         self.lock().focused = Some(label.to_string());
     }
 
-    /// The close transaction. If other live windows remain, prune this one
-    /// (deliberate single close). If it is the last, keep the full snapshot so
-    /// the whole workspace restores next launch.
+    /// Mark the app as intentionally quitting (Close All / Quit). Subsequent
+    /// `window_closing` calls preserve every window so the whole workspace is
+    /// restored next launch, even though the windows then close one-by-one.
+    pub fn begin_quit(&self) {
+        self.lock().quitting = true;
+    }
+
+    /// The close transaction.
+    /// - While quitting (Close All / Quit): preserve the full snapshot — every
+    ///   open window is restored next launch.
+    /// - Otherwise a deliberate single close: if other live windows remain,
+    ///   prune this one (it is forgotten); if it is the last, preserve it.
     pub fn window_closing(&self, label: &str) -> CloseOutcome {
         let mut s = self.lock();
+        if s.quitting {
+            return CloseOutcome::PreservedForQuit;
+        }
         let live = s.windows.len();
         if live <= 1 {
             CloseOutcome::PreservedForQuit
@@ -129,6 +145,27 @@ mod tests {
             ["main", "w-2"]
         );
         assert!(snap.windows[0].browser_tab); // merged update, original position
+    }
+
+    #[test]
+    fn quitting_preserves_all_windows_through_sequential_closes() {
+        // Close All / Quit: every window closes one-by-one but ALL are restored.
+        let store = SessionStore::new();
+        store.upsert(win("main"));
+        store.upsert(win("w-2"));
+        store.upsert(win("w-3"));
+        store.begin_quit();
+        assert_eq!(store.window_closing("main"), CloseOutcome::PreservedForQuit);
+        assert_eq!(store.window_closing("w-2"), CloseOutcome::PreservedForQuit);
+        assert_eq!(store.window_closing("w-3"), CloseOutcome::PreservedForQuit);
+        // None pruned — the whole workspace survives for next launch.
+        let labels: Vec<_> = store
+            .snapshot()
+            .windows
+            .iter()
+            .map(|w| w.label.clone())
+            .collect();
+        assert_eq!(labels, ["main", "w-2", "w-3"]);
     }
 
     #[test]

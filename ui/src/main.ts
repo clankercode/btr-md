@@ -624,14 +624,19 @@ async function runAction(id: ActionId): Promise<void> {
     case 'window.new':
       await invoke('new_window');
       return;
-    case 'window.closeAll': {
+    case 'window.closeAll':
+    case 'app.quit': {
+      // Intentional quit: tell the backend so the close transaction preserves
+      // every window (whole workspace restored next launch), then close them all.
+      try {
+        await invoke('begin_quit');
+      } catch (e) {
+        console.error('begin_quit failed:', e);
+      }
       const { getAllWindows } = await import('@tauri-apps/api/window');
       for (const w of await getAllWindows()) await w.close();
       return;
     }
-    case 'app.quit':
-      await getCurrentWindow().close();
-      return;
     case 'view.zoomIn':
       setZoom(zoom + 0.1);
       return;

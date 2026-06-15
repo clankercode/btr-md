@@ -165,6 +165,16 @@ pub fn window_closing(
     state.sessions.persist().map_err(|e| e.to_string())
 }
 
+/// Mark the app as intentionally quitting (Close All / Quit) so the subsequent
+/// per-window `window_closing` calls preserve every window — the whole workspace
+/// is restored next launch. Persists the current full snapshot immediately so it
+/// survives even if a window never reports its close.
+#[tauri::command]
+pub fn begin_quit(state: tauri::State<'_, crate::AppState>) -> Result<(), String> {
+    state.sessions.begin_quit();
+    state.sessions.persist().map_err(|e| e.to_string())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

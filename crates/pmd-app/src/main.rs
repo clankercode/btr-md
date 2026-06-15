@@ -191,6 +191,7 @@ fn main() {
             cmd::window::save_window_session,
             cmd::window::get_window_session,
             cmd::window::window_closing,
+            cmd::window::begin_quit,
             cmd::session::load_session,
             cmd::session::restore_dirty_doc,
         ])
