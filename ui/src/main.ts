@@ -2296,6 +2296,12 @@ function closeTab(id: number): void {
 
 listen<string>('open-file', (event) => openFile(event.payload)).catch(() => {});
 
+listen<string>('activate-doc', (event) => {
+  const tab = store.findDocByPath(event.payload);
+  if (tab) store.setActive(tab.id);
+  else void openFile(event.payload);
+}).catch(() => {});
+
 listen<DocStateChanged>('doc_state_changed', (event) => {
   const { doc_id, state } = event.payload;
   setStateByDocId(doc_id, state);
