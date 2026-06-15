@@ -141,12 +141,12 @@ pub async fn restore_dirty_doc(
 
     let doc_id = state
         .docs
-        .register_restored(canon.clone(), baseline_content, fstate.clone());
+        .register_restored(window.label(), canon.clone(), baseline_content, fstate.clone());
 
     // Honor save authority exactly like `register_opened`: a background restore
     // starts the watcher but does NOT steal active-doc save authority.
     if !background {
-        state.docs.set_active(doc_id);
+        state.docs.set_active(window.label(), doc_id);
     }
     state.watcher.set_target(app.clone(), doc_id, canon.clone());
     try_push_recent(&canon);
@@ -237,7 +237,8 @@ mod tests {
         let reg = crate::doc::DocRegistry::new();
         let baseline = "ancestor body".to_string();
         let st = reconstruct(&baseline, "edits", "external");
-        let id = reg.register_restored(PathBuf::from("/tmp/x.md"), baseline.clone(), st.clone());
+        let id =
+            reg.register_restored("main", PathBuf::from("/tmp/x.md"), baseline.clone(), st.clone());
         assert_eq!(reg.base_content_of(id).as_deref(), Some(baseline.as_str()));
         assert_eq!(reg.state_of(id), Some(st));
     }

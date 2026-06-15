@@ -47,8 +47,8 @@ pub fn register_doc(
         }
     };
 
-    let (doc_id, fstate) = state.docs.register(canon.clone(), contents);
-    state.docs.set_active(doc_id);
+    let (doc_id, fstate) = state.docs.register(window.label(), canon.clone(), contents);
+    state.docs.set_active(window.label(), doc_id);
     let trust_context = if let Some(canon) = canon {
         state.watcher.set_target(app.clone(), doc_id, canon.clone());
         crate::preview::trust_roots::apply_remembered_trust_for_document_global(
@@ -71,13 +71,21 @@ pub fn register_doc(
 /// activation (Phase 2) and after opening/creating a document (Phase 1).
 #[tauri::command]
 pub fn set_active_doc(
+    window: tauri::Window,
     state: tauri::State<'_, crate::AppState>,
     doc_id: DocId,
 ) -> Result<(), String> {
     if !state.docs.contains(doc_id) {
         return Err(format!("set_active_doc: unknown doc {}", doc_id.0));
     }
-    state.docs.set_active(doc_id);
+    if !state.docs.owns(window.label(), doc_id) {
+        return Err(format!(
+            "set_active_doc: doc {} not owned by {}",
+            doc_id.0,
+            window.label()
+        ));
+    }
+    state.docs.set_active(window.label(), doc_id);
     Ok(())
 }
 
@@ -86,10 +94,18 @@ pub fn set_active_doc(
 /// Returns the new state so the UI can update the Save button etc.
 #[tauri::command]
 pub fn doc_edited(
+    window: tauri::Window,
     state: tauri::State<'_, crate::AppState>,
     doc_id: DocId,
     contents: String,
 ) -> Result<FileState, String> {
+    if !state.docs.owns(window.label(), doc_id) {
+        return Err(format!(
+            "doc_edited: doc {} not owned by {}",
+            doc_id.0,
+            window.label()
+        ));
+    }
     state
         .docs
         .edited(doc_id, &contents)
@@ -102,17 +118,19 @@ pub fn doc_edited(
 #[tauri::command]
 pub async fn save_doc(
     app: tauri::AppHandle,
+    window: tauri::Window,
     state: tauri::State<'_, crate::AppState>,
     validation: tauri::State<'_, crate::preview::render_pipeline::ValidationWorker>,
     doc_id: DocId,
     contents: String,
     path: Option<PathBuf>,
 ) -> Result<FileState, String> {
-    // Save authority: only the active document may be written.
-    if !state.docs.is_active(doc_id) {
+    // Save authority: only the owning window's active document may be written.
+    if !state.docs.is_active(window.label(), doc_id) {
         return Err(format!(
-            "save_doc refuses doc {}: not the active document",
-            doc_id.0
+            "save_doc refuses doc {}: not the active document for {}",
+            doc_id.0,
+            window.label()
         ));
     }
 
@@ -180,10 +198,18 @@ pub struct PullResult {
 /// edits: buffer := disk, base := disk -> Clean.
 #[tauri::command]
 pub async fn pull_from_disk(
+    window: tauri::Window,
     state: tauri::State<'_, crate::AppState>,
     validation: tauri::State<'_, crate::preview::render_pipeline::ValidationWorker>,
     doc_id: DocId,
 ) -> Result<PullResult, String> {
+    if !state.docs.owns(window.label(), doc_id) {
+        return Err(format!(
+            "pull_from_disk: doc {} not owned by {}",
+            doc_id.0,
+            window.label()
+        ));
+    }
     let canon = doc_path_in_scope(&state, doc_id)?;
     let disk = std::fs::read_to_string(&canon).map_err(|e| e.to_string())?;
     let new_state = state
@@ -211,11 +237,19 @@ pub struct ResolveResult {
 /// us proceed against the current disk content.
 #[tauri::command]
 pub fn resolve_disk_change(
+    window: tauri::Window,
     state: tauri::State<'_, crate::AppState>,
     doc_id: DocId,
     ours_text: String,
     disk_digest_seen: String,
 ) -> Result<ResolveResult, String> {
+    if !state.docs.owns(window.label(), doc_id) {
+        return Err(format!(
+            "resolve_disk_change: doc {} not owned by {}",
+            doc_id.0,
+            window.label()
+        ));
+    }
     let canon = doc_path_in_scope(&state, doc_id)?;
     let disk = std::fs::read_to_string(&canon).map_err(|e| e.to_string())?;
 
@@ -251,7 +285,18 @@ pub fn resolve_disk_change(
 
 /// Close a document: drop its registry entry and stop watching it.
 #[tauri::command]
-pub fn drop_doc(state: tauri::State<'_, crate::AppState>, doc_id: DocId) -> Result<(), String> {
+pub fn drop_doc(
+    window: tauri::Window,
+    state: tauri::State<'_, crate::AppState>,
+    doc_id: DocId,
+) -> Result<(), String> {
+    if !state.docs.owns(window.label(), doc_id) {
+        return Err(format!(
+            "drop_doc: doc {} not owned by {}",
+            doc_id.0,
+            window.label()
+        ));
+    }
     crate::preview::grants::revoke_grants_for_doc(doc_id)?;
     state.watcher.clear(doc_id);
     state.docs.drop_doc(doc_id);

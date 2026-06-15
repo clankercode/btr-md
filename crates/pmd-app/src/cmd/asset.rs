@@ -421,7 +421,7 @@ pub async fn import_image_asset(
     bytes: Vec<u8>,
     confirm_new_folder: bool,
 ) -> Result<Option<ImportedImage>, String> {
-    if !state.docs.is_active(doc_id) {
+    if !state.docs.is_active(window.label(), doc_id) {
         return Err("image import requires the active document".into());
     }
     let doc_path = state

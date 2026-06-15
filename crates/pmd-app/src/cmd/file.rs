@@ -138,9 +138,9 @@ fn register_opened(
     foreground: bool,
 ) -> Result<OpenedDoc, String> {
     let contents_ui = contents.clone();
-    let (doc_id, fstate) = state.docs.register(Some(canon.clone()), contents);
+    let (doc_id, fstate) = state.docs.register(window_label, Some(canon.clone()), contents);
     if foreground {
-        state.docs.set_active(doc_id);
+        state.docs.set_active(window_label, doc_id);
     }
     state.watcher.set_target(app.clone(), doc_id, canon.clone());
     let applied = crate::preview::trust_roots::apply_remembered_trust_for_document_global(
