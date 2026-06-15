@@ -1,3 +1,4 @@
+pub mod focus_order;
 pub mod recents;
 pub mod session;
 pub mod settings;

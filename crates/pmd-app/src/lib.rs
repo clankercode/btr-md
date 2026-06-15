@@ -75,6 +75,8 @@ pub struct AppState {
     pub watcher: watcher::WatcherSet,
     /// In-memory, single-writer store of the live per-window session.
     pub sessions: state::window_session::SessionStore,
+    /// Most-recently-focused window ordering, for launch routing.
+    pub mru: std::sync::Mutex<state::focus_order::MruOrder>,
 }
 
 impl AppState {
@@ -86,6 +88,7 @@ impl AppState {
             docs: doc::DocRegistry::new(),
             watcher: watcher::WatcherSet::new(),
             sessions: state::window_session::SessionStore::new(),
+            mru: std::sync::Mutex::new(Default::default()),
         }
     }
 }

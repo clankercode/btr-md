@@ -37,6 +37,7 @@ fn main() {
         docs: pmd_app_lib::doc::DocRegistry::new(),
         watcher: pmd_app_lib::watcher::WatcherSet::new(),
         sessions: pmd_app_lib::state::window_session::SessionStore::new(),
+        mru: std::sync::Mutex::new(Default::default()),
     };
 
     tauri::Builder::default()
@@ -70,6 +71,30 @@ fn main() {
             }
         }))
         .plugin(tauri_plugin_dialog::init())
+        // Track most-recently-focused window for launch routing. This global
+        // handler covers ALL windows (restored at startup + future
+        // `new_window`). Verified manually — there is no Tauri-runtime test.
+        .on_window_event(|window, event| {
+            let label = window.label().to_string();
+            let state = window.state::<AppState>();
+            match event {
+                tauri::WindowEvent::Focused(true) => {
+                    state
+                        .mru
+                        .lock()
+                        .unwrap_or_else(|p| p.into_inner())
+                        .touch(&label);
+                }
+                tauri::WindowEvent::Destroyed => {
+                    state
+                        .mru
+                        .lock()
+                        .unwrap_or_else(|p| p.into_inner())
+                        .remove(&label);
+                }
+                _ => {}
+            }
+        })
         .manage(state)
         .manage(LinkActivationStore::default())
         .manage(ValidationWorker::new())
