@@ -1624,6 +1624,54 @@ body[data-state="welcome"] #split-resizer {
 }
 
 /* --------------------------------------------
+   22b. History menu (recently closed windows)
+   -------------------------------------------- */
+
+.pmd-history-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.pmd-history-window + .pmd-history-window {
+  border-top: 1px solid var(--pmd-border);
+}
+
+.pmd-history-window-header {
+  display: flex;
+  align-items: center;
+  gap: var(--pmd-space-1);
+}
+
+.pmd-history-toggle {
+  flex: 1;
+  min-width: 0;
+}
+
+.pmd-history-toggle span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pmd-history-restore {
+  flex-shrink: 0;
+  padding: var(--pmd-space-1) var(--pmd-space-2);
+  font-size: var(--pmd-text-xs);
+  margin-right: var(--pmd-space-1);
+}
+
+.pmd-history-tabs {
+  padding-left: var(--pmd-space-6);
+}
+
+.pmd-history-tabs .pmd-dropdown-item {
+  padding: var(--pmd-space-1) var(--pmd-space-3);
+  font-size: var(--pmd-text-xs);
+  color: var(--pmd-fg-muted);
+}
+
+/* --------------------------------------------
    22. Default-handler banner + gist (Phase 5)
    -------------------------------------------- */
 

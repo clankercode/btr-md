@@ -192,6 +192,9 @@ fn main() {
             cmd::window::get_window_session,
             cmd::window::window_closing,
             cmd::window::begin_quit,
+            cmd::window::get_recently_closed_windows,
+            cmd::window::restore_recently_closed_window,
+            cmd::window::clear_recently_closed_windows,
             cmd::session::load_session,
             cmd::session::restore_dirty_doc,
         ])

@@ -1,5 +1,6 @@
 export type ActionCategory =
   | "File"
+  | "History"
   | "Document"
   | "Edit"
   | "View"
@@ -18,6 +19,7 @@ export type ActionId =
   | "file.saveAs"
   | "file.closeTab"
   | "window.new"
+  | "window.reopenLastClosed"
   | "window.closeAll"
   | "app.quit"
   | "edit.find"
@@ -60,7 +62,8 @@ export type ActionId =
   | "asset.trustRepositoryRoot"
   | "asset.declineRepositoryRoot"
   | "settings.removeTrustRoot"
-  | "asset.revokeGrant";
+  | "asset.revokeGrant"
+  | "history.clearRecentlyClosed";
 
 export interface ActionContext {
   run(id: ActionId): void | Promise<void>;
@@ -86,6 +89,7 @@ export const DEFAULT_ACTION_SHORTCUTS: Record<string, string[]> = {
   "file.saveAs": ["Shift+Ctrl+S"],
   "file.closeTab": ["Ctrl+W"],
   "window.new": ["Ctrl+Shift+N"],
+  "window.reopenLastClosed": ["Ctrl+Shift+T"],
   "app.quit": ["Ctrl+Q"],
   "edit.find": ["Ctrl+F"],
   "edit.replace": ["Ctrl+H"],
@@ -132,6 +136,7 @@ export const NO_DEFAULT_ACTION_IDS: ActionId[] = [
   "asset.declineRepositoryRoot",
   "settings.removeTrustRoot",
   "asset.revokeGrant",
+  "history.clearRecentlyClosed",
 ];
 
 function spec(
@@ -160,6 +165,7 @@ export const defaultActionSpecs: ActionSpec[] = [
   spec("file.saveAs", "Save as", "File", "Save the active file to a new path"),
   spec("file.closeTab", "Close tab", "File", "Close the active tab"),
   spec("window.new", "New Window", "File", "Open a new window"),
+  spec("window.reopenLastClosed", "Reopen Last Closed Window", "History", "Restore the most recently closed window"),
   spec("window.closeAll", "Close All Windows", "File", "Close every open window (restored next launch)"),
   spec("app.quit", "Quit", "File", "Quit preview-md"),
   spec("edit.find", "Find", "Edit", "Find text in the editor"),
@@ -203,6 +209,7 @@ export const defaultActionSpecs: ActionSpec[] = [
   spec("asset.declineRepositoryRoot", "Decline repository root", "Assets", "Hide the repository-root asset grant recommendation", []),
   spec("asset.revokeGrant", "Revoke grant", "Assets", "Revoke a local asset folder grant", []),
   spec("settings.removeTrustRoot", "Remove trusted root", "Settings", "Remove a stored asset-root trust decision", []),
+  spec("history.clearRecentlyClosed", "Clear recently closed windows", "History", "Forget all recently closed windows"),
 ];
 
 export interface ActionRegistry {

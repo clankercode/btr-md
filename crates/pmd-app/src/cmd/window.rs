@@ -1,12 +1,18 @@
 use std::sync::atomic::{AtomicU64, Ordering};
 
-use serde::Deserialize;
-use tauri::Window;
+use serde::{Deserialize, Serialize};
+use tauri::{AppHandle, Window};
 
 use crate::cmd::session::{build_session_doc, SaveDocInput};
 use crate::state::session::{ActiveTab, SessionWindow, WindowGeometry};
 
 static NEXT_WINDOW: AtomicU64 = AtomicU64::new(2); // "main" is window 1
+
+/// Allocate a fresh window label that will not collide with restored windows.
+fn fresh_window_label() -> String {
+    let n = NEXT_WINDOW.fetch_add(1, Ordering::Relaxed);
+    format!("w-{n}")
+}
 
 #[tauri::command]
 pub fn set_window_title(window: Window, title: String) -> Result<(), String> {
@@ -16,8 +22,7 @@ pub fn set_window_title(window: Window, title: String) -> Result<(), String> {
 /// Create a fresh empty window (Rust-side). Returns its label.
 #[tauri::command]
 pub fn new_window(app: tauri::AppHandle) -> Result<String, String> {
-    let n = NEXT_WINDOW.fetch_add(1, Ordering::Relaxed);
-    let label = format!("w-{n}");
+    let label = fresh_window_label();
     crate::build_window(&app, &label, None).map_err(|e| e.to_string())?;
     Ok(label)
 }
@@ -163,6 +168,73 @@ pub fn window_closing(
 ) -> Result<(), String> {
     let _ = state.sessions.window_closing(&label);
     state.sessions.persist().map_err(|e| e.to_string())
+}
+
+/// One closed window as shown in the History menu.
+#[derive(Serialize)]
+pub struct ClosedWindowSummary {
+    pub tabs: Vec<String>,
+    pub browser_tab: bool,
+}
+
+fn summarize_closed_window(window: &crate::state::session::SessionWindow) -> ClosedWindowSummary {
+    let tabs = window
+        .docs
+        .iter()
+        .map(|d| {
+            d.path
+                .as_deref()
+                .and_then(|p| std::path::Path::new(p).file_name())
+                .map(|n| n.to_string_lossy().to_string())
+                .unwrap_or_else(|| "Untitled".to_string())
+        })
+        .collect();
+    ClosedWindowSummary {
+        tabs,
+        browser_tab: window.browser_tab,
+    }
+}
+
+/// List recently closed windows for the History menu.
+#[tauri::command]
+pub fn get_recently_closed_windows(
+    state: tauri::State<'_, crate::AppState>,
+) -> Vec<ClosedWindowSummary> {
+    state
+        .sessions
+        .recently_closed()
+        .iter()
+        .map(summarize_closed_window)
+        .collect()
+}
+
+/// Reopen the closed window at `index` (0 = oldest) in a new window.
+/// Returns the label of the newly created window.
+#[tauri::command]
+pub fn restore_recently_closed_window(
+    state: tauri::State<'_, crate::AppState>,
+    app: AppHandle,
+    index: usize,
+) -> Result<String, String> {
+    let window = state
+        .sessions
+        .take_recently_closed(index)
+        .ok_or_else(|| "No recently closed window at that index".to_string())?;
+    let label = fresh_window_label();
+    let geometry = Some(window.geometry.clone());
+    state.sessions.upsert(crate::state::session::SessionWindow {
+        label: label.clone(),
+        ..window
+    });
+    state.sessions.persist().map_err(|e| e.to_string())?;
+    crate::build_window(&app, &label, geometry.as_ref()).map_err(|e| e.to_string())?;
+    Ok(label)
+}
+
+/// Forget all recently closed windows.
+#[tauri::command]
+pub fn clear_recently_closed_windows(state: tauri::State<'_, crate::AppState>) {
+    state.sessions.clear_recently_closed();
 }
 
 /// Mark the app as intentionally quitting (Close All / Quit) so the subsequent

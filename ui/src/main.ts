@@ -2,7 +2,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { mountEditor, type EditorHandle } from './editor.js';
-import { createChrome, type Mode } from './chrome.js';
+import { createChrome, type Mode, type ClosedWindowSummary } from './chrome.js';
 import { attachScrollSync, type ScrollSyncHandle } from './scroll_sync.js';
 import { attachScrollMirror, type ScrollMirrorHandle } from './scroll_mirror.js';
 import { markAllNodes, rerenderForThemeChange } from './theme_apply.js';
@@ -624,6 +624,9 @@ async function runAction(id: ActionId): Promise<void> {
     case 'window.new':
       await invoke('new_window');
       return;
+    case 'window.reopenLastClosed':
+      await reopenLastClosedWindow();
+      return;
     case 'window.closeAll':
     case 'app.quit': {
       // Intentional quit: tell the backend so the close transaction preserves
@@ -701,6 +704,9 @@ async function runAction(id: ActionId): Promise<void> {
     case 'file.clearRecent':
       await invoke('clear_recent_files');
       chrome.setRecentFiles([]);
+      return;
+    case 'history.clearRecentlyClosed':
+      await clearRecentlyClosed();
       return;
     case 'document.reloadFromDisk':
       await doReload();
@@ -1507,6 +1513,59 @@ chrome.onRecentFileSelect((path: string) => openFile(path));
 chrome.onClearRecentFiles(async () => {
   await invoke('clear_recent_files');
   chrome.setRecentFiles([]);
+});
+
+async function loadRecentlyClosedWindows(): Promise<void> {
+  try {
+    const windows = await invoke<ClosedWindowSummary[]>('get_recently_closed_windows');
+    chrome.setRecentlyClosedWindows(windows);
+  } catch (e) {
+    console.error('loadRecentlyClosedWindows failed:', e);
+  }
+}
+
+async function reopenLastClosedWindow(): Promise<void> {
+  try {
+    const count = (await invoke<ClosedWindowSummary[]>('get_recently_closed_windows')).length;
+    if (count === 0) {
+      chrome.setStatus('No recently closed windows');
+      return;
+    }
+    // index = count - 1 => most recently closed (top of stack).
+    await invoke('restore_recently_closed_window', { index: count - 1 });
+  } catch (e) {
+    showError(`Reopen failed: ${String(e)}`);
+  }
+}
+
+async function restoreClosedWindowAt(index: number): Promise<void> {
+  try {
+    await invoke('restore_recently_closed_window', { index });
+  } catch (e) {
+    showError(`Restore failed: ${String(e)}`);
+  }
+}
+
+async function clearRecentlyClosed(): Promise<void> {
+  try {
+    await invoke('clear_recently_closed_windows');
+    chrome.setRecentlyClosedWindows([]);
+  } catch (e) {
+    showError(`Clear failed: ${String(e)}`);
+  }
+}
+
+chrome.onHistoryMenuOpen(() => {
+  void loadRecentlyClosedWindows();
+});
+chrome.onReopenLastClosed(() => {
+  void reopenLastClosedWindow();
+});
+chrome.onRestoreClosedWindow((index) => {
+  void restoreClosedWindowAt(index);
+});
+chrome.onClearRecentlyClosed(() => {
+  void clearRecentlyClosed();
 });
 
 async function applyTheme(slug: string) {
@@ -2438,6 +2497,7 @@ async function bootstrap(): Promise<void> {
     }
   }
   loadRecentFiles();
+  loadRecentlyClosedWindows();
 
   let openDialogOnStart = false;
   try {

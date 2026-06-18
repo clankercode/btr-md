@@ -8,6 +8,11 @@ export interface ChromeState {
   modified: boolean;
 }
 
+export interface ClosedWindowSummary {
+  tabs: string[];
+  browserTab: boolean;
+}
+
 export interface ChromeInstance {
   el: HTMLElement;
   setMode: (mode: Mode) => void;
@@ -34,6 +39,11 @@ export interface ChromeInstance {
   onRecentFileSelect: (handler: (path: string) => void) => void;
   onThemePickerClick: (handler: () => void) => void;
   onClearRecentFiles: (handler: () => void) => void;
+  setRecentlyClosedWindows: (windows: ClosedWindowSummary[]) => void;
+  onReopenLastClosed: (handler: () => void) => void;
+  onRestoreClosedWindow: (handler: (index: number) => void) => void;
+  onClearRecentlyClosed: (handler: () => void) => void;
+  onHistoryMenuOpen: (handler: () => void) => void;
   setReloadVisible: (visible: boolean) => void;
   onReloadClick: (handler: () => void) => void;
   setSaveEnabled: (enabled: boolean) => void;
@@ -233,6 +243,157 @@ export function createChrome(parent: HTMLElement): ChromeInstance {
   });
 
   toolbar.appendChild(fileMenuWrapper);
+
+  // -------------------------------------------------------------------------
+  // History menu: reopen last closed window + list of recently closed windows.
+  // -------------------------------------------------------------------------
+  const historyMenuWrapper = document.createElement('div');
+  historyMenuWrapper.className = 'pmd-dropdown';
+
+  const historyMenuBtn = document.createElement('button');
+  historyMenuBtn.className = 'pmd-btn pmd-btn-ghost pmd-btn-sm';
+  historyMenuBtn.textContent = 'History';
+  historyMenuBtn.type = 'button';
+  historyMenuBtn.setAttribute('role', 'menuitem');
+
+  const historyDropdown = document.createElement('div');
+  historyDropdown.className = 'pmd-dropdown-menu';
+  historyDropdown.setAttribute('role', 'menu');
+  historyDropdown.style.display = 'none';
+
+  const reopenItem = document.createElement('li');
+  reopenItem.className = 'pmd-dropdown-item';
+  reopenItem.setAttribute('role', 'menuitem');
+  reopenItem.textContent = 'Reopen Last Closed Window';
+  reopenItem.title = 'Ctrl+Shift+T';
+  const reopenHandlers: (() => void)[] = [];
+  reopenItem.addEventListener('click', () => {
+    closeHistoryDropdown();
+    reopenHandlers.forEach((h) => h());
+  });
+  historyDropdown.appendChild(reopenItem);
+
+  const historyDivider = document.createElement('li');
+  historyDivider.className = 'pmd-dropdown-divider';
+  historyDivider.setAttribute('role', 'separator');
+  historyDropdown.appendChild(historyDivider);
+
+  const historyList = document.createElement('div');
+  historyList.className = 'pmd-history-list';
+  historyDropdown.appendChild(historyList);
+
+  const clearHistoryItem = document.createElement('li');
+  clearHistoryItem.className = 'pmd-dropdown-item';
+  clearHistoryItem.setAttribute('role', 'menuitem');
+  clearHistoryItem.textContent = 'Clear Recently Closed';
+  const clearHistoryHandlers: (() => void)[] = [];
+  clearHistoryItem.addEventListener('click', () => {
+    closeHistoryDropdown();
+    clearHistoryHandlers.forEach((h) => h());
+  });
+  historyDropdown.appendChild(clearHistoryItem);
+
+  historyMenuWrapper.appendChild(historyMenuBtn);
+  historyMenuWrapper.appendChild(historyDropdown);
+  toolbar.appendChild(historyMenuWrapper);
+
+  let restoreClosedWindowHandlers: ((index: number) => void)[] = [];
+  let historyMenuOpenHandlers: (() => void)[] = [];
+
+  function closeHistoryDropdown() {
+    historyDropdown.style.display = 'none';
+  }
+
+  function toggleHistoryDropdown() {
+    const isHidden = historyDropdown.style.display === 'none';
+    historyDropdown.style.display = isHidden ? 'block' : 'none';
+  }
+
+  historyMenuBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    historyMenuOpenHandlers.forEach((h) => h());
+    toggleHistoryDropdown();
+  });
+
+  function setRecentlyClosedWindows(windows: ClosedWindowSummary[]): void {
+    historyList.innerHTML = '';
+    reopenItem.classList.toggle('data-disabled', windows.length === 0);
+    if (windows.length === 0) {
+      const empty = document.createElement('li');
+      empty.className = 'pmd-dropdown-item';
+      empty.style.opacity = '0.5';
+      empty.style.cursor = 'default';
+      empty.textContent = 'No recently closed windows';
+      historyList.appendChild(empty);
+      return;
+    }
+    windows.forEach((win, index) => {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'pmd-history-window';
+
+      const header = document.createElement('div');
+      header.className = 'pmd-history-window-header';
+
+      const toggle = document.createElement('button');
+      toggle.type = 'button';
+      toggle.className = 'pmd-dropdown-item pmd-submenu-toggle pmd-history-toggle';
+      toggle.setAttribute('role', 'menuitem');
+      toggle.setAttribute('aria-expanded', 'false');
+      const toggleLabel = document.createElement('span');
+      const tabCount = win.tabs.length + (win.browserTab ? 1 : 0);
+      toggleLabel.textContent = `Window (${tabCount} tab${tabCount === 1 ? '' : 's'})`;
+      const caret = document.createElement('span');
+      caret.className = 'pmd-submenu-caret';
+      caret.setAttribute('aria-hidden', 'true');
+      caret.textContent = '▸';
+      toggle.append(toggleLabel, caret);
+
+      const restoreBtn = document.createElement('button');
+      restoreBtn.type = 'button';
+      restoreBtn.className = 'pmd-btn pmd-btn-ghost pmd-btn-sm pmd-history-restore';
+      restoreBtn.textContent = 'Restore';
+      restoreBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        closeHistoryDropdown();
+        restoreClosedWindowHandlers.forEach((h) => h(index));
+      });
+
+      header.append(toggle, restoreBtn);
+
+      const tabsList = document.createElement('ul');
+      tabsList.className = 'pmd-submenu-list pmd-history-tabs';
+      win.tabs.forEach((tab) => {
+        const li = document.createElement('li');
+        li.className = 'pmd-dropdown-item';
+        li.setAttribute('role', 'menuitem');
+        li.textContent = tab;
+        tabsList.appendChild(li);
+      });
+      if (win.browserTab) {
+        const li = document.createElement('li');
+        li.className = 'pmd-dropdown-item';
+        li.setAttribute('role', 'menuitem');
+        li.textContent = 'Files';
+        tabsList.appendChild(li);
+      }
+
+      const setOpen = (open: boolean): void => {
+        toggle.setAttribute('aria-expanded', String(open));
+        tabsList.toggleAttribute('data-open', open);
+        caret.textContent = open ? '▾' : '▸';
+      };
+      toggle.addEventListener('click', (e) => {
+        e.stopPropagation();
+        setOpen(!tabsList.hasAttribute('data-open'));
+      });
+
+      wrapper.append(header, tabsList);
+      historyList.appendChild(wrapper);
+    });
+  }
+
+  setRecentlyClosedWindows([]);
+
   toolbar.appendChild(titleSection);
   toolbar.appendChild(modeGroup);
 
@@ -333,6 +494,9 @@ export function createChrome(parent: HTMLElement): ChromeInstance {
   const handleDocumentClick = (e: MouseEvent) => {
     if (!fileMenuWrapper.contains(e.target as Node)) {
       closeDropdown();
+    }
+    if (!historyMenuWrapper.contains(e.target as Node)) {
+      closeHistoryDropdown();
     }
   };
   document.addEventListener('click', handleDocumentClick);
@@ -549,6 +713,21 @@ export function createChrome(parent: HTMLElement): ChromeInstance {
     },
     onMergeClick: (handler: () => void) => {
       mergeHandlers.push(handler);
+    },
+    setRecentlyClosedWindows: (windows: ClosedWindowSummary[]) => {
+      setRecentlyClosedWindows(windows);
+    },
+    onReopenLastClosed: (handler: () => void) => {
+      reopenHandlers.push(handler);
+    },
+    onRestoreClosedWindow: (handler: (index: number) => void) => {
+      restoreClosedWindowHandlers.push(handler);
+    },
+    onClearRecentlyClosed: (handler: () => void) => {
+      clearHistoryHandlers.push(handler);
+    },
+    onHistoryMenuOpen: (handler: () => void) => {
+      historyMenuOpenHandlers.push(handler);
     },
     destroy: () => {
       document.removeEventListener('click', handleDocumentClick);

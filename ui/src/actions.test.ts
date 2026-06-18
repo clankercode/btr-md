@@ -14,7 +14,7 @@ test("default action inventory includes every approved shortcut exactly", () => 
   for (const [id, shortcuts] of Object.entries(DEFAULT_ACTION_SHORTCUTS)) {
     assert.deepEqual(byId.get(id)?.defaultShortcuts, shortcuts, id);
   }
-  assert.equal(Object.keys(DEFAULT_ACTION_SHORTCUTS).length, 25);
+  assert.equal(Object.keys(DEFAULT_ACTION_SHORTCUTS).length, 26);
 });
 
 test("toggle sidebar action exists with Ctrl+B", () => {
@@ -50,5 +50,5 @@ test("all no-default actions are registered searchable and unbound", () => {
     assert.equal(searchActions(defaultActionSpecs, action.label)[0].id, id);
     assert.equal(typeof action.run, "function");
   }
-  assert.equal(NO_DEFAULT_ACTION_IDS.length, 24);
+  assert.equal(NO_DEFAULT_ACTION_IDS.length, 25);
 });

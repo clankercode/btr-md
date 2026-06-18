@@ -283,7 +283,10 @@ fn only_the_active_doc_is_a_save_target() {
 
     reg.set_active("main", a);
     assert!(reg.is_active("main", a));
-    assert!(!reg.is_active("main", b), "a background doc must not be writable");
+    assert!(
+        !reg.is_active("main", b),
+        "a background doc must not be writable"
+    );
 
     reg.set_active("main", b);
     assert!(reg.is_active("main", b));

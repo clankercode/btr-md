@@ -36,7 +36,9 @@ fn external_modification_emits_disk_changed_clean() {
 
     // Register the doc as Clean (base == current disk) and watch it.
     let st = app.state::<AppState>();
-    let (doc_id, _) = st.docs.register("main", Some(canon.clone()), "# One\n".to_string());
+    let (doc_id, _) = st
+        .docs
+        .register("main", Some(canon.clone()), "# One\n".to_string());
     st.watcher.set_target(handle.clone(), doc_id, canon.clone());
     assert_eq!(st.watcher.watched(doc_id), Some(canon.clone()));
 
@@ -81,7 +83,9 @@ fn identical_rewrite_is_suppressed_as_clean() {
     });
 
     let st = app.state::<AppState>();
-    let (doc_id, _) = st.docs.register("main", Some(canon.clone()), body.to_string());
+    let (doc_id, _) = st
+        .docs
+        .register("main", Some(canon.clone()), body.to_string());
     st.watcher.set_target(handle.clone(), doc_id, canon.clone());
 
     let started = Instant::now();
