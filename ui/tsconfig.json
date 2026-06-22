@@ -59,6 +59,7 @@
     "src/image_embed.ts",
     "src/scroll_sync.ts",
     "src/scroll_mirror.ts",
-    "src/scroll_pure.ts"
+    "src/scroll_pure.ts",
+    "src/confirm_close_dialog.ts"
   ]
 }

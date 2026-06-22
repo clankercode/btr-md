@@ -33,6 +33,8 @@ export interface SessionManagerDeps {
     opts: { background: boolean; title?: string; baseContent?: string },
   ) => Promise<DocTab>;
   openFile: (path: string, opts?: { background?: boolean }) => Promise<void>;
+  /** Called before the window is allowed to close. Return false to cancel. */
+  onBeforeClose: () => Promise<boolean>;
 }
 
 export interface SessionManager {
@@ -49,7 +51,7 @@ export interface SessionManager {
 }
 
 export function createSessionManager(deps: SessionManagerDeps): SessionManager {
-  const { store, tabBuffer, addDocTab, openFile } = deps;
+  const { store, tabBuffer, addDocTab, openFile, onBeforeClose } = deps;
 
   /** Snapshot the open tabs into the `save_session` payload + the active index. */
   function buildSessionPayloadFromStore() {
@@ -185,6 +187,8 @@ export function createSessionManager(deps: SessionManagerDeps): SessionManager {
     getCurrentWindow()
       .onCloseRequested(async (event) => {
         event.preventDefault();
+        const ok = await onBeforeClose();
+        if (!ok) return;
         try {
           await flushSessionNow();
         } catch (e) {

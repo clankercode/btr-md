@@ -67,6 +67,7 @@ import {
   handleLinkActivationResponse,
   type OpenedDocumentFromLink,
 } from './link_activation.js';
+import { showConfirmCloseDialog } from './confirm_close_dialog.js';
 import {
   type DocumentDiagnostics,
   type AssetGrant,
@@ -618,7 +619,7 @@ async function runAction(id: ActionId): Promise<void> {
       return;
     case 'file.closeTab': {
       const id = store.activeId();
-      if (id !== null) closeTab(id);
+      if (id !== null) await closeTab(id);
       return;
     }
     case 'window.new':
@@ -629,6 +630,7 @@ async function runAction(id: ActionId): Promise<void> {
       return;
     case 'window.closeAll':
     case 'app.quit': {
+      if (!(await confirmCloseWindow())) return;
       // Intentional quit: tell the backend so the close transaction preserves
       // every window (whole workspace restored next launch), then close them all.
       try {
@@ -2227,36 +2229,73 @@ if (window.__pmdE2e !== undefined) {
 }
 
 async function saveCurrentDocAs(): Promise<void> {
-  await saveCurrentDoc(true);
+  const tab = store.activeDoc();
+  if (tab) await saveTab(tab, true);
 }
 
-async function saveCurrentDoc(forceSaveAs = false): Promise<void> {
+async function saveCurrentDoc(): Promise<void> {
   const tab = store.activeDoc();
-  if (!tab || !editor) return;
+  if (tab) await saveTab(tab);
+}
+
+/** Save a specific document tab. Works even when `tab` is not the active UI tab.
+ *  Temporarily shifts backend save-authority to the target doc and restores the
+ *  previously-active doc before returning, so the UI/backend active-doc state
+ *  stays consistent. Returns the new `FileState` or `null` if the user cancelled
+ *  or the save failed. */
+async function saveTab(tab: DocTab, forceSaveAs = false): Promise<FileState | null> {
+  const activeBefore = store.activeDoc();
+  const activeDocIdBefore = activeBefore?.docId;
+  let restored = false;
+
+  async function restoreActive(): Promise<void> {
+    if (restored) return;
+    restored = true;
+    if (activeDocIdBefore !== undefined && activeDocIdBefore !== tab.docId) {
+      await invoke('set_active_doc', { docId: activeDocIdBefore }).catch(() => {});
+    }
+  }
+
   try {
+    // Move backend save-authority to the target doc.
+    await invoke('set_active_doc', { docId: tab.docId });
+
     let path: string | null = null;
     if (forceSaveAs || !tab.filePath) {
-      const suggested = editor.getValue().split('\n')[0].slice(0, 50) || 'Untitled';
+      const buffer = tabBuffer(tab);
+      const suggested = buffer.split('\n')[0].slice(0, 50) || 'Untitled';
       const picked = await invoke<string | null>('save_dialog', { suggestedName: suggested + '.md' });
-      if (!picked) return;
+      if (!picked) {
+        await restoreActive();
+        return null;
+      }
       path = picked;
     }
-    const contents = editor.getValue();
+
+    const contents = tabBuffer(tab);
     const state = await invoke<FileState>('save_doc', { docId: tab.docId, contents, path });
+
     if (path) {
       store.updateDoc(tab.id, { filePath: path, title: basename(path) });
-      chrome.setFilename(basename(path), path);
-      updateFileOps();
+      if (store.activeId() === tab.id) {
+        chrome.setFilename(basename(path), path);
+        updateFileOps();
+        void revealActiveFile(path);
+      }
       saveSession();
-      // Keep the workspace active-file highlight in sync with the new path.
-      void revealActiveFile(path);
     }
     store.updateDoc(tab.id, { fileState: state, baseContent: contents });
-    refreshChrome(state);
-    chrome.setStatus('Saved');
+    if (store.activeId() === tab.id) {
+      refreshChrome(state);
+      chrome.setStatus('Saved');
+    }
     loadRecentFiles();
+    await restoreActive();
+    return state;
   } catch (e) {
+    await restoreActive();
     showError(`Save failed: ${String(e)}`);
+    return null;
   }
 }
 
@@ -2352,7 +2391,18 @@ function insertFootnote(): void {
   );
 }
 
-function closeTab(id: number): void {
+/** Whether closing this document tab should prompt the user to save. */
+function tabNeedsSaveConfirmation(tab: DocTab): boolean {
+  if (uiForState(tab.fileState).modified) return true;
+  // Untitled buffers stay `Untitled` regardless of edits, so we detect pending
+  // work by comparing the live buffer to the initial empty seed.
+  if (tab.fileState.kind === 'untitled') {
+    return tabBuffer(tab).trim().length > 0;
+  }
+  return false;
+}
+
+function doCloseTab(id: number): void {
   const tab = store.get(id);
   if (tab && tab.kind === 'doc') {
     invoke('drop_doc', { docId: tab.docId }).catch(() => {});
@@ -2362,6 +2412,70 @@ function closeTab(id: number): void {
     store.addEmpty();
   }
   saveSession();
+}
+
+async function closeTab(id: number): Promise<void> {
+  const tab = store.get(id);
+  if (!tab) return;
+  if (tab.kind !== 'doc' || !tabNeedsSaveConfirmation(tab)) {
+    doCloseTab(id);
+    return;
+  }
+
+  const choice = await showConfirmCloseDialog({ title: tab.title, count: 1 });
+  if (choice === 'cancel') return;
+  if (choice === 'discard') {
+    doCloseTab(id);
+    return;
+  }
+
+  const state = await saveTab(tab);
+
+  // The user may cancel the save-as dialog or the save may fail; in that case
+  // the tab still needs saving, so abort the close instead of discarding.
+  if (!state) return;
+  const updated = store.get(id);
+  if (updated && updated.kind === 'doc' && tabNeedsSaveConfirmation(updated)) {
+    return;
+  }
+  doCloseTab(id);
+}
+
+/** Check every document tab in the current window and, if any need saving,
+ *  prompt once with Save All / Don't Save All / Cancel. On **Save** the dirty
+ *  tabs are saved but left open; on **Discard** they are closed without saving.
+ *  Returns `true` if the close should proceed, `false` if the user cancelled.
+ *  Limitation: only checks the current window; other open windows are not
+ *  consulted before `closeAll` / `quit`. */
+async function confirmCloseWindow(): Promise<boolean> {
+  const dirtyTabs = store
+    .list()
+    .filter((t): t is DocTab => t.kind === 'doc' && tabNeedsSaveConfirmation(t));
+  if (dirtyTabs.length === 0) return true;
+
+  const choice = await showConfirmCloseDialog({
+    title: dirtyTabs.length === 1 ? dirtyTabs[0].title : `${dirtyTabs.length} documents`,
+    count: dirtyTabs.length,
+  });
+  if (choice === 'cancel') return false;
+
+  if (choice === 'save') {
+    for (const tab of dirtyTabs) {
+      const state = await saveTab(tab);
+      if (!state) {
+        // Save was cancelled or failed — abort the whole close.
+        return false;
+      }
+    }
+    return true;
+  }
+
+  // choice === 'discard': close every dirty tab so the session flush does not
+  // resurrect discarded buffers on the next launch.
+  for (const tab of dirtyTabs) {
+    doCloseTab(tab.id);
+  }
+  return true;
 }
 
 // ---------------------------------------------------------------------------
@@ -2415,7 +2529,13 @@ listen<string>('mode-change', (event) => {
 // Session persistence (extracted into session_manager.ts; backend-authoritative).
 // ---------------------------------------------------------------------------
 
-const sessionManager = createSessionManager({ store, tabBuffer, addDocTab, openFile });
+const sessionManager = createSessionManager({
+  store,
+  tabBuffer,
+  addDocTab,
+  openFile,
+  onBeforeClose: confirmCloseWindow,
+});
 const saveSession = sessionManager.saveSession;
 
 // ---------------------------------------------------------------------------
