@@ -34,6 +34,8 @@ export interface TabBarHandlers {
   onSelect: (id: TabId) => void;
   onClose: (id: TabId) => void;
   onNewTab: (shiftKey: boolean) => void;
+  onRevealInFolder?: (path: string) => void;
+  onCopyPath?: (path: string) => void;
 }
 
 export interface TabBarInstance {
@@ -144,10 +146,20 @@ export function createTabBar(store: TabStore, handlers: TabBarHandlers): TabBarI
     // affordance (functional move lands in a later phase).
     tabEl.addEventListener('contextmenu', (e) => {
       e.preventDefault();
+      const filePath = tab.kind === 'doc' ? tab.filePath : null;
       openContextMenu(
         e.clientX,
         e.clientY,
-        buildTabContextItems({ onClose: () => handlers.onClose(tab.id) })
+        buildTabContextItems({
+          onClose: () => handlers.onClose(tab.id),
+          filePath,
+          onRevealInFolder: filePath && handlers.onRevealInFolder
+            ? () => handlers.onRevealInFolder!(filePath)
+            : undefined,
+          onCopyPath: filePath && handlers.onCopyPath
+            ? () => handlers.onCopyPath!(filePath)
+            : undefined,
+        })
       );
     });
     // Middle-click closes the tab (standard browser/editor behaviour). The close

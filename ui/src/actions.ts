@@ -53,6 +53,8 @@ export type ActionId =
   | "document.export.html"
   | "view.setDiffMode"
   | "navigate.fileBrowser"
+  | "navigate.tabNext"
+  | "navigate.tabPrevious"
   | "share.openGist"
   | "share.copyGistMarkdown"
   | "settings.pickBaseFolder"
@@ -109,6 +111,8 @@ export const DEFAULT_ACTION_SHORTCUTS: Record<string, string[]> = {
   "settings.open": ["Ctrl+,"],
   "help.shortcuts": ["Ctrl+?"],
   "menu.focus": ["F10"],
+  "navigate.tabNext": ["Ctrl+PageDown"],
+  "navigate.tabPrevious": ["Ctrl+PageUp"],
 };
 
 export const NO_DEFAULT_ACTION_IDS: ActionId[] = [
@@ -199,6 +203,8 @@ export const defaultActionSpecs: ActionSpec[] = [
   spec("document.export.html", "Export to HTML", "Document", "Export the rendered document as a self-contained HTML file", []),
   spec("view.setDiffMode", "Set diff mode", "View", "Select the diff mode"),
   spec("navigate.fileBrowser", "File browser", "Navigate", "Open the file browser tab"),
+  spec("navigate.tabNext", "Next tab", "Navigate", "Switch to the next tab"),
+  spec("navigate.tabPrevious", "Previous tab", "Navigate", "Switch to the previous tab"),
   spec("share.openGist", "Open Gist", "Share", "Open the document Gist"),
   spec("share.copyGistMarkdown", "Copy Gist Markdown", "Share", "Copy Gist Markdown"),
   spec("settings.pickBaseFolder", "Pick file-browser folder", "Settings", "Pick the file-browser base folder"),

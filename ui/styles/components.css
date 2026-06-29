@@ -549,16 +549,27 @@
   display: flex;
   align-items: center;
   gap: var(--pmd-space-2);
-  padding: 0 var(--pmd-space-2);
+  padding: 0 var(--pmd-space-3);
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
 }
 
 .pmd-filename {
   font-size: var(--pmd-text-sm);
   color: var(--pmd-fg);
-  max-width: 200px;
+  font-weight: var(--pmd-font-medium);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.pmd-abbrev-path {
+  font-size: var(--pmd-text-xs);
+  color: var(--pmd-fg-subtle);
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
+  min-width: 0;
 }
 
 .pmd-modified-dot {
@@ -783,7 +794,84 @@
 body[data-sidebar="off"] #pmd-sidebar,
 body[data-sidebar="off"] #sidebar-resizer { display: none !important; }
 .pmd-browser-active { background: color-mix(in srgb, var(--pmd-accent, #5b9) 18%, transparent); }
-.pmd-context-menu { z-index: 120; }
+.pmd-context-menu {
+  z-index: 120;
+  position: fixed;
+  background: var(--pmd-bg-elevated);
+  border: 1px solid var(--pmd-border);
+  border-radius: var(--pmd-radius-lg);
+  padding: var(--pmd-space-1);
+  min-width: 180px;
+  max-width: 320px;
+  box-shadow: var(--pmd-shadow-lg);
+  animation: scaleIn 120ms ease-out;
+  font-family: var(--pmd-font-ui);
+  font-size: var(--pmd-text-sm);
+  user-select: none;
+}
+
+.pmd-context-menu-item {
+  display: flex;
+  align-items: center;
+  gap: var(--pmd-space-2);
+  width: 100%;
+  padding: var(--pmd-space-2) var(--pmd-space-3);
+  border: none;
+  border-radius: var(--pmd-radius-md);
+  background: transparent;
+  color: var(--pmd-fg);
+  font: inherit;
+  font-size: var(--pmd-text-sm);
+  cursor: pointer;
+  text-align: left;
+  transition: background var(--pmd-transition-fast);
+  white-space: nowrap;
+}
+
+.pmd-context-menu-item:hover,
+.pmd-context-menu-item[data-active] {
+  background: var(--pmd-bg-muted);
+}
+
+.pmd-context-menu-item:disabled,
+.pmd-context-menu-item[aria-disabled="true"] {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.pmd-context-menu-item:focus-visible {
+  outline: 2px solid var(--pmd-focus-ring);
+  outline-offset: -2px;
+}
+
+.pmd-context-menu-icon {
+  flex: 0 0 auto;
+  width: 18px;
+  text-align: center;
+  font-size: var(--pmd-text-xs);
+  color: var(--pmd-fg-muted);
+}
+
+.pmd-context-menu-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pmd-context-menu-shortcut {
+  flex: 0 0 auto;
+  margin-left: var(--pmd-space-4);
+  font-size: var(--pmd-text-xs);
+  color: var(--pmd-fg-subtle);
+  font-family: var(--pmd-font-mono);
+}
+
+.pmd-context-menu-separator {
+  height: 1px;
+  background: var(--pmd-border);
+  margin: var(--pmd-space-1) var(--pmd-space-2);
+}
 
 /* Non-document tab bodies (empty/welcome, file browser) take the full content
    area; the editor/preview panes are hidden while they are active. */
