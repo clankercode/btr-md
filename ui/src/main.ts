@@ -359,6 +359,12 @@ const tabBar: TabBarInstance = createTabBar(store, {
   onNewTab: (shift) => {
     void newFile({ background: shift });
   },
+  onRevealInFolder: (path) => {
+    void invoke('reveal_in_folder', { path }).catch((e) => showError(`Reveal failed: ${String(e)}`));
+  },
+  onCopyPath: (path) => {
+    void copyToClipboard(path, 'path');
+  },
 });
 // Tab strip lives inside `.pmd-chrome`, below the toolbar.
 chrome.el.appendChild(tabBar.el);
@@ -770,6 +776,17 @@ async function runAction(id: ActionId): Promise<void> {
     case 'settings.removeTrustRoot':
       chrome.setStatus(defaultActionSpecs.find((action) => action.id === id)?.label ?? id);
       return;
+    case 'navigate.tabNext':
+    case 'navigate.tabPrevious': {
+      const tabs = store.list();
+      if (tabs.length < 2) return;
+      const currentIdx = tabs.findIndex((t) => t.id === store.activeId());
+      if (currentIdx < 0) return;
+      const dir = id === 'navigate.tabNext' ? 1 : -1;
+      const nextIdx = (currentIdx + dir + tabs.length) % tabs.length;
+      store.setActive(tabs[nextIdx].id);
+      return;
+    }
     default:
       assertNever(id);
   }

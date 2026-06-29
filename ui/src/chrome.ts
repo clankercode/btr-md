@@ -2,6 +2,30 @@ import type { Mode } from './doc_state.js';
 import type { Counts } from './counts.js';
 export type { Mode };
 
+/**
+ * Abbreviate a file path by shortening each directory component to its first
+ * character, except for dot-prefixed dirs (like `.worktrees`) which get the
+ * first two characters. The filename itself is always shown in full.
+ *
+ * Examples:
+ *   ~/src/preview-md/.worktrees/feature/foo.md → ~/s/p/.wo/f/foo.md
+ *   /home/user/documents/report.md → /h/u/d/report.md
+ */
+export function abbreviatePath(path: string): string {
+  const lastSlash = path.lastIndexOf('/');
+  if (lastSlash < 0) return path;
+  const dir = path.slice(0, lastSlash);
+  const file = path.slice(lastSlash + 1);
+  const parts = dir.split('/');
+  const abbreviated = parts.map((part) => {
+    if (!part) return '';
+    // Dot-prefixed dirs: keep first two chars (e.g. .w for .worktrees).
+    if (part.startsWith('.')) return part.slice(0, 2);
+    return part[0];
+  });
+  return abbreviated.join('/') + '/' + file;
+}
+
 export interface ChromeState {
   mode: Mode;
   filename: string | null;
@@ -206,10 +230,14 @@ export function createChrome(parent: HTMLElement): ChromeInstance {
   modifiedDot.textContent = '●';
 
   const filenameEl = document.createElement('span');
-  filenameEl.className = 'pmd-filename pmd-truncate';
+  filenameEl.className = 'pmd-filename';
+
+  const abbrevPathEl = document.createElement('span');
+  abbrevPathEl.className = 'pmd-abbrev-path';
 
   titleSection.appendChild(modifiedDot);
   titleSection.appendChild(filenameEl);
+  titleSection.appendChild(abbrevPathEl);
 
   const modeGroup = document.createElement('div');
   modeGroup.className = 'pmd-segmented';
@@ -394,8 +422,8 @@ export function createChrome(parent: HTMLElement): ChromeInstance {
 
   setRecentlyClosedWindows([]);
 
-  toolbar.appendChild(titleSection);
   toolbar.appendChild(modeGroup);
+  toolbar.appendChild(titleSection);
 
   const toolbarSpacer = document.createElement('div');
   toolbarSpacer.className = 'pmd-toolbar-spacer';
@@ -583,6 +611,13 @@ export function createChrome(parent: HTMLElement): ChromeInstance {
     setFilename: (filename: string | null, tooltip?: string | null) => {
       filenameEl.textContent = filename || '';
       filenameEl.title = tooltip || filename || '';
+      // Compute abbreviated path: ~/s/b/.w/f/f/filename.md
+      if (tooltip) {
+        abbrevPathEl.textContent = abbreviatePath(tooltip);
+        abbrevPathEl.title = tooltip;
+      } else {
+        abbrevPathEl.textContent = '';
+      }
     },
     setModified: (modified: boolean) => {
       modifiedDot.toggleAttribute('data-modified', modified);
