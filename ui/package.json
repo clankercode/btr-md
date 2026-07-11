@@ -5,8 +5,9 @@
   "main": "index.js",
   "scripts": {
     "build": "node vendor/build-app.mjs",
+    "build:mock": "node vendor/build-mock.mjs",
     "typecheck": "tsc -p tsconfig.json",
-    "test:e2e:playwright": "NODE_PATH=${NODE_PATH:-$HOME/.bun/install/global/node_modules} playwright test -c playwright.config.cjs",
+    "test:e2e:playwright": "npm run build:mock && NODE_PATH=${NODE_PATH:-$HOME/.bun/install/global/node_modules} playwright test -c playwright.config.cjs",
     "visual-review": "NODE_PATH=${NODE_PATH:-$HOME/.bun/install/global/node_modules} playwright test -c playwright.config.cjs --grep @visual",
     "test:unit": "node --test src/*.test.ts",
     "test": "npm run test:e2e:playwright"

@@ -6,6 +6,7 @@ node_modules/
 /build-flatpak/
 /dist/
 /ui/dist/
+/ui/e2e/mock/dist/
 tests/screenshots/playwright-results/
 tests/screenshots/playwright/
 # Generated marketing/AppStream placeholders (scripts/capture-screenshots.sh);
