@@ -1,4 +1,3 @@
-import { invoke } from '@tauri-apps/api/core';
 import { type Settings, type OpenedDoc } from './backend/commands.js';
 import * as filesApi from './backend/files.js';
 import * as settingsApi from './backend/settings.js';
@@ -7,6 +6,7 @@ import * as docsApi from './backend/docs.js';
 import * as windowsApi from './backend/windows.js';
 import * as sessionApi from './backend/session.js';
 import { linkActivationInvoke } from './backend/links.js';
+import * as recentApi from './backend/recent.js';
 import { listen } from '@tauri-apps/api/event';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { mountEditor, type EditorHandle } from './editor.js';
@@ -690,7 +690,7 @@ async function runAction(id: ActionId): Promise<void> {
       return;
     }
     case 'file.clearRecent':
-      await invoke('clear_recent_files');
+      await recentApi.clearRecentFiles();
       chrome.setRecentFiles([]);
       return;
     case 'history.clearRecentlyClosed':
@@ -1501,7 +1501,7 @@ chrome.setFileOpsEnabled(false);
 
 async function loadRecentFiles(): Promise<void> {
   try {
-    const files = await invoke<string[]>('get_recent_files');
+    const files = await recentApi.getRecentFiles();
     chrome.setRecentFiles(files);
   } catch (e) {
     console.error('loadRecentFiles failed:', e);
@@ -1510,7 +1510,7 @@ async function loadRecentFiles(): Promise<void> {
 
 chrome.onRecentFileSelect((path: string) => openFile(path));
 chrome.onClearRecentFiles(async () => {
-  await invoke('clear_recent_files');
+  await recentApi.clearRecentFiles();
   chrome.setRecentFiles([]);
 });
 
@@ -2131,7 +2131,7 @@ async function newFile(opts: { background?: boolean } = {}): Promise<DocTab | nu
 
 async function openFileDialog(): Promise<void> {
   try {
-    const doc = await invoke<OpenedDoc | null>('open_dialog');
+    const doc = await recentApi.openDialog();
     if (doc) {
       const existing = store.findDocByPath(doc.path);
       if (existing) {
@@ -2261,7 +2261,7 @@ async function saveTab(tab: DocTab, forceSaveAs = false): Promise<FileState | nu
     if (forceSaveAs || !tab.filePath) {
       const buffer = tabBuffer(tab);
       const suggested = buffer.split('\n')[0].slice(0, 50) || 'Untitled';
-      const picked = await invoke<string | null>('save_dialog', { suggestedName: suggested + '.md' });
+      const picked = await recentApi.saveDialog(suggested + '.md');
       if (!picked) {
         await restoreActive();
         return null;

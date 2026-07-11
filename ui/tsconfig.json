@@ -29,6 +29,7 @@
     "src/backend/windows.ts",
     "src/backend/session.ts",
     "src/backend/links.ts",
+    "src/backend/recent.ts",
     "src/debounce.ts",
     "src/editor_insert.ts",
     "src/doc_state.ts",
