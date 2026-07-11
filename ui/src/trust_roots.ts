@@ -1,4 +1,4 @@
-import { invoke } from '@tauri-apps/api/core';
+import { call } from './backend/invoke.js';
 import type { AssetGrant, TrustRootDecision } from './document_contracts.js';
 
 export function grantRecommendedRoot(input: {
@@ -6,7 +6,7 @@ export function grantRecommendedRoot(input: {
   version: number;
   canonicalRoot: string;
 }): Promise<AssetGrant> {
-  return invoke<AssetGrant>('grant_recommended_root', {
+  return call('grant_recommended_root', {
     docId: input.docId,
     version: input.version,
     canonicalRoot: input.canonicalRoot,
@@ -14,13 +14,13 @@ export function grantRecommendedRoot(input: {
 }
 
 export function rememberDeclinedRoot(canonicalRoot: string): Promise<void> {
-  return invoke('remember_declined_root', { canonicalRoot });
+  return call('remember_declined_root', { canonicalRoot });
 }
 
 export function forgetTrustRoot(canonicalRoot: string): Promise<void> {
-  return invoke('forget_trust_root', { canonicalRoot });
+  return call('forget_trust_root', { canonicalRoot });
 }
 
 export function listTrustRoots(): Promise<TrustRootDecision[]> {
-  return invoke<TrustRootDecision[]>('list_trust_roots');
+  return call('list_trust_roots');
 }

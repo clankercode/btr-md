@@ -1,8 +1,8 @@
-import { invoke } from '@tauri-apps/api/core';
+import { call } from './backend/invoke.js';
 import type { AssetGrant } from './document_contracts.js';
 
 export function listAssetGrants(docId: number): Promise<AssetGrant[]> {
-  return invoke<AssetGrant[]>('list_asset_grants', { docId });
+  return call('list_asset_grants', { docId });
 }
 
 export function grantAssetFolderForBlockedImage(input: {
@@ -10,7 +10,7 @@ export function grantAssetFolderForBlockedImage(input: {
   version: number;
   placeholderId: string;
 }): Promise<AssetGrant | null> {
-  return invoke<AssetGrant | null>('grant_asset_folder', {
+  return call('grant_asset_folder', {
     docId: input.docId,
     version: input.version,
     placeholderId: input.placeholderId,
@@ -21,7 +21,7 @@ export function revokeAssetGrantForDocument(input: {
   docId: number;
   grantId: number;
 }): Promise<void> {
-  return invoke('revoke_asset_grant', {
+  return call('revoke_asset_grant', {
     docId: input.docId,
     grantId: input.grantId,
   });
@@ -47,7 +47,7 @@ export function importImageAsset(input: {
   bytes: number[] | Uint8Array;
   confirmNewFolder: boolean;
 }): Promise<ImportedImage | null> {
-  return invoke<ImportedImage | null>('import_image_asset', {
+  return call('import_image_asset', {
     docId: input.docId,
     fileName: input.fileName,
     bytes: Array.from(input.bytes),
@@ -57,5 +57,5 @@ export function importImageAsset(input: {
 
 /** Convert untrusted clipboard HTML to Markdown (sanitized backend-side). */
 export function pasteHtmlAsMarkdown(html: string): Promise<string> {
-  return invoke<string>('paste_html_as_markdown', { html });
+  return call('paste_html_as_markdown', { html });
 }
