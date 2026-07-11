@@ -27,6 +27,7 @@
     "src/backend/theme.ts",
     "src/backend/docs.ts",
     "src/backend/windows.ts",
+    "src/backend/session.ts",
     "src/debounce.ts",
     "src/editor_insert.ts",
     "src/doc_state.ts",

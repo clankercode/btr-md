@@ -5,6 +5,7 @@ import * as settingsApi from './backend/settings.js';
 import * as themeApi from './backend/theme.js';
 import * as docsApi from './backend/docs.js';
 import * as windowsApi from './backend/windows.js';
+import * as sessionApi from './backend/session.js';
 import { listen } from '@tauri-apps/api/event';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { mountEditor, type EditorHandle } from './editor.js';
@@ -1514,7 +1515,7 @@ chrome.onClearRecentFiles(async () => {
 
 async function loadRecentlyClosedWindows(): Promise<void> {
   try {
-    const windows = await invoke<ClosedWindowSummary[]>('get_recently_closed_windows');
+    const windows = await sessionApi.getRecentlyClosedWindows();
     chrome.setRecentlyClosedWindows(windows);
   } catch (e) {
     console.error('loadRecentlyClosedWindows failed:', e);
@@ -1523,13 +1524,13 @@ async function loadRecentlyClosedWindows(): Promise<void> {
 
 async function reopenLastClosedWindow(): Promise<void> {
   try {
-    const count = (await invoke<ClosedWindowSummary[]>('get_recently_closed_windows')).length;
+    const count = (await sessionApi.getRecentlyClosedWindows()).length;
     if (count === 0) {
       chrome.setStatus('No recently closed windows');
       return;
     }
     // index = count - 1 => most recently closed (top of stack).
-    await invoke('restore_recently_closed_window', { index: count - 1 });
+    await sessionApi.restoreRecentlyClosedWindow(count - 1);
   } catch (e) {
     showError(`Reopen failed: ${String(e)}`);
   }
@@ -1537,7 +1538,7 @@ async function reopenLastClosedWindow(): Promise<void> {
 
 async function restoreClosedWindowAt(index: number): Promise<void> {
   try {
-    await invoke('restore_recently_closed_window', { index });
+    await sessionApi.restoreRecentlyClosedWindow(index);
   } catch (e) {
     showError(`Restore failed: ${String(e)}`);
   }
@@ -1545,7 +1546,7 @@ async function restoreClosedWindowAt(index: number): Promise<void> {
 
 async function clearRecentlyClosed(): Promise<void> {
   try {
-    await invoke('clear_recently_closed_windows');
+    await sessionApi.clearRecentlyClosedWindows();
     chrome.setRecentlyClosedWindows([]);
   } catch (e) {
     showError(`Clear failed: ${String(e)}`);
@@ -2636,7 +2637,7 @@ async function bootstrap(): Promise<void> {
   let restored = false;
   try {
     const label = getCurrentWindow().label;
-    const w = await invoke<LoadedWindowSession | null>('get_window_session', { label });
+    const w = await sessionApi.getWindowSession(label);
     if (w) {
       restored = await sessionManager.restoreSession({
         version: 2,

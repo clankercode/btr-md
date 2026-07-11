@@ -9,9 +9,9 @@
 // (the store, buffer snapshotting, tab creation, file opening) are injected so
 // there is no import cycle.
 
-import { invoke } from '@tauri-apps/api/core';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import * as docsApi from './backend/docs.js';
+import * as sessionApi from './backend/session.js';
 import { debounce, type Debounced } from './debounce.js';
 import {
   buildSavePayload,
@@ -93,7 +93,7 @@ export function createSessionManager(deps: SessionManagerDeps): SessionManager {
     const { docs, active, browserTab } = buildSessionPayloadFromStore();
     try {
       const geometry = await readGeometry();
-      await invoke('save_window_session', { input: { label, geometry, docs, active, browserTab } });
+      await sessionApi.saveWindowSession({ label, geometry, docs, active, browserTab });
     } catch (e) {
       // Same fault-tolerance as the old localStorage catch: never block the UI.
       console.error('save_window_session failed:', e);
@@ -195,7 +195,7 @@ export function createSessionManager(deps: SessionManagerDeps): SessionManager {
           console.error('Session flush on close failed:', e);
         }
         try {
-          await invoke('window_closing', { label: getCurrentWindow().label });
+          await sessionApi.windowClosing(getCurrentWindow().label);
         } catch (e) {
           console.error('window_closing failed:', e);
         }
