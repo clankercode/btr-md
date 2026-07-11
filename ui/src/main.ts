@@ -6,6 +6,7 @@ import * as themeApi from './backend/theme.js';
 import * as docsApi from './backend/docs.js';
 import * as windowsApi from './backend/windows.js';
 import * as sessionApi from './backend/session.js';
+import { linkActivationInvoke } from './backend/links.js';
 import { listen } from '@tauri-apps/api/event';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { mountEditor, type EditorHandle } from './editor.js';
@@ -1230,13 +1231,13 @@ async function adoptOpenedDocumentFromLink(documentFromBackend: OpenedDocumentFr
 
 attachPreviewLinkActivation(previewContent, {
   currentDoc: currentPreviewDoc,
-  invoke,
+  invoke: linkActivationInvoke,
   handleResponse: (response, doc) =>
     handleLinkActivationResponse({
       response,
       docId: doc.doc_id,
       version: doc.version,
-      invoke,
+      invoke: linkActivationInvoke,
       scrollToBlock: scrollPreviewToBlock,
       openDocument: adoptOpenedDocumentFromLink,
       showMessage: (message) => chrome.setStatus(message),
