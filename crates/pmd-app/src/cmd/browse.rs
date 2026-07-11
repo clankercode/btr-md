@@ -13,7 +13,7 @@ use serde::Serialize;
 use std::path::PathBuf;
 use tauri_plugin_dialog::DialogExt;
 
-use crate::cmd::file::MARKDOWN_EXTENSIONS;
+use crate::path_scope::MARKDOWN_EXTENSIONS;
 use crate::state::settings;
 
 #[derive(Serialize)]

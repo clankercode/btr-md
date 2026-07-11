@@ -1,3 +1,19 @@
+//! Filesystem containment primitives for the app.
+//!
+//! Per ADR-0002, every filesystem-containment helper (canonicalisation,
+//! component-wise ancestor tests, lexical path normalisation, and the
+//! markdown-extension predicate used to gate which files may be opened) is
+//! concentrated here so the security-relevant behaviour has exactly one
+//! implementation. The invariant these helpers uphold is *containment*: a
+//! candidate path is admissible only when it lies at or below a trusted
+//! ancestor once symlinks and `..` segments are resolved — a **component-wise**
+//! relationship, never a textual `starts_with` (so `/base` contains `/base/x`
+//! but never `/base_evil`).
+//!
+//! Link/URL *semantics* (scheme classification, mailto/http detection,
+//! reference-label normalisation) deliberately do NOT live here — they belong
+//! to `pmd_core::facts`. Do not add URL parsing to this module.
+
 use std::{
     collections::HashSet,
     path::{Path, PathBuf},
@@ -45,7 +61,11 @@ impl Default for PathScope {
 /// Component-wise ancestor test: is `child` equal to, or nested under, `dir`?
 /// Both are expected to be canonical (absolute, symlink-resolved). Compares
 /// path *components* so `/base` does not match `/base_evil`.
-fn is_within(dir: &Path, child: &Path) -> bool {
+///
+/// This is the single containment predicate for the crate. It is equivalent to
+/// `child == dir || child.starts_with(dir)` (Rust's `Path::starts_with` is
+/// itself component-wise), spelled out as an explicit loop for clarity.
+pub(crate) fn is_within(dir: &Path, child: &Path) -> bool {
     let mut d = dir.components();
     let mut c = child.components();
     loop {
@@ -237,6 +257,46 @@ impl PathScope {
     }
 }
 
+/// Lexically normalise a path without touching the filesystem, collapsing
+/// `.` and resolving `..` against earlier components. Returns an error if a
+/// `..` would escape above the root of the accumulated path. Unlike
+/// [`canonicalise`], this does NOT resolve symlinks or require the path to
+/// exist — callers that need symlink safety must additionally canonicalise
+/// and re-check containment.
+pub(crate) fn normalize_path(path: impl AsRef<Path>) -> Result<PathBuf, String> {
+    let mut normalized = PathBuf::new();
+    for component in path.as_ref().components() {
+        match component {
+            std::path::Component::Prefix(prefix) => normalized.push(prefix.as_os_str()),
+            std::path::Component::RootDir => normalized.push(component.as_os_str()),
+            std::path::Component::CurDir => {}
+            std::path::Component::ParentDir => {
+                if !normalized.pop() {
+                    return Err("Path escapes above the document root".to_string());
+                }
+            }
+            std::path::Component::Normal(part) => normalized.push(part),
+        }
+    }
+    Ok(normalized)
+}
+
+/// Filename extensions the backend recognises as Markdown. Single source of
+/// truth so the open dialog, directory browser, and open-path guards agree.
+pub(crate) const MARKDOWN_EXTENSIONS: &[&str] = &["md", "markdown", "mdown", "mkd"];
+
+/// True if `p`'s final extension (case-insensitive) is one of
+/// [`MARKDOWN_EXTENSIONS`]. Operates on the filesystem *path* extension; link
+/// targets (which may carry `#fragment`/`?query`) are classified by
+/// `pmd_core::facts::links`, not here.
+pub(crate) fn is_markdown_path(p: &Path) -> bool {
+    let Some(ext) = p.extension().and_then(|e| e.to_str()) else {
+        return false;
+    };
+    let lower = ext.to_lowercase();
+    MARKDOWN_EXTENSIONS.iter().any(|e| *e == lower)
+}
+
 fn canonicalise(p: &std::path::Path) -> std::io::Result<PathBuf> {
     if p.exists() {
         std::fs::canonicalize(p)
@@ -306,7 +366,134 @@ fn resolve_creatable(p: &std::path::Path) -> std::io::Result<(PathBuf, Vec<PathB
 
 #[cfg(test)]
 mod tests {
-    use super::PathScope;
+    use super::{is_markdown_path, is_within, normalize_path, PathScope};
+    use std::path::Path;
+
+    #[test]
+    fn is_within_is_component_wise_not_textual() {
+        // Equal paths and true descendants are within.
+        assert!(is_within(Path::new("/base"), Path::new("/base")));
+        assert!(is_within(Path::new("/base"), Path::new("/base/x")));
+        assert!(is_within(Path::new("/base"), Path::new("/base/x/y")));
+        // A sibling that merely shares a textual prefix is NOT within.
+        assert!(!is_within(Path::new("/base"), Path::new("/base_evil")));
+        assert!(!is_within(Path::new("/base"), Path::new("/base_evil/x")));
+        // An ancestor is not a descendant.
+        assert!(!is_within(Path::new("/base/x"), Path::new("/base")));
+    }
+
+    #[test]
+    fn is_within_matches_path_starts_with() {
+        // Pin equivalence to the `child == dir || child.starts_with(dir)` form
+        // the scattered copy used, across a spread of shapes.
+        for (dir, child) in [
+            ("/a/b", "/a/b"),
+            ("/a/b", "/a/b/c"),
+            ("/a/b", "/a/bc"),
+            ("/a/b", "/a"),
+            ("/a/b", "/x/y"),
+            ("/", "/anything"),
+        ] {
+            let d = Path::new(dir);
+            let c = Path::new(child);
+            let reference = c == d || c.starts_with(d);
+            assert_eq!(is_within(d, c), reference, "dir={dir} child={child}");
+        }
+    }
+
+    #[test]
+    fn normalize_path_collapses_curdir_and_resolves_parentdir() {
+        assert_eq!(
+            normalize_path("/base/./sub/../file.md").unwrap(),
+            Path::new("/base/file.md")
+        );
+        // Trailing separator does not add a trailing empty component.
+        assert_eq!(
+            normalize_path("/base/sub/").unwrap(),
+            Path::new("/base/sub")
+        );
+        // Relative inputs stay relative (no cwd resolution here).
+        assert_eq!(normalize_path("a/b/../c").unwrap(), Path::new("a/c"));
+    }
+
+    #[test]
+    fn normalize_path_refuses_escape_above_root() {
+        assert!(normalize_path("/base/../../etc/passwd").is_err());
+        assert!(normalize_path("../escape").is_err());
+    }
+
+    #[test]
+    fn normalize_path_does_not_resolve_symlinks_or_require_existence() {
+        // Nonexistent path is normalised lexically, no filesystem access.
+        assert_eq!(
+            normalize_path("/definitely/does/not/exist/../x").unwrap(),
+            Path::new("/definitely/does/not/x")
+        );
+    }
+
+    #[test]
+    fn is_markdown_path_matches_known_extensions_case_insensitively() {
+        for ok in ["a.md", "a.MARKDOWN", "a.Mdown", "deep/dir/a.mkd", "a.b.md"] {
+            assert!(is_markdown_path(Path::new(ok)), "{ok} should be markdown");
+        }
+        for no in ["a.txt", "README", "a.mdx", "notes.md.bak"] {
+            assert!(
+                !is_markdown_path(Path::new(no)),
+                "{no} should not be markdown"
+            );
+        }
+    }
+
+    #[test]
+    fn canonicalise_resolves_symlink_and_rejects_missing_parent() {
+        let dir = tempfile::tempdir().expect("dir");
+        let real = dir.path().join("real.md");
+        std::fs::write(&real, "x").expect("write");
+        let canon_real = std::fs::canonicalize(&real).unwrap();
+
+        // A symlink to the file canonicalises to the real target.
+        #[cfg(unix)]
+        {
+            let link = dir.path().join("link.md");
+            std::os::unix::fs::symlink(&real, &link).expect("symlink");
+            assert_eq!(PathScope::canonicalise(&link).unwrap(), canon_real);
+        }
+
+        // Nonexistent file with an existing parent: parent is canonicalised and
+        // the file name re-appended (supports save-as targets).
+        let new = dir.path().join("new.md");
+        assert_eq!(
+            PathScope::canonicalise(&new).unwrap(),
+            dir.path().canonicalize().unwrap().join("new.md")
+        );
+
+        // Nonexistent file whose parent also does not exist: error.
+        let orphan = dir.path().join("missing_dir").join("f.md");
+        assert!(PathScope::canonicalise(&orphan).is_err());
+    }
+
+    #[test]
+    fn is_within_rejects_symlink_escape_after_canonicalise() {
+        // A symlink inside `base` that points outside must, once canonicalised,
+        // fail the containment test — this is the property browsing relies on.
+        #[cfg(unix)]
+        {
+            let base = tempfile::tempdir().expect("base");
+            let outside = tempfile::tempdir().expect("outside");
+            let outside_file = outside.path().join("secret.md");
+            std::fs::write(&outside_file, "x").expect("write");
+
+            let escape = base.path().join("escape.md");
+            std::os::unix::fs::symlink(&outside_file, &escape).expect("symlink");
+
+            let base_canon = base.path().canonicalize().unwrap();
+            let escape_canon = std::fs::canonicalize(&escape).unwrap();
+            assert!(
+                !is_within(&base_canon, &escape_canon),
+                "symlink escaping the base must not be contained"
+            );
+        }
+    }
 
     #[test]
     fn resolve_creatable_existing_parent_has_no_missing_dirs() {

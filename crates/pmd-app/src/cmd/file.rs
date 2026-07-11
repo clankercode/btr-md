@@ -90,17 +90,6 @@ pub(crate) fn write_no_follow(path: &Path, contents: &[u8]) -> std::io::Result<(
     }
 }
 
-/// Markdown extensions we accept. Kept in one place so UI and backend agree.
-pub const MARKDOWN_EXTENSIONS: &[&str] = &["md", "markdown", "mdown", "mkd"];
-
-fn is_markdown_path(p: &Path) -> bool {
-    let Some(ext) = p.extension().and_then(|e| e.to_str()) else {
-        return false;
-    };
-    let lower = ext.to_lowercase();
-    MARKDOWN_EXTENSIONS.iter().any(|e| *e == lower)
-}
-
 /// What an open command returns: enough for the renderer to adopt the document
 /// (its `doc_id`, canonical `path`, `contents`, and initial lifecycle `state`).
 #[derive(Serialize)]
@@ -194,7 +183,7 @@ pub async fn open_file(
 /// regular open path (`request_open_file`) uses [`plan_open_or_create`] instead,
 /// which tolerates a missing file and creates it.
 pub(crate) fn admit_open_path(state: &crate::AppState, path: &Path) -> Result<PathBuf, String> {
-    if !is_markdown_path(path) {
+    if !crate::path_scope::is_markdown_path(path) {
         return Err(format!(
             "request_open_file refuses non-markdown extension: {}",
             path.display()
@@ -208,7 +197,7 @@ pub(crate) fn admit_open_path(state: &crate::AppState, path: &Path) -> Result<Pa
     }
 
     let canon = crate::path_scope::PathScope::canonicalise(path).map_err(|e| e.to_string())?;
-    if !is_markdown_path(&canon) {
+    if !crate::path_scope::is_markdown_path(&canon) {
         return Err(format!(
             "request_open_file refuses canonical non-markdown target: {}",
             canon.display()
@@ -263,7 +252,7 @@ pub(crate) fn plan_open_or_create(
     state: &crate::AppState,
     path: &Path,
 ) -> Result<OpenOrCreatePlan, String> {
-    if !is_markdown_path(path) {
+    if !crate::path_scope::is_markdown_path(path) {
         return Err(format!(
             "request_open_file refuses non-markdown extension: {}",
             path.display()
@@ -272,7 +261,7 @@ pub(crate) fn plan_open_or_create(
 
     if path.exists() {
         let canon = crate::path_scope::PathScope::canonicalise(path).map_err(|e| e.to_string())?;
-        if !is_markdown_path(&canon) {
+        if !crate::path_scope::is_markdown_path(&canon) {
             return Err(format!(
                 "request_open_file refuses canonical non-markdown target: {}",
                 canon.display()
@@ -288,7 +277,7 @@ pub(crate) fn plan_open_or_create(
 
     let (canon, missing_dirs) =
         crate::path_scope::PathScope::resolve_creatable(path).map_err(|e| e.to_string())?;
-    if !is_markdown_path(&canon) {
+    if !crate::path_scope::is_markdown_path(&canon) {
         return Err(format!(
             "request_open_file refuses canonical non-markdown target: {}",
             canon.display()
@@ -387,7 +376,7 @@ pub async fn open_dialog(
     let file_path = app
         .dialog()
         .file()
-        .add_filter("Markdown", MARKDOWN_EXTENSIONS)
+        .add_filter("Markdown", crate::path_scope::MARKDOWN_EXTENSIONS)
         .blocking_pick_file();
 
     if let Some(path) = file_path {
