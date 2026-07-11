@@ -54,12 +54,14 @@ export function markAllNodes(container: HTMLElement, renderNonce: string) {
 
 export async function rerenderForThemeChange(
   root: HTMLElement,
-  ctx: { vars: Record<string, string> }
+  ctx: { vars: Record<string, string> },
+  renderNonce: string,
 ) {
   // Mermaid re-init happens inside renderMermaidNode (with the active theme
   // vars), so we don't eagerly load mermaid here — a math-only document never
   // pulls in the diagram libraries on a theme change (todo #8).
-  const renderNonce = root.dataset.pmdNonce ?? '';
+  // `renderNonce` is threaded in explicitly by the caller (the render
+  // coordinator's applied nonce) rather than read from a root dataset channel.
   const targets = Array.from(root.querySelectorAll<HTMLElement>('.pmd-mermaid[data-mermaid-source][data-pmd-nonce], .pmd-math[data-math-source][data-pmd-nonce]'))
     .filter((target) => hasRenderNonce(target, renderNonce));
   for (const t of targets) {

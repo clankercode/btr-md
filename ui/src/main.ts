@@ -894,7 +894,7 @@ function tabBuffer(tab: DocTab): string {
 
 function currentPreviewDoc(): { doc_id: number; version: number } | null {
   const tab = store.activeDoc();
-  const version = Number(previewContent.dataset.versionApplied || '0');
+  const version = appliedRender.version;
   if (!tab || !version) return null;
   return { doc_id: tab.docId, version };
 }
@@ -1589,7 +1589,7 @@ async function applyTheme(slug: string) {
       document.documentElement.dataset.theme = bundle.mode;
     }
     setMermaidTheme(bundle.mermaid_vars);
-    requestAnimationFrame(() => rerenderForThemeChange(previewContent, { vars: bundle.mermaid_vars }));
+    requestAnimationFrame(() => rerenderForThemeChange(previewContent, { vars: bundle.mermaid_vars }, appliedRender.nonce));
   } catch (e) {
     console.error('applyTheme failed:', e);
   }
@@ -1672,6 +1672,10 @@ interface RenderItem {
 let renderQueue: RenderItem[] = [];
 let rendering = false;
 let currentVersion = 0;
+// Applied-render channel (replaces the previewContent dataset round-trip):
+// the version+nonce of the most recently painted render. Read by
+// currentPreviewDoc() and threaded into rerenderForThemeChange().
+let appliedRender: { version: number; nonce: string } = { version: 0, nonce: '' };
 
 function scheduleRender(): Promise<void> {
   // Drop any pending debounced edit-render: this render supersedes it (covers
@@ -1713,8 +1717,7 @@ async function processRenderQueue(): Promise<void> {
       result.version === item.version &&
       store.activeId() === item.tabId;
     if (stillCurrent) {
-      previewContent.dataset.versionApplied = String(result.version);
-      previewContent.dataset.pmdNonce = result.render_nonce;
+      appliedRender = { version: result.version, nonce: result.render_nonce };
       // Full-document replace + decorate. Used for the non-incremental path and
       // as the safety fallback when block reconcile detects a desync.
       const fullReplace = async () => {
