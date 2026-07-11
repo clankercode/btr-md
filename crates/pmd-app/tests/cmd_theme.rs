@@ -154,6 +154,11 @@ async fn set_theme_emits_css_variables_used_by_stylesheets() {
     for name in [
         "--pmd-bg-elevated",
         "--pmd-fg-muted",
+        // The folder sidebar paints its panel with `--pmd-surface`; the bundle
+        // must emit it (derived from bg_elevated when the palette omits it) so
+        // the sidebar re-themes with the active theme instead of keeping the
+        // static design-system value keyed only on [data-theme].
+        "--pmd-surface",
         "--pmd-inline-code-bg",
         "--pmd-code-block-fg",
         "--pmd-mermaid-edge-label-bg",

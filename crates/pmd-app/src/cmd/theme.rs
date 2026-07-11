@@ -429,6 +429,19 @@ pub fn set_theme_from_roots(slug: &str, roots: &[PathBuf]) -> Result<ThemeBundle
         }
     }
 
+    // The folder sidebar paints its panel with `--pmd-surface` (see
+    // ui/styles/components.css). Themes rarely set an explicit `surface`
+    // palette key, and design-system.css only defines `--pmd-surface` under
+    // static `[data-theme]` selectors — so without emitting it here the
+    // sidebar would keep a generic slate colour and never track the active
+    // theme's palette. Derive it from `bg_elevated`, matching the CSS
+    // author's declared fallback `var(--pmd-surface, var(--pmd-bg-elevated))`.
+    if !colours.contains_key("surface") {
+        if let Some(bg_elevated) = colours.get("bg_elevated") {
+            css_vars.push_str(&format!("  --pmd-surface: {};\n", bg_elevated));
+        }
+    }
+
     css_vars.push_str("}\n");
 
     // Emit `color-scheme` so native UI (scrollbars, form controls) matches.
