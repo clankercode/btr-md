@@ -562,7 +562,7 @@ export function createChrome(parent: HTMLElement): ChromeInstance {
   }
 
   function handleModeClick(e: Event) {
-    const btn = (e.target as HTMLElement).closest('.pmd-segmented-btn');
+    const btn = (e.target as HTMLElement).closest<HTMLElement>('.pmd-segmented-btn');
     if (!btn) return;
     const mode = btn.dataset.mode as Mode;
     setMode(mode);

@@ -1,4 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
+import { type Settings, type OpenedDoc } from './backend/commands.js';
 import { listen } from '@tauri-apps/api/event';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { mountEditor, type EditorHandle } from './editor.js';
@@ -104,37 +105,12 @@ import {
   rememberDeclinedRoot,
 } from './trust_roots.js';
 
-interface Settings {
-  active_theme: string | null;
-  light_theme: string | null;
-  dark_theme: string | null;
-  auto_switch: boolean;
-  default_mode: string | null;
-  autosave_mode: AutosaveMode;
-  autoreload_mode: AutoreloadMode;
-  browser_base_dir: string | null;
-  gist_enabled: boolean;
-  diff_mode: DiffMode;
-  dont_ask_default_handler: boolean;
-  mono_font: string | null;
-  shortcut_overrides: ShortcutOverrides;
-  split_scroll_locked: boolean;
-}
-
 declare global {
   interface Window {
     __pmdE2e?: boolean;
     __pmdE2eActions?: string[];
     __pmdOpenPathForTest?: (path: string) => Promise<void>;
   }
-}
-
-interface OpenedDoc {
-  doc_id: number;
-  path: string;
-  contents: string;
-  state: FileState;
-  trust_context: DocumentTrustContext | null;
 }
 
 // ---------------------------------------------------------------------------
