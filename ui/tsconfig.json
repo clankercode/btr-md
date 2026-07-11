@@ -23,6 +23,7 @@
     "src/backend/commands.ts",
     "src/backend/invoke.ts",
     "src/backend/files.ts",
+    "src/backend/settings.ts",
     "src/debounce.ts",
     "src/editor_insert.ts",
     "src/doc_state.ts",

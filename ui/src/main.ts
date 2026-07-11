@@ -1,6 +1,7 @@
 import { invoke } from '@tauri-apps/api/core';
 import { type Settings, type OpenedDoc } from './backend/commands.js';
 import * as filesApi from './backend/files.js';
+import * as settingsApi from './backend/settings.js';
 import { listen } from '@tauri-apps/api/event';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { mountEditor, type EditorHandle } from './editor.js';
@@ -406,19 +407,16 @@ let settingsMenu: ReturnType<typeof createSettingsMenu> | null = null;
 const toolbarEl = chrome.el.querySelector('.pmd-toolbar');
 if (toolbarEl instanceof HTMLElement) {
   settingsMenu = createSettingsMenu(toolbarEl, {
-    getSettings: () => invoke<SettingsSnapshot>('get_settings'),
-    setAutosaveMode: (m) => invoke('set_autosave_mode', { mode: m }).then(() => {}),
-    setAutoreloadMode: (m) => invoke('set_autoreload_mode', { mode: m }).then(() => {}),
-    setMergeStrategy: (m) => invoke('set_merge_strategy', { strategy: m }).then(() => {}),
-    setGistEnabled: (e) => invoke('set_gist_enabled', { enabled: e }).then(() => {}),
-    setDiffMode: (m) => invoke('set_diff_mode', { mode: m }).then(() => {}),
+    getSettings: () => settingsApi.getSettings(),
+    setAutosaveMode: (m) => settingsApi.setAutosaveMode(m),
+    setAutoreloadMode: (m) => settingsApi.setAutoreloadMode(m),
+    setMergeStrategy: (m) => settingsApi.setMergeStrategy(m),
+    setGistEnabled: (e) => settingsApi.setGistEnabled(e),
+    setDiffMode: (m) => settingsApi.setDiffMode(m),
     pickBaseDir: () => filesApi.pickBaseDir(),
-    getDefaultHandlerStatus: () =>
-      invoke<{ status: HandlerStatus; platform: string }>('default_handler_status').then(
-        (r) => r.status
-    ),
-    setAsDefaultHandler: () => invoke('set_as_default_handler').then(() => {}),
-    setMonoFont: (f) => invoke('set_mono_font', { font: f }).then(() => {}),
+    getDefaultHandlerStatus: () => settingsApi.defaultHandlerStatus().then((r) => r.status),
+    setAsDefaultHandler: () => settingsApi.setAsDefaultHandler(),
+    setMonoFont: (f) => settingsApi.setMonoFont(f),
     listTrustRoots,
     forgetTrustRoot: forgetTrustRootFromSettings,
     onAutosaveChange: (m) => {
@@ -518,7 +516,7 @@ async function setSplitScrollLock(enabled: boolean): Promise<void> {
   // sync instead of waiting for the next user scroll.
   if (enabled) scrollMirror?.alignNow();
   try {
-    await invoke('set_split_scroll_locked', { enabled });
+    await settingsApi.setSplitScrollLocked(enabled);
   } catch (e) {
     console.error('set_split_scroll_locked failed:', e);
   }
@@ -782,7 +780,7 @@ const shortcutEditor = createShortcutEditor({
   actions: defaultActionSpecs,
   loadOverrides: () => shortcutOverrides,
   saveOverrides: async (overrides) => {
-    const settings = await invoke<Settings>('set_shortcut_overrides', { overrides });
+    const settings = await settingsApi.setShortcutOverrides(overrides);
     shortcutOverrides = settings.shortcut_overrides ?? {};
   },
   enabledActionIds,
@@ -1622,7 +1620,7 @@ const systemColorSchemeQuery = window.matchMedia('(prefers-color-scheme: dark)')
 
 async function loadSettings(): Promise<Settings | null> {
   try {
-    return await invoke<Settings>('get_settings');
+    return await settingsApi.getSettings();
   } catch (e) {
     console.error('get_settings failed:', e);
     return null;
@@ -2550,7 +2548,7 @@ function showDefaultHandlerBanner(): void {
   setBtn.textContent = 'Set as default';
   setBtn.addEventListener('click', async () => {
     try {
-      await invoke('set_as_default_handler');
+      await settingsApi.setAsDefaultHandler();
       chrome.setStatus('Set as default markdown app');
     } catch (e) {
       showError(`Set default failed: ${String(e)}`);
@@ -2562,7 +2560,7 @@ function showDefaultHandlerBanner(): void {
   noBtn.type = 'button';
   noBtn.textContent = "Don't ask again";
   noBtn.addEventListener('click', () => {
-    invoke('set_dont_ask_default_handler', { value: true }).catch(() => {});
+    settingsApi.setDontAskDefaultHandler(true).catch(() => {});
     banner.remove();
   });
   const dismiss = document.createElement('button');
@@ -2603,7 +2601,7 @@ async function bootstrap(): Promise<void> {
     await applyAutoSwitchTheme(settings);
     // Offer to become the default markdown handler (once, unless silenced).
     if (!settings.dont_ask_default_handler) {
-      invoke<{ status: HandlerStatus }>('default_handler_status')
+      settingsApi.defaultHandlerStatus()
         .then((r) => {
           if (r.status === 'not_default') showDefaultHandlerBanner();
         })
@@ -2615,7 +2613,7 @@ async function bootstrap(): Promise<void> {
 
   let openDialogOnStart = false;
   try {
-    openDialogOnStart = await invoke<boolean>('get_open_dialog_on_start');
+    openDialogOnStart = await settingsApi.getOpenDialogOnStart();
   } catch (e) {
     console.error('Failed to get open-dialog startup flag:', e);
   }
