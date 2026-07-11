@@ -12,8 +12,9 @@ import type { CommandMap } from './commands.js';
  */
 export function call<K extends keyof CommandMap>(
   cmd: K,
-  args: CommandMap[K]['args'],
+  ...rest: CommandMap[K]['args'] extends void ? [] : [args: CommandMap[K]['args']]
 ): Promise<CommandMap[K]['result']> {
+  const args = rest[0];
   return invoke(cmd as string, args as unknown as InvokeArgs | undefined) as Promise<
     CommandMap[K]['result']
   >;

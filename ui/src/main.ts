@@ -1,5 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
 import { type Settings, type OpenedDoc } from './backend/commands.js';
+import * as filesApi from './backend/files.js';
 import { listen } from '@tauri-apps/api/event';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { mountEditor, type EditorHandle } from './editor.js';
@@ -203,12 +204,12 @@ appContainer.appendChild(mainRegion);
 document.body.appendChild(appContainer);
 
 const workspace = createWorkspaceModel({
-  listDir: (dir) => invoke<DirListing>('list_dir', { dir }),
+  listDir: (dir) => filesApi.listDir(dir),
 });
 
 async function setWorkspaceRoot(path: string): Promise<boolean> {
   try {
-    const canon = await invoke<string>('set_workspace_root', { path });
+    const canon = await filesApi.setWorkspaceRoot(path);
     await workspace.setRoot(canon);
     return true;
   } catch (e) {
@@ -231,7 +232,7 @@ async function revealActiveFile(filePath: string): Promise<void> {
 
 const browserDeps = {
   model: workspace,
-  pickBaseDir: () => invoke<string | null>('pick_base_dir'),
+  pickBaseDir: () => filesApi.pickBaseDir(),
   onOpenFile: (
     path: string,
     opts: { background: boolean; pinned?: boolean; replacePreview?: boolean },
@@ -243,10 +244,10 @@ const browserDeps = {
     }),
   setRoot: setWorkspaceRoot,
   revealInFolder: (path: string) => {
-    void invoke('reveal_in_folder', { path });
+    void filesApi.revealInFolder(path);
   },
   renameFile: (path: string, newName: string) =>
-    invoke<string>('rename_path', { path, newName }),
+    filesApi.renamePath(path, newName),
 };
 
 const sidebarBrowser = createFileBrowser({ ...browserDeps, openOnSingleClick: true });
@@ -336,7 +337,7 @@ const tabBar: TabBarInstance = createTabBar(store, {
     void newFile({ background: shift });
   },
   onRevealInFolder: (path) => {
-    void invoke('reveal_in_folder', { path }).catch((e) => showError(`Reveal failed: ${String(e)}`));
+    void filesApi.revealInFolder(path).catch((e) => showError(`Reveal failed: ${String(e)}`));
   },
   onCopyPath: (path) => {
     void copyToClipboard(path, 'path');
@@ -411,7 +412,7 @@ if (toolbarEl instanceof HTMLElement) {
     setMergeStrategy: (m) => invoke('set_merge_strategy', { strategy: m }).then(() => {}),
     setGistEnabled: (e) => invoke('set_gist_enabled', { enabled: e }).then(() => {}),
     setDiffMode: (m) => invoke('set_diff_mode', { mode: m }).then(() => {}),
-    pickBaseDir: () => invoke<string | null>('pick_base_dir'),
+    pickBaseDir: () => filesApi.pickBaseDir(),
     getDefaultHandlerStatus: () =>
       invoke<{ status: HandlerStatus; platform: string }>('default_handler_status').then(
         (r) => r.status
@@ -677,12 +678,12 @@ async function runAction(id: ActionId): Promise<void> {
     }
     case 'file.revealInFolder': {
       const p = activeFilePath();
-      if (p) await invoke('reveal_in_folder', { path: p }).catch((e) => showError(`Reveal failed: ${String(e)}`));
+      if (p) await filesApi.revealInFolder(p).catch((e) => showError(`Reveal failed: ${String(e)}`));
       return;
     }
     case 'file.openDefaultApp': {
       const p = activeFilePath();
-      if (p) await invoke('open_in_default_app', { path: p }).catch((e) => showError(`Open failed: ${String(e)}`));
+      if (p) await filesApi.openInDefaultApp(p).catch((e) => showError(`Open failed: ${String(e)}`));
       return;
     }
     case 'file.clearRecent':
@@ -1485,11 +1486,11 @@ chrome.onCopyUrl(() => {
 });
 chrome.onRevealInFolder(() => {
   const p = activeFilePath();
-  if (p) invoke('reveal_in_folder', { path: p }).catch((e) => showError(`Reveal failed: ${String(e)}`));
+  if (p) filesApi.revealInFolder(p).catch((e) => showError(`Reveal failed: ${String(e)}`));
 });
 chrome.onOpenInApp(() => {
   const p = activeFilePath();
-  if (p) invoke('open_in_default_app', { path: p }).catch((e) => showError(`Open failed: ${String(e)}`));
+  if (p) filesApi.openInDefaultApp(p).catch((e) => showError(`Open failed: ${String(e)}`));
 });
 chrome.onExportPdf(() => exportToPdf());
 chrome.onExportHtml(() => exportToHtml());
