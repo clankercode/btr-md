@@ -2,7 +2,7 @@ use std::collections::BTreeSet;
 use std::path::{Path, PathBuf};
 
 use base64::Engine;
-use pmd_core::facts::{ImageFact, LinkKind};
+use pmd_core::facts::{CoreDocumentFacts, ImageFact, LinkKind};
 
 use crate::preview::contracts::{
     DocumentIssue, IssueCategory, IssueSeverity, ResourceDecision, ResourceDecisionKind,
@@ -14,6 +14,9 @@ pub struct ResourcePolicyContext<'a> {
     pub version: u64,
     pub doc_path: Option<&'a Path>,
     pub markdown: &'a str,
+    /// Facts already extracted by the render that produced `rendered_html`.
+    /// The policy must not re-derive them from `markdown`.
+    pub facts: &'a CoreDocumentFacts,
     pub rendered_html: &'a str,
     pub allowed_roots: Vec<PathBuf>,
 }
@@ -34,7 +37,7 @@ pub fn resolve_resources(
         .map(|path| path.display().to_string())
         .collect();
 
-    let facts = pmd_core::emit::render_string(context.markdown).facts;
+    let facts = context.facts;
     let mut decisions = Vec::new();
 
     for (index, image) in facts.images.iter().enumerate() {
@@ -97,6 +100,7 @@ pub fn resolve_for_test(
         version,
         doc_path: Some(doc_path),
         markdown,
+        facts: &core.facts,
         rendered_html: &core.html,
         allowed_roots: vec![doc_path
             .parent()

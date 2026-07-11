@@ -142,6 +142,7 @@ fn untitled_document_blocks_relative_resource_until_saved() {
         version: 7,
         doc_path: None,
         markdown: "![draft](draft.png)",
+        facts: &core.facts,
         rendered_html: &core.html,
         allowed_roots: Vec::new(),
     })
@@ -153,4 +154,30 @@ fn untitled_document_blocks_relative_resource_until_saved() {
         "outside_allowed_roots"
     );
     assert!(resolution.safe_html.contains("pmd-image-placeholder"));
+}
+
+#[test]
+fn policy_consumes_threaded_facts_not_a_reparse() {
+    // The facts come from a document with one external image; the markdown
+    // handed to the policy deliberately has none. Decisions must follow the
+    // threaded facts, proving the policy does not re-derive them.
+    let source = "![remote](https://example.com/i.png)";
+    let core = pmd_core::emit::render_string(source);
+
+    let resolution = resolve_resources(ResourcePolicyContext {
+        doc_id: 1,
+        version: 8,
+        doc_path: None,
+        markdown: "no images here",
+        facts: &core.facts,
+        rendered_html: &core.html,
+        allowed_roots: Vec::new(),
+    })
+    .unwrap();
+
+    assert_eq!(resolution.report.decisions.len(), 1);
+    assert_eq!(
+        resolution.report.decisions[0].source_target,
+        "https://example.com/i.png"
+    );
 }

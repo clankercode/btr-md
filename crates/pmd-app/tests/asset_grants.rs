@@ -129,6 +129,7 @@ fn symlink_escape_remains_blocked_after_canonicalization() {
         version: 2,
         doc_path: Some(&doc_path),
         markdown,
+        facts: &rendered.facts,
         rendered_html: &rendered.html,
         allowed_roots: vec![assets.canonicalize().unwrap()],
     })
@@ -163,6 +164,7 @@ fn granted_roots_are_supplied_to_resource_policy() {
         version: 2,
         doc_path: Some(&doc_path),
         markdown,
+        facts: &rendered.facts,
         rendered_html: &rendered.html,
         allowed_roots: vec![docs.canonicalize().unwrap(), grant.canonical_root],
     })

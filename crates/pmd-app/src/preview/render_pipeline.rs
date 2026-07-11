@@ -22,6 +22,7 @@ pub fn render_preview(
         version,
         doc_path,
         markdown,
+        facts: &core.facts,
         rendered_html: &core.html,
         allowed_roots,
     })?;
