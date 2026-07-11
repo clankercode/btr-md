@@ -4,6 +4,7 @@ import * as filesApi from './backend/files.js';
 import * as settingsApi from './backend/settings.js';
 import * as themeApi from './backend/theme.js';
 import * as docsApi from './backend/docs.js';
+import * as windowsApi from './backend/windows.js';
 import { listen } from '@tauri-apps/api/event';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { mountEditor, type EditorHandle } from './editor.js';
@@ -541,7 +542,7 @@ async function openGist(): Promise<void> {
   const content = editor && store.activeDoc() ? editor.getValue() : '';
   try {
     await navigator.clipboard.writeText(content);
-    await invoke('open_url', { url: 'https://gist.github.com/' });
+    await windowsApi.openUrl('https://gist.github.com/');
     chrome.setStatus('Copied — paste the document into the new gist');
   } catch (e) {
     showError(`Gist failed: ${String(e)}`);
@@ -606,7 +607,7 @@ async function runAction(id: ActionId): Promise<void> {
       return;
     }
     case 'window.new':
-      await invoke('new_window');
+      await windowsApi.newWindow();
       return;
     case 'window.reopenLastClosed':
       await reopenLastClosedWindow();
@@ -617,7 +618,7 @@ async function runAction(id: ActionId): Promise<void> {
       // Intentional quit: tell the backend so the close transaction preserves
       // every window (whole workspace restored next launch), then close them all.
       try {
-        await invoke('begin_quit');
+        await windowsApi.beginQuit();
       } catch (e) {
         console.error('begin_quit failed:', e);
       }
@@ -1934,9 +1935,9 @@ function updateTitle(): void {
   // "btr-md — <filename>" when a doc is open, "btr-md — better markdown" otherwise.
   const suffix = tab ? (tab.filePath ? basename(tab.filePath) : 'Untitled') : 'better markdown';
   const modified = tab ? uiForState(tab.fileState).modified : false;
-  invoke('set_window_title', {
-    title: modified ? `btr-md — ● ${suffix}` : `btr-md — ${suffix}`,
-  }).catch(() => {});
+  windowsApi.setWindowTitle(
+    modified ? `btr-md — ● ${suffix}` : `btr-md — ${suffix}`,
+  ).catch(() => {});
 }
 
 // ---------------------------------------------------------------------------
