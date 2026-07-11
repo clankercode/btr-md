@@ -211,10 +211,13 @@ fn decide_image(
         ));
     };
 
-    let candidate = normalize_path(doc_dir.join(target))?;
+    let candidate = crate::path_scope::normalize_path(doc_dir.join(target))?;
     if candidate.exists() {
         let canonical = canonical_existing_path(&candidate)?;
-        if roots.iter().any(|root| is_within(root, &canonical)) {
+        if roots
+            .iter()
+            .any(|root| crate::path_scope::is_within(root, &canonical))
+        {
             match data_url_for_local_image(&canonical) {
                 Ok(safe_url) => Ok(image_decision(
                     image,
@@ -246,7 +249,10 @@ fn decide_image(
                 placeholder_id,
             ))
         }
-    } else if roots.iter().any(|root| is_within(root, &candidate)) {
+    } else if roots
+        .iter()
+        .any(|root| crate::path_scope::is_within(root, &candidate))
+    {
         Ok(image_decision(
             image,
             target.clone(),
@@ -269,13 +275,18 @@ fn decide_image(
     }
 }
 
-fn scan_unresolved_reference_images(
+/// Scan raw markdown for image reference uses (`![alt][label]`) whose label is
+/// not defined, returning a synthetic [`ImageFact`] per unresolved use. This is
+/// markdown-reference *semantics* (not path containment) and is the single
+/// implementation shared with `validation` (see ADR-0002; a future c4 may lift
+/// it into `pmd_core::facts`).
+pub(crate) fn scan_unresolved_reference_images(
     markdown: &str,
     definitions: &[pmd_core::facts::ReferenceDefinitionFact],
 ) -> Vec<ImageFact> {
     let defined_labels = definitions
         .iter()
-        .map(|definition| normalize_reference_label(&definition.label))
+        .map(|definition| pmd_core::facts::links::normalize_reference_label(&definition.label))
         .collect::<BTreeSet<_>>();
     let mut images = Vec::new();
 
@@ -296,7 +307,7 @@ fn scan_unresolved_reference_images(
             };
             let ref_close = alt_close + 2 + ref_close_rel;
             let label = &line[alt_close + 2..ref_close];
-            let normalized = normalize_reference_label(label);
+            let normalized = pmd_core::facts::links::normalize_reference_label(label);
             if !normalized.is_empty() && !defined_labels.contains(&normalized) {
                 images.push(ImageFact {
                     target: None,
@@ -313,14 +324,6 @@ fn scan_unresolved_reference_images(
     }
 
     images
-}
-
-fn normalize_reference_label(label: &str) -> String {
-    label
-        .split_whitespace()
-        .collect::<Vec<_>>()
-        .join(" ")
-        .to_ascii_lowercase()
 }
 
 fn image_decision(
@@ -496,24 +499,6 @@ fn has_url_scheme(target: &str) -> bool {
             .all(|ch| ch.is_ascii_alphanumeric() || matches!(ch, '+' | '-' | '.'))
 }
 
-fn normalize_path(path: impl AsRef<Path>) -> Result<PathBuf, String> {
-    let mut normalized = PathBuf::new();
-    for component in path.as_ref().components() {
-        match component {
-            std::path::Component::Prefix(prefix) => normalized.push(prefix.as_os_str()),
-            std::path::Component::RootDir => normalized.push(component.as_os_str()),
-            std::path::Component::CurDir => {}
-            std::path::Component::ParentDir => {
-                if !normalized.pop() {
-                    return Err("Path escapes above the document root".to_string());
-                }
-            }
-            std::path::Component::Normal(part) => normalized.push(part),
-        }
-    }
-    Ok(normalized)
-}
-
 fn canonical_existing_path(path: &Path) -> Result<PathBuf, String> {
     path.canonicalize()
         .map_err(|err| format!("Could not canonicalize {}: {err}", path.display()))
@@ -524,10 +509,6 @@ fn canonical_allowed_roots(roots: &[PathBuf]) -> Result<Vec<PathBuf>, String> {
         .iter()
         .map(|root| canonical_existing_path(root))
         .collect()
-}
-
-fn is_within(root: &Path, child: &Path) -> bool {
-    child == root || child.starts_with(root)
 }
 
 fn html_escape(value: &str) -> String {

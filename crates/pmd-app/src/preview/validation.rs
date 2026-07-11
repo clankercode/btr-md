@@ -430,7 +430,10 @@ async fn validate_links_images_and_refs(
             ));
         }
     }
-    for image in scan_unresolved_reference_images(markdown, facts) {
+    for image in crate::preview::resource_policy::scan_unresolved_reference_images(
+        markdown,
+        &facts.reference_definitions,
+    ) {
         if !budget.consume_fact() {
             continue;
         }
@@ -438,56 +441,13 @@ async fn validate_links_images_and_refs(
             "missing-image-reference",
             IssueSeverity::Error,
             IssueCategory::Image,
-            image.0,
-            image.1,
+            image.line_start,
+            image.line_end,
             "Image reference unresolved: define the reference or use an inline path.".to_string(),
         ));
     }
     budget.append_warnings(&mut issues);
     Ok(issues)
-}
-
-fn scan_unresolved_reference_images(markdown: &str, facts: &CoreDocumentFacts) -> Vec<(u32, u32)> {
-    let defined_labels = facts
-        .reference_definitions
-        .iter()
-        .map(|definition| normalize_reference_label(&definition.label))
-        .collect::<BTreeSet<_>>();
-    let mut images = Vec::new();
-    for (line_index, line) in markdown.lines().enumerate() {
-        let mut cursor = 0;
-        while let Some(open_rel) = line[cursor..].find("![") {
-            let open = cursor + open_rel;
-            let Some(alt_close_rel) = line[open + 2..].find(']') else {
-                break;
-            };
-            let alt_close = open + 2 + alt_close_rel;
-            if line.as_bytes().get(alt_close + 1) != Some(&b'[') {
-                cursor = alt_close + 1;
-                continue;
-            }
-            let Some(ref_close_rel) = line[alt_close + 2..].find(']') else {
-                break;
-            };
-            let ref_close = alt_close + 2 + ref_close_rel;
-            let label = &line[alt_close + 2..ref_close];
-            let normalized = normalize_reference_label(label);
-            if !normalized.is_empty() && !defined_labels.contains(&normalized) {
-                let line_number = (line_index + 1).try_into().unwrap_or(u32::MAX);
-                images.push((line_number, line_number));
-            }
-            cursor = ref_close + 1;
-        }
-    }
-    images
-}
-
-fn normalize_reference_label(label: &str) -> String {
-    label
-        .split_whitespace()
-        .collect::<Vec<_>>()
-        .join(" ")
-        .to_ascii_lowercase()
 }
 
 async fn local_path_exists(path: &Path, fs_gate: &tokio::sync::Semaphore) -> Result<bool, String> {

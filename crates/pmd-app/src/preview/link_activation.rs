@@ -240,7 +240,9 @@ impl LinkActivationStore {
         label_text: &str,
         doc_path: Option<PathBuf>,
     ) {
-        let kind = classify_target(target);
+        // URL/link classification is owned by pmd-core (ADR-0002); the test
+        // path uses the same classifier the render path already feeds through.
+        let kind = pmd_core::facts::links::classify_target(Some(target), false);
         self.links
             .lock()
             .unwrap_or_else(|poisoned| poisoned.into_inner())
@@ -493,7 +495,7 @@ fn resolve_local_target(link: &StoredLink) -> Result<PathBuf, String> {
     let doc_dir = doc_path
         .parent()
         .ok_or_else(|| "Document parent directory is unavailable.".to_string())?;
-    let candidate = normalize_path(doc_dir.join(&link.target))?;
+    let candidate = crate::path_scope::normalize_path(doc_dir.join(&link.target))?;
     let canonical = candidate
         .canonicalize()
         .map_err(|err| format!("Linked target unavailable: {err}"))?;
@@ -513,7 +515,7 @@ fn open_markdown_from_backend(
     path: &str,
 ) -> Result<OpenedDoc, String> {
     let path = PathBuf::from(path);
-    if !is_markdown_path(&path) {
+    if !crate::path_scope::is_markdown_path(&path) {
         return Err("Linked document is not Markdown.".to_string());
     }
     let canon = crate::path_scope::PathScope::canonicalise(&path).map_err(|e| e.to_string())?;
@@ -538,42 +540,6 @@ fn open_markdown_from_backend(
     })
 }
 
-fn classify_target(target: &str) -> LinkKind {
-    let lower = target.to_ascii_lowercase();
-    if target.starts_with('#') {
-        LinkKind::Fragment
-    } else if lower.starts_with("mailto:") {
-        LinkKind::Mailto
-    } else if lower.starts_with("http://") || lower.starts_with("https://") {
-        LinkKind::ExternalUrl
-    } else if has_url_scheme(target) {
-        LinkKind::UnknownScheme
-    } else if target_without_fragment_or_query(&lower).ends_with(".md")
-        || target_without_fragment_or_query(&lower).ends_with(".markdown")
-    {
-        LinkKind::LocalMarkdown
-    } else {
-        LinkKind::LocalFile
-    }
-}
-
-fn target_without_fragment_or_query(target: &str) -> &str {
-    let fragment = target.find('#').unwrap_or(target.len());
-    let query = target.find('?').unwrap_or(target.len());
-    &target[..fragment.min(query)]
-}
-
-fn has_url_scheme(target: &str) -> bool {
-    let Some(colon) = target.find(':') else {
-        return false;
-    };
-    let scheme = &target[..colon];
-    !scheme.is_empty()
-        && scheme
-            .chars()
-            .all(|ch| ch.is_ascii_alphanumeric() || matches!(ch, '+' | '-' | '.'))
-}
-
 fn split_scheme_host(target: &str) -> (String, Option<String>) {
     let Some((scheme, rest)) = target.split_once(':') else {
         return (String::new(), None);
@@ -584,34 +550,6 @@ fn split_scheme_host(target: &str) -> (String, Option<String>) {
         .filter(|value| !value.is_empty())
         .map(ToString::to_string);
     (scheme.to_ascii_lowercase(), host)
-}
-
-fn is_markdown_path(path: &Path) -> bool {
-    path.extension()
-        .and_then(|ext| ext.to_str())
-        .map(|ext| {
-            let lower = ext.to_ascii_lowercase();
-            matches!(lower.as_str(), "md" | "markdown" | "mdown" | "mkd")
-        })
-        .unwrap_or(false)
-}
-
-fn normalize_path(path: impl AsRef<Path>) -> Result<PathBuf, String> {
-    let mut normalized = PathBuf::new();
-    for component in path.as_ref().components() {
-        match component {
-            std::path::Component::Prefix(prefix) => normalized.push(prefix.as_os_str()),
-            std::path::Component::RootDir => normalized.push(component.as_os_str()),
-            std::path::Component::CurDir => {}
-            std::path::Component::ParentDir => {
-                if !normalized.pop() {
-                    return Err("Path escapes above the document root".to_string());
-                }
-            }
-            std::path::Component::Normal(part) => normalized.push(part),
-        }
-    }
-    Ok(normalized)
 }
 
 fn generate_token() -> String {
