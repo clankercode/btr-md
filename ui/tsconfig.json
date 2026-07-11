@@ -70,6 +70,7 @@
     "src/scroll_sync.ts",
     "src/scroll_mirror.ts",
     "src/scroll_pure.ts",
-    "src/confirm_close_dialog.ts"
+    "src/confirm_close_dialog.ts",
+    "e2e/mock/mock.ts"
   ]
 }

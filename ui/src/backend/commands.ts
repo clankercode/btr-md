@@ -56,6 +56,10 @@ export interface Settings {
   default_mode: string | null;
   autosave_mode: AutosaveMode;
   autoreload_mode: AutoreloadMode;
+  // The settings-menu view (`SettingsSnapshot` in settings_menu.ts) reads this,
+  // and the backend + e2e mock both emit it, but the original `Settings` shape
+  // omitted it — a latent prod/mock mismatch surfaced while typing the mock.
+  merge_strategy: MergeStrategy;
   browser_base_dir: string | null;
   gist_enabled: boolean;
   diff_mode: DiffMode;
