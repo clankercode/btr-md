@@ -2,6 +2,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { type Settings, type OpenedDoc } from './backend/commands.js';
 import * as filesApi from './backend/files.js';
 import * as settingsApi from './backend/settings.js';
+import * as themeApi from './backend/theme.js';
 import { listen } from '@tauri-apps/api/event';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { mountEditor, type EditorHandle } from './editor.js';
@@ -1338,7 +1339,7 @@ let cachedThemes: ThemeInfo[] = [];
 async function loadThemes(): Promise<ThemeInfo[]> {
   if (cachedThemes.length > 0) return cachedThemes;
   try {
-    cachedThemes = await invoke<ThemeInfo[]>('list_themes');
+    cachedThemes = await themeApi.listThemes();
   } catch (e) {
     console.error('loadThemes failed:', e);
     cachedThemes = [];
@@ -1357,8 +1358,8 @@ async function showThemePicker(): Promise<void> {
       const payload: Record<string, string> = {};
       if (mode === 'light') payload.light = slug;
       else if (mode === 'dark') payload.dark = slug;
-      await invoke('set_theme_pair', payload);
-      await invoke('set_auto_switch', { autoSwitch: true });
+      await themeApi.setThemePair(payload);
+      await themeApi.setAutoSwitch(true);
     }
     await applyTheme(slug);
   });
@@ -1564,9 +1565,9 @@ chrome.onClearRecentlyClosed(() => {
 
 async function applyTheme(slug: string) {
   try {
-    const bundle = await invoke<{ css: string; mermaid_vars: Record<string, string>; mode: string; warnings?: string[] }>('set_theme', { slug });
+    const bundle = await themeApi.setTheme(slug);
     try {
-      await invoke('set_active_theme', { slug });
+      await themeApi.setActiveTheme(slug);
     } catch (e) {
       console.error('set_active_theme failed:', e);
     }
@@ -1646,7 +1647,7 @@ chrome.onModeChange((mode) => applyMode(mode));
 document.body.addEventListener('mode-change', (event) => {
   const mode = (event as CustomEvent<{ mode?: unknown }>).detail?.mode;
   if (!isMode(mode)) return;
-  invoke('set_default_mode', { mode }).catch((e) => console.error('set_default_mode failed:', e));
+  themeApi.setDefaultMode(mode).catch((e) => console.error('set_default_mode failed:', e));
 });
 
 // ---------------------------------------------------------------------------
