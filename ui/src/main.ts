@@ -43,6 +43,7 @@ import { installDragOverlay } from './drag_overlay.js';
 import { type LoadedWindowSession } from './session.js';
 import { createSessionManager } from './session_manager.js';
 import { reconcileBlocks, ReconcileDesyncError, type BlockRef } from './block_reconcile.js';
+import { createRenderCoordinator } from './render_coordinator.js';
 import {
   createActionRegistry,
   defaultActionSpecs,
@@ -894,7 +895,7 @@ function tabBuffer(tab: DocTab): string {
 
 function currentPreviewDoc(): { doc_id: number; version: number } | null {
   const tab = store.activeDoc();
-  const version = appliedRender.version;
+  const version = coordinator.appliedVersion();
   if (!tab || !version) return null;
   return { doc_id: tab.docId, version };
 }
@@ -961,7 +962,7 @@ async function grantAssetFolder(): Promise<void> {
     placeholderId: blocked?.placeholder_id ?? '',
   });
   await refreshActiveAssetGrants();
-  await scheduleRender();
+  await coordinator.schedule();
 }
 
 async function trustRepositoryRoot(root?: string): Promise<void> {
@@ -975,7 +976,7 @@ async function trustRepositoryRoot(root?: string): Promise<void> {
   });
   updateOpenTrustContexts(canonicalRoot, 'trusted');
   await refreshActiveAssetGrants();
-  await scheduleRender();
+  await coordinator.schedule();
 }
 
 async function declineRepositoryRoot(root?: string): Promise<void> {
@@ -990,7 +991,7 @@ async function forgetTrustRootFromSettings(canonicalRoot: string): Promise<void>
   await forgetTrustRoot(canonicalRoot);
   updateOpenTrustContexts(canonicalRoot, 'unknown');
   await refreshActiveAssetGrants();
-  await scheduleRender();
+  await coordinator.schedule();
 }
 
 async function revokeAssetGrant(grantId?: number): Promise<void> {
@@ -998,7 +999,7 @@ async function revokeAssetGrant(grantId?: number): Promise<void> {
   if (!active || grantId === undefined) return;
   await revokeAssetGrantForDocument({ docId: active.docId, grantId });
   await refreshActiveAssetGrants();
-  await scheduleRender();
+  await coordinator.schedule();
 }
 
 function cssEscape(value: string): string {
@@ -1589,7 +1590,7 @@ async function applyTheme(slug: string) {
       document.documentElement.dataset.theme = bundle.mode;
     }
     setMermaidTheme(bundle.mermaid_vars);
-    requestAnimationFrame(() => rerenderForThemeChange(previewContent, { vars: bundle.mermaid_vars }, appliedRender.nonce));
+    requestAnimationFrame(() => rerenderForThemeChange(previewContent, { vars: bundle.mermaid_vars }, coordinator.appliedNonce()));
   } catch (e) {
     console.error('applyTheme failed:', e);
   }
@@ -1655,127 +1656,62 @@ document.body.addEventListener('mode-change', (event) => {
 });
 
 // ---------------------------------------------------------------------------
-// Tab-aware rendering: each render carries {tabId, seq}; a result is painted
-// only if it is still the latest render for the tab that is still active.
-// ---------------------------------------------------------------------------
+// Tab-aware rendering is owned by the render coordinator. Each render carries
+// {tabId, seq, docId, version}; a result is painted only if it is still the
+// latest render for the tab that is still active (the 4-part staleness gate).
+// The coordinator owns the render queue, the `rendering` serialization gate,
+// the monotonic version, and the reconcile→full-replace fallback. main.ts
+// injects the backend render, the DOM decoration pipeline (`decorators`, run on
+// the whole root for a full replace or on each changed node after a reconcile),
+// the low-level DOM writes (`dom`), and the once-per-applied-render subscribers.
+const coordinator = createRenderCoordinator({
+  render: (req) => docsApi.renderCmd(req),
+  root: previewContent,
+  decorators: [
+    (node, nonce) => markAllNodes(node, nonce),
+    (node, nonce) => renderMermaidNodes(node, nonce),
+    (node, nonce) => renderMathNodes(node, nonce),
+    (node) => decorateCodeBlocks(node),
+    (node) => decorateTables(node, () => editor?.getValue() ?? ''),
+  ],
+  dom: {
+    fullReplace: (root, html) => { root.innerHTML = html; },
+    reconcile: (root, html, blocks) => {
+      const frag = document.createElement('div');
+      frag.innerHTML = html;
+      return reconcileBlocks(root, frag, blocks);
+    },
+    // Refresh the nonce on all kept (unchanged) nodes so that a later theme
+    // change (rerenderForThemeChange) does not skip them — it filters by the
+    // current root nonce.
+    refreshKeptNonces: (root, nonce) => {
+      root.querySelectorAll<HTMLElement>('[data-pmd-nonce]')
+        .forEach((el) => { el.dataset.pmdNonce = nonce; });
+    },
+    // A desync (or any reconcile failure) must never wedge the preview: the
+    // coordinator rebuilds the whole thing from scratch so updates keep flowing.
+    isDesyncError: (err) => err instanceof ReconcileDesyncError,
+    onReconcileError: (err) => console.error('reconcile failed:', err),
+  },
+  activeDoc: () => store.activeDoc() ?? null,
+  getValue: () => (editor ? editor.getValue() : null),
+  getTab: (id) => store.get(id) ?? null,
+  activeId: () => store.activeId(),
+});
 
-interface RenderItem {
-  md: string;
-  tabId: number;
-  docId: number;
-  seq: number;
-  version: number;
-  resolve: () => void;
-  reject: (e: unknown) => void;
-}
-
-let renderQueue: RenderItem[] = [];
-let rendering = false;
-let currentVersion = 0;
-// Applied-render channel (replaces the previewContent dataset round-trip):
-// the version+nonce of the most recently painted render. Read by
-// currentPreviewDoc() and threaded into rerenderForThemeChange().
-let appliedRender: { version: number; nonce: string } = { version: 0, nonce: '' };
-
-function scheduleRender(): Promise<void> {
-  // Drop any pending debounced edit-render: this render supersedes it (covers
-  // immediate tab-switch/reload/merge renders, and the debounced fire itself).
-  scheduleRenderDebounced.cancel();
-  const tab = store.activeDoc();
-  if (!tab || !editor) return Promise.resolve();
-  tab.renderSeq++;
-  const version = ++currentVersion;
-  const item: Omit<RenderItem, 'resolve' | 'reject'> = {
-    md: editor.getValue(),
-    tabId: tab.id,
-    docId: tab.docId,
-    seq: tab.renderSeq,
-    version,
-  };
-  return new Promise<void>((resolve, reject) => {
-    renderQueue.push({ ...item, resolve, reject });
-    processRenderQueue();
-  });
-}
-
-async function processRenderQueue(): Promise<void> {
-  if (rendering || renderQueue.length === 0) return;
-  rendering = true;
-  const item = renderQueue.shift()!;
-  try {
-    const result = await docsApi.renderCmd({
-      docId: item.docId,
-      version: item.version,
-      markdown: item.md,
-    });
-    const tab = store.get(item.tabId);
-    const stillCurrent =
-      tab &&
-      tab.kind === 'doc' &&
-      tab.renderSeq === item.seq &&
-      tab.docId === result.doc_id &&
-      result.version === item.version &&
-      store.activeId() === item.tabId;
-    if (stillCurrent) {
-      appliedRender = { version: result.version, nonce: result.render_nonce };
-      // Full-document replace + decorate. Used for the non-incremental path and
-      // as the safety fallback when block reconcile detects a desync.
-      const fullReplace = async () => {
-        previewContent.innerHTML = result.html;
-        markAllNodes(previewContent, result.render_nonce);
-        await renderMermaidNodes(previewContent, result.render_nonce);
-        await renderMathNodes(previewContent, result.render_nonce);
-        decorateCodeBlocks(previewContent);
-        decorateTables(previewContent, () => editor?.getValue() ?? '');
-      };
-      if (result.blocks && result.blocks.length > 0) {
-        try {
-          const frag = document.createElement('div');
-          frag.innerHTML = result.html;
-          const changed = reconcileBlocks(previewContent, frag, result.blocks);
-          for (const node of changed) {
-            markAllNodes(node, result.render_nonce);
-            await renderMermaidNodes(node, result.render_nonce);
-            await renderMathNodes(node, result.render_nonce);
-            decorateCodeBlocks(node);
-            decorateTables(node, () => editor?.getValue() ?? '');
-          }
-          // Refresh the nonce on all kept (unchanged) nodes so that a later
-          // theme change (rerenderForThemeChange) does not skip them — it
-          // filters by the current root nonce.
-          previewContent.querySelectorAll<HTMLElement>('[data-pmd-nonce]')
-            .forEach((el) => { el.dataset.pmdNonce = result.render_nonce; });
-        } catch (err) {
-          // A desync (or any reconcile failure) must never wedge the preview:
-          // rebuild the whole thing from scratch so updates keep flowing.
-          if (!(err instanceof ReconcileDesyncError)) console.error('reconcile failed:', err);
-          await fullReplace();
-        }
-      } else {
-        await fullReplace();
-      }
-      // Single post-render hook covering both reconcile and full-replace
-      // branches: refresh the preview-find overlay against the new DOM. Wrapped
-      // implicitly — refreshPreview never throws on stale ranges.
-      findController.refreshPreview();
-      applyOutlineRender(result);
-      void refreshActiveAssetGrants();
-      // The DOM is now fresh: if this render followed a user edit to this same
-      // doc in split mode, recentre the preview on the edited block (scroll
-      // sync, LHS->RHS). Keyed on (doc id, version), so only a render newer
-      // than the edit settles it — an in-flight pre-edit render that lands in
-      // the debounce gap, a superseded/rejected render, or a different-doc
-      // render never wrongly consume or fire it.
-      scrollSync?.flushPendingEditCenter(result.doc_id, result.version);
-    }
-    item.resolve();
-  } catch (e) {
-    item.reject(e);
-  } finally {
-    rendering = false;
-    processRenderQueue();
-  }
-}
+// Once-per-applied-render fan-out, in registration order (matches the former
+// inline post-render hook):
+//   1. refresh the preview-find overlay against the new DOM (never throws on
+//      stale ranges);
+//   2. accept outline/frontmatter/diagnostics facts;
+//   3. refresh the active doc's asset grants;
+//   4. if this render followed a user edit to this same doc in split mode,
+//      recentre the preview on the edited block. Keyed on (doc id, version) so
+//      only a render newer than the edit settles it.
+coordinator.onApplied(() => findController.refreshPreview());
+coordinator.onApplied((result) => { applyOutlineRender(result); });
+coordinator.onApplied(() => { void refreshActiveAssetGrants(); });
+coordinator.onApplied((result) => scrollSync?.flushPendingEditCenter(result.doc_id, result.version));
 
 // ---------------------------------------------------------------------------
 // Editor + per-tab edit handling.
@@ -1876,14 +1812,12 @@ async function pasteHtmlAsMarkdownAtCursor(): Promise<void> {
   }
 }
 
-// Coalesce keystroke bursts into a single render. Each render re-parses the
-// whole document (Rust) and rebuilds the preview DOM (JS main thread); firing
-// one per keystroke on a large file pins the main thread and makes typing lag.
-// Tab-switch / reload / merge paths still call scheduleRender() directly so the
+// Coalescing keystroke bursts into a single render is owned by the coordinator
+// (its internal debounce; default 80ms). Each render re-parses the whole
+// document (Rust) and rebuilds the preview DOM (JS main thread); firing one per
+// keystroke on a large file pins the main thread and makes typing lag.
+// Tab-switch / reload / merge paths call coordinator.schedule() directly so the
 // preview updates immediately on those non-typing actions.
-const scheduleRenderDebounced = debounce(() => {
-  scheduleRender();
-}, 80);
 
 function onActiveEdit(): void {
   const tab = store.activeDoc();
@@ -1893,9 +1827,12 @@ function onActiveEdit(): void {
   }
   // baseVersion = latest version scheduled before this edit; the edit's own
   // (debounced) render will be strictly newer, which is how the scroll-sync
-  // gate distinguishes it from an in-flight pre-edit render.
-  scrollSync?.notifyEdit(tab.docId, currentVersion);
-  scheduleRenderDebounced();
+  // gate distinguishes it from an in-flight pre-edit render. currentVersion()
+  // MUST be read synchronously here, before scheduleDebounced() — the debounced
+  // render does not advance the version until it actually fires, so notifyEdit
+  // records the pre-edit version.
+  scrollSync?.notifyEdit(tab.docId, coordinator.currentVersion());
+  coordinator.scheduleDebounced();
   sendDocEdited(tab.docId, editor.getValue());
   scheduleIdleAutosave();
   scheduleCounts();
@@ -2043,7 +1980,7 @@ async function activateDocTab(tab: DocTab): Promise<void> {
   chrome.setFilename(tab.filePath ? basename(tab.filePath) : 'Untitled', tab.filePath ?? 'Untitled');
   applyMode(tab.mode);
   refreshChrome(tab.fileState);
-  await scheduleRender();
+  await coordinator.schedule();
   chrome.setCounts(computeCounts(editor.getValue()));
   applyDiffMode();
   // Suspend the mirror briefly so the two programmatic scrollTop writes
@@ -2310,7 +2247,7 @@ async function doReload(): Promise<void> {
     editor.view.dispatch({ selection: { anchor: Math.min(cursor, max) } });
     store.updateDoc(tab.id, { fileState: res.state, baseContent: res.contents });
     refreshChrome(res.state);
-    await scheduleRender();
+    await coordinator.schedule();
     applyDiffMode();
     chrome.setStatus('Reloaded from disk');
   } catch (e) {
@@ -2331,7 +2268,7 @@ async function doMerge(): Promise<void> {
     editor.setValueProgrammatic(res.merged);
     store.updateDoc(tab.id, { fileState: res.state });
     refreshChrome(res.state);
-    await scheduleRender();
+    await coordinator.schedule();
     chrome.setStatus(
       res.conflicted
         ? 'Merged with conflicts — resolve the markers, then save'
