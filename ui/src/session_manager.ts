@@ -11,6 +11,7 @@
 
 import { invoke } from '@tauri-apps/api/core';
 import { getCurrentWindow } from '@tauri-apps/api/window';
+import * as docsApi from './backend/docs.js';
 import { debounce, type Debounced } from './debounce.js';
 import {
   buildSavePayload,
@@ -20,7 +21,6 @@ import {
   type OpenedDocResult,
 } from './session.js';
 import type { TabStore, DocTab } from './tabs.js';
-import type { FileState } from './doc_state.js';
 
 const STALE_LOCALSTORAGE_KEY = 'pmd:session';
 
@@ -109,7 +109,7 @@ export function createSessionManager(deps: SessionManagerDeps): SessionManager {
 
   /** Register an untitled doc holding `content` and add it as a background tab. */
   async function restoreUntitled(content: string, mode: DocTab['mode']): Promise<void> {
-    const reg = await invoke<{ doc_id: number; state: FileState }>('register_doc', {
+    const reg = await docsApi.registerDoc({
       path: null,
       contents: content,
     });
@@ -139,7 +139,7 @@ export function createSessionManager(deps: SessionManagerDeps): SessionManager {
           // Dirty saved doc: reconstruct the authoritative FileState via the
           // backend, seeding the editor with the returned live buffer.
           try {
-            const doc = await invoke<OpenedDocResult>('restore_dirty_doc', {
+            const doc = await docsApi.restoreDirtyDoc({
               path: action.path,
               content: action.content,
               baselineContent: action.baselineContent,

@@ -25,6 +25,7 @@
     "src/backend/files.ts",
     "src/backend/settings.ts",
     "src/backend/theme.ts",
+    "src/backend/docs.ts",
     "src/debounce.ts",
     "src/editor_insert.ts",
     "src/doc_state.ts",

@@ -3,6 +3,7 @@ import { type Settings, type OpenedDoc } from './backend/commands.js';
 import * as filesApi from './backend/files.js';
 import * as settingsApi from './backend/settings.js';
 import * as themeApi from './backend/theme.js';
+import * as docsApi from './backend/docs.js';
 import { listen } from '@tauri-apps/api/event';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { mountEditor, type EditorHandle } from './editor.js';
@@ -1216,7 +1217,7 @@ async function adoptOpenedDocumentFromLink(documentFromBackend: OpenedDocumentFr
   };
   const existing = store.findDocByPath(doc.path);
   if (existing) {
-    invoke('drop_doc', { docId: doc.doc_id }).catch(() => {});
+    docsApi.dropDoc(doc.doc_id).catch(() => {});
     store.setActive(existing.id);
     return;
   }
@@ -1318,7 +1319,7 @@ installDragOverlay({
     });
   },
   onOpenBlob: async (name, contents) => {
-    const reg = await invoke<{ doc_id: number; state: FileState }>('register_doc', {
+    const reg = await docsApi.registerDoc({
       path: null,
       contents,
     });
@@ -1445,7 +1446,7 @@ async function exportToHtml(): Promise<void> {
     docPath: activeFilePath(),
   });
   try {
-    const saved = await invoke<string | null>('export_html', {
+    const saved = await docsApi.exportHtml({
       payload,
       suggestedName: suggestedExportName(activeFilePath()),
     });
@@ -1695,7 +1696,7 @@ async function processRenderQueue(): Promise<void> {
   rendering = true;
   const item = renderQueue.shift()!;
   try {
-    const result = await invoke<RenderResult>('render_cmd', {
+    const result = await docsApi.renderCmd({
       docId: item.docId,
       version: item.version,
       markdown: item.md,
@@ -1902,7 +1903,7 @@ const scheduleCounts = debounce(() => {
 }, 200);
 
 const sendDocEdited = debounce((docId: number, md: string) => {
-  invoke<FileState>('doc_edited', { docId, contents: md })
+  docsApi.docEdited(docId, md)
     .then((state) => setStateByDocId(docId, state))
     .catch((e) => console.error('doc_edited failed:', e));
 }, 180);
@@ -2032,7 +2033,7 @@ async function activateDocTab(tab: DocTab): Promise<void> {
   clearDocumentIntelligenceUi();
   trustPolicyPanel.setTrustContext(tab.trustContext);
   void refreshActiveAssetGrants();
-  invoke('set_active_doc', { docId: tab.docId }).catch(() => {});
+  docsApi.setActiveDoc(tab.docId).catch(() => {});
   chrome.setFilename(tab.filePath ? basename(tab.filePath) : 'Untitled', tab.filePath ?? 'Untitled');
   applyMode(tab.mode);
   refreshChrome(tab.fileState);
@@ -2107,7 +2108,7 @@ async function addDocTab(
 
 async function newFile(opts: { background?: boolean } = {}): Promise<DocTab | null> {
   try {
-    const reg = await invoke<{ doc_id: number; state: FileState; trust_context: DocumentTrustContext | null }>('register_doc', {
+    const reg = await docsApi.registerDoc({
       path: null,
       contents: '',
     });
@@ -2131,7 +2132,7 @@ async function openFileDialog(): Promise<void> {
     if (doc) {
       const existing = store.findDocByPath(doc.path);
       if (existing) {
-        invoke('drop_doc', { docId: doc.doc_id }).catch(() => {});
+        docsApi.dropDoc(doc.doc_id).catch(() => {});
         store.setActive(existing.id);
       } else {
         await addDocTab(doc, { background: false });
@@ -2177,7 +2178,7 @@ async function replacePreviewTab(tab: DocTab, doc: OpenedDoc, pinned: boolean): 
   } else {
     store.setActive(updated.id);
   }
-  invoke('drop_doc', { docId: oldDocId }).catch(() => {});
+  docsApi.dropDoc(oldDocId).catch(() => {});
   saveSession();
   return updated;
 }
@@ -2196,10 +2197,10 @@ async function openFile(
     return;
   }
   try {
-    const doc = await invoke<OpenedDoc>('request_open_file', { path, background: background || false });
+    const doc = await docsApi.requestOpenFile({ path, background: background || false });
     const existing2 = store.findDocByPath(doc.path);
     if (existing2) {
-      invoke('drop_doc', { docId: doc.doc_id }).catch(() => {});
+      docsApi.dropDoc(doc.doc_id).catch(() => {});
       if (pinned && !existing2.pinned) store.updateDoc(existing2.id, { pinned: true });
       if (background) tabBar.triggerHighlight(existing2.id);
       else store.setActive(existing2.id);
@@ -2245,13 +2246,13 @@ async function saveTab(tab: DocTab, forceSaveAs = false): Promise<FileState | nu
     if (restored) return;
     restored = true;
     if (activeDocIdBefore !== undefined && activeDocIdBefore !== tab.docId) {
-      await invoke('set_active_doc', { docId: activeDocIdBefore }).catch(() => {});
+      await docsApi.setActiveDoc(activeDocIdBefore).catch(() => {});
     }
   }
 
   try {
     // Move backend save-authority to the target doc.
-    await invoke('set_active_doc', { docId: tab.docId });
+    await docsApi.setActiveDoc(tab.docId);
 
     let path: string | null = null;
     if (forceSaveAs || !tab.filePath) {
@@ -2266,7 +2267,7 @@ async function saveTab(tab: DocTab, forceSaveAs = false): Promise<FileState | nu
     }
 
     const contents = tabBuffer(tab);
-    const state = await invoke<FileState>('save_doc', { docId: tab.docId, contents, path });
+    const state = await docsApi.saveDoc({ docId: tab.docId, contents, path });
 
     if (path) {
       store.updateDoc(tab.id, { filePath: path, title: basename(path) });
@@ -2296,9 +2297,7 @@ async function doReload(): Promise<void> {
   const tab = store.activeDoc();
   if (!tab || !editor) return;
   try {
-    const res = await invoke<{ contents: string; state: FileState }>('pull_from_disk', {
-      docId: tab.docId,
-    });
+    const res = await docsApi.pullFromDisk(tab.docId);
     const cursor = editor.view.state.selection.main.head;
     editor.setValueProgrammatic(res.contents);
     const max = editor.view.state.doc.length;
@@ -2318,10 +2317,11 @@ async function doMerge(): Promise<void> {
   if (!tab || !editor) return;
   const diskDigestSeen = 'disk' in tab.fileState ? tab.fileState.disk : '';
   try {
-    const res = await invoke<{ merged: string; state: FileState; conflicted: boolean }>(
-      'resolve_disk_change',
-      { docId: tab.docId, oursText: editor.getValue(), diskDigestSeen }
-    );
+    const res = await docsApi.resolveDiskChange({
+      docId: tab.docId,
+      oursText: editor.getValue(),
+      diskDigestSeen,
+    });
     editor.setValueProgrammatic(res.merged);
     store.updateDoc(tab.id, { fileState: res.state });
     refreshChrome(res.state);
@@ -2398,7 +2398,7 @@ function tabNeedsSaveConfirmation(tab: DocTab): boolean {
 function doCloseTab(id: number): void {
   const tab = store.get(id);
   if (tab && tab.kind === 'doc') {
-    invoke('drop_doc', { docId: tab.docId }).catch(() => {});
+    docsApi.dropDoc(tab.docId).catch(() => {});
   }
   store.close(id);
   if (store.list().length === 0) {
@@ -2621,7 +2621,7 @@ async function bootstrap(): Promise<void> {
 
   let initialPath: string | null = null;
   try {
-    initialPath = await invoke<string | null>('get_initial_path');
+    initialPath = await docsApi.getInitialPath();
   } catch (e) {
     console.error('Failed to get initial path:', e);
   }
