@@ -71,6 +71,7 @@
     "src/scroll_mirror.ts",
     "src/scroll_pure.ts",
     "src/confirm_close_dialog.ts",
+    "src/render_coordinator.ts",
     "e2e/mock/mock.ts"
   ]
 }

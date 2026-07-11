@@ -299,15 +299,19 @@ test('reconcile: a non-desync throw falls back AND logs, then keeps draining', a
   await p1;
   assert.equal(f.domCalls.fullReplace.length, 1);
   assert.equal(f.domCalls.reconcileError.length, 1, 'non-desync error logged');
+  // The fallback still paints, so this render applies (matches the original:
+  // the catch falls through to the post-render hooks).
+  assert.equal(f.applied.length, 1);
+  assert.equal(f.applied[0].version, 1);
 
-  // Coordinator is not wedged: a subsequent render drains and applies.
+  // Coordinator is not wedged: a subsequent render drains and applies too.
   f.setReconcile(() => [H('c')]);
   const p2 = f.coord.schedule();
   assert.equal(f.calls.length, 2);
   f.calls[1].resolve(makeResult({ version: 2 }));
   await p2;
-  assert.equal(f.applied.length, 1);
-  assert.equal(f.applied[0].version, 2);
+  assert.equal(f.applied.length, 2);
+  assert.equal(f.applied[1].version, 2);
 });
 
 test('drain: a render() rejection does not wedge the queue', async () => {
