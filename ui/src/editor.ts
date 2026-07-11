@@ -208,8 +208,16 @@ const editorTheme = EditorView.theme({
     border: 'none',
     borderRight: '1px solid var(--pmd-border)',
   },
-  '.cm-activeLineGutter': { backgroundColor: 'var(--pmd-bg-elevated)' },
-  '.cm-activeLine': { backgroundColor: 'var(--pmd-bg-elevated)' },
+  // Translucent so the selection layer (drawn *below* the line layer by
+  // CodeMirror) still shows through on the cursor's line. An opaque
+  // background here masks the selection highlight on the active line.
+  // color-mix keeps this theme-derived and composes over the real bg.
+  '.cm-activeLineGutter': {
+    backgroundColor: 'color-mix(in srgb, var(--pmd-bg-elevated) 55%, transparent)',
+  },
+  '.cm-activeLine': {
+    backgroundColor: 'color-mix(in srgb, var(--pmd-bg-elevated) 55%, transparent)',
+  },
   '.cm-md-strong': { fontWeight: '700' },
   '.cm-md-em': { fontStyle: 'italic' },
   '.cm-md-code': {
