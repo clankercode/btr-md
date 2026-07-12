@@ -2555,6 +2555,37 @@ async function bootstrap(): Promise<void> {
   loadRecentFiles();
   loadRecentlyClosedWindows();
 
+  // Restore this window's persisted session FIRST. A window that has a session
+  // slice is a restored window and must never consume the global launch intent
+  // (the initial path / open-dialog flag) — otherwise xdg-opening a file while
+  // a workspace is being restored would hijack a restored window. Only a
+  // window with NO session slice (a clean `main`, or the extra window the
+  // backend mints for a launch file) falls through to the launch intent below.
+  let hadSession = false;
+  try {
+    const label = getCurrentWindow().label;
+    const w = await sessionApi.getWindowSession(label);
+    if (w) {
+      hadSession = true;
+      await sessionManager.restoreSession({
+        version: 2,
+        docs: w.docs,
+        active: w.active,
+        browser_tab: w.browser_tab,
+      });
+    }
+  } catch (e) {
+    console.error('Window session restore failed:', e);
+  }
+
+  if (hadSession) {
+    // Restored window: never touch the launch intent. Guarantee at least one
+    // tab if the session restored nothing usable.
+    if (store.list().length === 0) store.addEmpty();
+    return;
+  }
+
+  // Fresh window (no session slice): honour the launch intent.
   let openDialogOnStart = false;
   try {
     openDialogOnStart = await settingsApi.getOpenDialogOnStart();
@@ -2574,28 +2605,9 @@ async function bootstrap(): Promise<void> {
     return;
   }
 
-  // No CLI file: try to restore the previous session from the backend.
-  let restored = false;
-  try {
-    const label = getCurrentWindow().label;
-    const w = await sessionApi.getWindowSession(label);
-    if (w) {
-      restored = await sessionManager.restoreSession({
-        version: 2,
-        docs: w.docs,
-        active: w.active,
-        browser_tab: w.browser_tab,
-      });
-    }
-  } catch (e) {
-    console.error('Window session restore failed:', e);
-  }
-
-  if (!restored) {
-    // First run / empty session: a single empty (welcome) tab.
-    store.addEmpty();
-    if (openDialogOnStart) setTimeout(() => openFileDialog(), 0);
-  }
+  // First run / empty session: a single empty (welcome) tab.
+  store.addEmpty();
+  if (openDialogOnStart) setTimeout(() => openFileDialog(), 0);
 }
 
 chrome.setStatus('Ready');

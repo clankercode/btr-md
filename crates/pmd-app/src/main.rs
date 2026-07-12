@@ -209,18 +209,39 @@ fn main() {
             cmd::window::reserve_window_labels(session.windows.iter().map(|w| w.label.clone()));
 
             let handle = app.handle();
-            let restoring = args.initial_path.is_none() && !session.windows.is_empty();
-            if restoring {
-                for w in &session.windows {
-                    pmd_app_lib::build_window(handle, &w.label, Some(&w.geometry))?;
+            // A launch intent (xdg-open / CLI file, or `--open-dialog`) is
+            // hosted by a fresh window; a saved session is restored verbatim.
+            // When both are present we do BOTH — restore the whole prior
+            // workspace and open the launch file in one extra new window — so
+            // xdg-opening a file no longer discards the previous session.
+            let has_launch = args.initial_path.is_some() || args.open_dialog;
+            match cmd::window::plan_startup(has_launch, !session.windows.is_empty()) {
+                cmd::window::StartupWindows::JustMain => {
+                    pmd_app_lib::build_window(handle, "main", None)?;
                 }
-                if let Some(focus) = &session.focused_label {
-                    if let Some(win) = app.get_webview_window(focus) {
-                        let _ = win.set_focus();
+                plan @ (cmd::window::StartupWindows::RestoreOnly
+                | cmd::window::StartupWindows::RestorePlusLaunch) => {
+                    for w in &session.windows {
+                        pmd_app_lib::build_window(handle, &w.label, Some(&w.geometry))?;
+                    }
+                    if let Some(focus) = &session.focused_label {
+                        if let Some(win) = app.get_webview_window(focus) {
+                            let _ = win.set_focus();
+                        }
+                    }
+                    if plan == cmd::window::StartupWindows::RestorePlusLaunch {
+                        // The launch window's label is NOT in the session, so its
+                        // frontend `bootstrap` finds no window-session slice and
+                        // falls through to `get_initial_path` / the open-dialog
+                        // flag — opening the file here rather than in a restored
+                        // window. Focus it last so the just-opened file is on top.
+                        let label = cmd::window::new_window(handle.clone())
+                            .map_err(|e| -> Box<dyn std::error::Error> { e.into() })?;
+                        if let Some(win) = app.get_webview_window(&label) {
+                            let _ = win.set_focus();
+                        }
                     }
                 }
-            } else {
-                pmd_app_lib::build_window(handle, "main", None)?;
             }
 
             pmd_app_lib::preview::grants::init_grant_store(app.asset_protocol_scope());
@@ -230,13 +251,12 @@ fn main() {
                 Ok(()) => {}
                 Err(e) => eprintln!("[btr-md] could not load trusted asset roots: {e}"),
             }
-            // The watcher + registry entry for the initial file are created by
-            // the frontend's open flow; here we only nudge it to open.
-            if let Some(ref p) = args.initial_path {
-                if let Some(win) = app.get_webview_window("main") {
-                    let _ = win.emit("open-file", p.to_string_lossy().to_string());
-                }
-            }
+            // The launch file is opened entirely by the frontend's boot flow via
+            // `get_initial_path` in the launch window (`main`, or the extra
+            // window minted above). No startup `open-file` emit is needed — and
+            // it would be wrong: at setup() time no webview has registered the
+            // listener yet, and in the restore-plus-launch case it would target a
+            // restored window rather than the fresh launch window.
             // Re-admit the persisted file-browser base directory (a previously
             // user-trusted folder) so the browser tab works after a restart.
             if let Some(base) = pmd_app_lib::state::settings::load().browser_base_dir {

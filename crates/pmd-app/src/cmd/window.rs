@@ -54,6 +54,37 @@ pub enum LaunchRoute {
     ForwardTo(String),   // open file as a new tab in this window
 }
 
+/// What windows to build at startup (`main.rs` setup).
+///
+/// A "launch intent" is a file passed on the command line / via xdg-open, or a
+/// `--open-dialog` request: something the *first fresh* window should act on by
+/// consuming the global initial-path / open-dialog flag (see the frontend
+/// `bootstrap`). A restored window carries a persisted session slice and must
+/// NOT swallow that intent — otherwise xdg-opening a file would silently
+/// hijack a restored window instead of opening a new one.
+#[derive(Debug, PartialEq, Eq)]
+pub enum StartupWindows {
+    /// No session to restore: build a single `main` window. The frontend opens
+    /// the launch file / dialog there, or shows the welcome tab.
+    JustMain,
+    /// Restore the persisted session windows only (no launch intent).
+    RestoreOnly,
+    /// Restore the persisted session windows AND mint one extra fresh window to
+    /// host the launch intent, so the whole prior workspace comes back and the
+    /// xdg-opened file lands in its own new window.
+    RestorePlusLaunch,
+}
+
+/// Decide the startup window set from whether a launch intent is present and
+/// whether the persisted session has any windows. Pure; unit-tested.
+pub fn plan_startup(has_launch_intent: bool, has_session: bool) -> StartupWindows {
+    match (has_session, has_launch_intent) {
+        (false, _) => StartupWindows::JustMain,
+        (true, false) => StartupWindows::RestoreOnly,
+        (true, true) => StartupWindows::RestorePlusLaunch,
+    }
+}
+
 /// Decide where a forwarded launch goes.
 /// `paths` empty -> bare relaunch -> new window.
 /// else if a path is already open -> reuse that owner window.
@@ -111,6 +142,24 @@ mod routing_tests {
     fn new_file_with_no_live_window_opens_new() {
         let r = route_launch(&[PathBuf::from("/tmp/new.md")], |_| None, None);
         assert_eq!(r, LaunchRoute::NewWindow);
+    }
+
+    #[test]
+    fn no_session_always_builds_just_main() {
+        assert_eq!(plan_startup(false, false), StartupWindows::JustMain);
+        assert_eq!(plan_startup(true, false), StartupWindows::JustMain);
+    }
+
+    #[test]
+    fn session_without_launch_intent_restores_only() {
+        assert_eq!(plan_startup(false, true), StartupWindows::RestoreOnly);
+    }
+
+    #[test]
+    fn session_with_launch_intent_restores_plus_extra_window() {
+        // The xdg-open bug: a launch file alongside a saved session must restore
+        // the whole workspace AND open the file in a new window.
+        assert_eq!(plan_startup(true, true), StartupWindows::RestorePlusLaunch);
     }
 }
 
