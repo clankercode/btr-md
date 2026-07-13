@@ -1,18 +1,19 @@
 ---
 claimed_at: "2026-07-13T04:04:34Z"
 claimed_by: grok-bl-fix-many
-completed_at: null
+completed_at: "2026-07-13T04:26:02Z"
 complexity: medium
 created_at: "2026-07-13T03:58:24Z"
 depends_on: []
+duration_minutes: 21.483135405716666
 estimate_hours: 10
 id: I002
 priority: medium
 started_at: "2026-07-13T04:04:34Z"
-status: in_progress
+status: done
 tags: []
 title: Focus active document in sidebar (with per-doc base dir rules)
-updated_at: "2026-07-13T04:04:34Z"
+updated_at: "2026-07-13T04:26:02Z"
 ---
 ## Request
 When a document becomes focused, the sidebar should reveal/select it (auto-expanding folders as needed).

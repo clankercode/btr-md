@@ -14,7 +14,7 @@ ideas:
       file: I002-focus-active-document-in-sideb.todo
       id: I002
       priority: medium
-      status: in_progress
+      status: done
       tags: []
       title: Focus active document in sidebar (with per-doc base dir rules)
     - complexity: medium
