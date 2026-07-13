@@ -87,6 +87,17 @@ export function createFileBrowser(deps: FileBrowserDeps): FileBrowserInstance {
       row.setAttribute("aria-selected", String(isSel));
       row.classList.toggle("pmd-browser-active", path === active);
     }
+    scrollActiveIntoView();
+  }
+
+  /** Keep the active document row visible after tab switches / re-root. */
+  function scrollActiveIntoView(): void {
+    const active = model.activeFile();
+    if (!active) return;
+    const row = rows.get(active);
+    if (!row) return;
+    // nearest avoids yanking the tree when the row is already on-screen.
+    row.scrollIntoView({ block: "nearest", inline: "nearest" });
   }
 
   async function activateRow(entry: DirEntry, background: boolean): Promise<void> {
@@ -359,6 +370,7 @@ export function createFileBrowser(deps: FileBrowserDeps): FileBrowserInstance {
     renderEntries(root, 0, tree);
     el.appendChild(tree);
     lastStructureKey = structureKey();
+    scrollActiveIntoView();
   }
 
   function onModelChange(): void {

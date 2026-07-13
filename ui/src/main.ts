@@ -36,7 +36,7 @@ import {
 import { createTabStore, type DocTab } from './tabs.js';
 import { createTabBar, type TabBarInstance } from './tabbar.js';
 import { createFileBrowser, type FileBrowserInstance, type DirListing } from './file_browser.js';
-import { createWorkspaceModel, parentOf } from './workspace.js';
+import { createWorkspaceModel, parentOf, isUnder } from './workspace.js';
 import { createSettingsMenu, type SettingsSnapshot, type HandlerStatus } from './settings_menu.js';
 import { computeCounts } from './counts.js';
 import { createInsertMenu, type AlertType, type InsertMenuInstance } from './insert_menu.js';
@@ -231,14 +231,56 @@ async function setWorkspaceRoot(path: string): Promise<boolean> {
 }
 
 // Keep the workspace's active-file highlight mirroring the active document.
-// Cold-start only: when no sticky root exists yet, default it to the file's
-// parent folder. Once a root exists it is sticky — opening files never moves
-// it; we just reveal/clear the active-file highlight against the current root.
+// When the document is under the current root, expand ancestors + select/scroll.
+// When it is outside (or there is no root), re-root to the best listable base
+// for that document (git worktree/repo → home → parent, intersected with path
+// grants) so the file is reachable in the sidebar.
+// Monotonic seq so rapid tab switches drop stale async re-root work.
+let revealActiveSeq = 0;
 async function revealActiveFile(filePath: string): Promise<void> {
-  if (!workspace.root()) {
+  const seq = ++revealActiveSeq;
+  const stillCurrent = () => seq === revealActiveSeq;
+
+  const currentRoot = workspace.root();
+  if (currentRoot && isUnder(currentRoot, filePath)) {
+    if (!stillCurrent()) return;
+    await workspace.revealFile(filePath);
+    return;
+  }
+
+  // Outside current base (or cold start): ask the backend for a listable root.
+  let resolved: string | null = null;
+  try {
+    resolved = await filesApi.resolveDocumentWorkspaceRoot(filePath);
+  } catch (e) {
+    console.warn('resolve_document_workspace_root failed:', e);
+  }
+  if (!stillCurrent()) return;
+
+  if (resolved) {
+    if (resolved !== workspace.root()) {
+      const ok = await setWorkspaceRoot(resolved);
+      if (!stillCurrent()) return;
+      if (!ok) {
+        // Grant race / rejection — try the document's parent as a last resort.
+        const parent = parentOf(filePath);
+        if (parent && parent !== workspace.root()) await setWorkspaceRoot(parent);
+        if (!stillCurrent()) return;
+      }
+    }
+  } else if (!workspace.root()) {
     const parent = parentOf(filePath);
     if (parent) await setWorkspaceRoot(parent);
+    if (!stillCurrent()) return;
+  } else {
+    // Still outside the sticky root and no listable alternative: try parent so
+    // an admitted sibling folder can become the base for this document.
+    const parent = parentOf(filePath);
+    if (parent && parent !== workspace.root()) await setWorkspaceRoot(parent);
+    if (!stillCurrent()) return;
   }
+
+  if (!stillCurrent()) return;
   await workspace.revealFile(filePath);
 }
 

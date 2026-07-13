@@ -102,6 +102,7 @@ export interface CommandMap {
   // --- files ---
   list_dir: { args: { dir: string }; result: DirListing };
   set_workspace_root: { args: { path: string }; result: string };
+  resolve_document_workspace_root: { args: { path: string }; result: string };
   pick_base_dir: { args: void; result: string | null };
   reveal_in_folder: { args: { path: string }; result: void };
   rename_path: { args: { path: string; newName: string }; result: string };

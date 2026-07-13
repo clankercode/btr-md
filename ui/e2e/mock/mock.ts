@@ -488,6 +488,17 @@ function installMock(config: MockConfig): void {
       browserBaseDir = args.path;
       return args.path;
     },
+    // Prefer the document's parent when under the configured browser base;
+    // otherwise fall back to parent (matches "listable" base without real git).
+    resolve_document_workspace_root: (args) => {
+      const path = args.path;
+      const base = browserBaseDir ?? config.settings?.browser_base_dir ?? null;
+      if (base && (path === base || path.startsWith(base.endsWith('/') ? base : `${base}/`))) {
+        return base;
+      }
+      const slash = path.lastIndexOf('/');
+      return slash > 0 ? path.slice(0, slash) : path;
+    },
     pick_base_dir: () => browserBaseDir ?? config.settings?.browser_base_dir ?? null,
     reveal_in_folder: () => undefined,
     rename_path: (args) => `${dirname(args.path)}/${args.newName}`,
