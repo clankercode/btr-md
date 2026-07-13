@@ -26,3 +26,5 @@ ideas:
       status: done
       tags: []
       title: Basic rich HTML document support in preview mode
+    - file: I004-follow-ups-path-ui-tab-re-root.todo
+      id: I004

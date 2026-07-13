@@ -1,0 +1,21 @@
+---
+complexity: medium
+created_at: "2026-07-13T05:30:54Z"
+depends_on: []
+estimate_hours: 10
+id: I004
+priority: high
+status: pending
+tags:
+    - ui
+    - sidebar
+    - menus
+title: 'Follow-ups: path UI, tab re-root, sidebar ignore/F5, menu a11y/hover'
+updated_at: "2026-07-13T05:30:54Z"
+---
+## From product answers
+- I002: keep grant-safe re-root; stay put under git root; tab RMB: short \"Re-root to git\" action
+- B003: ignore high-churn dirs (node_modules, .git, target/, …) via expandable list + predicates (e.g. Cargo.toml → target/)
+- B003: default shortcut for sidebar refresh (F5)
+- I001: hide basename chip when full-path mode; add Settings toggle for show_full_path
+- B005: arrow-key nav on File/History/Insert; stronger accent hover (fix theme visibility)
