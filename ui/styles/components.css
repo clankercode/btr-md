@@ -1766,6 +1766,8 @@ body[data-state="welcome"] #split-resizer {
 .pmd-history-toggle {
   flex: 1;
   min-width: 0;
+  /* Override .pmd-submenu-toggle { width: 100% } so Restore stays beside it. */
+  width: auto;
 }
 
 .pmd-history-toggle span:first-child {
