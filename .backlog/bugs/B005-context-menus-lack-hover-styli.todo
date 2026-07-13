@@ -1,18 +1,18 @@
 ---
+claimed_at: "2026-07-13T04:04:34Z"
+claimed_by: grok-bl-fix-many
+completed_at: null
 complexity: medium
 created_at: "2026-07-13T03:58:24Z"
 depends_on: []
 estimate_hours: 1
 id: B005
 priority: medium
-status: pending
-tags:
-    - ui
-    - menus
-    - dry
-    - a11y
+started_at: "2026-07-13T04:04:34Z"
+status: in_progress
+tags: []
 title: Context menus lack hover styling; standardize shared menu component
-updated_at: "2026-07-13T03:58:24Z"
+updated_at: "2026-07-13T04:04:34Z"
 ---
 ## Problem
 Tab context menu (RMB) menu items lack on-hover styling. Related menus are inconsistent and should share common code (DRY).

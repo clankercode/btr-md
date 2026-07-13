@@ -1,18 +1,18 @@
 ---
+claimed_at: "2026-07-13T04:04:34Z"
+claimed_by: grok-bl-fix-many
+completed_at: null
 complexity: medium
 created_at: "2026-07-13T03:58:24Z"
 depends_on: []
 estimate_hours: 1
 id: B004
 priority: medium
-status: pending
-tags:
-    - preview
-    - selection
-    - theme
-    - a11y
+started_at: "2026-07-13T04:04:34Z"
+status: in_progress
+tags: []
 title: Preview text selection highlight is hard to read vs editor
-updated_at: "2026-07-13T03:58:24Z"
+updated_at: "2026-07-13T04:04:34Z"
 ---
 ## Problem
 Selecting text in the **preview** pane has inferior contrast/coloring compared to the **edit** pane. Edit selection is readable; preview selection is not (low-contrast gray wash).

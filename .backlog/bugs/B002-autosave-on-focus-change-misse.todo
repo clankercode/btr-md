@@ -1,17 +1,18 @@
 ---
+claimed_at: "2026-07-13T04:04:34Z"
+claimed_by: grok-bl-fix-many
+completed_at: null
 complexity: medium
 created_at: "2026-07-13T03:58:24Z"
 depends_on: []
 estimate_hours: 1
 id: B002
 priority: high
-status: pending
-tags:
-    - autosave
-    - focus
-    - tabs
+started_at: "2026-07-13T04:04:34Z"
+status: in_progress
+tags: []
 title: Autosave on focus change misses document/tab focus loss
-updated_at: "2026-07-13T03:58:24Z"
+updated_at: "2026-07-13T04:04:34Z"
 ---
 ## Problem
 Autosave on focus change does not fully detect focus loss. It should fire for both:

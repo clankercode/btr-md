@@ -1,7 +1,28 @@
 ideas:
-    - file: I001-toggle-full-vs-compressed-path.todo
+    - complexity: medium
+      depends_on: []
+      estimate_hours: 10
+      file: I001-toggle-full-vs-compressed-path.todo
       id: I001
-    - file: I002-focus-active-document-in-sideb.todo
+      priority: medium
+      status: in_progress
+      tags: []
+      title: Toggle full vs compressed path in top-bar path label
+    - complexity: medium
+      depends_on: []
+      estimate_hours: 10
+      file: I002-focus-active-document-in-sideb.todo
       id: I002
-    - file: I003-basic-rich-html-document-suppo.todo
+      priority: medium
+      status: in_progress
+      tags: []
+      title: Focus active document in sidebar (with per-doc base dir rules)
+    - complexity: medium
+      depends_on: []
+      estimate_hours: 10
+      file: I003-basic-rich-html-document-suppo.todo
       id: I003
+      priority: medium
+      status: in_progress
+      tags: []
+      title: Basic rich HTML document support in preview mode
