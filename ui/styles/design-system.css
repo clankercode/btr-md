@@ -244,9 +244,39 @@ code, pre, kbd {
    7. Selection Styles
    -------------------------------------------- */
 
+/* Native selection (preview, inputs, chrome text). Themes declare solid
+   `selection_bg` + inverted `selection_fg` (WCAG-validated); the editor
+   mirrors these via CodeMirror layers (`.cm-selectionBackground` +
+   `.cm-pmd-selectedText`). Preview relies on this pseudo-element.
+
+   Strategy (belt + suspenders for WebKitGTK):
+   1. Keep `var(--pmd-selection-*)` so engines that resolve custom properties
+      inside `::selection` track the active theme tokens.
+   2. Lead with concrete design-system hex as a parse fallback when `var()`
+      is dropped entirely (historical WebKitGTK behaviour → washed default
+      selection with unselected text colour, ~1–3:1 on mid-tone selection_bg).
+   3. Theme bundles re-emit a *concrete* `::selection` rule with palette hex
+      (see `set_theme_from_roots`) so the active theme always wins once
+      loaded — keep selectors here low-specificity so those rules can
+      override without fighting `[data-theme] .pmd-preview …` traps.
+   4. `-webkit-text-fill-color` forces inverted ink even when a span sets
+      text-fill (e.g. gradient titles). */
 ::selection {
-  background-color: var(--pmd-selection-bg);
-  color: var(--pmd-selection-fg);
+  background-color: #0369a1;
+  background-color: var(--pmd-selection-bg, #0369a1);
+  color: #ffffff;
+  color: var(--pmd-selection-fg, #ffffff);
+  -webkit-text-fill-color: #ffffff;
+  -webkit-text-fill-color: var(--pmd-selection-fg, #ffffff);
+}
+
+[data-theme="dark"] ::selection {
+  background-color: #7dd3fc;
+  background-color: var(--pmd-selection-bg, #7dd3fc);
+  color: #020617;
+  color: var(--pmd-selection-fg, #020617);
+  -webkit-text-fill-color: #020617;
+  -webkit-text-fill-color: var(--pmd-selection-fg, #020617);
 }
 
 /* --------------------------------------------
