@@ -33,6 +33,7 @@ export type ActionId =
   | "view.cycleMode"
   | "view.toggleWordWrap"
   | "view.toggleSidebar"
+  | "view.refreshSidebar"
   | "navigate.commandOverlay"
   | "navigate.outline"
   | "diagnostics.togglePanel"
@@ -129,6 +130,7 @@ export const NO_DEFAULT_ACTION_IDS: ActionId[] = [
   "document.export.pdf",
   "document.export.html",
   "view.setDiffMode",
+  "view.refreshSidebar",
   "navigate.fileBrowser",
   "share.openGist",
   "share.copyGistMarkdown",
@@ -183,6 +185,7 @@ export const defaultActionSpecs: ActionSpec[] = [
   spec("view.cycleMode", "Cycle mode", "View", "Cycle source split preview modes"),
   spec("view.toggleWordWrap", "Toggle word wrap", "View", "Toggle editor word wrapping"),
   spec("view.toggleSidebar", "Toggle sidebar", "View", "Show or hide the folder sidebar"),
+  spec("view.refreshSidebar", "Refresh folder tree", "View", "Reload the sidebar file tree from disk"),
   spec("navigate.commandOverlay", "Command overlay", "Navigate", "Open the command overlay"),
   spec("navigate.outline", "Show outline", "Navigate", "Show document outline"),
   spec("diagnostics.togglePanel", "Toggle diagnostics", "Diagnostics", "Show or hide diagnostics"),

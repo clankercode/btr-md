@@ -1,5 +1,6 @@
 //! Content-aware watcher behaviour: the worker re-reads + hashes the file and
 //! drives the registry, emitting a single structured `doc_state_changed`.
+//! Also covers the recursive workspace-tree watcher used by the sidebar.
 
 use pmd_app_lib::AppState;
 use std::sync::mpsc;
@@ -106,4 +107,103 @@ fn identical_rewrite_is_suppressed_as_clean() {
             Err(e) => panic!("watcher did not emit doc_state_changed: {e}"),
         }
     }
+}
+
+#[test]
+fn workspace_tree_create_emits_workspace_tree_changed() {
+    let temp = tempfile::tempdir().expect("tempdir");
+    let root = temp.path().canonicalize().expect("canonical root");
+
+    let app = mock_app();
+    let handle = app.handle().clone();
+    let (tx, rx) = mpsc::channel::<String>();
+    let _listener = handle.listen("workspace_tree_changed", move |event: tauri::Event| {
+        let _ = tx.send(event.payload().to_string());
+    });
+
+    let st = app.state::<AppState>();
+    st.workspace_watcher.set_root(handle.clone(), root.clone());
+    assert_eq!(st.workspace_watcher.watched_root(), Some(root.clone()));
+
+    let started = Instant::now();
+    let mut attempt = 0;
+    loop {
+        attempt += 1;
+        let path = root.join(format!("created-{attempt}.md"));
+        std::fs::write(&path, "# hi\n").expect("create file");
+        match rx.recv_timeout(Duration::from_millis(400)) {
+            Ok(payload) => {
+                let v: serde_json::Value =
+                    serde_json::from_str(&payload).expect("workspace_tree_changed JSON");
+                let got = v
+                    .get("root")
+                    .and_then(|r| r.as_str())
+                    .expect("root field");
+                assert_eq!(
+                    std::path::Path::new(got),
+                    root.as_path(),
+                    "payload root must match watched root"
+                );
+                break;
+            }
+            Err(mpsc::RecvTimeoutError::Timeout) if started.elapsed() < Duration::from_secs(5) => {
+                continue;
+            }
+            Err(e) => panic!("workspace watcher did not emit workspace_tree_changed: {e}"),
+        }
+    }
+}
+
+#[test]
+fn workspace_tree_content_only_write_is_suppressed() {
+    // A pure content rewrite must not fire workspace_tree_changed — that would
+    // thrash the sidebar on every autosave of an open file under the root.
+    let temp = tempfile::tempdir().expect("tempdir");
+    let root = temp.path().canonicalize().expect("canonical root");
+    let file = root.join("notes.md");
+    std::fs::write(&file, "# one\n").expect("seed");
+
+    let app = mock_app();
+    let handle = app.handle().clone();
+    let (tx, rx) = mpsc::channel::<String>();
+    let _listener = handle.listen("workspace_tree_changed", move |event: tauri::Event| {
+        let _ = tx.send(event.payload().to_string());
+    });
+
+    let st = app.state::<AppState>();
+    st.workspace_watcher.set_root(handle.clone(), root.clone());
+
+    // Give the watcher a moment to settle, then rewrite content only.
+    std::thread::sleep(Duration::from_millis(50));
+    // Drain any startup noise.
+    while rx.try_recv().is_ok() {}
+
+    std::fs::write(&file, "# two\n").expect("content rewrite");
+    // Wait longer than the coalesce window; a correct implementation stays quiet.
+    match rx.recv_timeout(Duration::from_millis(500)) {
+        Ok(payload) => panic!(
+            "content-only rewrite must not emit workspace_tree_changed, got {payload}"
+        ),
+        Err(mpsc::RecvTimeoutError::Timeout) => {}
+        Err(e) => panic!("unexpected recv error: {e}"),
+    }
+}
+
+#[test]
+fn workspace_tree_set_root_replaces_previous() {
+    let a = tempfile::tempdir().expect("tempdir a");
+    let b = tempfile::tempdir().expect("tempdir b");
+    let root_a = a.path().canonicalize().expect("canon a");
+    let root_b = b.path().canonicalize().expect("canon b");
+
+    let app = mock_app();
+    let handle = app.handle().clone();
+    let st = app.state::<AppState>();
+
+    st.workspace_watcher.set_root(handle.clone(), root_a.clone());
+    assert_eq!(st.workspace_watcher.watched_root(), Some(root_a));
+    st.workspace_watcher.set_root(handle.clone(), root_b.clone());
+    assert_eq!(st.workspace_watcher.watched_root(), Some(root_b));
+    st.workspace_watcher.clear();
+    assert_eq!(st.workspace_watcher.watched_root(), None);
 }

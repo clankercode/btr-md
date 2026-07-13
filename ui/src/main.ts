@@ -650,6 +650,9 @@ async function runAction(id: ActionId): Promise<void> {
       localStorage.setItem(SIDEBAR_VISIBLE_KEY, next ? '1' : '0');
       return;
     }
+    case 'view.refreshSidebar':
+      await workspace.refresh();
+      return;
     case 'navigate.commandOverlay':
       commandOverlay.open();
       return;
@@ -2431,6 +2434,16 @@ listen<DocStateChanged>('doc_state_changed', (event) => {
   setStateByDocId(doc_id, state);
   const active = store.activeDoc();
   if (active && active.docId === doc_id) maybeAutoreload(state);
+}).catch(() => {});
+
+// Backend recursive watcher on the workspace root coalesces create/rename/delete
+// bursts into `workspace_tree_changed`. Debounce again on the UI so stacked
+// emits (e.g. high-churn dirs) collapse into a single listing refresh.
+const scheduleWorkspaceTreeRefresh = debounce(() => {
+  void workspace.refresh();
+}, 150);
+listen('workspace_tree_changed', () => {
+  scheduleWorkspaceTreeRefresh();
 }).catch(() => {});
 
 listen<DocumentDiagnostics>('pmd://diagnostics-enriched', (event) => {

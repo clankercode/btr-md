@@ -189,3 +189,127 @@ fn build_slot<R: Runtime>(app: AppHandle<R>, doc: DocId, path: &Path) -> Option<
 fn touches(event: &notify::Event, file_name: &std::ffi::OsStr) -> bool {
     event.paths.iter().any(|p| p.file_name() == Some(file_name))
 }
+
+// ---------------------------------------------------------------------------
+// Workspace tree watcher (sidebar / folder browser).
+//
+// Separate from the per-document content watcher above: this watches the UI
+// workspace root *recursively* so creates/renames/deletes of files and folders
+// can invalidate the sidebar listing without a restart. Content-only writes
+// (Modify::Data) are ignored — they do not change tree structure.
+// ---------------------------------------------------------------------------
+
+/// Coalescing window for directory-tree bursts (e.g. bulk create/delete).
+const TREE_COALESCE_MS: u64 = 150;
+
+/// Payload for the `workspace_tree_changed` event.
+#[derive(Clone, Serialize)]
+struct WorkspaceTreeChanged {
+    root: PathBuf,
+}
+
+/// Recursive FS watcher for the current workspace root. At most one root is
+/// watched at a time; swapping drops the previous watcher so its worker exits.
+pub struct WorkspaceTreeWatcher {
+    slot: Mutex<Option<WorkspaceTreeSlot>>,
+}
+
+struct WorkspaceTreeSlot {
+    _watcher: RecommendedWatcher,
+    root: PathBuf,
+}
+
+impl Default for WorkspaceTreeWatcher {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl WorkspaceTreeWatcher {
+    pub fn new() -> Self {
+        Self {
+            slot: Mutex::new(None),
+        }
+    }
+
+    fn lock(&self) -> std::sync::MutexGuard<'_, Option<WorkspaceTreeSlot>> {
+        self.slot.lock().unwrap_or_else(|p| p.into_inner())
+    }
+
+    /// Watch `root` recursively, replacing any previous root.
+    pub fn set_root<R: Runtime>(&self, app: AppHandle<R>, root: PathBuf) {
+        let mut slot = self.lock();
+        // Drop old watcher first so its worker observes a closed channel and exits.
+        *slot = None;
+        if let Some(built) = build_tree_slot(app, &root) {
+            *slot = Some(built);
+        }
+    }
+
+    /// Stop watching (e.g. no workspace root).
+    pub fn clear(&self) {
+        *self.lock() = None;
+    }
+
+    /// Root currently watched, if any. Used by tests/diagnostics.
+    pub fn watched_root(&self) -> Option<PathBuf> {
+        self.lock().as_ref().map(|s| s.root.clone())
+    }
+}
+
+/// Whether an event can change the *structure* of a directory listing
+/// (names/children), as opposed to only file contents or metadata.
+fn affects_tree_structure(kind: &EventKind) -> bool {
+    use notify::event::ModifyKind;
+    match kind {
+        EventKind::Create(_) | EventKind::Remove(_) | EventKind::Any => true,
+        EventKind::Modify(ModifyKind::Name(_)) | EventKind::Modify(ModifyKind::Any) => true,
+        // Data / Metadata / Other modifications leave the tree shape alone.
+        EventKind::Modify(_) | EventKind::Access(_) | EventKind::Other => false,
+    }
+}
+
+fn build_tree_slot<R: Runtime>(app: AppHandle<R>, root: &Path) -> Option<WorkspaceTreeSlot> {
+    let watched_root = root.to_path_buf();
+
+    let (tx, rx) = channel();
+    let mut watcher = RecommendedWatcher::new(
+        move |res: notify::Result<notify::Event>| {
+            let _ = tx.send(res);
+        },
+        Config::default(),
+    )
+    .ok()?;
+
+    watcher.watch(&watched_root, RecursiveMode::Recursive).ok()?;
+
+    let worker_root = watched_root.clone();
+    std::thread::spawn(move || {
+        while let Ok(res) = rx.recv() {
+            let Ok(event) = res else { continue };
+            if !affects_tree_structure(&event.kind) {
+                continue;
+            }
+            // Drain the rest of the burst so a mass create/delete becomes one emit.
+            loop {
+                match rx.recv_timeout(Duration::from_millis(TREE_COALESCE_MS)) {
+                    Ok(Ok(ev)) if affects_tree_structure(&ev.kind) => {}
+                    Ok(_) => {}
+                    Err(RecvTimeoutError::Timeout) => break,
+                    Err(RecvTimeoutError::Disconnected) => return,
+                }
+            }
+            let _ = app.emit(
+                "workspace_tree_changed",
+                WorkspaceTreeChanged {
+                    root: worker_root.clone(),
+                },
+            );
+        }
+    });
+
+    Some(WorkspaceTreeSlot {
+        _watcher: watcher,
+        root: watched_root,
+    })
+}
