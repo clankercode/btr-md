@@ -1,5 +1,11 @@
 # btr-md / preview-md — Repo Norms
 
+## Backlog (`.backlog/`)
+
+- Use `bl` / `backlog` for tasks, bugs, and ideas. Prefer `bl --help` / `bl howto` when unsure.
+- **Always keep `.backlog/` changes committed.** After any `bl` mutation (`init`, `bug`, `idea`, `add*`, `claim`, `done`, `set`, `append`, etc.), commit the resulting `.backlog/` updates promptly so claims, status, and planning history are on the branch—not only in the working tree.
+- Do not leave uncommitted backlog drift at the end of a session or before opening a PR.
+
 ## Worktrees for feature work
 
 Default to doing new feature work in a **dedicated git worktree under `.worktrees/`**

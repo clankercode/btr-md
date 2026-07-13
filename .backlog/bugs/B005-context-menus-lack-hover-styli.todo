@@ -1,0 +1,34 @@
+---
+complexity: medium
+created_at: "2026-07-13T03:58:24Z"
+depends_on: []
+estimate_hours: 1
+id: B005
+priority: medium
+status: pending
+tags:
+    - ui
+    - menus
+    - dry
+    - a11y
+title: Context menus lack hover styling; standardize shared menu component
+updated_at: "2026-07-13T03:58:24Z"
+---
+## Problem
+Tab context menu (RMB) menu items lack on-hover styling. Related menus are inconsistent and should share common code (DRY).
+
+## Scope / examples to unify
+- Tab context menu
+- Insert menu
+- File & history menus
+- Sidebar file/folder context menus
+- Any other same-type dropdown/context menus
+
+## Expected
+- Hover (and keyboard focus) styling on all items of this menu type.
+- One shared menu primitive/component used by the examples above.
+
+## Acceptance
+- [ ] Shared menu component (or clear thin wrapper) used by listed menus.
+- [ ] Hover + keyboard focus styles present and consistent.
+- [ ] No visual regression on open/close, nested items, disabled items.

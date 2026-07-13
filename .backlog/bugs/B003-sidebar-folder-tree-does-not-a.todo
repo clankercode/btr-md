@@ -1,0 +1,26 @@
+---
+complexity: medium
+created_at: "2026-07-13T03:58:24Z"
+depends_on: []
+estimate_hours: 1
+id: B003
+priority: high
+status: pending
+tags:
+    - sidebar
+    - fs
+    - refresh
+title: Sidebar folder tree does not auto-update or refresh
+updated_at: "2026-07-13T03:58:24Z"
+---
+## Problem
+The sidebar folder structure does not autoupdate when new folders or files are added on disk. There is also no (working) way to refresh it.
+
+## Expected
+- Tree reflects filesystem changes under the workspace (watch or equivalent).
+- User can manually refresh the sidebar if auto-update misses something.
+
+## Acceptance
+- [ ] Creating/renaming/deleting files or folders under the workspace updates the sidebar without restart.
+- [ ] Explicit refresh action exists and reloads the tree correctly.
+- [ ] No excessive thrashing on high-churn directories (debounce/coalesce events).

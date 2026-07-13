@@ -1,0 +1,27 @@
+---
+complexity: medium
+created_at: "2026-07-13T03:58:24Z"
+depends_on: []
+estimate_hours: 1
+id: B001
+priority: high
+status: pending
+tags:
+    - diff
+    - show-changes
+    - ui
+title: Show-changes modes all render as by-line (gutter and by-word broken)
+updated_at: "2026-07-13T03:58:24Z"
+---
+## Problem
+Show-changes modes do not work properly. All modes render as **by line**, so **gutter** and **by word** modes are effectively broken.
+
+## Expected
+- By-line, by-word, and gutter modes each produce distinct, correct diff presentation.
+- Switching modes updates the view immediately and matches the selected mode.
+
+## Acceptance
+- [ ] By-word mode highlights intra-line word-level changes (not whole lines only).
+- [ ] Gutter mode shows change markers in the gutter as designed.
+- [ ] By-line mode continues to work and is not the only rendered path.
+- [ ] Manual check on `just run` (e2e mock cannot verify real render decoration).

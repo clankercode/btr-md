@@ -1,0 +1,4 @@
+project: "preview-md"
+description: "Desktop markdown editor/previewer (Tauri: Rust backend, TypeScript UI)"
+timeline_weeks: 0
+phases: []

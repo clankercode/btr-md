@@ -1,0 +1,30 @@
+---
+complexity: medium
+created_at: "2026-07-13T03:58:24Z"
+depends_on: []
+estimate_hours: 1
+id: B002
+priority: high
+status: pending
+tags:
+    - autosave
+    - focus
+    - tabs
+title: Autosave on focus change misses document/tab focus loss
+updated_at: "2026-07-13T03:58:24Z"
+---
+## Problem
+Autosave on focus change does not fully detect focus loss. It should fire for both:
+1. **Window focus loss** (app/window blur)
+2. **Document focus loss** (e.g. switching to another tab)
+
+Today one or both paths are incomplete, so dirty buffers may not autosave when the user leaves a document without leaving the window.
+
+## Expected
+Autosave triggers whenever the active document loses focus—window blur **or** switching tabs/documents—subject to existing autosave settings.
+
+## Acceptance
+- [ ] Leaving the window with a dirty document triggers autosave (when enabled).
+- [ ] Switching to another tab/document with a dirty buffer triggers autosave.
+- [ ] No double-save storms / races on rapid tab switching (debounce or equivalent if needed).
+- [ ] Covered by unit tests where practical; focus edge cases verified on real `just run`.

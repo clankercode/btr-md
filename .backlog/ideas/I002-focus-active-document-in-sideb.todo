@@ -1,0 +1,30 @@
+---
+complexity: medium
+created_at: "2026-07-13T03:58:24Z"
+depends_on: []
+estimate_hours: 10
+id: I002
+priority: medium
+status: pending
+tags:
+    - sidebar
+    - focus
+    - workspace
+    - git
+title: Focus active document in sidebar (with per-doc base dir rules)
+updated_at: "2026-07-13T03:58:24Z"
+---
+## Request
+When a document becomes focused, the sidebar should reveal/select it (auto-expanding folders as needed).
+
+If the document is **not** under the current workspace base directory, that document should get its **own base dir**, chosen in priority order:
+1. Git worktree root (if in a worktree)
+2. Git repo root (if in a repo)
+3. User home directory (if under `$HOME`)
+4. The document's local directory otherwise
+
+## Acceptance
+- [ ] Focusing a tab selects/scrolls-to the file in the sidebar when under current base.
+- [ ] Folders auto-expand so the file is visible.
+- [ ] Out-of-base documents get a base dir per the priority list above.
+- [ ] Switching tabs updates sidebar focus consistently.

@@ -1,0 +1,6 @@
+bugs:
+    - file: B001-show-changes-modes-all-render.todo
+    - file: B002-autosave-on-focus-change-misse.todo
+    - file: B003-sidebar-folder-tree-does-not-a.todo
+    - file: B004-preview-text-selection-highlig.todo
+    - file: B005-context-menus-lack-hover-styli.todo

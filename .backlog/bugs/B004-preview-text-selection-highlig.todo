@@ -1,0 +1,29 @@
+---
+complexity: medium
+created_at: "2026-07-13T03:58:24Z"
+depends_on: []
+estimate_hours: 1
+id: B004
+priority: medium
+status: pending
+tags:
+    - preview
+    - selection
+    - theme
+    - a11y
+title: Preview text selection highlight is hard to read vs editor
+updated_at: "2026-07-13T03:58:24Z"
+---
+## Problem
+Selecting text in the **preview** pane has inferior contrast/coloring compared to the **edit** pane. Edit selection is readable; preview selection is not (low-contrast gray wash).
+
+## Evidence
+Screenshot: `/home/xertrov/Pictures/Screenshots/Screenshot_20260713_135234.png` — left (edit) has clear blue/gray selection; right (preview) selection is washed out and hard to read.
+
+## Expected
+Preview selection styling is at least as readable as the editor selection for the active theme (both light and dark if applicable).
+
+## Acceptance
+- [ ] Selected text in preview has sufficient contrast against background and against unselected text.
+- [ ] Matches or intentionally parallels editor selection affordance.
+- [ ] Verified visually on `just run` (not e2e-mockable for real HTML).
