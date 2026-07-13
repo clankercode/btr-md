@@ -49,6 +49,12 @@ theme-list:
 theme-validate:
     ./scripts/theme-validate.sh
 
+# Render each themes/*/ palette to a PNG styleguide sheet under
+# reviews/theme-previews/ (plus index.md). Requires playwright.
+# PNGs are gitignored; re-run after palette edits for visual review.
+theme-previews:
+    node scripts/theme-previews.mjs
+
 # packaging
 build-release:
     cargo build --release -p pmd-app -j 2

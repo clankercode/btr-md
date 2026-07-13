@@ -421,10 +421,25 @@ pub fn set_theme_from_roots(slug: &str, roots: &[PathBuf]) -> Result<ThemeBundle
         }
     }
 
-    // Themes without bg_muted fall back to bg_elevated so the muted token
-    // always resolves to *something* sensible.
+    // Themes without bg_muted get a surface distinct from bg_elevated.
+    // Menu/dropdown panels paint with `--pmd-bg-elevated` and hover rows use
+    // `--pmd-bg-muted`; falling back to the elevated colour made hover
+    // invisible. Mix elevated toward fg (~10%) so the token always differs.
     if !colours.contains_key("bg_muted") {
-        if let Some(bg_elevated) = colours.get("bg_elevated") {
+        if let (Some(bg_elevated), Some(fg)) = (colours.get("bg_elevated"), colours.get("fg")) {
+            if let (Some(elev_rgb), Some(fg_rgb)) = (
+                pmd_core::theme::mix::parse_hex(bg_elevated),
+                pmd_core::theme::mix::parse_hex(fg),
+            ) {
+                let muted = pmd_core::theme::mix::mix(elev_rgb, fg_rgb, 0.10);
+                css_vars.push_str(&format!(
+                    "  --pmd-bg-muted: {};\n",
+                    pmd_core::theme::mix::to_hex(muted)
+                ));
+            } else {
+                css_vars.push_str(&format!("  --pmd-bg-muted: {};\n", bg_elevated));
+            }
+        } else if let Some(bg_elevated) = colours.get("bg_elevated") {
             css_vars.push_str(&format!("  --pmd-bg-muted: {};\n", bg_elevated));
         }
     }

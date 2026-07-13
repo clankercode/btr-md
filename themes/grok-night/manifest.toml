@@ -1,0 +1,59 @@
+[meta]
+name = "Grok Night"
+slug = "grok-night"
+author = "Grok Build"
+mode = "dark"
+version = "1.0.0"
+
+[palette]
+# Surfaces — neutral charcoal with magenta/lilac accent (Grok TUI night)
+bg = "#0f1216"
+bg_elevated = "#242034"
+fg = "#e4e4e4"
+fg_muted = "#81868f"
+accent = "#c4a7e7"
+link = "#c4a7e7"
+border = "#6a6580"
+
+# Editor
+selection_bg = "#c8c8cc"
+selection_fg = "#0f1216"
+focus_ring = "#c4a7e7"
+caret = "#e4e4e4"
+scrollbar_thumb = "#343048"
+scrollbar_track = "#0f1216"
+
+# Markdown
+inline_code_bg = "#242034"
+inline_code_fg = "#e4e4e4"
+code_block_bg = "#1a1728"
+code_block_fg = "#e4e4e4"
+code_block_border = "#343048"
+blockquote_bar = "#9b7ece"
+blockquote_fg = "#81868f"
+hr = "#343048"
+
+# Tables
+table_header_bg = "#242034"
+table_row_alt = "#16141f"
+table_border = "#343048"
+
+# Admonitions
+admonition_note = "#9b7ece"
+admonition_warn = "#e0af68"
+admonition_tip = "#7ec17e"
+
+# Kbd
+kbd_bg = "#242034"
+kbd_fg = "#e4e4e4"
+kbd_border = "#6a6580"
+
+# Links
+link_hover = "#dcc9f5"
+link_visited = "#9b7ece"
+image_caption = "#81868f"
+
+# Mermaid
+
+# Syntax — purple-forward dark scheme
+syntax = { keyword = "#c4a7e7", string = "#a3d4a0", number = "#e0af68", function = "#9b7ece", type = "#7ec8e3", comment = "#5e646c", operator = "#bebebe", punctuation = "#bebebe", variable = "#e4c07a", constant = "#e0af68" }

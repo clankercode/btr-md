@@ -17,6 +17,8 @@ fn bundled_theme_set_is_complete() {
         "dracula",
         "github-dark",
         "github-light",
+        "grok-day",
+        "grok-night",
         "lavender-forest",
         "nord",
         "onyx-sorcerer",
