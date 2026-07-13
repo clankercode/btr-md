@@ -1,6 +1,8 @@
 pub mod allowlist;
 use std::sync::OnceLock;
 
+pub use allowlist::{is_safe_css_fragment, sanitize_document_css};
+
 static BUILDER: OnceLock<ammonia::Builder<'static>> = OnceLock::new();
 
 pub fn clean(html: &str) -> String {

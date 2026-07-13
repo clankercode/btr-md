@@ -236,10 +236,7 @@ impl PathScope {
     /// Deepest admitted directory that contains `canon` (component-wise).
     /// Prefer this when a preferred workspace base is not itself listable.
     pub fn deepest_allowed_containing(&self, canon: &Path) -> Option<PathBuf> {
-        let dirs = self
-            .allowed_dirs
-            .lock()
-            .unwrap_or_else(|p| p.into_inner());
+        let dirs = self.allowed_dirs.lock().unwrap_or_else(|p| p.into_inner());
         dirs.iter()
             .filter(|dir| is_within(dir, canon))
             .max_by_key(|dir| dir.components().count())
@@ -296,33 +293,53 @@ pub(crate) fn normalize_path(path: impl AsRef<Path>) -> Result<PathBuf, String> 
 
 /// Filename extensions the backend recognises as Markdown. Single source of
 /// truth so the open dialog, directory browser, and open-path guards agree.
-pub(crate) const MARKDOWN_EXTENSIONS: &[&str] = &["md", "markdown", "mdown", "mkd"];
+/// Kept in sync with `pmd_core::document_kind::MARKDOWN_EXTENSIONS`.
+pub(crate) const MARKDOWN_EXTENSIONS: &[&str] = pmd_core::document_kind::MARKDOWN_EXTENSIONS;
 
 /// Filename extensions recognised as pure HTML documents (preview via the
 /// HTML-aware path, not the markdown pipeline).
-pub(crate) const HTML_EXTENSIONS: &[&str] = &["html", "htm"];
+pub(crate) const HTML_EXTENSIONS: &[&str] = pmd_core::document_kind::HTML_EXTENSIONS;
 
-/// All extensions the app will open as documents (markdown + HTML).
-pub(crate) const DOCUMENT_EXTENSIONS: &[&str] = &[
-    "md", "markdown", "mdown", "mkd", "html", "htm",
+/// Config-ish documents (json/yaml/toml/ini and similar).
+pub(crate) const CONFIG_EXTENSIONS: &[&str] = &[
+    "json",
+    "jsonc",
+    "yaml",
+    "yml",
+    "toml",
+    "ini",
+    "cfg",
+    "conf",
+    "properties",
 ];
+
+/// All extensions the app will open as documents (markdown + HTML + config).
+pub(crate) const DOCUMENT_EXTENSIONS: &[&str] = pmd_core::document_kind::DOCUMENT_EXTENSIONS;
 
 /// True if `p`'s final extension (case-insensitive) is one of
 /// [`MARKDOWN_EXTENSIONS`]. Operates on the filesystem *path* extension; link
 /// targets (which may carry `#fragment`/`?query`) are classified by
 /// `pmd_core::facts::links`, not here.
+#[allow(dead_code)] // public path-scope helper; covered by unit tests
 pub(crate) fn is_markdown_path(p: &Path) -> bool {
     extension_in(p, MARKDOWN_EXTENSIONS)
 }
 
 /// True if `p` is a pure HTML document (`.html` / `.htm`).
+#[allow(dead_code)] // public path-scope helper; covered by unit tests
 pub(crate) fn is_html_path(p: &Path) -> bool {
     extension_in(p, HTML_EXTENSIONS)
 }
 
-/// True if `p` is an openable document (markdown or HTML).
+/// True if `p` is a config document (json/yaml/toml/ini/…).
+#[allow(dead_code)] // public path-scope helper; covered by unit tests
+pub(crate) fn is_config_path(p: &Path) -> bool {
+    extension_in(p, CONFIG_EXTENSIONS)
+}
+
+/// True if `p` is an openable document (markdown, HTML, or config).
 pub(crate) fn is_document_path(p: &Path) -> bool {
-    is_markdown_path(p) || is_html_path(p)
+    pmd_core::document_kind::kind_from_path(p).is_some()
 }
 
 fn extension_in(p: &Path, allowed: &[&str]) -> bool {
@@ -490,6 +507,27 @@ mod tests {
         assert!(is_document_path(Path::new("a.md")));
         assert!(!is_html_path(Path::new("a.md")));
         assert!(!is_document_path(Path::new("a.txt")));
+    }
+
+    #[test]
+    fn config_paths_are_openable_documents() {
+        use super::{is_config_path, is_document_path};
+        for ok in [
+            "a.json",
+            "a.JSONC",
+            "a.yaml",
+            "a.yml",
+            "a.toml",
+            "a.ini",
+            "a.cfg",
+            "a.conf",
+            "a.properties",
+        ] {
+            assert!(is_config_path(Path::new(ok)), "{ok}");
+            assert!(is_document_path(Path::new(ok)), "{ok}");
+        }
+        assert!(!is_config_path(Path::new("a.md")));
+        assert!(!is_config_path(Path::new("a.html")));
     }
 
     #[test]

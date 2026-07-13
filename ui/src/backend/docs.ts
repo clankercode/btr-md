@@ -20,6 +20,7 @@ export function renderCmd(args: {
   docId: number;
   version: number;
   markdown: string;
+  allowDocumentStyles?: boolean;
 }): Promise<RenderResult> {
   return call('render_cmd', args);
 }

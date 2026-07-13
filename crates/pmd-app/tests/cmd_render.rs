@@ -153,16 +153,36 @@ async fn html_document_uses_html_preview_path_not_markdown() {
         .await
         .expect("render html");
 
-    assert!(result.html.contains("<nav"), "structure kept: {}", result.html);
+    assert!(
+        result.html.contains("<nav"),
+        "structure kept: {}",
+        result.html
+    );
     assert!(result.html.contains(r#"class="toc""#), "{}", result.html);
     assert!(result.html.contains("use_snake_case"), "{}", result.html);
     assert!(result.html.contains("#not-md"), "{}", result.html);
-    assert!(!result.html.contains("<script"), "script stripped: {}", result.html);
-    assert!(!result.html.contains("evil"), "{}", result.html);
-    assert!(result.html.contains("data-pmd-link-id="), "link markers: {}", result.html);
-    assert!(result.blocks.is_empty(), "HTML is full-replace, not block-incremental");
     assert!(
-        result.facts.core.headings.iter().any(|h| h.text == "Section"),
+        !result.html.contains("<script"),
+        "script stripped: {}",
+        result.html
+    );
+    assert!(!result.html.contains("evil"), "{}", result.html);
+    assert!(
+        result.html.contains("data-pmd-link-id="),
+        "link markers: {}",
+        result.html
+    );
+    assert!(
+        result.blocks.is_empty(),
+        "HTML is full-replace, not block-incremental"
+    );
+    assert!(
+        result
+            .facts
+            .core
+            .headings
+            .iter()
+            .any(|h| h.text == "Section"),
         "outline headings: {:?}",
         result.facts.core.headings
     );
@@ -181,5 +201,122 @@ async fn html_extension_htm_also_uses_html_path() {
 
     assert!(result.html.contains("<article"), "{}", result.html);
     assert!(result.html.contains("<h2"), "{}", result.html);
-    assert!(!result.html.contains("<em>"), "no md emphasis: {}", result.html);
+    assert!(
+        !result.html.contains("<em>"),
+        "no md emphasis: {}",
+        result.html
+    );
+    assert_eq!(result.document_kind, "html");
+}
+
+#[tokio::test]
+async fn html_content_autodetect_without_html_extension() {
+    let temp = tempfile::tempdir().unwrap();
+    // Extensionless path is not openable via dialog, but if already registered
+    // the content sniff still selects the HTML pipeline.
+    let doc_path = temp.path().join("snippet");
+    let source = "<!DOCTYPE html><html><body><p>use_snake_case</p></body></html>";
+    std::fs::write(&doc_path, source).unwrap();
+
+    let result = render_cmd_for_test(4, 1, Some(&doc_path), source.into())
+        .await
+        .expect("render sniffed html");
+
+    assert_eq!(result.document_kind, "html");
+    assert!(result.html.contains("use_snake_case"), "{}", result.html);
+    assert!(!result.html.contains("<em>"), "{}", result.html);
+}
+
+#[tokio::test]
+async fn trusted_html_styles_require_allow_flag() {
+    use pmd_app_lib::cmd::render::render_cmd_for_test_with_options;
+
+    let temp = tempfile::tempdir().unwrap();
+    let doc_path = temp.path().join("styled.html");
+    let source = r#"<!DOCTYPE html><html><head>
+<style>h1 { color: blue; }</style>
+</head><body><h1>Title</h1></body></html>"#;
+    std::fs::write(&doc_path, source).unwrap();
+
+    let stripped = render_cmd_for_test(5, 1, Some(&doc_path), source.into())
+        .await
+        .expect("default strip");
+    assert!(stripped.document_styles_available, "trusted + has styles");
+    assert!(!stripped.document_styles_applied);
+    assert!(!stripped.html.contains("color: blue"), "{}", stripped.html);
+
+    let applied = render_cmd_for_test_with_options(5, 2, Some(&doc_path), source.into(), true)
+        .await
+        .expect("allow styles");
+    assert!(applied.document_styles_applied);
+    assert!(
+        applied.html.contains("data-pmd-doc-style"),
+        "{}",
+        applied.html
+    );
+    assert!(applied.html.contains("color: blue"), "{}", applied.html);
+}
+
+#[tokio::test]
+async fn unsaved_html_buffer_never_applies_styles() {
+    use pmd_app_lib::cmd::render::render_cmd_for_test_with_options;
+
+    let source = r#"<!DOCTYPE html><html><head>
+<style>h1 { color: blue; }</style>
+</head><body><h1>Title</h1></body></html>"#;
+    let result = render_cmd_for_test_with_options(6, 1, None, source.into(), true)
+        .await
+        .expect("unsaved");
+    assert_eq!(result.document_kind, "html");
+    assert!(
+        !result.document_styles_available,
+        "untrusted must not advertise prompt"
+    );
+    assert!(!result.document_styles_applied);
+    assert!(!result.html.contains("color: blue"), "{}", result.html);
+}
+
+#[tokio::test]
+async fn json_document_uses_config_preview_not_markdown() {
+    let temp = tempfile::tempdir().unwrap();
+    let doc_path = temp.path().join("data.json");
+    let source = r#"{"msg":"<b>x</b>","n":1}"#;
+    std::fs::write(&doc_path, source).unwrap();
+
+    let result = render_cmd_for_test(7, 1, Some(&doc_path), source.into())
+        .await
+        .expect("json");
+
+    assert_eq!(result.document_kind, "json");
+    assert!(result.html.contains("pmd-config-doc"), "{}", result.html);
+    assert!(
+        result.html.contains("&lt;b&gt;"),
+        "escaped: {}",
+        result.html
+    );
+    assert!(!result.html.contains("<b>x</b>"), "{}", result.html);
+    assert!(result.blocks.is_empty());
+}
+
+#[tokio::test]
+async fn yaml_toml_ini_documents_use_config_preview() {
+    let temp = tempfile::tempdir().unwrap();
+    for (name, source, kind) in [
+        ("a.yaml", "title: hello\n", "yaml"),
+        ("b.toml", "title = \"hello\"\n", "toml"),
+        ("c.ini", "[main]\ntitle=hello\n", "ini"),
+    ] {
+        let doc_path = temp.path().join(name);
+        std::fs::write(&doc_path, source).unwrap();
+        let result = render_cmd_for_test(8, 1, Some(&doc_path), source.into())
+            .await
+            .unwrap_or_else(|e| panic!("{name}: {e}"));
+        assert_eq!(result.document_kind, kind, "{name}");
+        assert!(
+            result.html.contains("pmd-config-doc"),
+            "{name}: {}",
+            result.html
+        );
+        assert!(result.html.contains("hello"), "{name}: {}", result.html);
+    }
 }

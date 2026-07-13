@@ -16,6 +16,7 @@ export interface RenderRequest {
   docId: number;
   version: number;
   markdown: string;
+  allowDocumentStyles?: boolean;
 }
 
 /** The active-doc tab as the coordinator needs it: a stable object whose
@@ -24,6 +25,8 @@ export interface RenderTargetTab {
   id: number;
   docId: number;
   renderSeq: number;
+  /** When true, ask the backend to apply sanitized document styles. */
+  documentStylesChoice?: 'unknown' | 'allow' | 'deny';
 }
 
 /** A tab as seen by the staleness gate. `kind`/`docId`/`renderSeq` are read;
@@ -105,6 +108,7 @@ interface RenderItem {
   docId: number;
   seq: number;
   version: number;
+  allowDocumentStyles: boolean;
   resolve: () => void;
   reject: (e: unknown) => void;
 }
@@ -169,6 +173,7 @@ export function createRenderCoordinator(deps: RenderCoordinatorDeps): RenderCoor
         docId: item.docId,
         version: item.version,
         markdown: item.md,
+        allowDocumentStyles: item.allowDocumentStyles,
       });
       const tab = getTab(item.tabId);
       const stillCurrent =
@@ -211,6 +216,7 @@ export function createRenderCoordinator(deps: RenderCoordinatorDeps): RenderCoor
       docId: tab.docId,
       seq: tab.renderSeq,
       version,
+      allowDocumentStyles: tab.documentStylesChoice === 'allow',
     };
     return new Promise<void>((resolve, reject) => {
       renderQueue.push({ ...base, resolve, reject });

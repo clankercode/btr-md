@@ -195,21 +195,56 @@ fn is_safe_data_image_url(value: &str) -> bool {
         || value.starts_with("data:image/webp;base64,")
 }
 
-fn is_safe_inline_style(value: &str) -> bool {
+/// Forbidden substrings for CSS that may be applied to the live preview
+/// (inline `style="…"` or trusted document `<style>` blocks). Case-insensitive.
+const FORBIDDEN_CSS_NEEDLES: &[&str] = &[
+    "url(",
+    "expression(",
+    "@import",
+    "javascript:",
+    "vbscript:",
+    "data:",
+    "behavior:",
+    "-moz-binding",
+    "</",
+    "<script",
+];
+
+/// True when a CSS fragment has none of the high-risk constructs we refuse
+/// (remote/local `url()`, expression, `@import`, script breakouts, …).
+pub fn is_safe_css_fragment(value: &str) -> bool {
+    if value.contains('\0') {
+        return false;
+    }
     let lower = value.to_ascii_lowercase();
-    ![
-        "url(",
-        "expression(",
-        "@import",
-        "javascript:",
-        "vbscript:",
-        "data:",
-        "behavior:",
-        "-moz-binding",
-        "</",
-    ]
-    .iter()
-    .any(|needle| lower.contains(needle))
+    !FORBIDDEN_CSS_NEEDLES
+        .iter()
+        .any(|needle| lower.contains(needle))
+}
+
+fn is_safe_inline_style(value: &str) -> bool {
+    is_safe_css_fragment(value)
+}
+
+/// Sanitize author-provided document stylesheet text for injection into the
+/// preview. Returns `None` when the CSS is empty after trim or fails the
+/// safety check (same needles as inline styles, plus null bytes).
+///
+/// Callers must only inject the result inside a carefully closed `<style>`
+/// element; the `</` needle rejects style-tag breakouts.
+pub fn sanitize_document_css(css: &str) -> Option<String> {
+    let trimmed = css.trim();
+    if trimmed.is_empty() {
+        return None;
+    }
+    // Bound runaway stylesheets (e.g. multi-MB minified dumps).
+    if trimmed.len() > 512 * 1024 {
+        return None;
+    }
+    if !is_safe_css_fragment(trimmed) {
+        return None;
+    }
+    Some(trimmed.to_string())
 }
 
 fn is_safe_local_svg_reference(value: &str) -> bool {
@@ -319,22 +354,10 @@ fn build_with_nonce(render_nonce: Option<String>, export: bool) -> ammonia::Buil
         .get_mut("input")
         .unwrap()
         .extend(["type", "checked", "disabled"]);
-    allowed_attrs
-        .get_mut("col")
-        .unwrap()
-        .extend(["span"]);
-    allowed_attrs
-        .get_mut("colgroup")
-        .unwrap()
-        .extend(["span"]);
-    allowed_attrs
-        .get_mut("time")
-        .unwrap()
-        .extend(["datetime"]);
-    allowed_attrs
-        .get_mut("abbr")
-        .unwrap()
-        .extend(["title"]);
+    allowed_attrs.get_mut("col").unwrap().extend(["span"]);
+    allowed_attrs.get_mut("colgroup").unwrap().extend(["span"]);
+    allowed_attrs.get_mut("time").unwrap().extend(["datetime"]);
+    allowed_attrs.get_mut("abbr").unwrap().extend(["title"]);
     // Safe presentation-only inline CSS for rich HTML documents (and KaTeX
     // export). Filtered by `is_safe_inline_style` below — no urls, expression(),
     // or breakout sequences.

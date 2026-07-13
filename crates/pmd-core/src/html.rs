@@ -10,11 +10,29 @@ use crate::escape::escape_html;
 use crate::facts::counts::{add_word_count, finalize_counts};
 use crate::facts::links::classify_target;
 use crate::facts::slug::Slugger;
-use crate::facts::{
-    AnchorFact, AnchorSource, CoreDocumentFacts, HeadingFact, ImageFact, LinkFact,
-};
+use crate::facts::{AnchorFact, AnchorSource, CoreDocumentFacts, HeadingFact, ImageFact, LinkFact};
+use crate::sanitize::sanitize_document_css;
 
-/// Render a pure HTML document for the live preview.
+/// Options for [`render_html_document_with_options`].
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct HtmlRenderOptions {
+    /// When true, extract document `<style>` blocks, run them through
+    /// [`sanitize_document_css`], and inject a single safe `<style>` element
+    /// into the preview HTML. Callers must only set this after a trust gate
+    /// (and usually a user prompt).
+    pub allow_styles: bool,
+}
+
+/// Extra signals returned alongside the core [`RenderResult`] for HTML docs.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct HtmlRenderExtras {
+    /// Source contained at least one non-empty `<style>` block (head or body).
+    pub styles_available: bool,
+    /// Sanitized document styles were applied to `result.html`.
+    pub styles_applied: bool,
+}
+
+/// Render a pure HTML document for the live preview (styles stripped).
 ///
 /// Security:
 /// - Scripts, event handlers, and disallowed tags/attrs are stripped by
@@ -23,17 +41,46 @@ use crate::facts::{
 ///   sanitize so resource policy and link activation can apply the same rules
 ///   as markdown (no free navigation, no out-of-scope image loads).
 pub fn render_html_document(source: &str) -> RenderResult {
+    render_html_document_with_options(source, HtmlRenderOptions::default()).0
+}
+
+/// Render HTML with optional trusted document styles. See [`HtmlRenderOptions`].
+pub fn render_html_document_with_options(
+    source: &str,
+    opts: HtmlRenderOptions,
+) -> (RenderResult, HtmlRenderExtras) {
     let render_nonce = generate_render_nonce();
+    let style_blocks = extract_style_block_contents(source);
+    let styles_available = style_blocks.iter().any(|s| !s.trim().is_empty());
+    let applied_css = if opts.allow_styles {
+        style_blocks
+            .iter()
+            .filter_map(|s| sanitize_document_css(s))
+            .collect::<Vec<_>>()
+            .join("\n")
+    } else {
+        String::new()
+    };
+    let styles_applied = !applied_css.is_empty();
+
     // Drop head chrome, then opaque blocks (`script`/`style`/comments) *before*
     // resource rewriting so markup hidden inside those blocks cannot become
-    // trusted link/image markers.
+    // trusted link/image markers. Document styles are re-injected (sanitized)
+    // only when `allow_styles` is set.
     let body = extract_body_fragment(source);
     let body = strip_opaque_blocks(body);
     let mut facts = CoreDocumentFacts::empty();
     facts.counts.bytes = source.len().try_into().unwrap_or(u32::MAX);
 
     let rewritten = rewrite_resources(&body, &render_nonce, &mut facts);
-    let html = crate::sanitize::clean_with_render_nonce(&rewritten, &render_nonce);
+    let mut html = crate::sanitize::clean_with_render_nonce(&rewritten, &render_nonce);
+    if styles_applied {
+        // Inject *after* ammonia: the allowlist excludes `<style>` (clean-content
+        // tags would drop the body). Content is CSS-sanitized; `</` is refused.
+        html = format!(
+            "<style type=\"text/css\" data-pmd-doc-style=\"1\">{applied_css}</style>{html}"
+        );
+    }
 
     collect_structure_facts(&html, &mut facts);
     let plain = strip_tags_for_text(&html);
@@ -42,7 +89,7 @@ pub fn render_html_document(source: &str) -> RenderResult {
     facts.counts.sentences = count_sentences(&plain);
     finalize_counts(&mut facts);
 
-    RenderResult {
+    let result = RenderResult {
         version: 0,
         html,
         source_map: Vec::new(),
@@ -51,7 +98,47 @@ pub fn render_html_document(source: &str) -> RenderResult {
         // markdown concern.
         blocks: Vec::new(),
         facts,
+    };
+    (
+        result,
+        HtmlRenderExtras {
+            styles_available,
+            styles_applied,
+        },
+    )
+}
+
+/// Collect inner text of every `<style…>…</style>` in `html` (case-insensitive).
+pub fn extract_style_block_contents(html: &str) -> Vec<String> {
+    let lower = html.to_ascii_lowercase();
+    let open = "<style";
+    let close = "</style";
+    let mut out = Vec::new();
+    let mut cursor = 0usize;
+    while let Some(rel) = lower[cursor..].find(open) {
+        let start = cursor + rel;
+        let after = start + open.len();
+        let boundary = lower.as_bytes().get(after).copied().unwrap_or(b'>');
+        if !(boundary == b'>' || boundary == b'/' || boundary.is_ascii_whitespace()) {
+            cursor = after;
+            continue;
+        }
+        let Some(open_end_rel) = lower[after..].find('>') else {
+            break;
+        };
+        let content_start = after + open_end_rel + 1;
+        let Some(close_rel) = lower[content_start..].find(close) else {
+            break;
+        };
+        let content_end = content_start + close_rel;
+        out.push(html[content_start..content_end].to_string());
+        if let Some(close_end_rel) = lower[content_end..].find('>') {
+            cursor = content_end + close_end_rel + 1;
+        } else {
+            break;
+        }
     }
+    out
 }
 
 /// Pull the previewable fragment from a full HTML document.
@@ -202,9 +289,7 @@ fn rewrite_resources(html: &str, render_nonce: &str, facts: &mut CoreDocumentFac
             let label = attrs
                 .get("aria-label")
                 .cloned()
-                .or_else(|| {
-                    href.filter(|h| h.starts_with('#')).map(|h| h.to_string())
-                })
+                .or_else(|| href.filter(|h| h.starts_with('#')).map(|h| h.to_string()))
                 .unwrap_or_default();
             facts.links.push(LinkFact {
                 target: href.map(str::to_string),
@@ -319,15 +404,12 @@ fn collect_structure_facts(html: &str, facts: &mut CoreDocumentFacts) {
                     cursor = content_start + close_rel;
                     continue;
                 }
-            } else if name.eq_ignore_ascii_case("a")
-                || (!name.is_empty() && !tag.starts_with("</"))
+            } else if name.eq_ignore_ascii_case("a") || (!name.is_empty() && !tag.starts_with("</"))
             {
                 // Explicit id anchors on non-heading elements.
                 let attrs = parse_simple_attrs(tag, attrs_start);
                 if let Some(id) = attrs.get("id") {
-                    if !id.is_empty()
-                        && !facts.anchors.iter().any(|a| a.slug == *id)
-                    {
+                    if !id.is_empty() && !facts.anchors.iter().any(|a| a.slug == *id) {
                         let line = line_at(html, tag_start);
                         let (slug, _) = slugger.slug_explicit(id.clone());
                         facts.anchors.push(AnchorFact {
@@ -552,7 +634,11 @@ mod tests {
         assert!(r.html.contains("<h1"), "{}", r.html);
         assert!(r.html.contains("Hello"), "{}", r.html);
         assert!(r.html.contains("<strong>world</strong>"), "{}", r.html);
-        assert!(r.html.contains("style="), "safe inline style kept: {}", r.html);
+        assert!(
+            r.html.contains("style="),
+            "safe inline style kept: {}",
+            r.html
+        );
         assert!(!r.html.contains("<script"), "script stripped: {}", r.html);
         assert!(!r.html.contains("alert"), "script body gone: {}", r.html);
         // Images become placeholders for resource policy.
@@ -564,12 +650,12 @@ mod tests {
         assert_eq!(r.facts.images.len(), 1);
         assert_eq!(r.facts.images[0].target.as_deref(), Some("./x.png"));
         // Links become inert markers for activation.
+        assert!(r.html.contains("data-pmd-link-id=\"link-0\""), "{}", r.html);
         assert!(
-            r.html.contains("data-pmd-link-id=\"link-0\""),
-            "{}",
+            !r.html.contains("href="),
+            "raw href must not survive: {}",
             r.html
         );
-        assert!(!r.html.contains("href="), "raw href must not survive: {}", r.html);
         assert_eq!(r.facts.links.len(), 1);
         assert_eq!(r.facts.links[0].kind, LinkKind::Fragment);
         assert!(r.facts.headings.iter().any(|h| h.text == "Title"));
@@ -603,11 +689,83 @@ mod tests {
 <!-- <a href="https://evil.test/comment">c</a> -->
 <a href="#ok">ok</a>"##;
         let r = render_html_document(src);
-        assert_eq!(r.facts.links.len(), 1, "only the live link: {:?}", r.facts.links);
+        assert_eq!(
+            r.facts.links.len(),
+            1,
+            "only the live link: {:?}",
+            r.facts.links
+        );
         assert_eq!(r.facts.links[0].target.as_deref(), Some("#ok"));
-        assert!(r.facts.images.is_empty(), "script img not a fact: {:?}", r.facts.images);
+        assert!(
+            r.facts.images.is_empty(),
+            "script img not a fact: {:?}",
+            r.facts.images
+        );
         assert!(!r.html.contains("evil.test"), "{}", r.html);
         assert!(!r.html.contains("pwn.png"), "{}", r.html);
         assert!(r.html.contains("data-pmd-link-id=\"link-0\""), "{}", r.html);
+    }
+
+    #[test]
+    fn styles_stripped_by_default_but_flagged_available() {
+        let src = r#"<!DOCTYPE html><html><head>
+<style>h1 { color: blue; }</style>
+</head><body><h1>Hi</h1></body></html>"#;
+        let (r, extras) = render_html_document_with_options(src, HtmlRenderOptions::default());
+        assert!(extras.styles_available);
+        assert!(!extras.styles_applied);
+        assert!(!r.html.contains("data-pmd-doc-style"), "{}", r.html);
+        assert!(!r.html.contains("color: blue"), "{}", r.html);
+        assert!(r.html.contains("Hi"), "{}", r.html);
+    }
+
+    #[test]
+    fn allow_styles_injects_sanitized_stylesheet() {
+        let src = r#"<!DOCTYPE html><html><head>
+<style>h1 { color: blue; }</style>
+<style>p { font-weight: bold; }</style>
+</head><body><h1>Hi</h1><p>x</p></body></html>"#;
+        let (r, extras) =
+            render_html_document_with_options(src, HtmlRenderOptions { allow_styles: true });
+        assert!(extras.styles_available);
+        assert!(extras.styles_applied);
+        assert!(r.html.contains("data-pmd-doc-style=\"1\""), "{}", r.html);
+        assert!(r.html.contains("color: blue"), "{}", r.html);
+        assert!(r.html.contains("font-weight: bold"), "{}", r.html);
+    }
+
+    #[test]
+    fn dangerous_document_styles_are_dropped_even_when_allowed() {
+        let src = r#"<html><head>
+<style>@import url(https://evil.test/x.css); h1{color:red}</style>
+<style>body{background:url(javascript:evil)}</style>
+<style>h1{color:green}</style>
+</head><body><h1>x</h1></body></html>"#;
+        let (r, extras) =
+            render_html_document_with_options(src, HtmlRenderOptions { allow_styles: true });
+        assert!(extras.styles_available);
+        // Only the safe third block survives.
+        assert!(extras.styles_applied);
+        assert!(
+            r.html.contains("color:green") || r.html.contains("color: green"),
+            "{}",
+            r.html
+        );
+        assert!(!r.html.contains("@import"), "{}", r.html);
+        assert!(!r.html.contains("evil.test"), "{}", r.html);
+        assert!(!r.html.contains("javascript:"), "{}", r.html);
+    }
+
+    #[test]
+    fn style_breakout_payload_is_refused() {
+        let src = r#"<html><head>
+<style>h1{color:red}</style></style><script>alert(1)</script><style>
+</head><body><h1>x</h1></body></html>"#;
+        // Malformed nesting still must not emit script. Extraction stops at first
+        // `</style>`; remaining markup is not treated as CSS when allow_styles.
+        let (r, _) =
+            render_html_document_with_options(src, HtmlRenderOptions { allow_styles: true });
+        assert!(!r.html.contains("<script"), "{}", r.html);
+        assert!(!r.html.contains("alert"), "{}", r.html);
     }
 }

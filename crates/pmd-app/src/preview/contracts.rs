@@ -15,6 +15,19 @@ pub struct RenderResult {
     pub blocks: Vec<emit::BlockRef>,
     pub facts: DocumentFacts,
     pub diagnostics: DocumentDiagnostics,
+    /// Detected document kind (`markdown` / `html` / `json` / …).
+    #[serde(default = "default_document_kind")]
+    pub document_kind: String,
+    /// Trusted HTML source has `<style>` blocks the user may opt into.
+    #[serde(default)]
+    pub document_styles_available: bool,
+    /// Sanitized document styles were injected into `html`.
+    #[serde(default)]
+    pub document_styles_applied: bool,
+}
+
+fn default_document_kind() -> String {
+    "markdown".to_string()
 }
 
 impl RenderResult {
@@ -46,6 +59,9 @@ impl RenderResult {
                 resources: policy.report,
                 link_summary: LinkValidationSummary::default(),
             },
+            document_kind: default_document_kind(),
+            document_styles_available: false,
+            document_styles_applied: false,
         }
     }
 }

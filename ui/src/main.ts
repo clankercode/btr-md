@@ -10,6 +10,7 @@ import * as recentApi from './backend/recent.js';
 import { listen } from '@tauri-apps/api/event';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { mountEditor, type EditorHandle } from './editor.js';
+import { detectDocumentKind } from './document_kind.js';
 import { createChrome, type Mode, type ClosedWindowSummary } from './chrome.js';
 import { attachScrollSync, type ScrollSyncHandle } from './scroll_sync.js';
 import { attachScrollMirror, type ScrollMirrorHandle } from './scroll_mirror.js';
@@ -1811,6 +1812,27 @@ coordinator.onApplied(() => findController.refreshPreview());
 coordinator.onApplied((result) => { applyOutlineRender(result); });
 coordinator.onApplied(() => { void refreshActiveAssetGrants(); });
 coordinator.onApplied((result) => scrollSync?.flushPendingEditCenter(result.doc_id, result.version));
+// Trusted HTML document styles: prompt once per tab; re-render on accept.
+coordinator.onApplied((result) => {
+  if (!editor || !result.document_kind) return;
+  const kind = result.document_kind;
+  if (kind === 'markdown' || kind === 'html' || kind === 'json' || kind === 'yaml' || kind === 'toml' || kind === 'ini') {
+    editor.setLanguage(kind);
+  }
+});
+coordinator.onApplied((result) => {
+  if (!result.document_styles_available) return;
+  const tab = store.activeDoc();
+  if (!tab || tab.documentStylesChoice !== 'unknown') return;
+  const name = tab.filePath ? basename(tab.filePath) : tab.title;
+  const ok = window.confirm(
+    `“${name}” includes document styles. Apply them to the preview?\n\n` +
+      'Styles are sanitized (no @import, url(), or scripts). You can keep the unstyled body by choosing Cancel.',
+  );
+  store.updateDoc(tab.id, { documentStylesChoice: ok ? 'allow' : 'deny' });
+  if (ok) void coordinator.schedule();
+});
+
 
 // ---------------------------------------------------------------------------
 // Editor + per-tab edit handling.
@@ -2164,8 +2186,8 @@ async function addDocTab(
   opts: { background: boolean; title?: string; baseContent?: string; pinned?: boolean }
 ): Promise<DocTab> {
   await ensureEditor();
-  const editorState = editor!.createState(doc.contents);
   const filePath = doc.path || null;
+  const editorState = editor!.createState(doc.contents, detectDocumentKind(filePath, doc.contents));
   const tab = store.addDoc(
     {
       docId: doc.doc_id,
@@ -2239,8 +2261,9 @@ async function replacePreviewTab(tab: DocTab, doc: OpenedDoc, pinned: boolean): 
     mode: currentMode,
     fileState: doc.state,
     baseContent: doc.contents,
-    editorState: editor!.createState(doc.contents),
+    editorState: editor!.createState(doc.contents, detectDocumentKind(doc.path || null, doc.contents)),
     cachedHtml: null,
+    documentStylesChoice: 'unknown',
     scrollEditor: 0,
     scrollPreview: 0,
     renderSeq: 0,

@@ -2,6 +2,8 @@ import { EditorState, Compartment, Prec } from '@codemirror/state';
 import { EditorView, basicSetup } from 'codemirror';
 import { Decoration, ViewPlugin, keymap } from '@codemirror/view';
 import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
+import { html } from '@codemirror/lang-html';
+import { json } from '@codemirror/lang-json';
 import { syntaxTree } from '@codemirror/language';
 import { GFM } from '@lezer/markdown';
 import { oneDark } from '@codemirror/theme-one-dark';
@@ -29,6 +31,8 @@ export {
   keymap,
   markdown,
   markdownLanguage,
+  html,
+  json,
   syntaxTree,
   GFM,
   oneDark,

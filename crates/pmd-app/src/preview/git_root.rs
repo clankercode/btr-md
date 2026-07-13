@@ -99,11 +99,7 @@ mod tests {
         let worktree = temp.path().join("wt");
         let docs = worktree.join("docs");
         std::fs::create_dir_all(&docs).unwrap();
-        std::fs::write(
-            worktree.join(".git"),
-            "gitdir: ../.git/worktrees/feature\n",
-        )
-        .unwrap();
+        std::fs::write(worktree.join(".git"), "gitdir: ../.git/worktrees/feature\n").unwrap();
         let doc = docs.join("notes.md");
         write_doc(&doc);
 

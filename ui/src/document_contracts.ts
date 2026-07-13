@@ -7,6 +7,12 @@ export interface RenderResult {
   blocks?: BlockRef[];
   facts: DocumentFacts;
   diagnostics: DocumentDiagnostics;
+  /** Detected kind: markdown | html | json | yaml | toml | ini. */
+  document_kind?: string;
+  /** Trusted HTML has `<style>` blocks the user may opt into. */
+  document_styles_available?: boolean;
+  /** Sanitized document styles were applied to `html`. */
+  document_styles_applied?: boolean;
 }
 
 export type TrustRootState = "unknown" | "trusted" | "declined";

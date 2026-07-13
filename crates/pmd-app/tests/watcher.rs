@@ -135,10 +135,7 @@ fn workspace_tree_create_emits_workspace_tree_changed() {
             Ok(payload) => {
                 let v: serde_json::Value =
                     serde_json::from_str(&payload).expect("workspace_tree_changed JSON");
-                let got = v
-                    .get("root")
-                    .and_then(|r| r.as_str())
-                    .expect("root field");
+                let got = v.get("root").and_then(|r| r.as_str()).expect("root field");
                 assert_eq!(
                     std::path::Path::new(got),
                     root.as_path(),
@@ -181,9 +178,9 @@ fn workspace_tree_content_only_write_is_suppressed() {
     std::fs::write(&file, "# two\n").expect("content rewrite");
     // Wait longer than the coalesce window; a correct implementation stays quiet.
     match rx.recv_timeout(Duration::from_millis(500)) {
-        Ok(payload) => panic!(
-            "content-only rewrite must not emit workspace_tree_changed, got {payload}"
-        ),
+        Ok(payload) => {
+            panic!("content-only rewrite must not emit workspace_tree_changed, got {payload}")
+        }
         Err(mpsc::RecvTimeoutError::Timeout) => {}
         Err(e) => panic!("unexpected recv error: {e}"),
     }
@@ -200,9 +197,11 @@ fn workspace_tree_set_root_replaces_previous() {
     let handle = app.handle().clone();
     let st = app.state::<AppState>();
 
-    st.workspace_watcher.set_root(handle.clone(), root_a.clone());
+    st.workspace_watcher
+        .set_root(handle.clone(), root_a.clone());
     assert_eq!(st.workspace_watcher.watched_root(), Some(root_a));
-    st.workspace_watcher.set_root(handle.clone(), root_b.clone());
+    st.workspace_watcher
+        .set_root(handle.clone(), root_b.clone());
     assert_eq!(st.workspace_watcher.watched_root(), Some(root_b));
     st.workspace_watcher.clear();
     assert_eq!(st.workspace_watcher.watched_root(), None);
