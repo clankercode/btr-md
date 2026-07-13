@@ -32,7 +32,7 @@ ideas:
       file: I004-follow-ups-path-ui-tab-re-root.todo
       id: I004
       priority: high
-      status: in_progress
+      status: done
       tags: []
       title: 'Follow-ups: path UI, tab re-root, sidebar ignore/F5, menu a11y/hover'
     - complexity: medium
