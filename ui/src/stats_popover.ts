@@ -1,5 +1,5 @@
 import type { StructureCounts } from "./document_contracts.ts";
-import { clampMenuPosition } from "./context_menu.ts";
+import { clampMenuPosition } from "./menu.ts";
 
 export interface StatsRow {
   label: string;

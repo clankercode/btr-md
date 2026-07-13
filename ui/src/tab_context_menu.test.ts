@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 // runner cannot resolve tabbar.ts's `.js` runtime imports, so we target the leaf
 // directly, matching the repo's pure-logic-in-a-leaf testing convention.
 import { buildTabContextItems } from './tab_context_menu.ts';
-import { isSeparator } from './context_menu.ts';
+import { isSeparator } from './menu.ts';
 
 test('tab context menu shows Close Tab and disabled Move to New Window', () => {
   const items = buildTabContextItems({ onClose: () => {} });

@@ -1,5 +1,11 @@
 import type { Mode } from './doc_state.js';
 import type { Counts } from './counts.js';
+import {
+  MenuClass,
+  attachMenuHoverHighlight,
+  createMenuItem,
+  createMenuSeparator,
+} from './menu.js';
 export type { Mode };
 
 /**
@@ -96,7 +102,7 @@ export function createChrome(parent: HTMLElement): ChromeInstance {
   fileMenuBtn.setAttribute('role', 'menuitem');
 
   const fileDropdown = document.createElement('div');
-  fileDropdown.className = 'pmd-dropdown-menu';
+  fileDropdown.className = MenuClass.dropdown;
   fileDropdown.setAttribute('role', 'menu');
   fileDropdown.style.display = 'none';
 
@@ -109,10 +115,11 @@ export function createChrome(parent: HTMLElement): ChromeInstance {
   // dropdown when there are many entries.
   const recentsToggle = document.createElement('button');
   recentsToggle.type = 'button';
-  recentsToggle.className = 'pmd-dropdown-item pmd-submenu-toggle';
+  recentsToggle.className = `${MenuClass.dropdownItem} pmd-submenu-toggle`;
   recentsToggle.setAttribute('role', 'menuitem');
   recentsToggle.setAttribute('aria-expanded', 'false');
   const recentsToggleLabel = document.createElement('span');
+  recentsToggleLabel.className = MenuClass.label;
   recentsToggleLabel.textContent = 'Recent files';
   const recentsCaret = document.createElement('span');
   recentsCaret.className = 'pmd-submenu-caret';
@@ -136,6 +143,7 @@ export function createChrome(parent: HTMLElement): ChromeInstance {
   fileDropdown.appendChild(fileOpsList);
   fileDropdown.appendChild(recentsToggle);
   fileDropdown.appendChild(recentsList);
+  attachMenuHoverHighlight(fileDropdown);
 
   fileMenuWrapper.appendChild(fileMenuBtn);
   fileMenuWrapper.appendChild(fileDropdown);
@@ -146,30 +154,25 @@ export function createChrome(parent: HTMLElement): ChromeInstance {
   // workspace for next launch.
   const closeWindowHandlers: (() => void)[] = [];
   const closeAllWindowsHandlers: (() => void)[] = [];
-  const closeItem = document.createElement('li');
-  closeItem.className = 'pmd-dropdown-item';
-  closeItem.setAttribute('role', 'menuitem');
-  closeItem.textContent = 'Close Window';
-  closeItem.addEventListener('click', () => {
-    closeDropdown();
-    closeWindowHandlers.forEach((h) => h());
+  const closeItem = createMenuItem({
+    label: 'Close Window',
+    as: 'li',
+    variant: 'dropdown',
+    beforeSelect: () => closeDropdown(),
+    onSelect: () => closeWindowHandlers.forEach((h) => h()),
   });
   fileOpsList.appendChild(closeItem);
 
-  const closeAllItem = document.createElement('li');
-  closeAllItem.className = 'pmd-dropdown-item';
-  closeAllItem.setAttribute('role', 'menuitem');
-  closeAllItem.textContent = 'Close All Windows';
-  closeAllItem.addEventListener('click', () => {
-    closeDropdown();
-    closeAllWindowsHandlers.forEach((h) => h());
+  const closeAllItem = createMenuItem({
+    label: 'Close All Windows',
+    as: 'li',
+    variant: 'dropdown',
+    beforeSelect: () => closeDropdown(),
+    onSelect: () => closeAllWindowsHandlers.forEach((h) => h()),
   });
   fileOpsList.appendChild(closeAllItem);
 
-  const closeDivider = document.createElement('li');
-  closeDivider.className = 'pmd-dropdown-divider';
-  closeDivider.setAttribute('role', 'separator');
-  fileOpsList.appendChild(closeDivider);
+  fileOpsList.appendChild(createMenuSeparator({ variant: 'dropdown', as: 'li' }));
 
   // Quick file ops (disabled when there is no file path).
   const fileOpHandlers: Record<string, (() => void)[]> = {
@@ -179,16 +182,14 @@ export function createChrome(parent: HTMLElement): ChromeInstance {
     reveal: [],
     openApp: [],
   };
-  const fileOpItems: HTMLLIElement[] = [];
+  const fileOpItems: HTMLElement[] = [];
   const addFileOp = (key: string, label: string) => {
-    const li = document.createElement('li');
-    li.className = 'pmd-dropdown-item';
-    li.setAttribute('role', 'menuitem');
-    li.textContent = label;
-    li.addEventListener('click', () => {
-      if (li.hasAttribute('data-disabled')) return;
-      closeDropdown();
-      fileOpHandlers[key].forEach((h) => h());
+    const li = createMenuItem({
+      label,
+      as: 'li',
+      variant: 'dropdown',
+      beforeSelect: () => closeDropdown(),
+      onSelect: () => fileOpHandlers[key].forEach((h) => h()),
     });
     fileOpsList.appendChild(li);
     fileOpItems.push(li);
@@ -201,20 +202,16 @@ export function createChrome(parent: HTMLElement): ChromeInstance {
 
   // Export section: divider then PDF / HTML. Always enabled (export operates on
   // the rendered document, which exists even for an unsaved buffer).
-  const exportDivider = document.createElement('li');
-  exportDivider.className = 'pmd-dropdown-divider';
-  exportDivider.setAttribute('role', 'separator');
-  fileOpsList.appendChild(exportDivider);
+  fileOpsList.appendChild(createMenuSeparator({ variant: 'dropdown', as: 'li' }));
 
   const exportHandlers: Record<string, (() => void)[]> = { pdf: [], html: [] };
   const addExportItem = (key: string, label: string) => {
-    const li = document.createElement('li');
-    li.className = 'pmd-dropdown-item';
-    li.setAttribute('role', 'menuitem');
-    li.textContent = label;
-    li.addEventListener('click', () => {
-      closeDropdown();
-      exportHandlers[key].forEach((h) => h());
+    const li = createMenuItem({
+      label,
+      as: 'li',
+      variant: 'dropdown',
+      beforeSelect: () => closeDropdown(),
+      onSelect: () => exportHandlers[key].forEach((h) => h()),
     });
     fileOpsList.appendChild(li);
   };
@@ -285,41 +282,37 @@ export function createChrome(parent: HTMLElement): ChromeInstance {
   historyMenuBtn.setAttribute('role', 'menuitem');
 
   const historyDropdown = document.createElement('div');
-  historyDropdown.className = 'pmd-dropdown-menu';
+  historyDropdown.className = MenuClass.dropdown;
   historyDropdown.setAttribute('role', 'menu');
   historyDropdown.style.display = 'none';
 
-  const reopenItem = document.createElement('li');
-  reopenItem.className = 'pmd-dropdown-item';
-  reopenItem.setAttribute('role', 'menuitem');
-  reopenItem.textContent = 'Reopen Last Closed Window';
-  reopenItem.title = 'Ctrl+Shift+T';
   const reopenHandlers: (() => void)[] = [];
-  reopenItem.addEventListener('click', () => {
-    closeHistoryDropdown();
-    reopenHandlers.forEach((h) => h());
+  const reopenItem = createMenuItem({
+    label: 'Reopen Last Closed Window',
+    as: 'li',
+    variant: 'dropdown',
+    beforeSelect: () => closeHistoryDropdown(),
+    onSelect: () => reopenHandlers.forEach((h) => h()),
   });
+  reopenItem.title = 'Ctrl+Shift+T';
   historyDropdown.appendChild(reopenItem);
 
-  const historyDivider = document.createElement('li');
-  historyDivider.className = 'pmd-dropdown-divider';
-  historyDivider.setAttribute('role', 'separator');
-  historyDropdown.appendChild(historyDivider);
+  historyDropdown.appendChild(createMenuSeparator({ variant: 'dropdown', as: 'li' }));
 
   const historyList = document.createElement('div');
   historyList.className = 'pmd-history-list';
   historyDropdown.appendChild(historyList);
 
-  const clearHistoryItem = document.createElement('li');
-  clearHistoryItem.className = 'pmd-dropdown-item';
-  clearHistoryItem.setAttribute('role', 'menuitem');
-  clearHistoryItem.textContent = 'Clear Recently Closed';
   const clearHistoryHandlers: (() => void)[] = [];
-  clearHistoryItem.addEventListener('click', () => {
-    closeHistoryDropdown();
-    clearHistoryHandlers.forEach((h) => h());
+  const clearHistoryItem = createMenuItem({
+    label: 'Clear Recently Closed',
+    as: 'li',
+    variant: 'dropdown',
+    beforeSelect: () => closeHistoryDropdown(),
+    onSelect: () => clearHistoryHandlers.forEach((h) => h()),
   });
   historyDropdown.appendChild(clearHistoryItem);
+  attachMenuHoverHighlight(historyDropdown);
 
   historyMenuWrapper.appendChild(historyMenuBtn);
   historyMenuWrapper.appendChild(historyDropdown);
@@ -345,13 +338,15 @@ export function createChrome(parent: HTMLElement): ChromeInstance {
 
   function setRecentlyClosedWindows(windows: ClosedWindowSummary[]): void {
     historyList.innerHTML = '';
-    reopenItem.classList.toggle('data-disabled', windows.length === 0);
+    reopenItem.toggleAttribute('data-disabled', windows.length === 0);
+    reopenItem.setAttribute('aria-disabled', windows.length === 0 ? 'true' : 'false');
     if (windows.length === 0) {
-      const empty = document.createElement('li');
-      empty.className = 'pmd-dropdown-item';
-      empty.style.opacity = '0.5';
-      empty.style.cursor = 'default';
-      empty.textContent = 'No recently closed windows';
+      const empty = createMenuItem({
+        label: 'No recently closed windows',
+        as: 'li',
+        variant: 'dropdown',
+        disabled: true,
+      });
       historyList.appendChild(empty);
       return;
     }
@@ -364,10 +359,11 @@ export function createChrome(parent: HTMLElement): ChromeInstance {
 
       const toggle = document.createElement('button');
       toggle.type = 'button';
-      toggle.className = 'pmd-dropdown-item pmd-submenu-toggle pmd-history-toggle';
+      toggle.className = `${MenuClass.dropdownItem} pmd-submenu-toggle pmd-history-toggle`;
       toggle.setAttribute('role', 'menuitem');
       toggle.setAttribute('aria-expanded', 'false');
       const toggleLabel = document.createElement('span');
+      toggleLabel.className = MenuClass.label;
       const tabCount = win.tabs.length + (win.browserTab ? 1 : 0);
       toggleLabel.textContent = `Window (${tabCount} tab${tabCount === 1 ? '' : 's'})`;
       const caret = document.createElement('span');
@@ -391,17 +387,22 @@ export function createChrome(parent: HTMLElement): ChromeInstance {
       const tabsList = document.createElement('ul');
       tabsList.className = 'pmd-submenu-list pmd-history-tabs';
       win.tabs.forEach((tab) => {
-        const li = document.createElement('li');
-        li.className = 'pmd-dropdown-item';
-        li.setAttribute('role', 'menuitem');
-        li.textContent = tab;
+        // Display-only row (no action); keep full opacity like the prior markup.
+        const li = createMenuItem({
+          label: tab,
+          as: 'li',
+          variant: 'dropdown',
+        });
+        li.style.cursor = 'default';
         tabsList.appendChild(li);
       });
       if (win.browserTab) {
-        const li = document.createElement('li');
-        li.className = 'pmd-dropdown-item';
-        li.setAttribute('role', 'menuitem');
-        li.textContent = 'Files';
+        const li = createMenuItem({
+          label: 'Files',
+          as: 'li',
+          variant: 'dropdown',
+        });
+        li.style.cursor = 'default';
         tabsList.appendChild(li);
       }
 
@@ -649,44 +650,45 @@ export function createChrome(parent: HTMLElement): ChromeInstance {
     setRecentFiles: (files: string[]) => {
       recentsList.innerHTML = '';
       if (files.length === 0) {
-        const empty = document.createElement('li');
-        empty.className = 'pmd-dropdown-item';
-        empty.style.opacity = '0.5';
-        empty.style.cursor = 'default';
-        empty.textContent = 'No recent files';
-        recentsList.appendChild(empty);
+        recentsList.appendChild(
+          createMenuItem({
+            label: 'No recent files',
+            as: 'li',
+            variant: 'dropdown',
+            disabled: true,
+          })
+        );
         return;
       }
       files.forEach((file) => {
-        const item = document.createElement('li');
-        item.className = 'pmd-dropdown-item';
-        item.setAttribute('role', 'menuitem');
-        item.textContent = file.split('/').pop() || file;
-        item.title = file;
-        item.addEventListener('click', () => {
-          closeDropdown();
-          recentFileHandlers.forEach((h) => h(file));
+        const item = createMenuItem({
+          label: file.split('/').pop() || file,
+          as: 'li',
+          variant: 'dropdown',
+          beforeSelect: () => closeDropdown(),
+          onSelect: () => recentFileHandlers.forEach((h) => h(file)),
         });
+        item.title = file;
         recentsList.appendChild(item);
       });
 
-      const divider = document.createElement('li');
-      divider.className = 'pmd-dropdown-divider';
-      divider.setAttribute('role', 'separator');
-      recentsList.appendChild(divider);
+      recentsList.appendChild(createMenuSeparator({ variant: 'dropdown', as: 'li' }));
 
-      const clearItem = document.createElement('li');
-      clearItem.className = 'pmd-dropdown-item';
-      clearItem.setAttribute('role', 'menuitem');
-      clearItem.textContent = 'Clear Recent Files';
-      clearItem.addEventListener('click', () => {
-        closeDropdown();
-        clearHandlers.forEach((h) => h());
-      });
-      recentsList.appendChild(clearItem);
+      recentsList.appendChild(
+        createMenuItem({
+          label: 'Clear Recent Files',
+          as: 'li',
+          variant: 'dropdown',
+          beforeSelect: () => closeDropdown(),
+          onSelect: () => clearHandlers.forEach((h) => h()),
+        })
+      );
     },
     setFileOpsEnabled: (enabled: boolean) => {
-      fileOpItems.forEach((li) => li.toggleAttribute('data-disabled', !enabled));
+      fileOpItems.forEach((li) => {
+        li.toggleAttribute('data-disabled', !enabled);
+        li.setAttribute('aria-disabled', enabled ? 'false' : 'true');
+      });
     },
     focusMenu: () => {
       fileDropdown.style.display = 'block';

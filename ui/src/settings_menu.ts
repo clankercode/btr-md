@@ -8,6 +8,7 @@
 
 import type { AutoreloadMode, AutosaveMode, DiffMode, MergeStrategy } from './doc_state.js';
 import type { TrustRootDecision } from './document_contracts.js';
+import { MenuClass } from './menu.js';
 
 export interface SettingsSnapshot {
   autosave_mode: AutosaveMode;
@@ -148,13 +149,13 @@ export function createSettingsMenu(
   btn.title = 'Settings';
 
   const menu = document.createElement('div');
-  menu.className = 'pmd-dropdown-menu pmd-settings-menu';
+  menu.className = `${MenuClass.dropdown} pmd-settings-menu`;
   menu.setAttribute('role', 'menu');
   menu.setAttribute('data-align', 'end');
   menu.style.display = 'none';
 
   const heading = document.createElement('div');
-  heading.className = 'pmd-dropdown-label';
+  heading.className = MenuClass.sectionLabel;
   heading.textContent = 'File lifecycle';
   menu.appendChild(heading);
 
@@ -174,11 +175,11 @@ export function createSettingsMenu(
   menu.appendChild(merge.row);
 
   const divider = document.createElement('div');
-  divider.className = 'pmd-dropdown-divider';
+  divider.className = MenuClass.dropdownSeparator;
   menu.appendChild(divider);
 
   const browseHeading = document.createElement('div');
-  browseHeading.className = 'pmd-dropdown-label';
+  browseHeading.className = MenuClass.sectionLabel;
   browseHeading.textContent = 'File browser';
   menu.appendChild(browseHeading);
 
@@ -207,10 +208,10 @@ export function createSettingsMenu(
   menu.appendChild(baseRow);
 
   const divider2 = document.createElement('div');
-  divider2.className = 'pmd-dropdown-divider';
+  divider2.className = MenuClass.dropdownSeparator;
   menu.appendChild(divider2);
   const exportHeading = document.createElement('div');
-  exportHeading.className = 'pmd-dropdown-label';
+  exportHeading.className = MenuClass.sectionLabel;
   exportHeading.textContent = 'Editing & integration';
   menu.appendChild(exportHeading);
 
@@ -268,10 +269,10 @@ export function createSettingsMenu(
   menu.appendChild(fontRow);
 
   const divider3 = document.createElement('div');
-  divider3.className = 'pmd-dropdown-divider';
+  divider3.className = MenuClass.dropdownSeparator;
   menu.appendChild(divider3);
   const trustHeading = document.createElement('div');
-  trustHeading.className = 'pmd-dropdown-label';
+  trustHeading.className = MenuClass.sectionLabel;
   trustHeading.textContent = 'Asset roots';
   menu.appendChild(trustHeading);
   const trustRootsList = document.createElement('div');

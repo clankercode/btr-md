@@ -1,5 +1,5 @@
 import type { CommonFrontmatter, FrontmatterFact } from './document_contracts.ts';
-import { clampMenuPosition } from './context_menu.ts';
+import { clampMenuPosition } from './menu.ts';
 
 export interface FrontmatterPanelDeps {
   onEditValue: (key: string, value: string) => void;

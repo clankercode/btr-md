@@ -3,6 +3,13 @@
 // by the caller via the deps (which use editor_insert + footnotes.ts), so this
 // module stays DOM-only and decoupled from CodeMirror.
 
+import {
+  MenuClass,
+  attachMenuHoverHighlight,
+  createMenuItem,
+  createMenuSeparator,
+} from './menu.js';
+
 export type AlertType = 'note' | 'tip' | 'important' | 'warning' | 'caution';
 
 const ALERT_TYPES: { type: AlertType; label: string }[] = [
@@ -44,7 +51,7 @@ export function createInsertMenu(toolbar: HTMLElement, deps: InsertMenuDeps): In
   btn.title = 'Insert a footnote or GitHub alert';
 
   const menu = document.createElement('ul');
-  menu.className = 'pmd-dropdown-menu';
+  menu.className = MenuClass.dropdown;
   menu.setAttribute('role', 'menu');
   menu.setAttribute('data-align', 'end');
   menu.style.display = 'none';
@@ -53,25 +60,17 @@ export function createInsertMenu(toolbar: HTMLElement, deps: InsertMenuDeps): In
     menu.style.display = 'none';
   };
 
-  const item = (label: string, onClick: () => void): HTMLLIElement => {
-    const li = document.createElement('li');
-    li.className = 'pmd-dropdown-item';
-    li.setAttribute('role', 'menuitem');
-    li.textContent = label;
-    li.addEventListener('click', () => {
-      close();
-      onClick();
+  const item = (label: string, onClick: () => void): HTMLElement =>
+    createMenuItem({
+      label,
+      as: 'li',
+      variant: 'dropdown',
+      beforeSelect: close,
+      onSelect: onClick,
     });
-    return li;
-  };
 
-  menu.appendChild(
-    item('Footnote', () => deps.insertFootnote())
-  );
-  const divider = document.createElement('li');
-  divider.className = 'pmd-dropdown-divider';
-  divider.setAttribute('role', 'separator');
-  menu.appendChild(divider);
+  menu.appendChild(item('Footnote', () => deps.insertFootnote()));
+  menu.appendChild(createMenuSeparator({ variant: 'dropdown', as: 'li' }));
 
   for (const { type, label } of ALERT_TYPES) {
     menu.appendChild(
@@ -82,6 +81,8 @@ export function createInsertMenu(toolbar: HTMLElement, deps: InsertMenuDeps): In
       })
     );
   }
+
+  attachMenuHoverHighlight(menu);
 
   btn.addEventListener('click', (e) => {
     e.stopPropagation();
