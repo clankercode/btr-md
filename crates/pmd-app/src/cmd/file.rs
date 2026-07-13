@@ -177,15 +177,15 @@ pub async fn open_file(
 ///
 /// Used by `restore_dirty_doc`, which reconciles in-memory edits against the
 /// file's current disk content and therefore *requires the file to exist*.
-/// Applies the same security policy as the open path: a markdown-extension
-/// check (before and after canonicalisation, to defeat symlink-to-non-markdown
-/// swaps), file existence, then the three admission gates. The renderer's
-/// regular open path (`request_open_file`) uses [`plan_open_or_create`] instead,
-/// which tolerates a missing file and creates it.
+/// Applies the same security policy as the open path: a document-extension
+/// check (markdown or HTML; before and after canonicalisation, to defeat
+/// symlink-to-non-document swaps), file existence, then the three admission
+/// gates. The renderer's regular open path (`request_open_file`) uses
+/// [`plan_open_or_create`] instead, which tolerates a missing file and creates it.
 pub(crate) fn admit_open_path(state: &crate::AppState, path: &Path) -> Result<PathBuf, String> {
-    if !crate::path_scope::is_markdown_path(path) {
+    if !crate::path_scope::is_document_path(path) {
         return Err(format!(
-            "request_open_file refuses non-markdown extension: {}",
+            "request_open_file refuses non-document extension: {}",
             path.display()
         ));
     }
@@ -197,9 +197,9 @@ pub(crate) fn admit_open_path(state: &crate::AppState, path: &Path) -> Result<Pa
     }
 
     let canon = crate::path_scope::PathScope::canonicalise(path).map_err(|e| e.to_string())?;
-    if !crate::path_scope::is_markdown_path(&canon) {
+    if !crate::path_scope::is_document_path(&canon) {
         return Err(format!(
-            "request_open_file refuses canonical non-markdown target: {}",
+            "request_open_file refuses canonical non-document target: {}",
             canon.display()
         ));
     }
@@ -240,9 +240,9 @@ pub(crate) struct OpenOrCreatePlan {
 
 /// Admit a renderer-supplied open path, tolerating a not-yet-existing file.
 ///
-/// Shares the markdown-extension and admission-gate policy with
-/// [`admit_open_path`], but instead of rejecting a missing file it resolves a
-/// creatable canonical target (see [`crate::path_scope::PathScope::resolve_creatable`])
+/// Shares the document-extension (markdown or HTML) and admission-gate policy
+/// with [`admit_open_path`], but instead of rejecting a missing file it resolves
+/// a creatable canonical target (see [`crate::path_scope::PathScope::resolve_creatable`])
 /// and reports what would have to be created. The path is held to the same
 /// admission gates as an existing open, so a missing file is only creatable
 /// where the user could already open one — within scope, recents, or an
@@ -252,18 +252,18 @@ pub(crate) fn plan_open_or_create(
     state: &crate::AppState,
     path: &Path,
 ) -> Result<OpenOrCreatePlan, String> {
-    if !crate::path_scope::is_markdown_path(path) {
+    if !crate::path_scope::is_document_path(path) {
         return Err(format!(
-            "request_open_file refuses non-markdown extension: {}",
+            "request_open_file refuses non-document extension: {}",
             path.display()
         ));
     }
 
     if path.exists() {
         let canon = crate::path_scope::PathScope::canonicalise(path).map_err(|e| e.to_string())?;
-        if !crate::path_scope::is_markdown_path(&canon) {
+        if !crate::path_scope::is_document_path(&canon) {
             return Err(format!(
-                "request_open_file refuses canonical non-markdown target: {}",
+                "request_open_file refuses canonical non-document target: {}",
                 canon.display()
             ));
         }
@@ -277,9 +277,9 @@ pub(crate) fn plan_open_or_create(
 
     let (canon, missing_dirs) =
         crate::path_scope::PathScope::resolve_creatable(path).map_err(|e| e.to_string())?;
-    if !crate::path_scope::is_markdown_path(&canon) {
+    if !crate::path_scope::is_document_path(&canon) {
         return Err(format!(
-            "request_open_file refuses canonical non-markdown target: {}",
+            "request_open_file refuses canonical non-document target: {}",
             canon.display()
         ));
     }
@@ -376,7 +376,9 @@ pub async fn open_dialog(
     let file_path = app
         .dialog()
         .file()
+        .add_filter("Documents", crate::path_scope::DOCUMENT_EXTENSIONS)
         .add_filter("Markdown", crate::path_scope::MARKDOWN_EXTENSIONS)
+        .add_filter("HTML", crate::path_scope::HTML_EXTENSIONS)
         .blocking_pick_file();
 
     if let Some(path) = file_path {
@@ -510,10 +512,21 @@ mod plan_tests {
     }
 
     #[test]
-    fn non_markdown_extension_is_rejected() {
+    fn non_document_extension_is_rejected() {
         let (_lock, state, base) = fixture();
         let target = base.path().join("fresh.txt");
 
         assert!(plan_open_or_create(&state, &target).is_err());
+    }
+
+    #[test]
+    fn html_extension_is_admitted_under_allowed_dir() {
+        let (_lock, state, base) = fixture();
+        let target = base.path().join("page.html");
+        std::fs::write(&target, "<p>hi</p>").expect("write");
+
+        let plan = plan_open_or_create(&state, &target).expect("html should open");
+        assert!(plan.exists);
+        assert!(plan.canon.ends_with("page.html"));
     }
 }

@@ -32,6 +32,8 @@ test("classifyDroppedFile distinguishes embed / open / ignore", () => {
   assert.equal(classifyDroppedFile("vector.svg", "image/svg+xml"), "ignore");
   assert.equal(classifyDroppedFile("notes.md", "text/markdown"), "open");
   assert.equal(classifyDroppedFile("notes.markdown", ""), "open");
+  assert.equal(classifyDroppedFile("page.html", "text/html"), "open");
+  assert.equal(classifyDroppedFile("page.HTM", ""), "open");
   assert.equal(classifyDroppedFile("archive.zip", "application/zip"), "ignore");
 });
 

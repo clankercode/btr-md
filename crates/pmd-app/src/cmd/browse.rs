@@ -13,7 +13,7 @@ use serde::Serialize;
 use std::path::PathBuf;
 use tauri_plugin_dialog::DialogExt;
 
-use crate::path_scope::MARKDOWN_EXTENSIONS;
+use crate::path_scope::DOCUMENT_EXTENSIONS;
 use crate::state::settings;
 
 #[derive(Serialize)]
@@ -22,6 +22,8 @@ pub struct DirEntry {
     /// Canonical path of the entry.
     pub path: PathBuf,
     pub is_dir: bool,
+    /// True when the entry is an openable document (markdown or HTML).
+    /// Field name kept for IPC compatibility with the file browser UI.
     pub is_markdown: bool,
 }
 
@@ -32,11 +34,11 @@ pub struct DirListing {
     pub entries: Vec<DirEntry>,
 }
 
-fn is_markdown_name(name: &str) -> bool {
+fn is_openable_document_name(name: &str) -> bool {
     name.rsplit_once('.')
         .map(|(_, ext)| {
             let lower = ext.to_lowercase();
-            MARKDOWN_EXTENSIONS.iter().any(|e| *e == lower)
+            DOCUMENT_EXTENSIONS.iter().any(|e| *e == lower)
         })
         .unwrap_or(false)
 }
@@ -77,7 +79,7 @@ pub fn list_dir(
         };
         let is_dir = meta.is_dir();
         entries.push(DirEntry {
-            is_markdown: !is_dir && is_markdown_name(&name),
+            is_markdown: !is_dir && is_openable_document_name(&name),
             name,
             path: entry_canon,
             is_dir,

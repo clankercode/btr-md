@@ -285,16 +285,39 @@ pub(crate) fn normalize_path(path: impl AsRef<Path>) -> Result<PathBuf, String> 
 /// truth so the open dialog, directory browser, and open-path guards agree.
 pub(crate) const MARKDOWN_EXTENSIONS: &[&str] = &["md", "markdown", "mdown", "mkd"];
 
+/// Filename extensions recognised as pure HTML documents (preview via the
+/// HTML-aware path, not the markdown pipeline).
+pub(crate) const HTML_EXTENSIONS: &[&str] = &["html", "htm"];
+
+/// All extensions the app will open as documents (markdown + HTML).
+pub(crate) const DOCUMENT_EXTENSIONS: &[&str] = &[
+    "md", "markdown", "mdown", "mkd", "html", "htm",
+];
+
 /// True if `p`'s final extension (case-insensitive) is one of
 /// [`MARKDOWN_EXTENSIONS`]. Operates on the filesystem *path* extension; link
 /// targets (which may carry `#fragment`/`?query`) are classified by
 /// `pmd_core::facts::links`, not here.
 pub(crate) fn is_markdown_path(p: &Path) -> bool {
+    extension_in(p, MARKDOWN_EXTENSIONS)
+}
+
+/// True if `p` is a pure HTML document (`.html` / `.htm`).
+pub(crate) fn is_html_path(p: &Path) -> bool {
+    extension_in(p, HTML_EXTENSIONS)
+}
+
+/// True if `p` is an openable document (markdown or HTML).
+pub(crate) fn is_document_path(p: &Path) -> bool {
+    is_markdown_path(p) || is_html_path(p)
+}
+
+fn extension_in(p: &Path, allowed: &[&str]) -> bool {
     let Some(ext) = p.extension().and_then(|e| e.to_str()) else {
         return false;
     };
     let lower = ext.to_lowercase();
-    MARKDOWN_EXTENSIONS.iter().any(|e| *e == lower)
+    allowed.iter().any(|e| *e == lower)
 }
 
 fn canonicalise(p: &std::path::Path) -> std::io::Result<PathBuf> {
@@ -436,12 +459,24 @@ mod tests {
         for ok in ["a.md", "a.MARKDOWN", "a.Mdown", "deep/dir/a.mkd", "a.b.md"] {
             assert!(is_markdown_path(Path::new(ok)), "{ok} should be markdown");
         }
-        for no in ["a.txt", "README", "a.mdx", "notes.md.bak"] {
+        for no in ["a.txt", "README", "a.mdx", "notes.md.bak", "a.html"] {
             assert!(
                 !is_markdown_path(Path::new(no)),
                 "{no} should not be markdown"
             );
         }
+    }
+
+    #[test]
+    fn is_html_and_document_path_recognise_html_extensions() {
+        use super::{is_document_path, is_html_path};
+        for ok in ["a.html", "a.HTM", "deep/x.Html"] {
+            assert!(is_html_path(Path::new(ok)), "{ok}");
+            assert!(is_document_path(Path::new(ok)), "{ok}");
+        }
+        assert!(is_document_path(Path::new("a.md")));
+        assert!(!is_html_path(Path::new("a.md")));
+        assert!(!is_document_path(Path::new("a.txt")));
     }
 
     #[test]

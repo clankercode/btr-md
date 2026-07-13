@@ -1,17 +1,24 @@
 // Drag-to-open visual overlay.
 //
 // Owns a single fixed, full-window overlay element that appears while a drag is
-// in progress over the window, indicating whether the payload looks like
-// markdown (valid -> "Drop to open") or not (reject -> "Not a markdown file").
+// in progress over the window, indicating whether the payload looks like an
+// openable document (valid -> "Drop to open") or not
+// (reject -> "Not a supported file").
 //
 // The actual open logic lives in main.ts and is injected via callbacks, so this
 // module has no import cycle with main.ts.
 
 export type DragValidity = 'valid' | 'reject';
 
-// MIME types we treat as markdown-ish during dragover. File names are NOT
-// available during dragover (only on drop), so detection is by `kind`/`type`.
-const MARKDOWN_MIME = new Set(['text/markdown', 'text/x-markdown', 'text/plain']);
+// MIME types we treat as openable-document-ish during dragover. File names are
+// NOT available during dragover (only on drop), so detection is by `kind`/`type`.
+const DOCUMENT_MIME = new Set([
+  'text/markdown',
+  'text/x-markdown',
+  'text/plain',
+  'text/html',
+  'application/xhtml+xml',
+]);
 
 // Image detection kept self-contained here (drag-overlay is unit-tested in
 // isolation, so it must not import sibling source modules). The richer embed
@@ -54,8 +61,8 @@ export function computeValidity(
       if (!it || it.kind !== 'file') continue;
       sawFile = true;
       const type = (it.type || '').toLowerCase();
-      // Markdown-ish or an image we can embed → a valid drop target.
-      if (type === '' || MARKDOWN_MIME.has(type) || isImageMime(type)) {
+      // Document-ish or an image we can embed → a valid drop target.
+      if (type === '' || DOCUMENT_MIME.has(type) || isImageMime(type)) {
         sawMarkdown = true;
       }
     }
@@ -105,12 +112,14 @@ export interface DragOverlayCallbacks {
   showError: (message: string) => void;
 }
 
-const MARKDOWN_EXTENSIONS = ['md', 'markdown', 'mdown', 'mkd'];
+// Openable document extensions — keep in sync with
+// `crates/pmd-app/src/path_scope.rs` DOCUMENT_EXTENSIONS.
+const DOCUMENT_EXTENSIONS = ['md', 'markdown', 'mdown', 'mkd', 'html', 'htm'];
 
-function isMarkdownFileName(name: string): boolean {
+function isDocumentFileName(name: string): boolean {
   const dot = name.lastIndexOf('.');
   if (dot < 0) return false;
-  return MARKDOWN_EXTENSIONS.includes(name.slice(dot + 1).toLowerCase());
+  return DOCUMENT_EXTENSIONS.includes(name.slice(dot + 1).toLowerCase());
 }
 
 let overlayEl: HTMLElement | null = null;
@@ -136,7 +145,7 @@ function showOverlay(validity: DragValidity): void {
   const label = el.querySelector('.pmd-drag-label') as HTMLElement | null;
   if (validity === 'reject') {
     el.classList.add('pmd-drag-overlay--reject');
-    if (label) label.textContent = 'Not a markdown file';
+    if (label) label.textContent = 'Not a supported file';
   } else {
     el.classList.remove('pmd-drag-overlay--reject');
     if (label) label.textContent = 'Drop to open';
@@ -209,7 +218,7 @@ async function handleDrop(e: DragEvent, cbs: DragOverlayCallbacks): Promise<void
       imagesToEmbed.push(file);
       continue;
     }
-    if (!isMarkdownFileName(file.name)) {
+    if (!isDocumentFileName(file.name)) {
       sawUnsupported = true;
       continue;
     }
@@ -249,6 +258,6 @@ async function handleDrop(e: DragEvent, cbs: DragOverlayCallbacks): Promise<void
     blobs.length === 0 &&
     imagesToEmbed.length === 0
   ) {
-    cbs.showError('Not a markdown or image file');
+    cbs.showError('Not a supported document or image file');
   }
 }
