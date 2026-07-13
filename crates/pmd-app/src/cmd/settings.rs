@@ -20,6 +20,7 @@ pub struct Settings {
     pub mono_font: Option<String>,
     pub shortcut_overrides: BTreeMap<String, Vec<String>>,
     pub split_scroll_locked: bool,
+    pub show_full_path: bool,
 }
 
 impl From<settings::Settings> for Settings {
@@ -40,6 +41,7 @@ impl From<settings::Settings> for Settings {
             mono_font: s.mono_font,
             shortcut_overrides: s.shortcut_overrides,
             split_scroll_locked: s.split_scroll_locked,
+            show_full_path: s.show_full_path,
         }
     }
 }
@@ -180,6 +182,16 @@ pub fn set_shortcut_overrides_for_test(
 pub fn set_split_scroll_locked(enabled: bool) -> Result<Settings, String> {
     settings::rmw(|s| settings::Settings {
         split_scroll_locked: enabled,
+        ..s
+    })
+    .map_err(|e| e.to_string())?;
+    get_settings()
+}
+
+#[tauri::command]
+pub fn set_show_full_path(enabled: bool) -> Result<Settings, String> {
+    settings::rmw(|s| settings::Settings {
+        show_full_path: enabled,
         ..s
     })
     .map_err(|e| e.to_string())?;

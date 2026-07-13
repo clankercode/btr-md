@@ -453,6 +453,8 @@ function installMock(config: MockConfig): void {
     return `<article class="pmd-preview"><h1>${escapeHtml(heading)}</h1><p>${escaped}</p>${linkHtml}${blocked}</article>`;
   };
 
+  let showFullPath = config.settings?.show_full_path === true;
+
   function settingsPayload(): Settings {
     return {
       active_theme: null,
@@ -470,6 +472,7 @@ function installMock(config: MockConfig): void {
       mono_font: null,
       shortcut_overrides: shortcutOverrides,
       split_scroll_locked: false,
+      show_full_path: showFullPath,
     };
   }
 
@@ -504,6 +507,10 @@ function installMock(config: MockConfig): void {
     set_as_default_handler: () => undefined,
     set_mono_font: () => undefined,
     set_split_scroll_locked: () => undefined,
+    set_show_full_path: (args) => {
+      showFullPath = args.enabled === true;
+      return undefined;
+    },
     set_shortcut_overrides: (args) => {
       shortcutOverrides = structuredClone(args.overrides ?? {});
       return settingsPayload();

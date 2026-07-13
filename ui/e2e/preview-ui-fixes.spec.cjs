@@ -1,5 +1,5 @@
 const { test, expect } = require('playwright/test');
-const { appUrl, installTauriMock } = require('./helpers.cjs');
+const { appUrl, installTauriMock, openSavedMarkdown } = require('./helpers.cjs');
 
 async function buildWorkspace(page) {
   await installTauriMock(page, {
@@ -115,4 +115,38 @@ test('mermaid syntax failures use only the app inline error UI', async ({ page }
   await expect(page.locator('.pmd-mermaid-error-message')).not.toHaveText('');
   await expect(page.locator('body > div[id^="dpmd-mermaid-"]')).toHaveCount(0);
   await expect(page.locator('body > div svg text', { hasText: 'Syntax error in text' })).toHaveCount(0);
+});
+
+test('path label toggles full vs compressed and persists via settings', async ({ page }) => {
+  const filePath = '/home/user/docs/project/readme.md';
+  await openSavedMarkdown(page, filePath, '# Hello\n');
+
+  const pathLabel = page.locator('.pmd-abbrev-path');
+  await expect(pathLabel).toBeVisible();
+  // Compressed: /h/u/d/p/readme.md
+  await expect(pathLabel).toHaveText('/h/u/d/p/readme.md');
+  await expect(pathLabel).not.toHaveAttribute('data-full', '');
+
+  await pathLabel.click();
+  await expect(pathLabel).toHaveText(filePath);
+  await expect(pathLabel).toHaveAttribute('data-full', '');
+
+  const invocations = await page.evaluate(() =>
+    (window.__pmdInvocations || []).filter((i) => i.cmd === 'set_show_full_path')
+  );
+  expect(invocations.length).toBeGreaterThanOrEqual(1);
+  expect(invocations[invocations.length - 1].args).toEqual({ enabled: true });
+
+  await pathLabel.click();
+  await expect(pathLabel).toHaveText('/h/u/d/p/readme.md');
+  await expect(pathLabel).not.toHaveAttribute('data-full', '');
+});
+
+test('untitled documents hide the path label (no toggle errors)', async ({ page }) => {
+  await installTauriMock(page);
+  await page.goto(appUrl());
+  await page.getByRole('button', { name: 'New File' }).click();
+  await expect(page.locator('.cm-content')).toBeVisible();
+  await expect(page.locator('.pmd-filename')).toHaveText('Untitled');
+  await expect(page.locator('.pmd-abbrev-path')).toBeHidden();
 });

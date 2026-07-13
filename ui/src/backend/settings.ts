@@ -55,6 +55,10 @@ export function setSplitScrollLocked(enabled: boolean): Promise<void> {
   return call('set_split_scroll_locked', { enabled });
 }
 
+export function setShowFullPath(enabled: boolean): Promise<void> {
+  return call('set_show_full_path', { enabled });
+}
+
 export function setShortcutOverrides(overrides: ShortcutOverrides): Promise<Settings> {
   return call('set_shortcut_overrides', { overrides });
 }
