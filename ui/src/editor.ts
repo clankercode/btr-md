@@ -24,6 +24,9 @@ import {
 } from './editor_format.js';
 import { listEnter } from './editor_list.js';
 import { editorIndent, editorDedent } from './editor_indent.js';
+import { diffViewConfig } from './editor_diff.js';
+export type { DiffViewConfig } from './editor_diff.js';
+export { diffViewConfig } from './editor_diff.js';
 
 // One EditorView is reused across all document tabs; each tab owns a live
 // `EditorState` (held in memory by the tab store, never serialized). Switching
@@ -183,6 +186,22 @@ const wrapCompartment = new Compartment();
 const diffCompartment = new Compartment();
 const searchCompartment = new Compartment();
 
+/** Build the CodeMirror extension list for a show-changes mode. */
+export function buildDiffExtension(mode: string, baseline: string): any[] {
+  const cfg = diffViewConfig(mode);
+  if (cfg.mode === 'none') return [];
+  return [
+    unifiedMergeView({
+      original: baseline,
+      gutter: cfg.gutter,
+      highlightChanges: cfg.highlightChanges,
+      allowInlineDiffs: cfg.allowInlineDiffs,
+      mergeControls: false,
+    }),
+    EditorView.editorAttributes.of({ class: cfg.editorClass }),
+  ];
+}
+
 const editorTheme = EditorView.theme({
   '&': {
     height: '100%',
@@ -241,6 +260,37 @@ const editorTheme = EditorView.theme({
   },
   '.cm-pmd-selectedText': { color: 'var(--pmd-selection-fg)' },
   '.cm-pmd-selectedText *': { color: 'var(--pmd-selection-fg)' },
+
+  // --- Show-changes mode chrome (B001) ---------------------------------
+  // Gutter-only: suppress line fills + deleted-chunk widgets. The change
+  // gutter (`.cm-changeGutter` / `.cm-changedLineGutter`) stays visible.
+  '&.pmd-diff-gutter .cm-changedLine, &.pmd-diff-gutter .cm-inlineChangedLine': {
+    backgroundColor: 'transparent',
+  },
+  '&.pmd-diff-gutter .cm-deletedChunk': {
+    display: 'none',
+  },
+  '&.pmd-diff-gutter .cm-insertedLine, &.pmd-diff-gutter .cm-deletedLine': {
+    textDecoration: 'none',
+    backgroundColor: 'transparent',
+  },
+  // Word-by-word: CM's default word mark is a 2px bottom underline that is
+  // easy to miss against whole-line fills. Use a filled highlight so
+  // intra-line edits read clearly as word-level, not line-level.
+  '&.pmd-diff-word .cm-changedText': {
+    background:
+      'linear-gradient(color-mix(in srgb, #2b2 40%, transparent), color-mix(in srgb, #2b2 40%, transparent))',
+    borderRadius: '2px',
+  },
+  '&.pmd-diff-word .cm-deletedText': {
+    backgroundColor: 'color-mix(in srgb, #e43 35%, transparent)',
+    textDecoration: 'line-through',
+    borderRadius: '2px',
+  },
+  // Soften the whole-line wash so word marks remain the primary signal.
+  '&.pmd-diff-word .cm-changedLine, &.pmd-diff-word .cm-inlineChangedLine': {
+    backgroundColor: 'color-mix(in srgb, #2b2 8%, transparent)',
+  },
 });
 
 // Markdown formatting + smart-list keymap (Slice A, features #2/#3).
@@ -337,33 +387,17 @@ export async function mountEditor(
       return wrapEnabled;
     },
     setDiff: (mode: string, baseline: string) => {
-      let ext: any = [];
-      if (mode === 'gutter') {
-        ext = unifiedMergeView({
-          original: baseline,
-          gutter: true,
-          highlightChanges: false,
-          mergeControls: false,
-        });
-      } else if (mode === 'line_by_line') {
-        ext = unifiedMergeView({
-          original: baseline,
-          gutter: true,
-          highlightChanges: false,
-          allowInlineDiffs: false,
-          mergeControls: false,
-        });
-      } else if (mode === 'word_by_word') {
-        ext = unifiedMergeView({
-          original: baseline,
-          gutter: true,
-          highlightChanges: true,
-          allowInlineDiffs: true,
-          mergeControls: false,
-        });
+      const ext = buildDiffExtension(mode, baseline);
+      // Two-phase reconfigure: `originalDoc` / `ChunkField` are StateFields
+      // whose `init` only runs when the field is first added. A single
+      // reconfigure that swaps one unifiedMergeView for another keeps the
+      // previous baseline and chunks. Clearing first forces a clean rebuild
+      // against the supplied baseline (also needed after save/reload).
+      // Effects-only (no docChanged) so the edit callback never fires.
+      view.dispatch({ effects: diffCompartment.reconfigure([]) });
+      if (ext.length > 0) {
+        view.dispatch({ effects: diffCompartment.reconfigure(ext) });
       }
-      // Effects-only dispatch (no docChanged) so the edit callback never fires.
-      view.dispatch({ effects: diffCompartment.reconfigure(ext) });
     },
     openSearch: () => openSourceFind(view),
     searchNext: () => sourceFindNext(view),
