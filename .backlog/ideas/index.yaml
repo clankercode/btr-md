@@ -41,7 +41,7 @@ ideas:
       file: I005-html-polish-config-format-docs.todo
       id: I005
       priority: high
-      status: in_progress
+      status: done
       tags: []
       title: HTML polish + config-format docs (json/yaml/toml/ini)
     - complexity: medium
