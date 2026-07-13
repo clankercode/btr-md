@@ -5,7 +5,7 @@ ideas:
       file: I001-toggle-full-vs-compressed-path.todo
       id: I001
       priority: medium
-      status: in_progress
+      status: done
       tags: []
       title: Toggle full vs compressed path in top-bar path label
     - complexity: medium
