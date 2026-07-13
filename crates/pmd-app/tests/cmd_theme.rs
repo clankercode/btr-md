@@ -162,12 +162,70 @@ async fn set_theme_emits_css_variables_used_by_stylesheets() {
         "--pmd-inline-code-bg",
         "--pmd-code-block-fg",
         "--pmd-mermaid-edge-label-bg",
+        "--pmd-selection-bg",
+        "--pmd-selection-fg",
     ] {
         assert!(bundle.css.contains(name), "expected CSS variable {name}");
     }
     assert!(
         !bundle.css.contains("--pmd-bg_elevated"),
         "theme CSS should use hyphenated custom property names"
+    );
+}
+
+/// Preview selection relies on native `::selection`. Theme palettes use solid
+/// selection_bg + inverted selection_fg; the bundle must emit those as
+/// concrete colours (not only CSS variables) so WebKitGTK cannot fall back to
+/// its washed default while leaving text on the unselected colour.
+#[tokio::test]
+async fn set_theme_emits_concrete_selection_highlight_rule() {
+    let light = set_theme_from_roots("github-light", &workspace_theme_roots())
+        .expect("set_theme github-light");
+    // github-light: selection_bg = #1f2328, selection_fg = #ffffff
+    assert!(
+        light.css.contains("::selection"),
+        "expected ::selection rule in theme CSS"
+    );
+    assert!(
+        light.css.contains("html[data-theme=\"dark\"] ::selection")
+            || light.css.contains("html[data-theme=\"light\"] ::selection"),
+        "expected data-theme-scoped ::selection so design-system dark fallbacks are overridden"
+    );
+    assert!(
+        light.css.contains("background-color: #1f2328;"),
+        "expected concrete selection_bg hex in ::selection, got:\n{}",
+        light.css
+    );
+    assert!(
+        light.css.contains("color: #ffffff;"),
+        "expected concrete selection_fg hex in ::selection"
+    );
+    assert!(
+        light.css.contains("-webkit-text-fill-color: #ffffff;"),
+        "expected -webkit-text-fill-color so fill-color tricks do not keep unselected ink"
+    );
+
+    let dark = set_theme_from_roots("github-dark", &workspace_theme_roots())
+        .expect("set_theme github-dark");
+    // github-dark: selection_bg = #f0f3f6, selection_fg = #0d1117
+    assert!(
+        dark.css.contains("background-color: #f0f3f6;"),
+        "expected github-dark selection_bg in ::selection, got:\n{}",
+        dark.css
+    );
+    assert!(
+        dark.css.contains("color: #0d1117;"),
+        "expected github-dark selection_fg in ::selection"
+    );
+    // Must not rely solely on var() inside the highlight rule (WebKitGTK).
+    let selection_block = dark
+        .css
+        .split("/* Selection highlight")
+        .nth(1)
+        .expect("selection comment marker");
+    assert!(
+        !selection_block.contains("var(--pmd-selection"),
+        "selection highlight rule must use concrete hex, not var()"
     );
 }
 

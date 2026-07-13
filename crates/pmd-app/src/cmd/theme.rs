@@ -453,6 +453,38 @@ pub fn set_theme_from_roots(slug: &str, roots: &[PathBuf]) -> Result<ThemeBundle
         css_vars.push_str(&format!("html {{ color-scheme: {}; }}\n", mode));
     }
 
+    // Concrete `::selection` colours. Themes declare solid selection_bg +
+    // inverted selection_fg (validated ≥4.5:1). The editor applies those
+    // tokens via CodeMirror layers; the preview uses native `::selection`.
+    // WebKitGTK has historically ignored custom properties inside
+    // `::selection`, falling back to a washed default while keeping the
+    // unselected text colour — unreadable on mid-tone selection_bg. Emit
+    // palette hex literally so the highlight always matches the editor.
+    //
+    // Specificity: design-system uses `[data-theme="dark"] ::selection` as a
+    // pre-theme fallback. Match that with `html[data-theme] …` so the active
+    // theme's concrete colours always win once the bundle is injected (later
+    // in cascade, equal-or-higher specificity). Also cover `*::selection` so
+    // descendant colour rules (links, code, syntax spans) inherit the
+    // inverted ink.
+    if let (Some(sel_bg), Some(sel_fg)) =
+        (colours.get("selection_bg"), colours.get("selection_fg"))
+    {
+        css_vars.push_str(&format!(
+            "/* Selection highlight (concrete; do not use var() here — WebKitGTK) */\n\
+             ::selection,\n\
+             *::selection,\n\
+             html[data-theme=\"light\"] ::selection,\n\
+             html[data-theme=\"light\"] *::selection,\n\
+             html[data-theme=\"dark\"] ::selection,\n\
+             html[data-theme=\"dark\"] *::selection {{\n\
+               background-color: {sel_bg};\n\
+               color: {sel_fg};\n\
+               -webkit-text-fill-color: {sel_fg};\n\
+             }}\n"
+        ));
+    }
+
     css_vars.push_str(&extra_css);
 
     let mut mermaid_vars = BTreeMap::new();
