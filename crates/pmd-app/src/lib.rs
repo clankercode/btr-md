@@ -73,6 +73,8 @@ pub struct AppState {
     pub docs: doc::DocRegistry,
     /// One file watcher per open file-backed document.
     pub watcher: watcher::WatcherSet,
+    /// Recursive watcher for the UI workspace root (sidebar tree refresh).
+    pub workspace_watcher: watcher::WorkspaceTreeWatcher,
     /// In-memory, single-writer store of the live per-window session.
     pub sessions: state::window_session::SessionStore,
     /// Most-recently-focused window ordering, for launch routing.
@@ -87,6 +89,7 @@ impl AppState {
             open_dialog_on_start: std::sync::Mutex::new(false),
             docs: doc::DocRegistry::new(),
             watcher: watcher::WatcherSet::new(),
+            workspace_watcher: watcher::WorkspaceTreeWatcher::new(),
             sessions: state::window_session::SessionStore::new(),
             mru: std::sync::Mutex::new(Default::default()),
         }

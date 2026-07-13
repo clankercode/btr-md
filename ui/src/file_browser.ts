@@ -341,6 +341,17 @@ export function createFileBrowser(deps: FileBrowserDeps): FileBrowserInstance {
     path.title = dir;
     header.appendChild(path);
 
+    const refresh = document.createElement("button");
+    refresh.className = "pmd-btn pmd-btn-ghost pmd-btn-sm";
+    refresh.type = "button";
+    refresh.textContent = "↻";
+    refresh.title = "Refresh folder tree";
+    refresh.setAttribute("aria-label", "Refresh folder tree");
+    refresh.addEventListener("click", () => {
+      void model.refresh();
+    });
+    header.appendChild(refresh);
+
     const change = document.createElement("button");
     change.className = "pmd-btn pmd-btn-ghost pmd-btn-sm";
     change.type = "button";

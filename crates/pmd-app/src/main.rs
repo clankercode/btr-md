@@ -36,6 +36,7 @@ fn main() {
         open_dialog_on_start: std::sync::Mutex::new(args.open_dialog),
         docs: pmd_app_lib::doc::DocRegistry::new(),
         watcher: pmd_app_lib::watcher::WatcherSet::new(),
+        workspace_watcher: pmd_app_lib::watcher::WorkspaceTreeWatcher::new(),
         sessions: pmd_app_lib::state::window_session::SessionStore::new(),
         mru: std::sync::Mutex::new(Default::default()),
     };

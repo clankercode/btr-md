@@ -124,8 +124,12 @@ pub async fn pick_base_dir(
 /// base so it is restored next launch. Returns the canonical root. On rejection
 /// the frontend falls back to `pick_base_dir` (the OS picker) to grant a new
 /// base.
+///
+/// Also (re)starts the recursive workspace-tree watcher so the sidebar can
+/// auto-refresh when files/folders change under the root.
 #[tauri::command]
 pub fn set_workspace_root(
+    app: tauri::AppHandle,
     state: tauri::State<'_, crate::AppState>,
     path: PathBuf,
 ) -> Result<PathBuf, String> {
@@ -139,6 +143,7 @@ pub fn set_workspace_root(
     }) {
         eprintln!("[btr-md] could not persist workspace root: {e}");
     }
+    state.workspace_watcher.set_root(app, canon.clone());
     Ok(canon)
 }
 

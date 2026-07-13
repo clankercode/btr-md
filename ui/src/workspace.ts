@@ -79,6 +79,9 @@ export function createWorkspaceModel(deps: WorkspaceDeps): WorkspaceModel {
   let activeFile: string | null = null;
   const cache = new Map<string, DirEntry[]>();
   const handlers: Array<() => void> = [];
+  /** Bumped on every `refresh()` so a slower in-flight refresh cannot emit after
+   *  a newer one has already started (or finished). */
+  let refreshGen = 0;
 
   const emit = () => handlers.forEach((h) => h());
 
@@ -184,8 +187,39 @@ export function createWorkspaceModel(deps: WorkspaceDeps): WorkspaceModel {
     },
 
     refresh: async () => {
+      // Re-fetch the root and every expanded directory under it so the open
+      // tree stays populated after an FS change or an explicit refresh.
+      // (Previously only the root was reloaded, which left expanded subtrees
+      // empty until the user collapsed/re-expanded.)
+      //
+      // Listings are staged into a local map and swapped in atomically so a
+      // concurrent refresh cannot observe a half-cleared cache or keep a
+      // stale listing written by an older in-flight call.
+      const gen = ++refreshGen;
+      if (!root) {
+        if (gen !== refreshGen) return;
+        cache.clear();
+        emit();
+        return;
+      }
+      const dirs: string[] = [root];
+      for (const dir of expanded) {
+        if (dir !== root && isUnder(root, dir)) dirs.push(dir);
+      }
+      const next = new Map<string, DirEntry[]>();
+      for (const dir of dirs) {
+        if (gen !== refreshGen) return;
+        try {
+          const listing = await deps.listDir(dir);
+          next.set(dir, listing.entries);
+        } catch (e) {
+          console.error("list_dir failed:", e);
+          next.set(dir, []);
+        }
+      }
+      if (gen !== refreshGen) return;
       cache.clear();
-      if (root) await ensureLoaded(root);
+      for (const [d, entries] of next) cache.set(d, entries);
       emit();
     },
   };

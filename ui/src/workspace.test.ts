@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { parentOf, isUnder, prunedExpanded } from "./workspace.ts";
+import { parentOf, isUnder, prunedExpanded, createWorkspaceModel } from "./workspace.ts";
+import type { DirListing } from "./file_browser.ts";
 
 test("parentOf returns the parent path or null at root", () => {
   assert.equal(parentOf("/a/b/c"), "/a/b");
@@ -20,8 +21,6 @@ test("prunedExpanded keeps only paths under the root", () => {
   const got = prunedExpanded(new Set(["/r/a", "/r/a/b", "/other/x"]), "/r");
   assert.deepEqual([...got].sort(), ["/r/a", "/r/a/b"]);
 });
-
-import { createWorkspaceModel } from "./workspace.ts";
 
 function fakeListing(dir: string, names: string[]): DirListing {
   return {
@@ -128,4 +127,81 @@ test("onChange fires on mutations", async () => {
   await model.setRoot("/r");
   model.select("/r/a");
   assert.ok(n >= 2);
+});
+
+test("refresh re-lists root and expanded subdirs, picking up new entries", async () => {
+  const listings = new Map<string, string[]>([
+    ["/r", ["a/", "x.md"]],
+    ["/r/a", ["old.md"]],
+  ]);
+  const calls: string[] = [];
+  const model = createWorkspaceModel({
+    listDir: async (dir) => {
+      calls.push(dir);
+      return fakeListing(dir, listings.get(dir) ?? []);
+    },
+  });
+  await model.setRoot("/r");
+  await model.expand("/r/a");
+  assert.deepEqual(model.entriesOf("/r/a")?.map((e) => e.name), ["old.md"]);
+
+  // Disk change: new file appears under the expanded dir and at the root.
+  listings.set("/r", ["a/", "x.md", "new.md"]);
+  listings.set("/r/a", ["old.md", "fresh.md"]);
+  calls.length = 0;
+  await model.refresh();
+
+  assert.deepEqual(calls.sort(), ["/r", "/r/a"].sort());
+  assert.deepEqual(model.entriesOf("/r")?.map((e) => e.name), ["a", "x.md", "new.md"]);
+  assert.deepEqual(model.entriesOf("/r/a")?.map((e) => e.name), ["old.md", "fresh.md"]);
+});
+
+test("refresh with no root is a no-op that still notifies", async () => {
+  let n = 0;
+  const model = createWorkspaceModel({
+    listDir: async () => {
+      throw new Error("listDir must not be called without a root");
+    },
+  });
+  model.onChange(() => { n += 1; });
+  await model.refresh();
+  assert.equal(n, 1);
+  assert.equal(model.root(), null);
+});
+
+test("concurrent refresh keeps the later listing, not a stale partial", async () => {
+  type Deferred = { promise: Promise<void>; resolve: () => void };
+  const deferred = (): Deferred => {
+    let resolve!: () => void;
+    const promise = new Promise<void>((r) => { resolve = r; });
+    return { promise, resolve };
+  };
+
+  const gate1 = deferred();
+  let phase: "seed" | "first" | "second" = "seed";
+  const model = createWorkspaceModel({
+    listDir: async (dir) => {
+      if (phase === "seed") return fakeListing(dir, ["seed.md"]);
+      if (phase === "first") {
+        await gate1.promise;
+        return fakeListing(dir, ["stale.md"]);
+      }
+      return fakeListing(dir, ["fresh.md"]);
+    },
+  });
+  await model.setRoot("/r");
+  assert.deepEqual(model.entriesOf("/r")?.map((e) => e.name), ["seed.md"]);
+
+  phase = "first";
+  const first = model.refresh();
+  // Yield so the first refresh parks on gate1.
+  await Promise.resolve();
+  await Promise.resolve();
+
+  phase = "second";
+  const second = model.refresh();
+  gate1.resolve();
+  await Promise.all([first, second]);
+
+  assert.deepEqual(model.entriesOf("/r")?.map((e) => e.name), ["fresh.md"]);
 });
