@@ -1,0 +1,15 @@
+---
+complexity: medium
+created_at: "2026-07-13T05:30:59Z"
+depends_on: []
+estimate_hours: 10
+id: I006
+priority: high
+status: pending
+tags:
+    - themes
+    - devtool
+title: Theme audit, Grok schemes, theme PNG preview tool
+updated_at: "2026-07-13T05:30:59Z"
+---
+Audit bundled themes for contrast and hover. Add GrokNight and GrokDay from Grok Build. Add a dev tool that renders each theme to PNGs of key UI surfaces for visual review/fix loops.
