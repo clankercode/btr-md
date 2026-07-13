@@ -41,17 +41,22 @@ export interface DefocusSaveCoalescer {
   cancelAll(): void;
   /** Doc ids with a pending timer (for tests / diagnostics). */
   pending(): number[];
+  /** Resolve when the serial save queue is idle (tests / diagnostics). */
+  whenIdle(): Promise<void>;
 }
 
 /**
- * Per-docId trailing debounce. Different docs may be pending concurrently;
- * the same doc is never saved twice in parallel (a mid-flight re-schedule
- * queues one follow-up).
+ * Per-docId trailing debounce with a global save queue.
+ *
+ * Different docs may be *pending* concurrently (each with its own timer), but
+ * actual `save` calls are serialised. That matters because `saveTab` temporarily
+ * claims backend active-doc authority; parallel saves would race `setActiveDoc`.
+ * A mid-flight re-schedule of the same doc queues one follow-up.
  */
 export function createDefocusSaveCoalescer(opts: {
   delayMs: number;
   save: (docId: number) => void | Promise<void>;
-  /** Re-check eligibility when the timer fires. */
+  /** Re-check eligibility when the timer fires / before a queued run. */
   stillEligible: (docId: number) => boolean;
   setTimeout?: typeof setTimeout;
   clearTimeout?: typeof clearTimeout;
@@ -59,8 +64,12 @@ export function createDefocusSaveCoalescer(opts: {
   const setTimer = opts.setTimeout ?? setTimeout;
   const clearTimer = opts.clearTimeout ?? clearTimeout;
   const timers = new Map<number, ReturnType<typeof setTimeout>>();
+  /** Docs currently executing (or queued on the global chain). */
   const inFlight = new Set<number>();
+  /** Docs that need another save after the current in-flight run finishes. */
   const retrigger = new Set<number>();
+  /** Serialises all save calls across docs. */
+  let tail: Promise<void> = Promise.resolve();
 
   function schedule(docId: number): void {
     const existing = timers.get(docId);
@@ -69,26 +78,35 @@ export function createDefocusSaveCoalescer(opts: {
       docId,
       setTimer(() => {
         timers.delete(docId);
-        void fire(docId);
+        enqueue(docId);
       }, opts.delayMs) as ReturnType<typeof setTimeout>,
     );
   }
 
-  async function fire(docId: number): Promise<void> {
+  function enqueue(docId: number): void {
     if (inFlight.has(docId)) {
       retrigger.add(docId);
       return;
     }
     if (!opts.stillEligible(docId)) return;
     inFlight.add(docId);
-    try {
-      await opts.save(docId);
-    } finally {
-      inFlight.delete(docId);
-      if (retrigger.delete(docId)) {
-        schedule(docId);
+    const run = async (): Promise<void> => {
+      try {
+        // Re-check: a prior save in the queue may have cleaned this doc, or
+        // the tab may have been closed while we waited.
+        if (!opts.stillEligible(docId)) return;
+        await opts.save(docId);
+      } catch {
+        // Callers (saveTab) already surface errors; never break the chain.
+      } finally {
+        inFlight.delete(docId);
+        if (retrigger.delete(docId)) {
+          schedule(docId);
+        }
       }
-    }
+    };
+    // Keep the chain alive after rejections (run already swallows).
+    tail = tail.then(run, run);
   }
 
   function cancel(docId: number): void {
@@ -108,5 +126,6 @@ export function createDefocusSaveCoalescer(opts: {
     cancel,
     cancelAll,
     pending: () => [...timers.keys()],
+    whenIdle: () => tail.then(() => undefined, () => undefined),
   };
 }
