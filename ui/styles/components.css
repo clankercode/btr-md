@@ -2521,3 +2521,34 @@ mark.pmd-find {
 .pmd-status-counts:hover {
   color: var(--pmd-fg);
 }
+
+/* ---------------------------------------------------------------------------
+   Config-format document preview (json / yaml / toml / ini)
+   --------------------------------------------------------------------------- */
+.pmd-config-doc {
+  margin: 0;
+  padding: 0;
+}
+
+.pmd-config-error {
+  margin: 0 0 var(--pmd-space-3);
+  padding: var(--pmd-space-2) var(--pmd-space-3);
+  border: 1px solid color-mix(in srgb, var(--pmd-danger, #c00) 45%, var(--pmd-border));
+  border-radius: var(--pmd-radius-sm, 4px);
+  background: color-mix(in srgb, var(--pmd-danger, #c00) 12%, var(--pmd-bg));
+  color: var(--pmd-fg);
+  font-size: var(--pmd-text-sm, 0.9rem);
+}
+
+.pmd-config-pre {
+  margin: 0;
+  padding: var(--pmd-space-3);
+  overflow: auto;
+  border-radius: var(--pmd-radius-sm, 4px);
+  background: var(--pmd-bg-muted, var(--pmd-bg-elevated));
+  border: 1px solid var(--pmd-border);
+  font-family: var(--pmd-font-mono, "JetBrains Mono", monospace);
+  font-size: 0.9em;
+  line-height: 1.45;
+  white-space: pre;
+}

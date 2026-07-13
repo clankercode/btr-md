@@ -140,7 +140,13 @@ export interface CommandMap {
   // --- docs ---
   register_doc: { args: { path: string | null; contents: string }; result: RegisteredDoc };
   render_cmd: {
-    args: { docId: number; version: number; markdown: string };
+    args: {
+      docId: number;
+      version: number;
+      markdown: string;
+      /** Apply sanitized document styles for trusted HTML (after user confirm). */
+      allowDocumentStyles?: boolean;
+    };
     result: RenderResult;
   };
   doc_edited: { args: { docId: number; contents: string }; result: FileState };

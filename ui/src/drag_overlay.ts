@@ -18,6 +18,15 @@ const DOCUMENT_MIME = new Set([
   'text/plain',
   'text/html',
   'application/xhtml+xml',
+  'application/json',
+  'application/yaml',
+  'text/yaml',
+  'text/x-yaml',
+  'application/toml',
+  'text/toml',
+  'text/x-toml',
+  'text/ini',
+  'application/x-ini',
 ]);
 
 // Image detection kept self-contained here (drag-overlay is unit-tested in
@@ -114,7 +123,10 @@ export interface DragOverlayCallbacks {
 
 // Openable document extensions — keep in sync with
 // `crates/pmd-app/src/path_scope.rs` DOCUMENT_EXTENSIONS.
-const DOCUMENT_EXTENSIONS = ['md', 'markdown', 'mdown', 'mkd', 'html', 'htm'];
+const DOCUMENT_EXTENSIONS = [
+  'md', 'markdown', 'mdown', 'mkd', 'html', 'htm',
+  'json', 'jsonc', 'yaml', 'yml', 'toml', 'ini', 'cfg', 'conf', 'properties',
+];
 
 function isDocumentFileName(name: string): boolean {
   const dot = name.lastIndexOf('.');

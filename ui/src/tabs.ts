@@ -34,6 +34,11 @@ export interface DocTab {
   trustContext: DocumentTrustContext | null;
   /** False for the single-click sidebar preview tab; true once opened normally. */
   pinned: boolean;
+  /**
+   * Per-doc choice for applying trusted HTML document `<style>` blocks.
+   * `unknown` → prompt once when the backend reports styles available.
+   */
+  documentStylesChoice: 'unknown' | 'allow' | 'deny';
 }
 
 export interface EmptyTab {
@@ -59,6 +64,7 @@ export interface NewDocTab {
   baseContent: string;
   editorState: EditorState | null;
   trustContext: DocumentTrustContext | null;
+  documentStylesChoice?: 'unknown' | 'allow' | 'deny';
 }
 
 export interface TabStore {
@@ -117,6 +123,7 @@ export function createTabStore(): TabStore {
       reloadPending: false,
       trustContext: spec.trustContext,
       pinned: opts?.pinned ?? true,
+      documentStylesChoice: spec.documentStylesChoice ?? 'unknown',
     };
     tabs.push(tab);
     if (!opts?.background) setActive(tab.id);

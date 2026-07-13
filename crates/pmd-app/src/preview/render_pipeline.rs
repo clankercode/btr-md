@@ -2,13 +2,24 @@ use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 
-use pmd_core::html::render_html_document;
+use pmd_core::config_doc::render_config_document;
+use pmd_core::document_kind::{detect_document_kind, DocumentKind};
+use pmd_core::html::{render_html_document_with_options, HtmlRenderExtras, HtmlRenderOptions};
 use pmd_core::incremental::render_incremental;
 
-use crate::path_scope::is_html_path;
+use crate::path_scope::is_within;
 use crate::preview::contracts::RenderResult;
 use crate::preview::resource_policy::{resolve_resources, ResourcePolicyContext};
 use crate::preview::validation::{ValidationEngine, ValidationLimits, ValidationRequest};
+
+/// Options for [`render_preview`].
+#[derive(Debug, Clone, Copy, Default)]
+pub struct PreviewRenderOptions {
+    /// Frontend request to apply sanitized document `<style>` blocks. Still
+    /// gated server-side: only trusted docs (path under allowed roots) may
+    /// apply styles even when this is true.
+    pub allow_document_styles: bool,
+}
 
 pub fn render_preview(
     doc_id: u64,
@@ -17,13 +28,47 @@ pub fn render_preview(
     allowed_roots: Vec<std::path::PathBuf>,
     source: &str,
 ) -> Result<RenderResult, String> {
-    // Pure HTML documents skip the markdown pipeline so structure/classes and
-    // basic styling survive; security still goes through ammonia + resource
-    // policy (no free script execution).
-    let mut core = if doc_path.is_some_and(is_html_path) {
-        render_html_document(source)
-    } else {
-        render_incremental(source)
+    render_preview_with_options(
+        doc_id,
+        version,
+        doc_path,
+        allowed_roots,
+        source,
+        PreviewRenderOptions::default(),
+    )
+}
+
+pub fn render_preview_with_options(
+    doc_id: u64,
+    version: u64,
+    doc_path: Option<&Path>,
+    allowed_roots: Vec<std::path::PathBuf>,
+    source: &str,
+    opts: PreviewRenderOptions,
+) -> Result<RenderResult, String> {
+    let kind = detect_document_kind(doc_path, source);
+    let trusted = is_document_trusted(doc_path, &allowed_roots);
+
+    let (mut core, html_extras) = match kind {
+        DocumentKind::Html => {
+            // Styles only when the document is trusted AND the UI asked for them
+            // (after user confirm). Untrusted docs never apply document styles.
+            let allow_styles = opts.allow_document_styles && trusted;
+            let (result, extras) =
+                render_html_document_with_options(source, HtmlRenderOptions { allow_styles });
+            // If styles exist but trust is missing, still report available so
+            // the UI knows not to prompt (or can show a static notice later).
+            let extras = HtmlRenderExtras {
+                styles_available: extras.styles_available,
+                styles_applied: extras.styles_applied,
+            };
+            (result, extras)
+        }
+        DocumentKind::Json | DocumentKind::Yaml | DocumentKind::Toml | DocumentKind::Ini => (
+            render_config_document(kind, source),
+            HtmlRenderExtras::default(),
+        ),
+        DocumentKind::Markdown => (render_incremental(source), HtmlRenderExtras::default()),
     };
     core.version = version;
     let policy = resolve_resources(ResourcePolicyContext {
@@ -35,9 +80,30 @@ pub fn render_preview(
         rendered_html: &core.html,
         allowed_roots,
     })?;
-    Ok(RenderResult::from_core_and_policy(
-        doc_id, version, core, policy,
-    ))
+    let mut result = RenderResult::from_core_and_policy(doc_id, version, core, policy);
+    result.document_kind = kind.as_str().to_string();
+    // Only advertise styles when the doc is trusted — untrusted never prompts.
+    result.document_styles_available =
+        kind == DocumentKind::Html && html_extras.styles_available && trusted;
+    result.document_styles_applied = html_extras.styles_applied;
+    Ok(result)
+}
+
+/// A document is trusted for author-style application when it has a path that
+/// lies under an admitted allowed root (dialog/CLI open, workspace grant, …).
+fn is_document_trusted(doc_path: Option<&Path>, allowed_roots: &[PathBuf]) -> bool {
+    let Some(path) = doc_path else {
+        return false;
+    };
+    if allowed_roots.is_empty() {
+        return false;
+    }
+    // Prefer canonical comparison; fall back to lexical when the path is new.
+    let candidate = std::fs::canonicalize(path).unwrap_or_else(|_| path.to_path_buf());
+    allowed_roots.iter().any(|root| {
+        let root_c = std::fs::canonicalize(root).unwrap_or_else(|_| root.clone());
+        is_within(&root_c, &candidate)
+    })
 }
 
 #[derive(Clone)]

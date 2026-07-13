@@ -379,6 +379,7 @@ pub async fn open_dialog(
         .add_filter("Documents", crate::path_scope::DOCUMENT_EXTENSIONS)
         .add_filter("Markdown", crate::path_scope::MARKDOWN_EXTENSIONS)
         .add_filter("HTML", crate::path_scope::HTML_EXTENSIONS)
+        .add_filter("Config", crate::path_scope::CONFIG_EXTENSIONS)
         .blocking_pick_file();
 
     if let Some(path) = file_path {

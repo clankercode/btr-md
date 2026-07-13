@@ -236,9 +236,9 @@ var TextLeaf = class _TextLeaf extends Text {
   }
   lineInner(target, isLine, line, offset) {
     for (let i = 0; ; i++) {
-      let string8 = this.text[i], end = offset + string8.length;
+      let string9 = this.text[i], end = offset + string9.length;
       if ((isLine ? line : end) >= target)
-        return new Line(offset, end, line, string8);
+        return new Line(offset, end, line, string9);
       offset = end + 1;
       line++;
     }
@@ -606,10 +606,10 @@ var Line = class {
   /**
   @internal
   */
-  constructor(from, to, number8, text) {
+  constructor(from, to, number9, text) {
     this.from = from;
     this.to = to;
-    this.number = number8;
+    this.number = number9;
     this.text = text;
   }
   /**
@@ -815,10 +815,10 @@ var ChangeDesc = class _ChangeDesc {
   Create a change desc from its JSON representation (as produced
   by [`toJSON`](https://codemirror.net/6/docs/ref/#state.ChangeDesc.toJSON).
   */
-  static fromJSON(json) {
-    if (!Array.isArray(json) || json.length % 2 || json.some((a) => typeof a != "number"))
+  static fromJSON(json2) {
+    if (!Array.isArray(json2) || json2.length % 2 || json2.some((a) => typeof a != "number"))
       throw new RangeError("Invalid JSON representation of ChangeDesc");
-    return new _ChangeDesc(json);
+    return new _ChangeDesc(json2);
   }
   /**
   @internal
@@ -1021,12 +1021,12 @@ var ChangeSet = class _ChangeSet extends ChangeDesc {
   Create a changeset from its JSON representation (as produced by
   [`toJSON`](https://codemirror.net/6/docs/ref/#state.ChangeSet.toJSON).
   */
-  static fromJSON(json) {
-    if (!Array.isArray(json))
+  static fromJSON(json2) {
+    if (!Array.isArray(json2))
       throw new RangeError("Invalid JSON representation of ChangeSet");
     let sections = [], inserted2 = [];
-    for (let i = 0; i < json.length; i++) {
-      let part = json[i];
+    for (let i = 0; i < json2.length; i++) {
+      let part = json2[i];
       if (typeof part == "number") {
         sections.push(part, -1);
       } else if (!Array.isArray(part) || typeof part[0] != "number" || part.some((e, i2) => i2 && typeof e != "string")) {
@@ -1334,10 +1334,10 @@ var SelectionRange = class _SelectionRange {
   Convert a JSON representation of a range to a `SelectionRange`
   instance.
   */
-  static fromJSON(json) {
-    if (!json || typeof json.anchor != "number" || typeof json.head != "number")
+  static fromJSON(json2) {
+    if (!json2 || typeof json2.anchor != "number" || typeof json2.head != "number")
       throw new RangeError("Invalid JSON representation for SelectionRange");
-    return EditorSelection.range(json.anchor, json.head);
+    return EditorSelection.range(json2.anchor, json2.head);
   }
   /**
   @internal
@@ -1414,10 +1414,10 @@ var EditorSelection = class _EditorSelection {
   /**
   Create a selection from a JSON representation.
   */
-  static fromJSON(json) {
-    if (!json || !Array.isArray(json.ranges) || typeof json.main != "number" || json.main >= json.ranges.length)
+  static fromJSON(json2) {
+    if (!json2 || !Array.isArray(json2.ranges) || typeof json2.main != "number" || json2.main >= json2.ranges.length)
       throw new RangeError("Invalid JSON representation for EditorSelection");
-    return new _EditorSelection(json.ranges.map((r) => SelectionRange.fromJSON(r)), json.main);
+    return new _EditorSelection(json2.ranges.map((r) => SelectionRange.fromJSON(r)), json2.main);
   }
   /**
   Create a selection holding a single range.
@@ -1784,8 +1784,8 @@ var Compartment = class _Compartment {
   Create an [effect](https://codemirror.net/6/docs/ref/#state.TransactionSpec.effects) that
   reconfigures this compartment.
   */
-  reconfigure(content8) {
-    return _Compartment.reconfigure.of({ compartment: this, extension: content8 });
+  reconfigure(content9) {
+    return _Compartment.reconfigure.of({ compartment: this, extension: content9 });
   }
   /**
   Get the current content of the compartment in the state, or
@@ -1891,9 +1891,9 @@ function flatten(extension, compartments, newCompartments) {
     } else if (ext instanceof CompartmentInstance) {
       if (newCompartments.has(ext.compartment))
         throw new RangeError(`Duplicate use of compartment in extensions`);
-      let content8 = compartments.get(ext.compartment) || ext.inner;
-      newCompartments.set(ext.compartment, content8);
-      inner(content8, prec2);
+      let content9 = compartments.get(ext.compartment) || ext.inner;
+      newCompartments.set(ext.compartment, content9);
+      inner(content9, prec2);
     } else if (ext instanceof PrecExtension) {
       inner(ext.inner, ext.prec);
     } else if (ext instanceof StateField) {
@@ -1905,10 +1905,10 @@ function flatten(extension, compartments, newCompartments) {
       if (ext.facet.extensions)
         inner(ext.facet.extensions, Prec_.default);
     } else {
-      let content8 = ext.extension;
-      if (!content8)
+      let content9 = ext.extension;
+      if (!content9)
         throw new Error(`Unrecognized extension value in extension set (${ext}). This sometimes happens because multiple instances of @codemirror/state are loaded, breaking instanceof checks.`);
-      inner(content8, prec2);
+      inner(content9, prec2);
     }
   }
   inner(extension, Prec_.default);
@@ -2404,8 +2404,8 @@ var EditorState = class _EditorState {
   separator](https://codemirror.net/6/docs/ref/#state.EditorState^lineSeparator), create a
   [`Text`](https://codemirror.net/6/docs/ref/#state.Text) instance from the given string.
   */
-  toText(string8) {
-    return Text.of(string8.split(this.facet(_EditorState.lineSeparator) || DefaultSplit));
+  toText(string9) {
+    return Text.of(string9.split(this.facet(_EditorState.lineSeparator) || DefaultSplit));
   }
   /**
   Return the given range of the document as a string.
@@ -2448,20 +2448,20 @@ var EditorState = class _EditorState {
   to [`toJSON`](https://codemirror.net/6/docs/ref/#state.EditorState.toJSON) when serializing as
   third argument.
   */
-  static fromJSON(json, config2 = {}, fields) {
-    if (!json || typeof json.doc != "string")
+  static fromJSON(json2, config2 = {}, fields) {
+    if (!json2 || typeof json2.doc != "string")
       throw new RangeError("Invalid JSON representation for EditorState");
     let fieldInit = [];
     if (fields)
       for (let prop in fields) {
-        if (Object.prototype.hasOwnProperty.call(json, prop)) {
-          let field = fields[prop], value = json[prop];
+        if (Object.prototype.hasOwnProperty.call(json2, prop)) {
+          let field = fields[prop], value = json2[prop];
           fieldInit.push(field.init((state) => field.spec.fromJSON(value, state)));
         }
       }
     return _EditorState.create({
-      doc: json.doc,
-      selection: EditorSelection.fromJSON(json.selection),
+      doc: json2.doc,
+      selection: EditorSelection.fromJSON(json2.selection),
       extensions: config2.extensions ? fieldInit.concat([config2.extensions]) : fieldInit
     });
   }
@@ -2541,12 +2541,12 @@ var EditorState = class _EditorState {
   - [`"closeBrackets"`](https://codemirror.net/6/docs/ref/#autocomplete.CloseBracketConfig) controls
     bracket closing behavior.
   */
-  languageDataAt(name8, pos, side = -1) {
+  languageDataAt(name9, pos, side = -1) {
     let values2 = [];
     for (let provider of this.facet(languageData)) {
       for (let result of provider(this, pos, side)) {
-        if (Object.prototype.hasOwnProperty.call(result, name8))
-          values2.push(result[name8]);
+        if (Object.prototype.hasOwnProperty.call(result, name9))
+          values2.push(result[name9]);
       }
     }
     return values2;
@@ -3400,29 +3400,29 @@ function findMinIndex(value, array) {
     }
   return found;
 }
-function countColumn(string8, tabSize, to = string8.length) {
+function countColumn(string9, tabSize, to = string9.length) {
   let n = 0;
-  for (let i = 0; i < to && i < string8.length; ) {
-    if (string8.charCodeAt(i) == 9) {
+  for (let i = 0; i < to && i < string9.length; ) {
+    if (string9.charCodeAt(i) == 9) {
       n += tabSize - n % tabSize;
       i++;
     } else {
       n++;
-      i = findClusterBreak2(string8, i);
+      i = findClusterBreak2(string9, i);
     }
   }
   return n;
 }
-function findColumn(string8, col, tabSize, strict) {
+function findColumn(string9, col, tabSize, strict) {
   for (let i = 0, n = 0; ; ) {
     if (n >= col)
       return i;
-    if (i == string8.length)
+    if (i == string9.length)
       break;
-    n += string8.charCodeAt(i) == 9 ? tabSize - n % tabSize : 1;
-    i = findClusterBreak2(string8, i);
+    n += string9.charCodeAt(i) == 9 ? tabSize - n % tabSize : 1;
+    i = findClusterBreak2(string9, i);
   }
-  return strict === true ? -1 : string8.length;
+  return strict === true ? -1 : string9.length;
 }
 
 // node_modules/style-mod/src/style-mod.js
@@ -3652,14 +3652,14 @@ for (code in base) if (!shift.hasOwnProperty(code)) shift[code] = base[code];
 var code;
 function keyName(event) {
   var ignoreKey = mac && event.metaKey && event.shiftKey && !event.ctrlKey && !event.altKey || ie && event.shiftKey && event.key && event.key.length == 1 || event.key == "Unidentified";
-  var name8 = !ignoreKey && event.key || (event.shiftKey ? shift : base)[event.keyCode] || event.key || "Unidentified";
-  if (name8 == "Esc") name8 = "Escape";
-  if (name8 == "Del") name8 = "Delete";
-  if (name8 == "Left") name8 = "ArrowLeft";
-  if (name8 == "Up") name8 = "ArrowUp";
-  if (name8 == "Right") name8 = "ArrowRight";
-  if (name8 == "Down") name8 = "ArrowDown";
-  return name8;
+  var name9 = !ignoreKey && event.key || (event.shiftKey ? shift : base)[event.keyCode] || event.key || "Unidentified";
+  if (name9 == "Esc") name9 = "Escape";
+  if (name9 == "Del") name9 = "Delete";
+  if (name9 == "Left") name9 = "ArrowLeft";
+  if (name9 == "Up") name9 = "ArrowUp";
+  if (name9 == "Right") name9 = "ArrowRight";
+  if (name9 == "Down") name9 = "ArrowDown";
+  return name9;
 }
 
 // node_modules/crelt/index.js
@@ -3668,10 +3668,10 @@ function crelt() {
   if (typeof elt2 == "string") elt2 = document.createElement(elt2);
   var i = 1, next = arguments[1];
   if (next && typeof next == "object" && next.nodeType == null && !Array.isArray(next)) {
-    for (var name8 in next) if (Object.prototype.hasOwnProperty.call(next, name8)) {
-      var value = next[name8];
-      if (typeof value == "string") elt2.setAttribute(name8, value);
-      else if (value != null) elt2[name8] = value;
+    for (var name9 in next) if (Object.prototype.hasOwnProperty.call(next, name9)) {
+      var value = next[name9];
+      if (typeof value == "string") elt2.setAttribute(name9, value);
+      else if (value != null) elt2[name9] = value;
     }
     i++;
   }
@@ -3722,13 +3722,13 @@ var browser = {
   tabSize: doc.documentElement.style.tabSize != null ? "tab-size" : "-moz-tab-size"
 };
 function combineAttrs(source, target) {
-  for (let name8 in source) {
-    if (name8 == "class" && target.class)
+  for (let name9 in source) {
+    if (name9 == "class" && target.class)
       target.class += " " + source.class;
-    else if (name8 == "style" && target.style)
+    else if (name9 == "style" && target.style)
       target.style += ";" + source.style;
     else
-      target[name8] = source[name8];
+      target[name9] = source[name9];
   }
   return target;
 }
@@ -3751,38 +3751,38 @@ function attrsEq(a, b, ignore) {
 }
 function setAttrs(dom, attrs) {
   for (let i = dom.attributes.length - 1; i >= 0; i--) {
-    let name8 = dom.attributes[i].name;
-    if (attrs[name8] == null)
-      dom.removeAttribute(name8);
+    let name9 = dom.attributes[i].name;
+    if (attrs[name9] == null)
+      dom.removeAttribute(name9);
   }
-  for (let name8 in attrs) {
-    let value = attrs[name8];
-    if (name8 == "style")
+  for (let name9 in attrs) {
+    let value = attrs[name9];
+    if (name9 == "style")
       dom.style.cssText = value;
-    else if (dom.getAttribute(name8) != value)
-      dom.setAttribute(name8, value);
+    else if (dom.getAttribute(name9) != value)
+      dom.setAttribute(name9, value);
   }
 }
 function updateAttrs(dom, prev, attrs) {
   let changed = false;
   if (prev) {
-    for (let name8 in prev)
-      if (!(attrs && name8 in attrs)) {
+    for (let name9 in prev)
+      if (!(attrs && name9 in attrs)) {
         changed = true;
-        if (name8 == "style")
+        if (name9 == "style")
           dom.style.cssText = "";
         else
-          dom.removeAttribute(name8);
+          dom.removeAttribute(name9);
       }
   }
   if (attrs) {
-    for (let name8 in attrs)
-      if (!(prev && prev[name8] == attrs[name8])) {
+    for (let name9 in attrs)
+      if (!(prev && prev[name9] == attrs[name9])) {
         changed = true;
-        if (name8 == "style")
-          dom.style.cssText = attrs[name8];
+        if (name9 == "style")
+          dom.style.cssText = attrs[name9];
         else
-          dom.setAttribute(name8, attrs[name8]);
+          dom.setAttribute(name9, attrs[name9]);
       }
   }
   return changed;
@@ -4333,8 +4333,8 @@ function textRange(node, from, to = from) {
   range.setStart(node, from);
   return range;
 }
-function dispatchKey(elt2, name8, code, mods) {
-  let options = { key: name8, code: name8, keyCode: code, which: code, cancelable: true };
+function dispatchKey(elt2, name9, code, mods) {
+  let options = { key: name9, code: name9, keyCode: code, which: code, cancelable: true };
   if (mods)
     ({ altKey: options.altKey, ctrlKey: options.ctrlKey, shiftKey: options.shiftKey, metaKey: options.metaKey } = mods);
   let down = new KeyboardEvent("keydown", options);
@@ -4825,7 +4825,7 @@ var ScrollTarget = class _ScrollTarget {
     return this.range.to <= state.doc.length ? this : new _ScrollTarget(EditorSelection.cursor(state.doc.length), this.y, this.x, this.yMargin, this.xMargin, this.isSnapshot);
   }
 };
-var scrollIntoView = /* @__PURE__ */ StateEffect.define({ map: (t8, ch) => t8.map(ch) });
+var scrollIntoView = /* @__PURE__ */ StateEffect.define({ map: (t9, ch) => t9.map(ch) });
 var setEditContextFormatting = /* @__PURE__ */ StateEffect.define();
 function logException(state, exception, context) {
   let handler = state.facet(exceptionSink);
@@ -5230,9 +5230,9 @@ var Tile = class {
     return null;
   }
   get root() {
-    for (let t8 = this; t8; t8 = t8.parent)
-      if (t8 instanceof DocTile)
-        return t8;
+    for (let t9 = this; t9; t9 = t9.parent)
+      if (t9 instanceof DocTile)
+        return t9;
     return null;
   }
   static get(dom) {
@@ -5892,7 +5892,7 @@ var TileBuilder = class {
       if (wrap.from < this.pos && last instanceof BlockWrapperTile && last.wrapper.eq(wrap.wrapper)) {
         parent = last;
       } else {
-        let tile = BlockWrapperTile.of(wrap.wrapper, (_a2 = this.cache.find(BlockWrapperTile, (t8) => t8.wrapper.eq(wrap.wrapper))) === null || _a2 === void 0 ? void 0 : _a2.dom);
+        let tile = BlockWrapperTile.of(wrap.wrapper, (_a2 = this.cache.find(BlockWrapperTile, (t9) => t9.wrapper.eq(wrap.wrapper))) === null || _a2 === void 0 ? void 0 : _a2.dom);
         parent.append(tile);
         parent = tile;
       }
@@ -7032,8 +7032,8 @@ function posAtCoordsImprecise(view, contentRect, block, x, y) {
     let line = Math.floor((y - block.top - (view.defaultLineHeight - textHeight) * 0.5) / textHeight);
     into += line * view.viewState.heightOracle.lineLength;
   }
-  let content8 = view.state.sliceDoc(block.from, block.to);
-  return block.from + findColumn(content8, into, view.state.tabSize);
+  let content9 = view.state.sliceDoc(block.from, block.to);
+  return block.from + findColumn(content9, into, view.state.tabSize);
 }
 function blockAt(view, pos, side) {
   let line = view.lineBlockAt(pos);
@@ -7180,7 +7180,7 @@ var PosAssoc = class {
   }
 };
 function posAtCoords(view, coords, precise, scanY) {
-  let content8 = view.contentDOM.getBoundingClientRect(), docTop = content8.top + view.viewState.paddingTop;
+  let content9 = view.contentDOM.getBoundingClientRect(), docTop = content9.top + view.viewState.paddingTop;
   let { x, y } = coords, yOffset = y - docTop, block;
   for (; ; ) {
     if (yOffset < 0)
@@ -7204,7 +7204,7 @@ function posAtCoords(view, coords, precise, scanY) {
     if (precise)
       return null;
     if (block.type == BlockType.Text) {
-      let pos = posAtCoordsImprecise(view, content8, block, x, y);
+      let pos = posAtCoordsImprecise(view, content9, block, x, y);
       return new PosAssoc(pos, pos == block.from ? 1 : -1);
     }
   }
@@ -8363,25 +8363,25 @@ function captureCopy(view, text) {
   }, 50);
 }
 function copiedRange(state) {
-  let content8 = [], ranges = [], linewise = false;
+  let content9 = [], ranges = [], linewise = false;
   for (let range of state.selection.ranges)
     if (!range.empty) {
-      content8.push(state.sliceDoc(range.from, range.to));
+      content9.push(state.sliceDoc(range.from, range.to));
       ranges.push(range);
     }
-  if (!content8.length) {
+  if (!content9.length) {
     let upto = -1;
     for (let { from } of state.selection.ranges) {
       let line = state.doc.lineAt(from);
       if (line.number > upto) {
-        content8.push(line.text);
+        content9.push(line.text);
         ranges.push({ from: line.from, to: Math.min(state.doc.length, line.to + 1) });
       }
       upto = line.number;
     }
     linewise = true;
   }
-  return { text: textFilter(state, clipboardOutputFilter, content8.join(state.lineBreak)), ranges, linewise };
+  return { text: textFilter(state, clipboardOutputFilter, content9.join(state.lineBreak)), ranges, linewise };
 }
 var lastLinewiseCopy = null;
 handlers.copy = handlers.cut = (view, event) => {
@@ -8645,8 +8645,8 @@ var BlockInfo = class _BlockInfo {
   @internal
   */
   join(other) {
-    let content8 = (Array.isArray(this._content) ? this._content : [this]).concat(Array.isArray(other._content) ? other._content : [other]);
-    return new _BlockInfo(this.from, this.length + other.length, this.top, this.height + other.height, content8);
+    let content9 = (Array.isArray(this._content) ? this._content : [this]).concat(Array.isArray(other._content) ? other._content : [other]);
+    return new _BlockInfo(this.from, this.length + other.length, this.top, this.height + other.height, content9);
   }
 };
 var QueryType = /* @__PURE__ */ (function(QueryType3) {
@@ -11745,8 +11745,8 @@ var EditorView = class _EditorView {
   */
   static findFromDOM(dom) {
     var _a2;
-    let content8 = dom.querySelector(".cm-content");
-    let tile = content8 && Tile.get(content8) || Tile.get(dom);
+    let content9 = dom.querySelector(".cm-content");
+    let tile = content9 && Tile.get(content9) || Tile.get(dom);
     return ((_a2 = tile === null || tile === void 0 ? void 0 : tile.root) === null || _a2 === void 0 ? void 0 : _a2.view) || null;
   }
 };
@@ -11819,16 +11819,16 @@ function attrsFromFacet(view, facet, base2) {
   return base2;
 }
 var currentPlatform = browser.mac ? "mac" : browser.windows ? "win" : browser.linux ? "linux" : "key";
-function normalizeKeyName(name8, platform) {
-  const parts = name8.split(/-(?!$)/);
+function normalizeKeyName(name9, platform) {
+  const parts = name9.split(/-(?!$)/);
   let result = parts[parts.length - 1];
   if (result == "Space")
     result = " ";
-  let alt, ctrl, shift2, meta8;
+  let alt, ctrl, shift2, meta9;
   for (let i = 0; i < parts.length - 1; ++i) {
     const mod = parts[i];
     if (/^(cmd|meta|m)$/i.test(mod))
-      meta8 = true;
+      meta9 = true;
     else if (/^a(lt)?$/i.test(mod))
       alt = true;
     else if (/^(c|ctrl|control)$/i.test(mod))
@@ -11837,7 +11837,7 @@ function normalizeKeyName(name8, platform) {
       shift2 = true;
     else if (/^mod$/i.test(mod)) {
       if (platform == "mac")
-        meta8 = true;
+        meta9 = true;
       else
         ctrl = true;
     } else
@@ -11847,22 +11847,22 @@ function normalizeKeyName(name8, platform) {
     result = "Alt-" + result;
   if (ctrl)
     result = "Ctrl-" + result;
-  if (meta8)
+  if (meta9)
     result = "Meta-" + result;
   if (shift2)
     result = "Shift-" + result;
   return result;
 }
-function modifiers(name8, event, shift2) {
+function modifiers(name9, event, shift2) {
   if (event.altKey)
-    name8 = "Alt-" + name8;
+    name9 = "Alt-" + name9;
   if (event.ctrlKey)
-    name8 = "Ctrl-" + name8;
+    name9 = "Ctrl-" + name9;
   if (event.metaKey)
-    name8 = "Meta-" + name8;
+    name9 = "Meta-" + name9;
   if (shift2 !== false && event.shiftKey)
-    name8 = "Shift-" + name8;
-  return name8;
+    name9 = "Shift-" + name9;
+  return name9;
 }
 var handleKeyEvents = /* @__PURE__ */ Prec.default(/* @__PURE__ */ EditorView.domEventHandlers({
   keydown(event, view) {
@@ -11886,12 +11886,12 @@ var PrefixTimeout = 4e3;
 function buildKeymap(bindings, platform = currentPlatform) {
   let bound = /* @__PURE__ */ Object.create(null);
   let isPrefix = /* @__PURE__ */ Object.create(null);
-  let checkPrefix = (name8, is) => {
-    let current = isPrefix[name8];
+  let checkPrefix = (name9, is) => {
+    let current = isPrefix[name9];
     if (current == null)
-      isPrefix[name8] = is;
+      isPrefix[name9] = is;
     else if (current != is)
-      throw new Error("Key binding " + name8 + " is used both as a regular binding and as a multi-stroke prefix");
+      throw new Error("Key binding " + name9 + " is used both as a regular binding and as a multi-stroke prefix");
   };
   let add2 = (scope, key, command2, preventDefault, stopPropagation) => {
     var _a2, _b;
@@ -11939,13 +11939,13 @@ function buildKeymap(bindings, platform = currentPlatform) {
         for (let key in scopeObj)
           scopeObj[key].run.push((view) => any(view, currentKeyEvent));
       }
-    let name8 = b[platform] || b.key;
-    if (!name8)
+    let name9 = b[platform] || b.key;
+    if (!name9)
       continue;
     for (let scope of scopes) {
-      add2(scope, name8, b.run, b.preventDefault, b.stopPropagation);
+      add2(scope, name9, b.run, b.preventDefault, b.stopPropagation);
       if (b.shift)
-        add2(scope, "Shift-" + name8, b.shift, b.preventDefault, b.stopPropagation);
+        add2(scope, "Shift-" + name9, b.shift, b.preventDefault, b.stopPropagation);
     }
   }
   return bound;
@@ -11953,8 +11953,8 @@ function buildKeymap(bindings, platform = currentPlatform) {
 var currentKeyEvent = null;
 function runHandlers(map, event, view, scope) {
   currentKeyEvent = event;
-  let name8 = keyName(event);
-  let charCode = codePointAt2(name8, 0), isChar = codePointSize2(charCode) == name8.length && name8 != " ";
+  let name9 = keyName(event);
+  let charCode = codePointAt2(name9, 0), isChar = codePointSize2(charCode) == name9.length && name9 != " ";
   let prefix = "", handled = false, prevented = false, stopPropagation = false;
   if (storedPrefix && storedPrefix.view == view && storedPrefix.scope == scope) {
     prefix = storedPrefix.prefix + " ";
@@ -11985,17 +11985,17 @@ function runHandlers(map, event, view, scope) {
   };
   let scopeObj = map[scope], baseName, shiftName;
   if (scopeObj) {
-    if (runFor(scopeObj[prefix + modifiers(name8, event, !isChar)])) {
+    if (runFor(scopeObj[prefix + modifiers(name9, event, !isChar)])) {
       handled = true;
     } else if (isChar && (event.altKey || event.metaKey || event.ctrlKey) && // Ctrl-Alt may be used for AltGr on Windows
     !(browser.windows && event.ctrlKey && event.altKey) && // Alt-combinations on macOS tend to be typed characters
-    !(browser.mac && event.altKey && !(event.ctrlKey || event.metaKey)) && (baseName = base[event.keyCode]) && baseName != name8) {
+    !(browser.mac && event.altKey && !(event.ctrlKey || event.metaKey)) && (baseName = base[event.keyCode]) && baseName != name9) {
       if (runFor(scopeObj[prefix + modifiers(baseName, event, true)])) {
         handled = true;
-      } else if (event.shiftKey && (shiftName = shift[event.keyCode]) != name8 && shiftName != baseName && runFor(scopeObj[prefix + modifiers(shiftName, event, false)])) {
+      } else if (event.shiftKey && (shiftName = shift[event.keyCode]) != name9 && shiftName != baseName && runFor(scopeObj[prefix + modifiers(shiftName, event, false)])) {
         handled = true;
       }
-    } else if (isChar && event.shiftKey && runFor(scopeObj[prefix + modifiers(name8, event, true)])) {
+    } else if (isChar && event.shiftKey && runFor(scopeObj[prefix + modifiers(name9, event, true)])) {
       handled = true;
     }
     if (!handled && runFor(scopeObj._any))
@@ -12083,8 +12083,8 @@ function rectanglesForRange(view, className, range) {
     return [];
   let from = Math.max(range.from, view.viewport.from), to = Math.min(range.to, view.viewport.to);
   let ltr = view.textDirection == Direction.LTR;
-  let content8 = view.contentDOM, contentRect = content8.getBoundingClientRect(), base2 = getBase(view);
-  let lineElt = content8.querySelector(".cm-line"), lineStyle = lineElt && window.getComputedStyle(lineElt);
+  let content9 = view.contentDOM, contentRect = content9.getBoundingClientRect(), base2 = getBase(view);
+  let lineElt = content9.querySelector(".cm-line"), lineStyle = lineElt && window.getComputedStyle(lineElt);
   let leftSide = contentRect.left + (lineStyle ? parseInt(lineStyle.paddingLeft) + Math.min(0, parseInt(lineStyle.textIndent)) : 0);
   let rightSide = contentRect.right - (lineStyle ? parseInt(lineStyle.paddingRight) : 0);
   let startBlock = blockAt(view, from, 1), endBlock = blockAt(view, to, -1);
@@ -12825,18 +12825,18 @@ var TooltipViewManager = class {
     this.createTooltipView = createTooltipView;
     this.removeTooltipView = removeTooltipView;
     this.input = view.state.facet(facet);
-    this.tooltips = this.input.filter((t8) => t8);
+    this.tooltips = this.input.filter((t9) => t9);
     let prev = null;
-    this.tooltipViews = this.tooltips.map((t8) => prev = createTooltipView(t8, prev));
+    this.tooltipViews = this.tooltips.map((t9) => prev = createTooltipView(t9, prev));
   }
   update(update, above) {
     var _a2;
     let input = update.state.facet(this.facet);
     let tooltips = input.filter((x) => x);
     if (input === this.input) {
-      for (let t8 of this.tooltipViews)
-        if (t8.update)
-          t8.update(update);
+      for (let t9 of this.tooltipViews)
+        if (t9.update)
+          t9.update(update);
       return false;
     }
     let tooltipViews = [], newAbove = above ? [] : null;
@@ -12861,10 +12861,10 @@ var TooltipViewManager = class {
           tooltipView.update(update);
       }
     }
-    for (let t8 of this.tooltipViews)
-      if (tooltipViews.indexOf(t8) < 0) {
-        this.removeTooltipView(t8);
-        (_a2 = t8.destroy) === null || _a2 === void 0 ? void 0 : _a2.call(t8);
+    for (let t9 of this.tooltipViews)
+      if (tooltipViews.indexOf(t9) < 0) {
+        this.removeTooltipView(t9);
+        (_a2 = t9.destroy) === null || _a2 === void 0 ? void 0 : _a2.call(t9);
       }
     if (above) {
       newAbove.forEach((val, i) => above[i] = val);
@@ -12906,12 +12906,12 @@ var tooltipPlugin = /* @__PURE__ */ ViewPlugin.fromClass(class {
     this.createContainer();
     this.measureReq = { read: this.readMeasure.bind(this), write: this.writeMeasure.bind(this), key: this };
     this.resizeObserver = typeof ResizeObserver == "function" ? new ResizeObserver(() => this.measureSoon()) : null;
-    this.manager = new TooltipViewManager(view, showTooltip, (t8, p) => this.createTooltip(t8, p), (t8) => {
+    this.manager = new TooltipViewManager(view, showTooltip, (t9, p) => this.createTooltip(t9, p), (t9) => {
       if (this.resizeObserver)
-        this.resizeObserver.unobserve(t8.dom);
-      t8.dom.remove();
+        this.resizeObserver.unobserve(t9.dom);
+      t9.dom.remove();
     });
-    this.above = this.manager.tooltips.map((t8) => !!t8.above);
+    this.above = this.manager.tooltips.map((t9) => !!t9.above);
     this.intersectionObserver = typeof IntersectionObserver == "function" ? new IntersectionObserver((entries) => {
       if (Date.now() > this.lastTransaction - 50 && entries.length > 0 && entries[entries.length - 1].intersectionRatio < 1)
         this.measureSoon();
@@ -12954,8 +12954,8 @@ var tooltipPlugin = /* @__PURE__ */ ViewPlugin.fromClass(class {
     let newConfig = update.state.facet(tooltipConfig);
     if (newConfig.position != this.position && !this.madeAbsolute) {
       this.position = newConfig.position;
-      for (let t8 of this.manager.tooltipViews)
-        t8.dom.style.position = this.position;
+      for (let t9 of this.manager.tooltipViews)
+        t9.dom.style.position = this.position;
       shouldMeasure = true;
     }
     if (newConfig.parent != this.parent) {
@@ -12963,8 +12963,8 @@ var tooltipPlugin = /* @__PURE__ */ ViewPlugin.fromClass(class {
         this.container.remove();
       this.parent = newConfig.parent;
       this.createContainer();
-      for (let t8 of this.manager.tooltipViews)
-        this.container.appendChild(t8.dom);
+      for (let t9 of this.manager.tooltipViews)
+        this.container.appendChild(t9.dom);
       shouldMeasure = true;
     } else if (this.parent && this.view.themeClasses != this.classes) {
       this.classes = this.container.className = this.view.themeClasses;
@@ -13035,9 +13035,9 @@ var tooltipPlugin = /* @__PURE__ */ ViewPlugin.fromClass(class {
         bottom: visible.bottom - margins.bottom
       },
       parent: this.parent ? this.container.getBoundingClientRect() : this.view.dom.getBoundingClientRect(),
-      pos: this.manager.tooltips.map((t8, i) => {
+      pos: this.manager.tooltips.map((t9, i) => {
         let tv = this.manager.tooltipViews[i];
-        return tv.getCoords ? tv.getCoords(t8.pos) : this.view.coordsAtPos(t8.pos);
+        return tv.getCoords ? tv.getCoords(t9.pos) : this.view.coordsAtPos(t9.pos);
       }),
       size: this.manager.tooltipViews.map(({ dom }) => dom.getBoundingClientRect()),
       space: this.view.state.facet(tooltipConfig).tooltipSpace(this.view),
@@ -13051,8 +13051,8 @@ var tooltipPlugin = /* @__PURE__ */ ViewPlugin.fromClass(class {
     if (measured.makeAbsolute) {
       this.madeAbsolute = true;
       this.position = "absolute";
-      for (let t8 of this.manager.tooltipViews)
-        t8.dom.style.position = "absolute";
+      for (let t9 of this.manager.tooltipViews)
+        t9.dom.style.position = "absolute";
     }
     let { visible, space: space4, scaleX, scaleY } = measured;
     let others = [];
@@ -13211,7 +13211,7 @@ var HoverTooltipHost = class _HoverTooltipHost {
     this.mounted = false;
     this.dom = document.createElement("div");
     this.dom.classList.add("cm-tooltip-hover");
-    this.manager = new TooltipViewManager(view, showHoverTooltip, (t8, p) => this.createHostedView(t8, p), (t8) => t8.dom.remove());
+    this.manager = new TooltipViewManager(view, showHoverTooltip, (t9, p) => this.createHostedView(t9, p), (t9) => t9.dom.remove());
   }
   createHostedView(tooltip, prev) {
     let hostedView = tooltip.create(this.view);
@@ -13239,13 +13239,13 @@ var HoverTooltipHost = class _HoverTooltipHost {
   }
   destroy() {
     var _a2;
-    for (let t8 of this.manager.tooltipViews)
-      (_a2 = t8.destroy) === null || _a2 === void 0 ? void 0 : _a2.call(t8);
+    for (let t9 of this.manager.tooltipViews)
+      (_a2 = t9.destroy) === null || _a2 === void 0 ? void 0 : _a2.call(t9);
   }
-  passProp(name8) {
+  passProp(name9) {
     let value = void 0;
     for (let view of this.manager.tooltipViews) {
-      let given = view[name8];
+      let given = view[name9];
       if (given !== void 0) {
         if (value === void 0)
           value = given;
@@ -13273,14 +13273,14 @@ var showHoverTooltipHost = /* @__PURE__ */ showTooltip.compute([showHoverTooltip
   if (tooltips.length === 0)
     return null;
   return {
-    pos: Math.min(...tooltips.map((t8) => t8.pos)),
-    end: Math.max(...tooltips.map((t8) => {
+    pos: Math.min(...tooltips.map((t9) => t9.pos)),
+    end: Math.max(...tooltips.map((t9) => {
       var _a2;
-      return (_a2 = t8.end) !== null && _a2 !== void 0 ? _a2 : t8.pos;
+      return (_a2 = t9.end) !== null && _a2 !== void 0 ? _a2 : t9.pos;
     })),
     create: HoverTooltipHost.create,
     above: tooltips[0].above,
-    arrow: tooltips.some((t8) => t8.arrow)
+    arrow: tooltips.some((t9) => t9.arrow)
   };
 });
 var hoverPlugin = /* @__PURE__ */ Facet.define();
@@ -13366,7 +13366,7 @@ var HoverPlugin = class {
   }
   get tooltip() {
     let plugin = this.view.plugin(tooltipPlugin);
-    let index = plugin ? plugin.manager.tooltips.findIndex((t8) => t8.create == HoverTooltipHost.create) : -1;
+    let index = plugin ? plugin.manager.tooltips.findIndex((t9) => t9.create == HoverTooltipHost.create) : -1;
     return index > -1 ? plugin.manager.tooltipViews[index] : null;
   }
   mousemove(event) {
@@ -13702,23 +13702,23 @@ var dialogField = /* @__PURE__ */ StateField.define({
 var openDialogEffect = /* @__PURE__ */ StateEffect.define();
 var closeDialogEffect = /* @__PURE__ */ StateEffect.define();
 function createDialog(view, config2, result) {
-  let content8 = config2.content ? config2.content(view, () => done(null)) : null;
-  if (!content8) {
-    content8 = crelt("form");
+  let content9 = config2.content ? config2.content(view, () => done(null)) : null;
+  if (!content9) {
+    content9 = crelt("form");
     if (config2.input) {
       let input = crelt("input", config2.input);
       if (/^(text|password|number|email|tel|url)$/.test(input.type))
         input.classList.add("cm-textfield");
       if (!input.name)
         input.name = "input";
-      content8.appendChild(crelt("label", (config2.label || "") + ": ", input));
+      content9.appendChild(crelt("label", (config2.label || "") + ": ", input));
     } else {
-      content8.appendChild(document.createTextNode(config2.label || ""));
+      content9.appendChild(document.createTextNode(config2.label || ""));
     }
-    content8.appendChild(document.createTextNode(" "));
-    content8.appendChild(crelt("button", { class: "cm-button", type: "submit" }, config2.submitLabel || "OK"));
+    content9.appendChild(document.createTextNode(" "));
+    content9.appendChild(crelt("button", { class: "cm-button", type: "submit" }, config2.submitLabel || "OK"));
   }
-  let forms = content8.nodeName == "FORM" ? [content8] : content8.querySelectorAll("form");
+  let forms = content9.nodeName == "FORM" ? [content9] : content9.querySelectorAll("form");
   for (let i = 0; i < forms.length; i++) {
     let form = forms[i];
     form.addEventListener("keydown", (event) => {
@@ -13735,7 +13735,7 @@ function createDialog(view, config2, result) {
       done(form);
     });
   }
-  let panel = crelt("div", content8, crelt("button", {
+  let panel = crelt("div", content9, crelt("button", {
     onclick: () => done(null),
     "aria-label": view.state.phrase("close"),
     class: "cm-dialog-close",
@@ -13756,9 +13756,9 @@ function createDialog(view, config2, result) {
       if (config2.focus) {
         let focus;
         if (typeof config2.focus == "string")
-          focus = content8.querySelector(config2.focus);
+          focus = content9.querySelector(config2.focus);
         else
-          focus = content8.querySelector("input") || content8.querySelector("button");
+          focus = content9.querySelector("input") || content9.querySelector("button");
         if (focus && "select" in focus)
           focus.select();
         else if (focus && "focus" in focus)
@@ -14165,9 +14165,9 @@ var lineNumberConfig = /* @__PURE__ */ Facet.define({
   }
 });
 var NumberMarker = class extends GutterMarker {
-  constructor(number8) {
+  constructor(number9) {
     super();
-    this.number = number8;
+    this.number = number9;
   }
   eq(other) {
     return this.number == other.number;
@@ -14176,8 +14176,8 @@ var NumberMarker = class extends GutterMarker {
     return document.createTextNode(this.number);
   }
 };
-function formatNumber(view, number8) {
-  return view.state.facet(lineNumberConfig).formatNumber(number8, view.state);
+function formatNumber(view, number9) {
+  return view.state.facet(lineNumberConfig).formatNumber(number9, view.state);
 }
 var lineNumberGutter = /* @__PURE__ */ activeGutters.compute([lineNumberConfig], (state) => ({
   class: "cm-lineNumbers",
@@ -14296,10 +14296,10 @@ NodeProp.contextHash = new NodeProp({ perNode: true });
 NodeProp.lookAhead = new NodeProp({ perNode: true });
 NodeProp.mounted = new NodeProp({ perNode: true });
 var MountedTree = class {
-  constructor(tree, overlay, parser5, bracketed = false) {
+  constructor(tree, overlay, parser6, bracketed = false) {
     this.tree = tree;
     this.overlay = overlay;
-    this.parser = parser5;
+    this.parser = parser6;
     this.bracketed = bracketed;
   }
   /**
@@ -14314,8 +14314,8 @@ var NodeType = class _NodeType {
   /**
   @internal
   */
-  constructor(name8, props, id3, flags = 0) {
-    this.name = name8;
+  constructor(name9, props, id3, flags = 0) {
+    this.name = name9;
     this.props = props;
     this.id = id3;
     this.flags = flags;
@@ -14375,14 +14375,14 @@ var NodeType = class _NodeType {
   Returns true when this node's name or one of its
   [groups](#common.NodeProp^group) matches the given string.
   */
-  is(name8) {
-    if (typeof name8 == "string") {
-      if (this.name == name8)
+  is(name9) {
+    if (typeof name9 == "string") {
+      if (this.name == name9)
         return true;
       let group = this.prop(NodeProp.group);
-      return group ? group.indexOf(name8) > -1 : false;
+      return group ? group.indexOf(name9) > -1 : false;
     }
-    return this.id == name8;
+    return this.id == name9;
   }
   /**
   Create a function from node types to arbitrary values by
@@ -14395,8 +14395,8 @@ var NodeType = class _NodeType {
   static match(map) {
     let direct = /* @__PURE__ */ Object.create(null);
     for (let prop in map)
-      for (let name8 of prop.split(" "))
-        direct[name8] = map[prop];
+      for (let name9 of prop.split(" "))
+        direct[name9] = map[prop];
     return (node) => {
       for (let groups = node.prop(NodeProp.group), i = -1; i < (groups ? groups.length : 0); i++) {
         let found = direct[i < 0 ? node.name : groups[i]];
@@ -15607,12 +15607,12 @@ function buildTree(data2) {
   }
   function makeTree(type, children2, positions2, length2, lookAhead2, contextHash2, props) {
     if (contextHash2) {
-      let pair4 = [NodeProp.contextHash, contextHash2];
-      props = props ? [pair4].concat(props) : [pair4];
+      let pair5 = [NodeProp.contextHash, contextHash2];
+      props = props ? [pair5].concat(props) : [pair5];
     }
     if (lookAhead2 > 25) {
-      let pair4 = [NodeProp.lookAhead, lookAhead2];
-      props = props ? [pair4].concat(props) : [pair4];
+      let pair5 = [NodeProp.lookAhead, lookAhead2];
+      props = props ? [pair5].concat(props) : [pair5];
     }
     return new Tree(type, children2, positions2, length2, props);
   }
@@ -15895,8 +15895,8 @@ var Parser = class {
   }
 };
 var StringInput = class {
-  constructor(string8) {
-    this.string = string8;
+  constructor(string9) {
+    this.string = string9;
   }
   get length() {
     return this.string.length;
@@ -15915,8 +15915,8 @@ function parseMixed(nest) {
   return (parse, input, fragments, ranges) => new MixedParse(parse, nest, input, fragments, ranges);
 }
 var InnerParse = class {
-  constructor(parser5, parse, overlay, bracketed, target, from) {
-    this.parser = parser5;
+  constructor(parser6, parse, overlay, bracketed, target, from) {
+    this.parser = parser6;
     this.parse = parse;
     this.overlay = overlay;
     this.bracketed = bracketed;
@@ -15929,8 +15929,8 @@ function checkRanges(ranges) {
     throw new RangeError("Invalid inner parse ranges given: " + JSON.stringify(ranges));
 }
 var ActiveOverlay = class {
-  constructor(parser5, predicate, mounts, index, start, bracketed, target, prev) {
-    this.parser = parser5;
+  constructor(parser6, predicate, mounts, index, start, bracketed, target, prev) {
+    this.parser = parser6;
     this.predicate = predicate;
     this.mounts = mounts;
     this.index = index;
@@ -16188,14 +16188,14 @@ var FragmentCursor = class {
       this.inner = new StructureCursor(frag.tree, -frag.offset);
     }
   }
-  findMounts(pos, parser5) {
+  findMounts(pos, parser6) {
     var _a2;
     let result = [];
     if (this.inner) {
       this.inner.cursor.moveTo(pos, 1);
       for (let pos2 = this.inner.cursor.node; pos2; pos2 = pos2.parent) {
         let mount = (_a2 = pos2.tree) === null || _a2 === void 0 ? void 0 : _a2.prop(NodeProp.mounted);
-        if (mount && mount.parser == parser5) {
+        if (mount && mount.parser == parser6) {
           for (let i = this.fragI; i < this.fragments.length; i++) {
             let frag = this.fragments[i];
             if (frag.from >= pos2.to)
@@ -16300,31 +16300,31 @@ var Tag = class _Tag {
   /**
   @internal
   */
-  constructor(name8, set, base2, modified) {
-    this.name = name8;
+  constructor(name9, set, base2, modified) {
+    this.name = name9;
     this.set = set;
     this.base = base2;
     this.modified = modified;
     this.id = nextTagID++;
   }
   toString() {
-    let { name: name8 } = this;
+    let { name: name9 } = this;
     for (let mod of this.modified)
       if (mod.name)
-        name8 = `${mod.name}(${name8})`;
-    return name8;
+        name9 = `${mod.name}(${name9})`;
+    return name9;
   }
   static define(nameOrParent, parent) {
-    let name8 = typeof nameOrParent == "string" ? nameOrParent : "?";
+    let name9 = typeof nameOrParent == "string" ? nameOrParent : "?";
     if (nameOrParent instanceof _Tag)
       parent = nameOrParent;
     if (parent === null || parent === void 0 ? void 0 : parent.base)
       throw new Error("Can not derive from a modified tag");
-    let tag = new _Tag(name8, [], null, []);
+    let tag = new _Tag(name9, [], null, []);
     tag.set.push(tag);
     if (parent)
-      for (let t8 of parent.set)
-        tag.set.push(t8);
+      for (let t9 of parent.set)
+        tag.set.push(t9);
     return tag;
   }
   /**
@@ -16339,8 +16339,8 @@ var Tag = class _Tag {
   example `m1(m2(m3(t1)))` is a subtype of `m1(m2(t1))`,
   `m1(m3(t1)`, and so on.
   */
-  static defineModifier(name8) {
-    let mod = new Modifier(name8);
+  static defineModifier(name9) {
+    let mod = new Modifier(name9);
     return (tag) => {
       if (tag.modified.indexOf(mod) > -1)
         return tag;
@@ -16350,15 +16350,15 @@ var Tag = class _Tag {
 };
 var nextModifierID = 0;
 var Modifier = class _Modifier {
-  constructor(name8) {
-    this.name = name8;
+  constructor(name9) {
+    this.name = name9;
     this.instances = [];
     this.id = nextModifierID++;
   }
   static get(base2, mods) {
     if (!mods.length)
       return base2;
-    let exists = mods[0].instances.find((t8) => t8.base == base2 && sameArray2(mods, t8.modified));
+    let exists = mods[0].instances.find((t9) => t9.base == base2 && sameArray2(mods, t9.modified));
     if (exists)
       return exists;
     let set = [], tag = new Tag(base2.name, set, base2, mods);
@@ -16387,9 +16387,9 @@ function powerSet(array) {
 function styleTags(spec) {
   let byName = /* @__PURE__ */ Object.create(null);
   for (let prop in spec) {
-    let tags9 = spec[prop];
-    if (!Array.isArray(tags9))
-      tags9 = [tags9];
+    let tags10 = spec[prop];
+    if (!Array.isArray(tags10))
+      tags10 = [tags10];
     for (let part of prop.split(" "))
       if (part) {
         let pieces = [], mode = 2, rest = part;
@@ -16417,7 +16417,7 @@ function styleTags(spec) {
         let last = pieces.length - 1, inner = pieces[last];
         if (!inner)
           throw new RangeError("Invalid path: " + part);
-        let rule = new Rule(tags9, mode, last > 0 ? pieces.slice(0, last) : null);
+        let rule = new Rule(tags10, mode, last > 0 ? pieces.slice(0, last) : null);
         byName[inner] = rule.sort(byName[inner]);
       }
   }
@@ -16447,8 +16447,8 @@ var ruleNodeProp = new NodeProp({
   }
 });
 var Rule = class {
-  constructor(tags9, mode, context, next) {
-    this.tags = tags9;
+  constructor(tags10, mode, context, next) {
+    this.tags = tags10;
     this.mode = mode;
     this.context = context;
     this.next = next;
@@ -16472,9 +16472,9 @@ var Rule = class {
   }
 };
 Rule.empty = new Rule([], 2, null);
-function tagHighlighter(tags9, options) {
+function tagHighlighter(tags10, options) {
   let map = /* @__PURE__ */ Object.create(null);
-  for (let style of tags9) {
+  for (let style of tags10) {
     if (!Array.isArray(style.tag))
       map[style.tag.id] = style.class;
     else
@@ -16483,9 +16483,9 @@ function tagHighlighter(tags9, options) {
   }
   let { scope, all = null } = options || {};
   return {
-    style: (tags10) => {
+    style: (tags11) => {
       let cls = all;
-      for (let tag of tags10) {
+      for (let tag of tags11) {
         for (let sub of tag.set) {
           let tagClass = map[sub.id];
           if (tagClass) {
@@ -16499,10 +16499,10 @@ function tagHighlighter(tags9, options) {
     scope
   };
 }
-function highlightTags(highlighters, tags9) {
+function highlightTags(highlighters, tags10) {
   let result = null;
   for (let highlighter of highlighters) {
-    let value = highlighter.style(tags9);
+    let value = highlighter.style(tags10);
     if (value)
       result = result ? result + " " + value : value;
   }
@@ -16980,10 +16980,10 @@ var tags = {
   */
   special: Tag.defineModifier("special")
 };
-for (let name8 in tags) {
-  let val = tags[name8];
+for (let name9 in tags) {
+  let val = tags[name9];
   if (val instanceof Tag)
-    val.name = name8;
+    val.name = name9;
 }
 var classHighlighter = tagHighlighter([
   { tag: tags.link, class: "tok-link" },
@@ -17035,14 +17035,14 @@ var Language = class {
   configure your parser to [attach](https://codemirror.net/6/docs/ref/#language.languageDataProp) it
   to the language's outer syntax node.
   */
-  constructor(data2, parser5, extraExtensions = [], name8 = "") {
+  constructor(data2, parser6, extraExtensions = [], name9 = "") {
     this.data = data2;
-    this.name = name8;
+    this.name = name9;
     if (!EditorState.prototype.hasOwnProperty("tree"))
       Object.defineProperty(EditorState.prototype, "tree", { get() {
         return syntaxTree(this);
       } });
-    this.parser = parser5;
+    this.parser = parser6;
     this.extension = [
       language.of(this),
       EditorState.languageData.of((state, pos, side) => {
@@ -17129,9 +17129,9 @@ function topNodeAt(state, pos, side) {
   return tree;
 }
 var LRLanguage = class _LRLanguage extends Language {
-  constructor(data2, parser5, name8) {
-    super(data2, parser5, [], name8);
-    this.parser = parser5;
+  constructor(data2, parser6, name9) {
+    super(data2, parser6, [], name9);
+    this.parser = parser6;
   }
   /**
   Define a language from a parser.
@@ -17146,8 +17146,8 @@ var LRLanguage = class _LRLanguage extends Language {
   Create a new instance of this language with a reconfigured
   version of its parser and optionally a new name.
   */
-  configure(options, name8) {
-    return new _LRLanguage(this.data, this.parser.configure(options), name8 || this.name);
+  configure(options, name9) {
+    return new _LRLanguage(this.data, this.parser.configure(options), name9 || this.name);
   }
   get allowsNesting() {
     return this.parser.hasWrappers();
@@ -17192,8 +17192,8 @@ var DocInput = class {
 };
 var currentContext = null;
 var ParseContext = class _ParseContext {
-  constructor(parser5, state, fragments = [], tree, treeLen, viewport, skipped, scheduleOn) {
-    this.parser = parser5;
+  constructor(parser6, state, fragments = [], tree, treeLen, viewport, skipped, scheduleOn) {
+    this.parser = parser6;
     this.state = state;
     this.fragments = fragments;
     this.tree = tree;
@@ -17207,8 +17207,8 @@ var ParseContext = class _ParseContext {
   /**
   @internal
   */
-  static create(parser5, state, viewport) {
-    return new _ParseContext(parser5, state, [], Tree.empty, 0, viewport, [], null);
+  static create(parser6, state, viewport) {
+    return new _ParseContext(parser6, state, [], Tree.empty, 0, viewport, [], null);
   }
   startParse() {
     return this.parser.startParse(new DocInput(this.state.doc), this.fragments);
@@ -17356,7 +17356,7 @@ var ParseContext = class _ParseContext {
     return new class extends Parser {
       createParse(input, fragments, ranges) {
         let from = ranges[0].from, to = ranges[ranges.length - 1].to;
-        let parser5 = {
+        let parser6 = {
           parsedPos: from,
           advance() {
             let cx = currentContext;
@@ -17373,7 +17373,7 @@ var ParseContext = class _ParseContext {
           stopAt() {
           }
         };
-        return parser5;
+        return parser6;
       }
     }();
   }
@@ -17552,8 +17552,8 @@ var LanguageSupport = class {
   }
 };
 var LanguageDescription = class _LanguageDescription {
-  constructor(name8, alias, extensions, filename, loadFunc, support = void 0) {
-    this.name = name8;
+  constructor(name9, alias, extensions, filename, loadFunc, support = void 0) {
+    this.name = name9;
     this.alias = alias;
     this.extensions = extensions;
     this.filename = filename;
@@ -17610,16 +17610,16 @@ var LanguageDescription = class _LanguageDescription {
   or alias occurs in the string (for names shorter than three
   characters, only when surrounded by non-word characters).
   */
-  static matchLanguageName(descs, name8, fuzzy = true) {
-    name8 = name8.toLowerCase();
+  static matchLanguageName(descs, name9, fuzzy = true) {
+    name9 = name9.toLowerCase();
     for (let d of descs)
-      if (d.alias.some((a) => a == name8))
+      if (d.alias.some((a) => a == name9))
         return d;
     if (fuzzy)
       for (let d of descs)
         for (let a of d.alias) {
-          let found = name8.indexOf(a);
-          if (found > -1 && (a.length > 2 || !/\w/.test(name8[found - 1]) && !/\w/.test(name8[found + a.length])))
+          let found = name9.indexOf(a);
+          if (found > -1 && (a.length > 2 || !/\w/.test(name9[found - 1]) && !/\w/.test(name9[found + a.length])))
             return d;
         }
     return null;
@@ -18322,13 +18322,13 @@ function syntaxHighlighting(highlighter, options) {
     ext.push(highlighterFacet.of(highlighter));
   return ext;
 }
-function highlightingFor(state, tags9, scope) {
+function highlightingFor(state, tags10, scope) {
   let highlighters = getHighlighters(state);
   let result = null;
   if (highlighters)
     for (let highlighter of highlighters) {
       if (!highlighter.scope || scope && highlighter.scope(scope)) {
-        let cls = highlighter.style(tags9);
+        let cls = highlighter.style(tags10);
         if (cls)
           result = result ? result + " " + cls : cls;
       }
@@ -18572,8 +18572,8 @@ function matchPlainBrackets(state, pos, dir, tree, tokenType, maxScanDistance, b
   if (dir < 0 ? !pos : pos == state.doc.length)
     return null;
   let startCh = dir < 0 ? state.sliceDoc(pos - 1, pos) : state.sliceDoc(pos, pos + 1);
-  let bracket8 = brackets.indexOf(startCh);
-  if (bracket8 < 0 || bracket8 % 2 == 0 != dir > 0)
+  let bracket9 = brackets.indexOf(startCh);
+  if (bracket9 < 0 || bracket9 % 2 == 0 != dir > 0)
     return null;
   let startToken = { from: dir < 0 ? pos - 1 : pos, to: dir > 0 ? pos + 1 : pos };
   let iter = state.doc.iterRange(pos, dir > 0 ? state.doc.length : 0), depth = 0;
@@ -18589,7 +18589,7 @@ function matchPlainBrackets(state, pos, dir, tree, tokenType, maxScanDistance, b
       if (found % 2 == 0 == dir > 0) {
         depth++;
       } else if (depth == 1) {
-        return { start: startToken, end: { from: basePos + pos2, to: basePos + pos2 + 1 }, matched: found >> 1 == bracket8 >> 1 };
+        return { start: startToken, end: { from: basePos + pos2, to: basePos + pos2 + 1 }, matched: found >> 1 == bracket9 >> 1 };
       } else {
         depth--;
       }
@@ -18604,7 +18604,7 @@ var typeArray = [NodeType.none];
 var warned = [];
 var byTag = /* @__PURE__ */ Object.create(null);
 var defaultTable = /* @__PURE__ */ Object.create(null);
-for (let [legacyName, name8] of [
+for (let [legacyName, name9] of [
   ["variable", "variableName"],
   ["variable-2", "variableName.special"],
   ["string-2", "string.special"],
@@ -18618,7 +18618,7 @@ for (let [legacyName, name8] of [
   ["header", "heading"],
   ["property", "propertyName"]
 ])
-  defaultTable[legacyName] = /* @__PURE__ */ createTokenType(noTokens, name8);
+  defaultTable[legacyName] = /* @__PURE__ */ createTokenType(noTokens, name9);
 function warnForPart(part, msg) {
   if (warned.indexOf(part) > -1)
     return;
@@ -18627,9 +18627,9 @@ function warnForPart(part, msg) {
 }
 function createTokenType(extra, tagStr) {
   let tags$1 = [];
-  for (let name9 of tagStr.split(" ")) {
+  for (let name10 of tagStr.split(" ")) {
     let found = [];
-    for (let part of name9.split(".")) {
+    for (let part of name10.split(".")) {
       let value = extra[part] || tags[part];
       if (!value) {
         warnForPart(part, `Unknown highlighting tag ${part}`);
@@ -18650,14 +18650,14 @@ function createTokenType(extra, tagStr) {
   }
   if (!tags$1.length)
     return 0;
-  let name8 = tagStr.replace(/ /g, "_"), key = name8 + " " + tags$1.map((t8) => t8.id);
+  let name9 = tagStr.replace(/ /g, "_"), key = name9 + " " + tags$1.map((t9) => t9.id);
   let known = byTag[key];
   if (known)
     return known.id;
   let type = byTag[key] = NodeType.define({
     id: typeArray.length,
-    name: name8,
-    props: [styleTags({ [name8]: tags$1 })]
+    name: name9,
+    props: [styleTags({ [name9]: tags$1 })]
   });
   typeArray.push(type);
   return type.id;
@@ -18766,9 +18766,9 @@ function changeBlockComment(option, state, ranges = state.selection.ranges) {
     })) };
   } else if (option != 1 && comments.some((c) => c)) {
     let changes = [];
-    for (let i = 0, comment8; i < comments.length; i++)
-      if (comment8 = comments[i]) {
-        let token = tokens[i], { open, close } = comment8;
+    for (let i = 0, comment9; i < comments.length; i++)
+      if (comment9 = comments[i]) {
+        let token = tokens[i], { open, close } = comment9;
         changes.push({ from: open.pos - token.open.length, to: open.pos + open.margin }, { from: close.pos - close.margin, to: close.pos + token.close.length });
       }
     return { changes };
@@ -18791,10 +18791,10 @@ function changeLineComment(option, state, ranges = state.selection.ranges) {
         prevLine = line.from;
         let indent = /^\s*/.exec(line.text)[0].length;
         let empty2 = indent == line.length;
-        let comment8 = line.text.slice(indent, indent + token.length) == token ? indent : -1;
+        let comment9 = line.text.slice(indent, indent + token.length) == token ? indent : -1;
         if (indent < line.text.length && indent < minIndent)
           minIndent = indent;
-        lines.push({ line, comment: comment8, token, indent, empty: empty2, single: false });
+        lines.push({ line, comment: comment9, token, indent, empty: empty2, single: false });
       }
       pos = line.to + 1;
     }
@@ -18815,9 +18815,9 @@ function changeLineComment(option, state, ranges = state.selection.ranges) {
     return { changes: changeSet, selection: state.selection.map(changeSet, 1) };
   } else if (option != 1 && lines.some((l) => l.comment >= 0)) {
     let changes = [];
-    for (let { line, comment: comment8, token } of lines)
-      if (comment8 >= 0) {
-        let from = line.from + comment8, to = from + token.length;
+    for (let { line, comment: comment9, token } of lines)
+      if (comment9 >= 0) {
+        let from = line.from + comment9, to = from + token.length;
         if (line.text[to - line.from] == " ")
           to++;
         changes.push({ from, to });
@@ -18876,8 +18876,8 @@ var historyField_ = /* @__PURE__ */ StateField.define({
   toJSON(value) {
     return { done: value.done.map((e) => e.toJSON()), undone: value.undone.map((e) => e.toJSON()) };
   },
-  fromJSON(json) {
-    return new HistoryState(json.done.map(HistEvent.fromJSON), json.undone.map(HistEvent.fromJSON));
+  fromJSON(json2) {
+    return new HistoryState(json2.done.map(HistEvent.fromJSON), json2.undone.map(HistEvent.fromJSON));
   }
 });
 function history(config2 = {}) {
@@ -18933,8 +18933,8 @@ var HistEvent = class _HistEvent {
       selectionsAfter: this.selectionsAfter.map((s) => s.toJSON())
     };
   }
-  static fromJSON(json) {
-    return new _HistEvent(json.changes && ChangeSet.fromJSON(json.changes), [], json.mapped && ChangeDesc.fromJSON(json.mapped), json.startSelection && EditorSelection.fromJSON(json.startSelection), json.selectionsAfter.map(EditorSelection.fromJSON));
+  static fromJSON(json2) {
+    return new _HistEvent(json2.changes && ChangeSet.fromJSON(json2.changes), [], json2.mapped && ChangeDesc.fromJSON(json2.mapped), json2.startSelection && EditorSelection.fromJSON(json2.startSelection), json2.selectionsAfter.map(EditorSelection.fromJSON));
   }
   // This does not check `addToHistory` and such, it assumes the
   // transaction needs to be converted to an item. Returns null when
@@ -18962,11 +18962,11 @@ function updateBranch(branch, to, maxLen, newEvent) {
 }
 function isAdjacent(a, b) {
   let ranges = [], isAdjacent2 = false;
-  a.iterChangedRanges((f, t8) => ranges.push(f, t8));
-  b.iterChangedRanges((_f, _t, f, t8) => {
+  a.iterChangedRanges((f, t9) => ranges.push(f, t9));
+  b.iterChangedRanges((_f, _t, f, t9) => {
     for (let i = 0; i < ranges.length; ) {
       let from = ranges[i++], to = ranges[i++];
-      if (t8 >= from && f <= to)
+      if (t9 >= from && f <= to)
         isAdjacent2 = true;
     }
   });
@@ -19140,8 +19140,8 @@ function moveBySyntax(state, start, forward) {
     else
       at = forward ? next.to : next.from;
   }
-  let bracket8 = pos.type.prop(bracketProp), match, newPos;
-  if (bracket8 && (match = forward ? matchBrackets(state, pos.from, 1) : matchBrackets(state, pos.to, -1)) && match.matched)
+  let bracket9 = pos.type.prop(bracketProp), match, newPos;
+  if (bracket9 && (match = forward ? matchBrackets(state, pos.from, 1) : matchBrackets(state, pos.to, -1)) && match.matched)
     newPos = forward ? match.end.to : match.end.from;
   else
     newPos = forward ? pos.to : pos.from;
@@ -20697,8 +20697,8 @@ var SearchPanel = class {
       checked: query.wholeWord,
       onchange: this.commit
     });
-    function button(name8, onclick, content8) {
-      return crelt("button", { class: "cm-button", name: name8, onclick, type: "button" }, content8);
+    function button(name9, onclick, content9) {
+      return crelt("button", { class: "cm-button", name: name9, onclick, type: "button" }, content9);
     }
     this.dom = crelt("div", { onkeydown: (e) => this.keydown(e), class: "cm-search" }, [
       this.searchField,
@@ -21180,9 +21180,9 @@ function defaultPositionInfo(view, list, option, info, space4, tooltip) {
 }
 var setSelectedEffect = /* @__PURE__ */ StateEffect.define();
 function optionContent(config2) {
-  let content8 = config2.addToOptions.slice();
+  let content9 = config2.addToOptions.slice();
   if (config2.icons)
-    content8.push({
+    content9.push({
       render(completion) {
         let icon = document.createElement("div");
         icon.classList.add("cm-completionIcon");
@@ -21193,7 +21193,7 @@ function optionContent(config2) {
       },
       position: 20
     });
-  content8.push({
+  content9.push({
     render(completion, _s, _v, match) {
       let labelElt = document.createElement("span");
       labelElt.className = "cm-completionLabel";
@@ -21223,7 +21223,7 @@ function optionContent(config2) {
     },
     position: 80
   });
-  return content8.sort((a, b) => a.position - b.position).map((a) => a.render);
+  return content9.sort((a, b) => a.position - b.position).map((a) => a.render);
 }
 function rangeAroundSelected(total, selected, max) {
   if (total <= max)
@@ -21357,16 +21357,16 @@ var CompletionTooltip = class {
       }
     }
   }
-  addInfoPane(content8, completion) {
+  addInfoPane(content9, completion) {
     this.destroyInfo();
     let wrap = this.info = document.createElement("div");
     wrap.className = "cm-tooltip cm-completionInfo";
     wrap.id = "cm-completionInfo-" + Math.floor(Math.random() * 65535).toString(16);
-    if (content8.nodeType != null) {
-      wrap.appendChild(content8);
+    if (content9.nodeType != null) {
+      wrap.appendChild(content9);
       this.infoDestroy = null;
     } else {
-      let { dom, destroy } = content8;
+      let { dom, destroy } = content9;
       wrap.appendChild(dom);
       this.infoDestroy = destroy || null;
     }
@@ -21435,14 +21435,14 @@ var CompletionTooltip = class {
     for (let i = range.from; i < range.to; i++) {
       let { completion, match } = options[i], { section } = completion;
       if (section) {
-        let name8 = typeof section == "string" ? section : section.name;
-        if (name8 != curSection && (i > range.from || range.from == 0)) {
-          curSection = name8;
+        let name9 = typeof section == "string" ? section : section.name;
+        if (name9 != curSection && (i > range.from || range.from == 0)) {
+          curSection = name9;
           if (typeof section != "string" && section.header) {
             ul.appendChild(section.header(section));
           } else {
             let header = ul.appendChild(document.createElement("completion-section"));
-            header.textContent = name8;
+            header.textContent = name9;
           }
         }
       }
@@ -21500,9 +21500,9 @@ function sortOptions(active, state) {
     if (section) {
       if (!sections)
         sections = [];
-      let name8 = typeof section == "string" ? section : section.name;
-      if (!sections.some((s) => s.name == name8))
-        sections.push(typeof section == "string" ? { name: name8 } : section);
+      let name9 = typeof section == "string" ? section : section.name;
+      if (!sections.some((s) => s.name == name9))
+        sections.push(typeof section == "string" ? { name: name9 } : section);
     }
   };
   let conf = state.facet(completionConfig);
@@ -21522,10 +21522,10 @@ function sortOptions(active, state) {
             let score2 = match.score + (option.boost || 0);
             addOption(new Option(option, a.source, matched, score2));
             if (typeof option.section == "object" && option.section.rank === "dynamic") {
-              let { name: name8 } = option.section;
+              let { name: name9 } = option.section;
               if (!dynamicSectionScore)
                 dynamicSectionScore = /* @__PURE__ */ Object.create(null);
-              dynamicSectionScore[name8] = Math.max(score2, dynamicSectionScore[name8] || -1e9);
+              dynamicSectionScore[name9] = Math.max(score2, dynamicSectionScore[name9] || -1e9);
             }
           }
       }
@@ -22249,14 +22249,14 @@ var deleteBracketPair = ({ state, dispatch }) => {
 var closeBracketsKeymap = [
   { key: "Backspace", run: deleteBracketPair }
 ];
-function insertBracket(state, bracket8) {
+function insertBracket(state, bracket9) {
   let conf = config(state, state.selection.main.head);
   let tokens = conf.brackets || defaults2.brackets;
   for (let tok of tokens) {
     let closed = closing(codePointAt2(tok, 0));
-    if (bracket8 == tok)
+    if (bracket9 == tok)
       return closed == tok ? handleSame(state, tok, tokens.indexOf(tok + tok + tok) > -1, conf) : handleOpen(state, tok, closed, conf.before || defaults2.before);
-    if (bracket8 == closed && closedBracketAt(state, state.selection.main.from))
+    if (bracket9 == closed && closedBracketAt(state, state.selection.main.from))
       return handleClose(state, tok, closed);
   }
   return null;
@@ -22332,10 +22332,10 @@ function handleSame(state, token, allowTriple, config2) {
         };
       } else if (closedBracketAt(state, pos)) {
         let isTriple = allowTriple && state.sliceDoc(pos, pos + token.length * 3) == token + token + token;
-        let content8 = isTriple ? token + token + token : token;
+        let content9 = isTriple ? token + token + token : token;
         return {
-          changes: { from: pos, to: pos + content8.length, insert: content8 },
-          range: EditorSelection.cursor(pos + content8.length)
+          changes: { from: pos, to: pos + content9.length, insert: content9 },
+          range: EditorSelection.cursor(pos + content9.length)
         };
       }
     } else if (allowTriple && state.sliceDoc(pos - 2 * token.length, pos) == token + token && (start = canStartStringAt(state, pos - 2 * token.length, stringPrefixes)) > -1 && nodeStart(state, start)) {
@@ -22656,7 +22656,7 @@ var lintConfig = /* @__PURE__ */ Facet.define({
         markerFilter: combineFilter,
         tooltipFilter: combineFilter,
         needsRefresh: (a, b) => !a ? b : !b ? a : (u) => a(u) || b(u),
-        hideOn: (a, b) => !a ? b : !b ? a : (t8, x, y) => a(t8, x, y) || b(t8, x, y),
+        hideOn: (a, b) => !a ? b : !b ? a : (t9, x, y) => a(t9, x, y) || b(t9, x, y),
         autoPanel: (a, b) => a || b
       })
     };
@@ -22668,9 +22668,9 @@ function combineFilter(a, b) {
 function assignKeys(actions) {
   let assigned = [];
   if (actions)
-    actions: for (let { name: name8 } of actions) {
-      for (let i = 0; i < name8.length; i++) {
-        let ch = name8[i];
+    actions: for (let { name: name9 } of actions) {
+      for (let i = 0; i < name9.length; i++) {
+        let ch = name9[i];
         if (/[a-zA-Z]/.test(ch) && !assigned.some((c) => c.toLowerCase() == ch.toLowerCase())) {
           assigned.push(ch);
           continue actions;
@@ -22693,11 +22693,11 @@ function renderDiagnostic(view, diagnostic, inPanel) {
       if (found)
         action.apply(view, found.from, found.to);
     };
-    let { name: name8 } = action, keyIndex = keys2[i] ? name8.indexOf(keys2[i]) : -1;
-    let nameElt = keyIndex < 0 ? name8 : [
-      name8.slice(0, keyIndex),
-      crelt("u", name8.slice(keyIndex, keyIndex + 1)),
-      name8.slice(keyIndex + 1)
+    let { name: name9 } = action, keyIndex = keys2[i] ? name9.indexOf(keys2[i]) : -1;
+    let nameElt = keyIndex < 0 ? name9 : [
+      name9.slice(0, keyIndex),
+      crelt("u", name9.slice(keyIndex, keyIndex + 1)),
+      name9.slice(keyIndex + 1)
     ];
     let markClass = action.markClass ? " " + action.markClass : "";
     return crelt("button", {
@@ -22705,7 +22705,7 @@ function renderDiagnostic(view, diagnostic, inPanel) {
       class: "cm-diagnosticAction" + markClass,
       onclick: click,
       onmousedown: click,
-      "aria-label": ` Action: ${name8}${keyIndex < 0 ? "" : ` (access key "${keys2[i]})"`}.`
+      "aria-label": ` Action: ${name9}${keyIndex < 0 ? "" : ` (access key "${keys2[i]})"`}.`
     }, nameElt);
   }), diagnostic.source && crelt("div", { class: "cm-diagnosticSource" }, diagnostic.source));
 }
@@ -22898,8 +22898,8 @@ var LintPanel = class _LintPanel {
     return new _LintPanel(view);
   }
 };
-function svg(content8, attrs = `viewBox="0 0 40 40"`) {
-  return `url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" ${attrs}>${encodeURIComponent(content8)}</svg>')`;
+function svg(content9, attrs = `viewBox="0 0 40 40"`) {
+  return `url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" ${attrs}>${encodeURIComponent(content9)}</svg>')`;
 }
 function underline(color) {
   return svg(`<path d="m0 2.5 l2 -1.5 l1 0 l2 1.5 l1 0" stroke="${color}" fill="none" stroke-width=".7"/>`, `width="6" height="3"`);
@@ -23148,31 +23148,31 @@ var Tag2 = class _Tag {
   /**
   @internal
   */
-  constructor(name8, set, base2, modified) {
-    this.name = name8;
+  constructor(name9, set, base2, modified) {
+    this.name = name9;
     this.set = set;
     this.base = base2;
     this.modified = modified;
     this.id = nextTagID2++;
   }
   toString() {
-    let { name: name8 } = this;
+    let { name: name9 } = this;
     for (let mod of this.modified)
       if (mod.name)
-        name8 = `${mod.name}(${name8})`;
-    return name8;
+        name9 = `${mod.name}(${name9})`;
+    return name9;
   }
   static define(nameOrParent, parent) {
-    let name8 = typeof nameOrParent == "string" ? nameOrParent : "?";
+    let name9 = typeof nameOrParent == "string" ? nameOrParent : "?";
     if (nameOrParent instanceof _Tag)
       parent = nameOrParent;
     if (parent === null || parent === void 0 ? void 0 : parent.base)
       throw new Error("Can not derive from a modified tag");
-    let tag = new _Tag(name8, [], null, []);
+    let tag = new _Tag(name9, [], null, []);
     tag.set.push(tag);
     if (parent)
-      for (let t8 of parent.set)
-        tag.set.push(t8);
+      for (let t9 of parent.set)
+        tag.set.push(t9);
     return tag;
   }
   /**
@@ -23187,8 +23187,8 @@ var Tag2 = class _Tag {
   example `m1(m2(m3(t1)))` is a subtype of `m1(m2(t1))`,
   `m1(m3(t1)`, and so on.
   */
-  static defineModifier(name8) {
-    let mod = new Modifier2(name8);
+  static defineModifier(name9) {
+    let mod = new Modifier2(name9);
     return (tag) => {
       if (tag.modified.indexOf(mod) > -1)
         return tag;
@@ -23198,15 +23198,15 @@ var Tag2 = class _Tag {
 };
 var nextModifierID2 = 0;
 var Modifier2 = class _Modifier {
-  constructor(name8) {
-    this.name = name8;
+  constructor(name9) {
+    this.name = name9;
     this.instances = [];
     this.id = nextModifierID2++;
   }
   static get(base2, mods) {
     if (!mods.length)
       return base2;
-    let exists = mods[0].instances.find((t8) => t8.base == base2 && sameArray3(mods, t8.modified));
+    let exists = mods[0].instances.find((t9) => t9.base == base2 && sameArray3(mods, t9.modified));
     if (exists)
       return exists;
     let set = [], tag = new Tag2(base2.name, set, base2, mods);
@@ -23235,9 +23235,9 @@ function powerSet2(array) {
 function styleTags2(spec) {
   let byName = /* @__PURE__ */ Object.create(null);
   for (let prop in spec) {
-    let tags9 = spec[prop];
-    if (!Array.isArray(tags9))
-      tags9 = [tags9];
+    let tags10 = spec[prop];
+    if (!Array.isArray(tags10))
+      tags10 = [tags10];
     for (let part of prop.split(" "))
       if (part) {
         let pieces = [], mode = 2, rest = part;
@@ -23265,7 +23265,7 @@ function styleTags2(spec) {
         let last = pieces.length - 1, inner = pieces[last];
         if (!inner)
           throw new RangeError("Invalid path: " + part);
-        let rule = new Rule2(tags9, mode, last > 0 ? pieces.slice(0, last) : null);
+        let rule = new Rule2(tags10, mode, last > 0 ? pieces.slice(0, last) : null);
         byName[inner] = rule.sort(byName[inner]);
       }
   }
@@ -23295,8 +23295,8 @@ var ruleNodeProp2 = new NodeProp({
   }
 });
 var Rule2 = class {
-  constructor(tags9, mode, context, next) {
-    this.tags = tags9;
+  constructor(tags10, mode, context, next) {
+    this.tags = tags10;
     this.mode = mode;
     this.context = context;
     this.next = next;
@@ -23320,9 +23320,9 @@ var Rule2 = class {
   }
 };
 Rule2.empty = new Rule2([], 2, null);
-function tagHighlighter2(tags9, options) {
+function tagHighlighter2(tags10, options) {
   let map = /* @__PURE__ */ Object.create(null);
-  for (let style of tags9) {
+  for (let style of tags10) {
     if (!Array.isArray(style.tag))
       map[style.tag.id] = style.class;
     else
@@ -23331,9 +23331,9 @@ function tagHighlighter2(tags9, options) {
   }
   let { scope, all = null } = options || {};
   return {
-    style: (tags10) => {
+    style: (tags11) => {
       let cls = all;
-      for (let tag of tags10) {
+      for (let tag of tags11) {
         for (let sub of tag.set) {
           let tagClass = map[sub.id];
           if (tagClass) {
@@ -23728,10 +23728,10 @@ var tags2 = {
   */
   special: Tag2.defineModifier("special")
 };
-for (let name8 in tags2) {
-  let val = tags2[name8];
+for (let name9 in tags2) {
+  let val = tags2[name9];
   if (val instanceof Tag2)
-    val.name = name8;
+    val.name = name9;
 }
 var classHighlighter2 = tagHighlighter2([
   { tag: tags2.link, class: "tok-link" },
@@ -23848,9 +23848,9 @@ var LeafBlock = class {
   /**
   @internal
   */
-  constructor(start, content8) {
+  constructor(start, content9) {
     this.start = start;
-    this.content = content8;
+    this.content = content9;
     this.marks = [];
     this.parsers = [];
   }
@@ -24288,9 +24288,9 @@ var LinkReferenceParser = class {
   nextLine(cx, line, leaf) {
     if (this.stage == -1)
       return false;
-    let content8 = leaf.content + "\n" + line.scrub();
-    let finish = this.advance(content8);
-    if (finish > -1 && finish < content8.length)
+    let content9 = leaf.content + "\n" + line.scrub();
+    let finish = this.advance(content9);
+    if (finish > -1 && finish < content9.length)
       return this.complete(cx, leaf, finish);
     return false;
   }
@@ -24314,26 +24314,26 @@ var LinkReferenceParser = class {
       this.stage = -1;
     return false;
   }
-  advance(content8) {
+  advance(content9) {
     for (; ; ) {
       if (this.stage == -1) {
         return -1;
       } else if (this.stage == 0) {
-        if (!this.nextStage(parseLinkLabel(content8, this.pos, this.start, true)))
+        if (!this.nextStage(parseLinkLabel(content9, this.pos, this.start, true)))
           return -1;
-        if (content8.charCodeAt(this.pos) != 58)
+        if (content9.charCodeAt(this.pos) != 58)
           return this.stage = -1;
         this.elts.push(elt(Type.LinkMark, this.pos + this.start, this.pos + this.start + 1));
         this.pos++;
       } else if (this.stage == 1) {
-        if (!this.nextStage(parseURL(content8, skipSpace(content8, this.pos), this.start)))
+        if (!this.nextStage(parseURL(content9, skipSpace(content9, this.pos), this.start)))
           return -1;
       } else if (this.stage == 2) {
-        let skip = skipSpace(content8, this.pos), end = 0;
+        let skip = skipSpace(content9, this.pos), end = 0;
         if (skip > this.pos) {
-          let title = parseLinkTitle(content8, skip, this.start);
+          let title = parseLinkTitle(content9, skip, this.start);
           if (title) {
-            let titleEnd = lineEnd(content8, title.to - this.start);
+            let titleEnd = lineEnd(content9, title.to - this.start);
             if (titleEnd > 0) {
               this.nextStage(title);
               end = titleEnd;
@@ -24341,10 +24341,10 @@ var LinkReferenceParser = class {
           }
         }
         if (!end)
-          end = lineEnd(content8, this.pos);
-        return end > 0 && end < content8.length ? end : -1;
+          end = lineEnd(content9, this.pos);
+        return end > 0 && end < content9.length ? end : -1;
       } else {
-        return lineEnd(content8, this.pos);
+        return lineEnd(content9, this.pos);
       }
     }
   }
@@ -24399,8 +24399,8 @@ var BlockContext = class {
   /**
   @internal
   */
-  constructor(parser5, input, fragments, ranges) {
-    this.parser = parser5;
+  constructor(parser6, input, fragments, ranges) {
+    this.parser = parser6;
     this.input = input;
     this.ranges = ranges;
     this.line = new Line2();
@@ -24456,9 +24456,9 @@ var BlockContext = class {
     let leaf = new LeafBlock(this.lineStart + line.pos, line.text.slice(line.pos));
     for (let parse of this.parser.leafBlockParsers)
       if (parse) {
-        let parser5 = parse(this, leaf);
-        if (parser5)
-          leaf.parsers.push(parser5);
+        let parser6 = parse(this, leaf);
+        if (parser6)
+          leaf.parsers.push(parser6);
       }
     lines: while (this.nextLine()) {
       if (line.pos == line.text.length)
@@ -24468,8 +24468,8 @@ var BlockContext = class {
           if (stop(this, line, leaf))
             break lines;
       }
-      for (let parser5 of leaf.parsers)
-        if (parser5.nextLine(this, line, leaf))
+      for (let parser6 of leaf.parsers)
+        if (parser6.nextLine(this, line, leaf))
           return null;
       leaf.content += "\n" + line.scrub();
       for (let m of line.markers)
@@ -24673,8 +24673,8 @@ var BlockContext = class {
   @internal
   */
   finishLeaf(leaf) {
-    for (let parser5 of leaf.parsers)
-      if (parser5.finish(this, leaf))
+    for (let parser6 of leaf.parsers)
+      if (parser6.finish(this, leaf))
         return;
     let inline = injectMarks(this.parser.parseInline(leaf.content, leaf.start), leaf.marks);
     this.addNode(this.buffer.writeElements(inline, -leaf.start).finish(Type.Paragraph, leaf.content.length), leaf.start);
@@ -24736,8 +24736,8 @@ var MarkdownParser = class _MarkdownParser extends Parser {
     this.inlineNames = inlineNames;
     this.wrappers = wrappers;
     this.nodeTypes = /* @__PURE__ */ Object.create(null);
-    for (let t8 of nodeSet.types)
-      this.nodeTypes[t8.name] = t8.id;
+    for (let t9 of nodeSet.types)
+      this.nodeTypes[t9.name] = t9.id;
   }
   createParse(input, fragments, ranges) {
     let parse = new BlockContext(this, input, fragments, ranges);
@@ -24758,8 +24758,8 @@ var MarkdownParser = class _MarkdownParser extends Parser {
       skipContextMarkup = Object.assign({}, skipContextMarkup);
       let nodeTypes2 = nodeSet.types.slice(), styles;
       for (let s of config2.defineNodes) {
-        let { name: name8, block, composite, style } = typeof s == "string" ? { name: s } : s;
-        if (nodeTypes2.some((t8) => t8.name == name8))
+        let { name: name9, block, composite, style } = typeof s == "string" ? { name: s } : s;
+        if (nodeTypes2.some((t9) => t9.name == name9))
           continue;
         if (composite)
           skipContextMarkup[nodeTypes2.length] = (bl, cx, line) => composite(cx, line, bl.value);
@@ -24767,14 +24767,14 @@ var MarkdownParser = class _MarkdownParser extends Parser {
         let group = composite ? ["Block", "BlockContext"] : !block ? void 0 : id3 >= Type.ATXHeading1 && id3 <= Type.SetextHeading2 ? ["Block", "LeafBlock", "Heading"] : ["Block", "LeafBlock"];
         nodeTypes2.push(NodeType.define({
           id: id3,
-          name: name8,
+          name: name9,
           props: group && [[NodeProp.group, group]]
         }));
         if (style) {
           if (!styles)
             styles = {};
           if (Array.isArray(style) || style instanceof Tag2)
-            styles[name8] = style;
+            styles[name9] = style;
           else
             Object.assign(styles, style);
         }
@@ -24829,10 +24829,10 @@ var MarkdownParser = class _MarkdownParser extends Parser {
   /**
   @internal
   */
-  getNodeType(name8) {
-    let found = this.nodeTypes[name8];
+  getNodeType(name9) {
+    let found = this.nodeTypes[name9];
     if (found == null)
-      throw new RangeError(`Unknown node type '${name8}'`);
+      throw new RangeError(`Unknown node type '${name9}'`);
     return found;
   }
   /**
@@ -24882,19 +24882,19 @@ function resolveConfig(spec) {
     wrap: !wrapA ? wrapB : !wrapB ? wrapA : (inner, input, fragments, ranges) => wrapA(wrapB(inner, input, fragments, ranges), input, fragments, ranges)
   };
 }
-function findName(names, name8) {
-  let found = names.indexOf(name8);
+function findName(names, name9) {
+  let found = names.indexOf(name9);
   if (found < 0)
-    throw new RangeError(`Position specified relative to unknown parser ${name8}`);
+    throw new RangeError(`Position specified relative to unknown parser ${name9}`);
   return found;
 }
 var nodeTypes = [NodeType.none];
-for (let i = 1, name8; name8 = Type[i]; i++) {
+for (let i = 1, name9; name9 = Type[i]; i++) {
   nodeTypes[i] = NodeType.define({
     id: i,
-    name: name8,
+    name: name9,
     props: i >= Type.Escape ? [] : [[NodeProp.group, i in DefaultSkipMarkup ? ["Block", "BlockContext"] : ["Block", "LeafBlock"]]],
-    top: name8 == "Document"
+    top: name9 == "Document"
   });
 }
 var none4 = [];
@@ -25041,9 +25041,9 @@ var DefaultInline = {
         elt(Type.LinkMark, start + url[0].length, start + 1 + url[0].length)
       ]));
     }
-    let comment8 = /^!--[^>](?:-[^-]|[^-])*?-->/i.exec(after);
-    if (comment8)
-      return cx.append(elt(Type.Comment, start, start + 1 + comment8[0].length));
+    let comment9 = /^!--[^>](?:-[^-]|[^-])*?-->/i.exec(after);
+    if (comment9)
+      return cx.append(elt(Type.Comment, start, start + 1 + comment9[0].length));
     let procInst = /^\?[^]*?\?>/.exec(after);
     if (procInst)
       return cx.append(elt(Type.ProcessingInstruction, start, start + 1 + procInst[0].length));
@@ -25107,8 +25107,8 @@ var DefaultInline = {
           cx.parts[i] = null;
           return -1;
         }
-        let content8 = cx.takeContent(i);
-        let link = cx.parts[i] = finishLink(cx, content8, part.type == LinkStart ? Type.Link : Type.Image, part.from, start + 1);
+        let content9 = cx.takeContent(i);
+        let link = cx.parts[i] = finishLink(cx, content9, part.type == LinkStart ? Type.Link : Type.Image, part.from, start + 1);
         if (part.type == LinkStart)
           for (let j = 0; j < i; j++) {
             let p = cx.parts[j];
@@ -25121,10 +25121,10 @@ var DefaultInline = {
     return -1;
   }
 };
-function finishLink(cx, content8, type, start, startPos) {
+function finishLink(cx, content9, type, start, startPos) {
   let { text } = cx, next = cx.char(startPos), endPos = startPos;
-  content8.unshift(elt(Type.LinkMark, start, start + (type == Type.Image ? 2 : 1)));
-  content8.push(elt(Type.LinkMark, startPos - 1, startPos));
+  content9.unshift(elt(Type.LinkMark, start, start + (type == Type.Image ? 2 : 1)));
+  content9.push(elt(Type.LinkMark, startPos - 1, startPos));
   if (next == 40) {
     let pos = cx.skipSpace(startPos + 1);
     let dest = parseURL(text, pos - cx.offset, cx.offset), title;
@@ -25137,22 +25137,22 @@ function finishLink(cx, content8, type, start, startPos) {
       }
     }
     if (cx.char(pos) == 41) {
-      content8.push(elt(Type.LinkMark, startPos, startPos + 1));
+      content9.push(elt(Type.LinkMark, startPos, startPos + 1));
       endPos = pos + 1;
       if (dest)
-        content8.push(dest);
+        content9.push(dest);
       if (title)
-        content8.push(title);
-      content8.push(elt(Type.LinkMark, pos, endPos));
+        content9.push(title);
+      content9.push(elt(Type.LinkMark, pos, endPos));
     }
   } else if (next == 91) {
     let label = parseLinkLabel(text, startPos - cx.offset, cx.offset, false);
     if (label) {
-      content8.push(label);
+      content9.push(label);
       endPos = label.to;
     }
   }
-  return elt(type, start, endPos, content8);
+  return elt(type, start, endPos, content9);
 }
 function parseURL(text, start, offset) {
   let next = text.charCodeAt(start);
@@ -25224,8 +25224,8 @@ var InlineContext = class {
   /**
   @internal
   */
-  constructor(parser5, text, offset) {
-    this.parser = parser5;
+  constructor(parser6, text, offset) {
+    this.parser = parser6;
     this.text = text;
     this.offset = offset;
     this.parts = [];
@@ -25306,7 +25306,7 @@ var InlineContext = class {
       }
       if (!open)
         continue;
-      let type = close.type.resolve, content8 = [];
+      let type = close.type.resolve, content9 = [];
       let start = open.from, end = close.to;
       if (emp) {
         let size = Math.min(2, open.to - open.from, closeSize);
@@ -25315,15 +25315,15 @@ var InlineContext = class {
         type = size == 1 ? "Emphasis" : "StrongEmphasis";
       }
       if (open.type.mark)
-        content8.push(this.elt(open.type.mark, start, open.to));
+        content9.push(this.elt(open.type.mark, start, open.to));
       for (let k = j + 1; k < i; k++) {
         if (this.parts[k] instanceof Element)
-          content8.push(this.parts[k]);
+          content9.push(this.parts[k]);
         this.parts[k] = null;
       }
       if (close.type.mark)
-        content8.push(this.elt(close.type.mark, close.from, end));
-      let element = this.elt(type, start, end, content8);
+        content9.push(this.elt(close.type.mark, close.from, end));
+      let element = this.elt(type, start, end, content9);
       this.parts[j] = emp && open.from != start ? new InlineDelimiter(open.type, open.from, start, open.side) : null;
       let keep = this.parts[i] = emp && close.to != end ? new InlineDelimiter(close.type, end, close.to, close.side) : null;
       if (keep)
@@ -25360,9 +25360,9 @@ var InlineContext = class {
   of elements.
   */
   takeContent(startIndex) {
-    let content8 = this.resolveMarkers(startIndex);
+    let content9 = this.resolveMarkers(startIndex);
     this.parts.length = startIndex;
-    return content8;
+    return content9;
   }
   /**
   Return the delimiter at the given index. Mostly useful to get
@@ -25553,9 +25553,9 @@ function parseCode(config2) {
         if (infoNode)
           info = input.read(infoNode.from, infoNode.to);
       }
-      let parser5 = codeParser(info);
-      if (parser5)
-        return { parser: parser5, overlay: (node2) => node2.type.id == Type.CodeText, bracketed: id3 == Type.FencedCode };
+      let parser6 = codeParser(info);
+      if (parser6)
+        return { parser: parser6, overlay: (node2) => node2.type.id == Type.CodeText, bracketed: id3 == Type.FencedCode };
     } else if (htmlParser && (id3 == Type.HTMLBlock || id3 == Type.HTMLTag || id3 == Type.CommentBlock)) {
       return { parser: htmlParser, overlay: leftOverSpace(node.node, node.from, node.to) };
     }
@@ -25644,9 +25644,9 @@ var TableParser = class {
           ];
       }
     } else if (this.rows) {
-      let content8 = [];
-      parseRow(cx, line.text, line.pos, content8, cx.lineStart);
-      this.rows.push(cx.elt("TableRow", cx.lineStart + line.pos, cx.lineStart + line.text.length, content8));
+      let content9 = [];
+      parseRow(cx, line.text, line.pos, content9, cx.lineStart);
+      this.rows.push(cx.elt("TableRow", cx.lineStart + line.pos, cx.lineStart + line.text.length, content9));
     }
     return false;
   }
@@ -25884,23 +25884,23 @@ var Stack = class _Stack {
   reduce(action) {
     var _a2;
     let depth = action >> 19, type = action & 65535;
-    let { parser: parser5 } = this.p;
+    let { parser: parser6 } = this.p;
     let lookaheadRecord = this.reducePos < this.pos - 25 && this.setLookAhead(this.pos);
-    let dPrec = parser5.dynamicPrecedence(type);
+    let dPrec = parser6.dynamicPrecedence(type);
     if (dPrec)
       this.score += dPrec;
     if (depth == 0) {
-      if (type < parser5.minRepeatTerm && this.reducePos < this.pos)
+      if (type < parser6.minRepeatTerm && this.reducePos < this.pos)
         this.reducePos = this.pos;
-      this.pushState(parser5.getGoto(this.state, type, true), this.reducePos);
-      if (type < parser5.minRepeatTerm)
+      this.pushState(parser6.getGoto(this.state, type, true), this.reducePos);
+      if (type < parser6.minRepeatTerm)
         this.storeNode(type, this.reducePos, this.reducePos, lookaheadRecord ? 8 : 4, true);
       this.reduceContext(type, this.reducePos);
       return;
     }
     let base2 = this.stack.length - (depth - 1) * 3 - (action & 262144 ? 6 : 0);
     let start = base2 ? this.stack[base2 - 2] : this.p.ranges[0].from;
-    if (type < parser5.minRepeatTerm && start == this.reducePos && this.reducePos < this.pos)
+    if (type < parser6.minRepeatTerm && start == this.reducePos && this.reducePos < this.pos)
       this.reducePos = this.pos;
     let size = this.reducePos - start;
     if (size >= 2e3 && !((_a2 = this.p.parser.nodeSet.types[type]) === null || _a2 === void 0 ? void 0 : _a2.isAnonymous)) {
@@ -25914,8 +25914,8 @@ var Stack = class _Stack {
       }
     }
     let bufferBase = base2 ? this.stack[base2 - 1] : 0, count2 = this.bufferBase + this.buffer.length - bufferBase;
-    if (type < parser5.minRepeatTerm || action & 131072) {
-      let pos = parser5.stateFlag(
+    if (type < parser6.minRepeatTerm || action & 131072) {
+      let pos = parser6.stateFlag(
         this.state,
         1
         /* StateFlag.Skipped */
@@ -25926,7 +25926,7 @@ var Stack = class _Stack {
       this.state = this.stack[base2];
     } else {
       let baseStateID = this.stack[base2 - 3];
-      this.state = parser5.getGoto(baseStateID, type, true);
+      this.state = parser6.getGoto(baseStateID, type, true);
     }
     while (this.stack.length > base2)
       this.stack.pop();
@@ -25985,18 +25985,18 @@ var Stack = class _Stack {
     if (action & 131072) {
       this.pushState(action & 65535, this.pos);
     } else if ((action & 262144) == 0) {
-      let nextState = action, { parser: parser5 } = this.p;
+      let nextState = action, { parser: parser6 } = this.p;
       this.pos = end;
-      let skipped = parser5.stateFlag(
+      let skipped = parser6.stateFlag(
         nextState,
         1
         /* StateFlag.Skipped */
       );
-      if (!skipped && (end > start || type <= parser5.maxNode))
+      if (!skipped && (end > start || type <= parser6.maxNode))
         this.reducePos = end;
       this.pushState(nextState, skipped ? start : Math.min(start, this.reducePos));
       this.shiftContext(type, start);
-      if (type <= parser5.maxNode)
+      if (type <= parser6.maxNode)
         this.buffer.push(type, start, end, 4);
     } else {
       this.pos = end;
@@ -26132,18 +26132,18 @@ var Stack = class _Stack {
   @internal
   */
   forceReduce() {
-    let { parser: parser5 } = this.p;
-    let reduce = parser5.stateSlot(
+    let { parser: parser6 } = this.p;
+    let reduce = parser6.stateSlot(
       this.state,
       5
       /* ParseState.ForcedReduce */
     );
     if ((reduce & 65536) == 0)
       return false;
-    if (!parser5.validAction(this.state, reduce)) {
+    if (!parser6.validAction(this.state, reduce)) {
       let depth = reduce >> 19, term = reduce & 65535;
       let target = this.stack.length - depth * 3;
-      if (target < 0 || parser5.getGoto(this.stack[target], term, false) < 0) {
+      if (target < 0 || parser6.getGoto(this.stack[target], term, false) < 0) {
         let backup = this.findForcedReduction();
         if (backup == null)
           return false;
@@ -26162,18 +26162,18 @@ var Stack = class _Stack {
   isn't a valid action. @internal
   */
   findForcedReduction() {
-    let { parser: parser5 } = this.p, seen = [];
+    let { parser: parser6 } = this.p, seen = [];
     let explore = (state, depth) => {
       if (seen.includes(state))
         return;
       seen.push(state);
-      return parser5.allActions(state, (action) => {
+      return parser6.allActions(state, (action) => {
         if (action & (262144 | 131072)) ;
         else if (action & 65536) {
           let rDepth = (action >> 19) - depth;
           if (rDepth > 1) {
             let term = action & 65535, target = this.stack.length - rDepth * 3;
-            if (target >= 0 && parser5.getGoto(this.stack[target], term, false) >= 0)
+            if (target >= 0 && parser6.getGoto(this.stack[target], term, false) >= 0)
               return rDepth << 19 | 65536 | term;
           }
         } else {
@@ -26209,12 +26209,12 @@ var Stack = class _Stack {
   get deadEnd() {
     if (this.stack.length != 3)
       return false;
-    let { parser: parser5 } = this.p;
-    return parser5.data[parser5.stateSlot(
+    let { parser: parser6 } = this.p;
+    return parser6.data[parser6.stateSlot(
       this.state,
       1
       /* ParseState.Actions */
-    )] == 65535 && !parser5.stateSlot(
+    )] == 65535 && !parser6.stateSlot(
       this.state,
       4
       /* ParseState.DefaultReduce */
@@ -26637,8 +26637,8 @@ var TokenGroup = class {
     this.id = id3;
   }
   token(input, stack) {
-    let { parser: parser5 } = stack.p;
-    readToken(this.data, input, stack, this.id, parser5.data, parser5.tokenPrecTable);
+    let { parser: parser6 } = stack.p;
+    readToken(this.data, input, stack, this.id, parser6.data, parser6.tokenPrecTable);
   }
 };
 TokenGroup.prototype.contextual = TokenGroup.prototype.fallback = TokenGroup.prototype.extend = false;
@@ -26839,18 +26839,18 @@ var FragmentCursor3 = class {
   }
 };
 var TokenCache = class {
-  constructor(parser5, stream) {
+  constructor(parser6, stream) {
     this.stream = stream;
     this.tokens = [];
     this.mainToken = null;
     this.actions = [];
-    this.tokens = parser5.tokenizers.map((_) => new CachedToken());
+    this.tokens = parser6.tokenizers.map((_) => new CachedToken());
   }
   getActions(stack) {
     let actionIndex = 0;
     let main = null;
-    let { parser: parser5 } = stack.p, { tokenizers } = parser5;
-    let mask = parser5.stateSlot(
+    let { parser: parser6 } = stack.p, { tokenizers } = parser6;
+    let mask = parser6.stateSlot(
       stack.state,
       3
       /* ParseState.TokenizerMask */
@@ -26908,10 +26908,10 @@ var TokenCache = class {
     let start = this.stream.clipPos(stack.pos);
     tokenizer.token(this.stream.reset(start, token), stack);
     if (token.value > -1) {
-      let { parser: parser5 } = stack.p;
-      for (let i = 0; i < parser5.specialized.length; i++)
-        if (parser5.specialized[i] == token.value) {
-          let result = parser5.specializers[i](this.stream.read(token.start, token.end), stack);
+      let { parser: parser6 } = stack.p;
+      for (let i = 0; i < parser6.specialized.length; i++)
+        if (parser6.specialized[i] == token.value) {
+          let result = parser6.specializers[i](this.stream.read(token.start, token.end), stack);
           if (result >= 0 && stack.p.parser.dialect.allows(result >> 1)) {
             if ((result & 1) == 0)
               token.value = result >> 1;
@@ -26935,9 +26935,9 @@ var TokenCache = class {
     return index;
   }
   addActions(stack, token, end, index) {
-    let { state } = stack, { parser: parser5 } = stack.p, { data: data2 } = parser5;
+    let { state } = stack, { parser: parser6 } = stack.p, { data: data2 } = parser6;
     for (let set = 0; set < 2; set++) {
-      for (let i = parser5.stateSlot(
+      for (let i = parser6.stateSlot(
         state,
         set ? 2 : 1
         /* ParseState.Actions */
@@ -26959,8 +26959,8 @@ var TokenCache = class {
   }
 };
 var Parse = class {
-  constructor(parser5, input, fragments, ranges) {
-    this.parser = parser5;
+  constructor(parser6, input, fragments, ranges) {
+    this.parser = parser6;
     this.input = input;
     this.ranges = ranges;
     this.recovering = 0;
@@ -26972,11 +26972,11 @@ var Parse = class {
     this.lastBigReductionSize = 0;
     this.bigReductionCount = 0;
     this.stream = new InputStream(input, ranges);
-    this.tokens = new TokenCache(parser5, this.stream);
-    this.topTerm = parser5.top[1];
+    this.tokens = new TokenCache(parser6, this.stream);
+    this.topTerm = parser6.top[1];
     let { from } = ranges[0];
-    this.stacks = [Stack.start(this, parser5.top[0], from)];
-    this.fragments = fragments.length && this.stream.end - from > parser5.bufferLength * 4 ? new FragmentCursor3(fragments, parser5.nodeSet) : null;
+    this.stacks = [Stack.start(this, parser6.top[0], from)];
+    this.fragments = fragments.length && this.stream.end - from > parser6.bufferLength * 4 ? new FragmentCursor3(fragments, parser6.nodeSet) : null;
   }
   get parsedPos() {
     return this.minStackPos;
@@ -27089,18 +27089,18 @@ var Parse = class {
   // given, stacks split off by ambiguous operations will be pushed to
   // `split`, or added to `stacks` if they move `pos` forward.
   advanceStack(stack, stacks, split) {
-    let start = stack.pos, { parser: parser5 } = this;
+    let start = stack.pos, { parser: parser6 } = this;
     let base2 = verbose ? this.stackID(stack) + " -> " : "";
     if (this.stoppedAt != null && start > this.stoppedAt)
       return stack.forceReduce() ? stack : null;
     if (this.fragments) {
       let strictCx = stack.curContext && stack.curContext.tracker.strict, cxHash = strictCx ? stack.curContext.hash : 0;
       for (let cached = this.fragments.nodeAt(start); cached; ) {
-        let match = this.parser.nodeSet.types[cached.type.id] == cached.type ? parser5.getGoto(stack.state, cached.type.id) : -1;
+        let match = this.parser.nodeSet.types[cached.type.id] == cached.type ? parser6.getGoto(stack.state, cached.type.id) : -1;
         if (match > -1 && cached.length && (!strictCx || (cached.prop(NodeProp.contextHash) || 0) == cxHash)) {
           stack.useNode(cached, match);
           if (verbose)
-            console.log(base2 + this.stackID(stack) + ` (via reuse of ${parser5.getName(cached.type.id)})`);
+            console.log(base2 + this.stackID(stack) + ` (via reuse of ${parser6.getName(cached.type.id)})`);
           return true;
         }
         if (!(cached instanceof Tree) || cached.children.length == 0 || cached.positions[0] > 0)
@@ -27112,7 +27112,7 @@ var Parse = class {
           break;
       }
     }
-    let defaultReduce = parser5.stateSlot(
+    let defaultReduce = parser6.stateSlot(
       stack.state,
       4
       /* ParseState.DefaultReduce */
@@ -27120,7 +27120,7 @@ var Parse = class {
     if (defaultReduce > 0) {
       stack.reduce(defaultReduce);
       if (verbose)
-        console.log(base2 + this.stackID(stack) + ` (via always-reduce ${parser5.getName(
+        console.log(base2 + this.stackID(stack) + ` (via always-reduce ${parser6.getName(
           defaultReduce & 65535
           /* Action.ValueMask */
         )})`);
@@ -27138,10 +27138,10 @@ var Parse = class {
       let main = this.tokens.mainToken;
       localStack.apply(action, term, main ? main.start : localStack.pos, end);
       if (verbose)
-        console.log(base2 + this.stackID(localStack) + ` (via ${(action & 65536) == 0 ? "shift" : `reduce of ${parser5.getName(
+        console.log(base2 + this.stackID(localStack) + ` (via ${(action & 65536) == 0 ? "shift" : `reduce of ${parser6.getName(
           action & 65535
           /* Action.ValueMask */
-        )}`} for ${parser5.getName(term)} @ ${start}${localStack == stack ? "" : ", split"})`);
+        )}`} for ${parser6.getName(term)} @ ${start}${localStack == stack ? "" : ", split"})`);
       if (last)
         return true;
       else if (localStack.pos > start)
@@ -27304,8 +27304,8 @@ var LRParser = class _LRParser extends Parser {
           }
         }
       }
-    this.nodeSet = new NodeSet(nodeNames.map((name8, i) => NodeType.define({
-      name: i >= this.minRepeatTerm ? void 0 : name8,
+    this.nodeSet = new NodeSet(nodeNames.map((name9, i) => NodeType.define({
+      name: i >= this.minRepeatTerm ? void 0 : name9,
       id: i,
       props: nodeProps[i],
       top: topTerms.indexOf(i) > -1,
@@ -27475,9 +27475,9 @@ var LRParser = class _LRParser extends Parser {
       copy.top = info;
     }
     if (config2.tokenizers)
-      copy.tokenizers = this.tokenizers.map((t8) => {
-        let found = config2.tokenizers.find((r) => r.from == t8);
-        return found ? found.to : t8;
+      copy.tokenizers = this.tokenizers.map((t9) => {
+        let found = config2.tokenizers.find((r) => r.from == t9);
+        return found ? found.to : t9;
       });
     if (config2.specializers) {
       copy.specializers = this.specializers.slice();
@@ -27595,31 +27595,31 @@ var Tag3 = class _Tag {
   /**
   @internal
   */
-  constructor(name8, set, base2, modified) {
-    this.name = name8;
+  constructor(name9, set, base2, modified) {
+    this.name = name9;
     this.set = set;
     this.base = base2;
     this.modified = modified;
     this.id = nextTagID3++;
   }
   toString() {
-    let { name: name8 } = this;
+    let { name: name9 } = this;
     for (let mod of this.modified)
       if (mod.name)
-        name8 = `${mod.name}(${name8})`;
-    return name8;
+        name9 = `${mod.name}(${name9})`;
+    return name9;
   }
   static define(nameOrParent, parent) {
-    let name8 = typeof nameOrParent == "string" ? nameOrParent : "?";
+    let name9 = typeof nameOrParent == "string" ? nameOrParent : "?";
     if (nameOrParent instanceof _Tag)
       parent = nameOrParent;
     if (parent === null || parent === void 0 ? void 0 : parent.base)
       throw new Error("Can not derive from a modified tag");
-    let tag = new _Tag(name8, [], null, []);
+    let tag = new _Tag(name9, [], null, []);
     tag.set.push(tag);
     if (parent)
-      for (let t8 of parent.set)
-        tag.set.push(t8);
+      for (let t9 of parent.set)
+        tag.set.push(t9);
     return tag;
   }
   /**
@@ -27634,8 +27634,8 @@ var Tag3 = class _Tag {
   example `m1(m2(m3(t1)))` is a subtype of `m1(m2(t1))`,
   `m1(m3(t1)`, and so on.
   */
-  static defineModifier(name8) {
-    let mod = new Modifier3(name8);
+  static defineModifier(name9) {
+    let mod = new Modifier3(name9);
     return (tag) => {
       if (tag.modified.indexOf(mod) > -1)
         return tag;
@@ -27645,15 +27645,15 @@ var Tag3 = class _Tag {
 };
 var nextModifierID3 = 0;
 var Modifier3 = class _Modifier {
-  constructor(name8) {
-    this.name = name8;
+  constructor(name9) {
+    this.name = name9;
     this.instances = [];
     this.id = nextModifierID3++;
   }
   static get(base2, mods) {
     if (!mods.length)
       return base2;
-    let exists = mods[0].instances.find((t8) => t8.base == base2 && sameArray4(mods, t8.modified));
+    let exists = mods[0].instances.find((t9) => t9.base == base2 && sameArray4(mods, t9.modified));
     if (exists)
       return exists;
     let set = [], tag = new Tag3(base2.name, set, base2, mods);
@@ -27682,9 +27682,9 @@ function powerSet3(array) {
 function styleTags3(spec) {
   let byName = /* @__PURE__ */ Object.create(null);
   for (let prop in spec) {
-    let tags9 = spec[prop];
-    if (!Array.isArray(tags9))
-      tags9 = [tags9];
+    let tags10 = spec[prop];
+    if (!Array.isArray(tags10))
+      tags10 = [tags10];
     for (let part of prop.split(" "))
       if (part) {
         let pieces = [], mode = 2, rest = part;
@@ -27712,7 +27712,7 @@ function styleTags3(spec) {
         let last = pieces.length - 1, inner = pieces[last];
         if (!inner)
           throw new RangeError("Invalid path: " + part);
-        let rule = new Rule3(tags9, mode, last > 0 ? pieces.slice(0, last) : null);
+        let rule = new Rule3(tags10, mode, last > 0 ? pieces.slice(0, last) : null);
         byName[inner] = rule.sort(byName[inner]);
       }
   }
@@ -27742,8 +27742,8 @@ var ruleNodeProp3 = new NodeProp({
   }
 });
 var Rule3 = class {
-  constructor(tags9, mode, context, next) {
-    this.tags = tags9;
+  constructor(tags10, mode, context, next) {
+    this.tags = tags10;
     this.mode = mode;
     this.context = context;
     this.next = next;
@@ -27767,9 +27767,9 @@ var Rule3 = class {
   }
 };
 Rule3.empty = new Rule3([], 2, null);
-function tagHighlighter3(tags9, options) {
+function tagHighlighter3(tags10, options) {
   let map = /* @__PURE__ */ Object.create(null);
-  for (let style of tags9) {
+  for (let style of tags10) {
     if (!Array.isArray(style.tag))
       map[style.tag.id] = style.class;
     else
@@ -27778,9 +27778,9 @@ function tagHighlighter3(tags9, options) {
   }
   let { scope, all = null } = options || {};
   return {
-    style: (tags10) => {
+    style: (tags11) => {
       let cls = all;
-      for (let tag of tags10) {
+      for (let tag of tags11) {
         for (let sub of tag.set) {
           let tagClass = map[sub.id];
           if (tagClass) {
@@ -28175,10 +28175,10 @@ var tags3 = {
   */
   special: Tag3.defineModifier("special")
 };
-for (let name8 in tags3) {
-  let val = tags3[name8];
+for (let name9 in tags3) {
+  let val = tags3[name9];
   if (val instanceof Tag3)
-    val.name = name8;
+    val.name = name9;
 }
 var classHighlighter3 = tagHighlighter3([
   { tag: tags3.link, class: "tok-link" },
@@ -28334,15 +28334,15 @@ var cachedPos = 0;
 function tagNameAfter(input, offset) {
   let pos = input.pos + offset;
   if (cachedPos == pos && cachedInput == input) return cachedName;
-  let next = input.peek(offset), name8 = "";
+  let next = input.peek(offset), name9 = "";
   for (; ; ) {
     if (!nameChar(next)) break;
-    name8 += String.fromCharCode(next);
+    name9 += String.fromCharCode(next);
     next = input.peek(++offset);
   }
   cachedInput = input;
   cachedPos = pos;
-  return cachedName = name8 ? name8.toLowerCase() : next == question || next == bang ? void 0 : null;
+  return cachedName = name9 ? name9.toLowerCase() : next == question || next == bang ? void 0 : null;
 }
 var lessThan = 60;
 var greaterThan = 62;
@@ -28350,8 +28350,8 @@ var slash = 47;
 var question = 63;
 var bang = 33;
 var dash = 45;
-function ElementContext(name8, parent) {
-  this.name = name8;
+function ElementContext(name9, parent) {
+  this.name = name9;
   this.parent = parent;
 }
 var startTagTerms = [StartTag, StartSelfClosingTag, StartScriptTag, StartStyleTag, StartTextareaTag];
@@ -28377,22 +28377,22 @@ var tagStart = new ExternalTokenizer((input, stack) => {
   input.advance();
   let close = input.next == slash;
   if (close) input.advance();
-  let name8 = tagNameAfter(input, 0);
-  if (name8 === void 0) return;
-  if (!name8) return input.acceptToken(close ? IncompleteCloseTag : IncompleteTag);
+  let name9 = tagNameAfter(input, 0);
+  if (name9 === void 0) return;
+  if (!name9) return input.acceptToken(close ? IncompleteCloseTag : IncompleteTag);
   let parent = stack.context ? stack.context.name : null;
   if (close) {
-    if (name8 == parent) return input.acceptToken(StartCloseTag);
+    if (name9 == parent) return input.acceptToken(StartCloseTag);
     if (parent && implicitlyClosed[parent]) return input.acceptToken(missingCloseTag, -2);
     if (stack.dialectEnabled(Dialect_noMatch)) return input.acceptToken(NoMatchStartCloseTag);
-    for (let cx = stack.context; cx; cx = cx.parent) if (cx.name == name8) return;
+    for (let cx = stack.context; cx; cx = cx.parent) if (cx.name == name9) return;
     input.acceptToken(MismatchedStartCloseTag);
   } else {
-    if (name8 == "script") return input.acceptToken(StartScriptTag);
-    if (name8 == "style") return input.acceptToken(StartStyleTag);
-    if (name8 == "textarea") return input.acceptToken(StartTextareaTag);
-    if (selfClosers.hasOwnProperty(name8)) return input.acceptToken(StartSelfClosingTag);
-    if (parent && closeOnOpen[parent] && closeOnOpen[parent][name8]) input.acceptToken(missingCloseTag, -1);
+    if (name9 == "script") return input.acceptToken(StartScriptTag);
+    if (name9 == "style") return input.acceptToken(StartStyleTag);
+    if (name9 == "textarea") return input.acceptToken(StartTextareaTag);
+    if (selfClosers.hasOwnProperty(name9)) return input.acceptToken(StartSelfClosingTag);
+    if (parent && closeOnOpen[parent] && closeOnOpen[parent][name9]) input.acceptToken(missingCloseTag, -1);
     else input.acceptToken(StartTag);
   }
 }, { contextual: true });
@@ -28495,8 +28495,8 @@ var parser2 = LRParser.deserialize({
 function getAttrs2(openTag, input) {
   let attrs = /* @__PURE__ */ Object.create(null);
   for (let att of openTag.getChildren(Attribute)) {
-    let name8 = att.getChild(AttributeName), value = att.getChild(AttributeValue) || att.getChild(UnquotedAttributeValue);
-    if (name8) attrs[input.read(name8.from, name8.to)] = !value ? "" : value.type.id == AttributeValue ? input.read(value.from + 1, value.to - 1) : input.read(value.from, value.to);
+    let name9 = att.getChild(AttributeName), value = att.getChild(AttributeValue) || att.getChild(UnquotedAttributeValue);
+    if (name9) attrs[input.read(name9.from, name9.to)] = !value ? "" : value.type.id == AttributeValue ? input.read(value.from + 1, value.to - 1) : input.read(value.from, value.to);
   }
   return attrs;
 }
@@ -28504,17 +28504,17 @@ function findTagName(openTag, input) {
   let tagNameNode = openTag.getChild(TagName);
   return tagNameNode ? input.read(tagNameNode.from, tagNameNode.to) : " ";
 }
-function maybeNest(node, input, tags9) {
+function maybeNest(node, input, tags10) {
   let attrs;
-  for (let tag of tags9) {
+  for (let tag of tags10) {
     if (!tag.attrs || tag.attrs(attrs || (attrs = getAttrs2(node.node.parent.firstChild, input))))
       return { parser: tag.parser, bracketed: true };
   }
   return null;
 }
-function configureNesting(tags9 = [], attributes = []) {
+function configureNesting(tags10 = [], attributes = []) {
   let script = [], style = [], textarea = [], other = [];
-  for (let tag of tags9) {
+  for (let tag of tags10) {
     let array = tag.tag == "script" ? script : tag.tag == "style" ? style : tag.tag == "textarea" ? textarea : other;
     array.push(tag);
   }
@@ -28614,23 +28614,23 @@ var Stack2 = class _Stack {
   reduce(action) {
     var _a2;
     let depth = action >> 19, type = action & 65535;
-    let { parser: parser5 } = this.p;
+    let { parser: parser6 } = this.p;
     let lookaheadRecord = this.reducePos < this.pos - 25 && this.setLookAhead(this.pos);
-    let dPrec = parser5.dynamicPrecedence(type);
+    let dPrec = parser6.dynamicPrecedence(type);
     if (dPrec)
       this.score += dPrec;
     if (depth == 0) {
-      if (type < parser5.minRepeatTerm && this.reducePos < this.pos)
+      if (type < parser6.minRepeatTerm && this.reducePos < this.pos)
         this.reducePos = this.pos;
-      this.pushState(parser5.getGoto(this.state, type, true), this.reducePos);
-      if (type < parser5.minRepeatTerm)
+      this.pushState(parser6.getGoto(this.state, type, true), this.reducePos);
+      if (type < parser6.minRepeatTerm)
         this.storeNode(type, this.reducePos, this.reducePos, lookaheadRecord ? 8 : 4, true);
       this.reduceContext(type, this.reducePos);
       return;
     }
     let base2 = this.stack.length - (depth - 1) * 3 - (action & 262144 ? 6 : 0);
     let start = base2 ? this.stack[base2 - 2] : this.p.ranges[0].from;
-    if (type < parser5.minRepeatTerm && start == this.reducePos && this.reducePos < this.pos)
+    if (type < parser6.minRepeatTerm && start == this.reducePos && this.reducePos < this.pos)
       this.reducePos = this.pos;
     let size = this.reducePos - start;
     if (size >= 2e3 && !((_a2 = this.p.parser.nodeSet.types[type]) === null || _a2 === void 0 ? void 0 : _a2.isAnonymous)) {
@@ -28644,8 +28644,8 @@ var Stack2 = class _Stack {
       }
     }
     let bufferBase = base2 ? this.stack[base2 - 1] : 0, count2 = this.bufferBase + this.buffer.length - bufferBase;
-    if (type < parser5.minRepeatTerm || action & 131072) {
-      let pos = parser5.stateFlag(
+    if (type < parser6.minRepeatTerm || action & 131072) {
+      let pos = parser6.stateFlag(
         this.state,
         1
         /* StateFlag.Skipped */
@@ -28656,7 +28656,7 @@ var Stack2 = class _Stack {
       this.state = this.stack[base2];
     } else {
       let baseStateID = this.stack[base2 - 3];
-      this.state = parser5.getGoto(baseStateID, type, true);
+      this.state = parser6.getGoto(baseStateID, type, true);
     }
     while (this.stack.length > base2)
       this.stack.pop();
@@ -28715,18 +28715,18 @@ var Stack2 = class _Stack {
     if (action & 131072) {
       this.pushState(action & 65535, this.pos);
     } else if ((action & 262144) == 0) {
-      let nextState = action, { parser: parser5 } = this.p;
+      let nextState = action, { parser: parser6 } = this.p;
       this.pos = end;
-      let skipped = parser5.stateFlag(
+      let skipped = parser6.stateFlag(
         nextState,
         1
         /* StateFlag.Skipped */
       );
-      if (!skipped && (end > start || type <= parser5.maxNode))
+      if (!skipped && (end > start || type <= parser6.maxNode))
         this.reducePos = end;
       this.pushState(nextState, skipped ? start : Math.min(start, this.reducePos));
       this.shiftContext(type, start);
-      if (type <= parser5.maxNode)
+      if (type <= parser6.maxNode)
         this.buffer.push(type, start, end, 4);
     } else {
       this.pos = end;
@@ -28862,18 +28862,18 @@ var Stack2 = class _Stack {
   @internal
   */
   forceReduce() {
-    let { parser: parser5 } = this.p;
-    let reduce = parser5.stateSlot(
+    let { parser: parser6 } = this.p;
+    let reduce = parser6.stateSlot(
       this.state,
       5
       /* ParseState.ForcedReduce */
     );
     if ((reduce & 65536) == 0)
       return false;
-    if (!parser5.validAction(this.state, reduce)) {
+    if (!parser6.validAction(this.state, reduce)) {
       let depth = reduce >> 19, term = reduce & 65535;
       let target = this.stack.length - depth * 3;
-      if (target < 0 || parser5.getGoto(this.stack[target], term, false) < 0) {
+      if (target < 0 || parser6.getGoto(this.stack[target], term, false) < 0) {
         let backup = this.findForcedReduction();
         if (backup == null)
           return false;
@@ -28892,18 +28892,18 @@ var Stack2 = class _Stack {
   isn't a valid action. @internal
   */
   findForcedReduction() {
-    let { parser: parser5 } = this.p, seen = [];
+    let { parser: parser6 } = this.p, seen = [];
     let explore = (state, depth) => {
       if (seen.includes(state))
         return;
       seen.push(state);
-      return parser5.allActions(state, (action) => {
+      return parser6.allActions(state, (action) => {
         if (action & (262144 | 131072)) ;
         else if (action & 65536) {
           let rDepth = (action >> 19) - depth;
           if (rDepth > 1) {
             let term = action & 65535, target = this.stack.length - rDepth * 3;
-            if (target >= 0 && parser5.getGoto(this.stack[target], term, false) >= 0)
+            if (target >= 0 && parser6.getGoto(this.stack[target], term, false) >= 0)
               return rDepth << 19 | 65536 | term;
           }
         } else {
@@ -28939,12 +28939,12 @@ var Stack2 = class _Stack {
   get deadEnd() {
     if (this.stack.length != 3)
       return false;
-    let { parser: parser5 } = this.p;
-    return parser5.data[parser5.stateSlot(
+    let { parser: parser6 } = this.p;
+    return parser6.data[parser6.stateSlot(
       this.state,
       1
       /* ParseState.Actions */
-    )] == 65535 && !parser5.stateSlot(
+    )] == 65535 && !parser6.stateSlot(
       this.state,
       4
       /* ParseState.DefaultReduce */
@@ -29367,8 +29367,8 @@ var TokenGroup2 = class {
     this.id = id3;
   }
   token(input, stack) {
-    let { parser: parser5 } = stack.p;
-    readToken2(this.data, input, stack, this.id, parser5.data, parser5.tokenPrecTable);
+    let { parser: parser6 } = stack.p;
+    readToken2(this.data, input, stack, this.id, parser6.data, parser6.tokenPrecTable);
   }
 };
 TokenGroup2.prototype.contextual = TokenGroup2.prototype.fallback = TokenGroup2.prototype.extend = false;
@@ -29569,18 +29569,18 @@ var FragmentCursor4 = class {
   }
 };
 var TokenCache2 = class {
-  constructor(parser5, stream) {
+  constructor(parser6, stream) {
     this.stream = stream;
     this.tokens = [];
     this.mainToken = null;
     this.actions = [];
-    this.tokens = parser5.tokenizers.map((_) => new CachedToken2());
+    this.tokens = parser6.tokenizers.map((_) => new CachedToken2());
   }
   getActions(stack) {
     let actionIndex = 0;
     let main = null;
-    let { parser: parser5 } = stack.p, { tokenizers } = parser5;
-    let mask = parser5.stateSlot(
+    let { parser: parser6 } = stack.p, { tokenizers } = parser6;
+    let mask = parser6.stateSlot(
       stack.state,
       3
       /* ParseState.TokenizerMask */
@@ -29638,10 +29638,10 @@ var TokenCache2 = class {
     let start = this.stream.clipPos(stack.pos);
     tokenizer.token(this.stream.reset(start, token), stack);
     if (token.value > -1) {
-      let { parser: parser5 } = stack.p;
-      for (let i = 0; i < parser5.specialized.length; i++)
-        if (parser5.specialized[i] == token.value) {
-          let result = parser5.specializers[i](this.stream.read(token.start, token.end), stack);
+      let { parser: parser6 } = stack.p;
+      for (let i = 0; i < parser6.specialized.length; i++)
+        if (parser6.specialized[i] == token.value) {
+          let result = parser6.specializers[i](this.stream.read(token.start, token.end), stack);
           if (result >= 0 && stack.p.parser.dialect.allows(result >> 1)) {
             if ((result & 1) == 0)
               token.value = result >> 1;
@@ -29665,9 +29665,9 @@ var TokenCache2 = class {
     return index;
   }
   addActions(stack, token, end, index) {
-    let { state } = stack, { parser: parser5 } = stack.p, { data: data2 } = parser5;
+    let { state } = stack, { parser: parser6 } = stack.p, { data: data2 } = parser6;
     for (let set = 0; set < 2; set++) {
-      for (let i = parser5.stateSlot(
+      for (let i = parser6.stateSlot(
         state,
         set ? 2 : 1
         /* ParseState.Actions */
@@ -29689,8 +29689,8 @@ var TokenCache2 = class {
   }
 };
 var Parse2 = class {
-  constructor(parser5, input, fragments, ranges) {
-    this.parser = parser5;
+  constructor(parser6, input, fragments, ranges) {
+    this.parser = parser6;
     this.input = input;
     this.ranges = ranges;
     this.recovering = 0;
@@ -29702,11 +29702,11 @@ var Parse2 = class {
     this.lastBigReductionSize = 0;
     this.bigReductionCount = 0;
     this.stream = new InputStream2(input, ranges);
-    this.tokens = new TokenCache2(parser5, this.stream);
-    this.topTerm = parser5.top[1];
+    this.tokens = new TokenCache2(parser6, this.stream);
+    this.topTerm = parser6.top[1];
     let { from } = ranges[0];
-    this.stacks = [Stack2.start(this, parser5.top[0], from)];
-    this.fragments = fragments.length && this.stream.end - from > parser5.bufferLength * 4 ? new FragmentCursor4(fragments, parser5.nodeSet) : null;
+    this.stacks = [Stack2.start(this, parser6.top[0], from)];
+    this.fragments = fragments.length && this.stream.end - from > parser6.bufferLength * 4 ? new FragmentCursor4(fragments, parser6.nodeSet) : null;
   }
   get parsedPos() {
     return this.minStackPos;
@@ -29819,18 +29819,18 @@ var Parse2 = class {
   // given, stacks split off by ambiguous operations will be pushed to
   // `split`, or added to `stacks` if they move `pos` forward.
   advanceStack(stack, stacks, split) {
-    let start = stack.pos, { parser: parser5 } = this;
+    let start = stack.pos, { parser: parser6 } = this;
     let base2 = verbose2 ? this.stackID(stack) + " -> " : "";
     if (this.stoppedAt != null && start > this.stoppedAt)
       return stack.forceReduce() ? stack : null;
     if (this.fragments) {
       let strictCx = stack.curContext && stack.curContext.tracker.strict, cxHash = strictCx ? stack.curContext.hash : 0;
       for (let cached = this.fragments.nodeAt(start); cached; ) {
-        let match = this.parser.nodeSet.types[cached.type.id] == cached.type ? parser5.getGoto(stack.state, cached.type.id) : -1;
+        let match = this.parser.nodeSet.types[cached.type.id] == cached.type ? parser6.getGoto(stack.state, cached.type.id) : -1;
         if (match > -1 && cached.length && (!strictCx || (cached.prop(NodeProp.contextHash) || 0) == cxHash)) {
           stack.useNode(cached, match);
           if (verbose2)
-            console.log(base2 + this.stackID(stack) + ` (via reuse of ${parser5.getName(cached.type.id)})`);
+            console.log(base2 + this.stackID(stack) + ` (via reuse of ${parser6.getName(cached.type.id)})`);
           return true;
         }
         if (!(cached instanceof Tree) || cached.children.length == 0 || cached.positions[0] > 0)
@@ -29842,7 +29842,7 @@ var Parse2 = class {
           break;
       }
     }
-    let defaultReduce = parser5.stateSlot(
+    let defaultReduce = parser6.stateSlot(
       stack.state,
       4
       /* ParseState.DefaultReduce */
@@ -29850,7 +29850,7 @@ var Parse2 = class {
     if (defaultReduce > 0) {
       stack.reduce(defaultReduce);
       if (verbose2)
-        console.log(base2 + this.stackID(stack) + ` (via always-reduce ${parser5.getName(
+        console.log(base2 + this.stackID(stack) + ` (via always-reduce ${parser6.getName(
           defaultReduce & 65535
           /* Action.ValueMask */
         )})`);
@@ -29868,10 +29868,10 @@ var Parse2 = class {
       let main = this.tokens.mainToken;
       localStack.apply(action, term, main ? main.start : localStack.pos, end);
       if (verbose2)
-        console.log(base2 + this.stackID(localStack) + ` (via ${(action & 65536) == 0 ? "shift" : `reduce of ${parser5.getName(
+        console.log(base2 + this.stackID(localStack) + ` (via ${(action & 65536) == 0 ? "shift" : `reduce of ${parser6.getName(
           action & 65535
           /* Action.ValueMask */
-        )}`} for ${parser5.getName(term)} @ ${start}${localStack == stack ? "" : ", split"})`);
+        )}`} for ${parser6.getName(term)} @ ${start}${localStack == stack ? "" : ", split"})`);
       if (last)
         return true;
       else if (localStack.pos > start)
@@ -30020,8 +30020,8 @@ var LRParser2 = class _LRParser extends Parser {
           }
         }
       }
-    this.nodeSet = new NodeSet(nodeNames.map((name8, i) => NodeType.define({
-      name: i >= this.minRepeatTerm ? void 0 : name8,
+    this.nodeSet = new NodeSet(nodeNames.map((name9, i) => NodeType.define({
+      name: i >= this.minRepeatTerm ? void 0 : name9,
       id: i,
       props: nodeProps[i],
       top: topTerms.indexOf(i) > -1,
@@ -30191,9 +30191,9 @@ var LRParser2 = class _LRParser extends Parser {
       copy.top = info;
     }
     if (config2.tokenizers)
-      copy.tokenizers = this.tokenizers.map((t8) => {
-        let found = config2.tokenizers.find((r) => r.from == t8);
-        return found ? found.to : t8;
+      copy.tokenizers = this.tokenizers.map((t9) => {
+        let found = config2.tokenizers.find((r) => r.from == t9);
+        return found ? found.to : t9;
       });
     if (config2.specializers) {
       copy.specializers = this.specializers.slice();
@@ -30311,31 +30311,31 @@ var Tag4 = class _Tag {
   /**
   @internal
   */
-  constructor(name8, set, base2, modified) {
-    this.name = name8;
+  constructor(name9, set, base2, modified) {
+    this.name = name9;
     this.set = set;
     this.base = base2;
     this.modified = modified;
     this.id = nextTagID4++;
   }
   toString() {
-    let { name: name8 } = this;
+    let { name: name9 } = this;
     for (let mod of this.modified)
       if (mod.name)
-        name8 = `${mod.name}(${name8})`;
-    return name8;
+        name9 = `${mod.name}(${name9})`;
+    return name9;
   }
   static define(nameOrParent, parent) {
-    let name8 = typeof nameOrParent == "string" ? nameOrParent : "?";
+    let name9 = typeof nameOrParent == "string" ? nameOrParent : "?";
     if (nameOrParent instanceof _Tag)
       parent = nameOrParent;
     if (parent === null || parent === void 0 ? void 0 : parent.base)
       throw new Error("Can not derive from a modified tag");
-    let tag = new _Tag(name8, [], null, []);
+    let tag = new _Tag(name9, [], null, []);
     tag.set.push(tag);
     if (parent)
-      for (let t8 of parent.set)
-        tag.set.push(t8);
+      for (let t9 of parent.set)
+        tag.set.push(t9);
     return tag;
   }
   /**
@@ -30350,8 +30350,8 @@ var Tag4 = class _Tag {
   example `m1(m2(m3(t1)))` is a subtype of `m1(m2(t1))`,
   `m1(m3(t1)`, and so on.
   */
-  static defineModifier(name8) {
-    let mod = new Modifier4(name8);
+  static defineModifier(name9) {
+    let mod = new Modifier4(name9);
     return (tag) => {
       if (tag.modified.indexOf(mod) > -1)
         return tag;
@@ -30361,15 +30361,15 @@ var Tag4 = class _Tag {
 };
 var nextModifierID4 = 0;
 var Modifier4 = class _Modifier {
-  constructor(name8) {
-    this.name = name8;
+  constructor(name9) {
+    this.name = name9;
     this.instances = [];
     this.id = nextModifierID4++;
   }
   static get(base2, mods) {
     if (!mods.length)
       return base2;
-    let exists = mods[0].instances.find((t8) => t8.base == base2 && sameArray5(mods, t8.modified));
+    let exists = mods[0].instances.find((t9) => t9.base == base2 && sameArray5(mods, t9.modified));
     if (exists)
       return exists;
     let set = [], tag = new Tag4(base2.name, set, base2, mods);
@@ -30398,9 +30398,9 @@ function powerSet4(array) {
 function styleTags4(spec) {
   let byName = /* @__PURE__ */ Object.create(null);
   for (let prop in spec) {
-    let tags9 = spec[prop];
-    if (!Array.isArray(tags9))
-      tags9 = [tags9];
+    let tags10 = spec[prop];
+    if (!Array.isArray(tags10))
+      tags10 = [tags10];
     for (let part of prop.split(" "))
       if (part) {
         let pieces = [], mode = 2, rest = part;
@@ -30428,7 +30428,7 @@ function styleTags4(spec) {
         let last = pieces.length - 1, inner = pieces[last];
         if (!inner)
           throw new RangeError("Invalid path: " + part);
-        let rule = new Rule4(tags9, mode, last > 0 ? pieces.slice(0, last) : null);
+        let rule = new Rule4(tags10, mode, last > 0 ? pieces.slice(0, last) : null);
         byName[inner] = rule.sort(byName[inner]);
       }
   }
@@ -30458,8 +30458,8 @@ var ruleNodeProp4 = new NodeProp({
   }
 });
 var Rule4 = class {
-  constructor(tags9, mode, context, next) {
-    this.tags = tags9;
+  constructor(tags10, mode, context, next) {
+    this.tags = tags10;
     this.mode = mode;
     this.context = context;
     this.next = next;
@@ -30483,9 +30483,9 @@ var Rule4 = class {
   }
 };
 Rule4.empty = new Rule4([], 2, null);
-function tagHighlighter4(tags9, options) {
+function tagHighlighter4(tags10, options) {
   let map = /* @__PURE__ */ Object.create(null);
-  for (let style of tags9) {
+  for (let style of tags10) {
     if (!Array.isArray(style.tag))
       map[style.tag.id] = style.class;
     else
@@ -30494,9 +30494,9 @@ function tagHighlighter4(tags9, options) {
   }
   let { scope, all = null } = options || {};
   return {
-    style: (tags10) => {
+    style: (tags11) => {
       let cls = all;
-      for (let tag of tags10) {
+      for (let tag of tags11) {
         for (let sub of tag.set) {
           let tagClass = map[sub.id];
           if (tagClass) {
@@ -30891,10 +30891,10 @@ var tags4 = {
   */
   special: Tag4.defineModifier("special")
 };
-for (let name8 in tags4) {
-  let val = tags4[name8];
+for (let name9 in tags4) {
+  let val = tags4[name9];
   if (val instanceof Tag4)
-    val.name = name8;
+    val.name = name9;
 }
 var classHighlighter4 = tagHighlighter4([
   { tag: tags4.link, class: "tok-link" },
@@ -31120,7 +31120,7 @@ function properties() {
           }
         }
       }
-    _properties = names.sort().map((name8) => ({ type: "property", label: name8, apply: name8 + ": " }));
+    _properties = names.sort().map((name9) => ({ type: "property", label: name9, apply: name9 + ": " }));
   }
   return _properties || [];
 }
@@ -31188,7 +31188,7 @@ var pseudoClasses = /* @__PURE__ */ [
   "valid",
   "visited",
   "where"
-].map((name8) => ({ type: "class", label: name8 }));
+].map((name9) => ({ type: "class", label: name9 }));
 var values = /* @__PURE__ */ [
   "above",
   "absolute",
@@ -31609,7 +31609,7 @@ var values = /* @__PURE__ */ [
   "xor",
   "xx-large",
   "xx-small"
-].map((name8) => ({ type: "keyword", label: name8 })).concat(/* @__PURE__ */ [
+].map((name9) => ({ type: "keyword", label: name9 })).concat(/* @__PURE__ */ [
   "aliceblue",
   "antiquewhite",
   "aqua",
@@ -31752,7 +31752,7 @@ var values = /* @__PURE__ */ [
   "whitesmoke",
   "yellow",
   "yellowgreen"
-].map((name8) => ({ type: "constant", label: name8 })));
+].map((name9) => ({ type: "constant", label: name9 })));
 var tags5 = /* @__PURE__ */ [
   "a",
   "abbr",
@@ -31832,7 +31832,7 @@ var tags5 = /* @__PURE__ */ [
   "tr",
   "u",
   "ul"
-].map((name8) => ({ type: "type", label: name8 }));
+].map((name9) => ({ type: "type", label: name9 }));
 var atRules = /* @__PURE__ */ [
   "@charset",
   "@color-profile",
@@ -31898,10 +31898,10 @@ function variableNames(doc2, node, isVariable) {
     node.cursor().iterate((node2) => {
       var _a2;
       if (isVariable(node2) && node2.matchContext(declSelector) && ((_a2 = node2.node.nextSibling) === null || _a2 === void 0 ? void 0 : _a2.name) == ":") {
-        let name8 = doc2.sliceString(node2.from, node2.to);
-        if (!seen.has(name8)) {
-          seen.add(name8);
-          result.push({ label: name8, type: "variable" });
+        let name9 = doc2.sliceString(node2.from, node2.to);
+        if (!seen.has(name9)) {
+          seen.add(name9);
+          result.push({ label: name9, type: "variable" });
         }
       }
     });
@@ -32022,23 +32022,23 @@ var Stack3 = class _Stack {
   reduce(action) {
     var _a2;
     let depth = action >> 19, type = action & 65535;
-    let { parser: parser5 } = this.p;
+    let { parser: parser6 } = this.p;
     let lookaheadRecord = this.reducePos < this.pos - 25 && this.setLookAhead(this.pos);
-    let dPrec = parser5.dynamicPrecedence(type);
+    let dPrec = parser6.dynamicPrecedence(type);
     if (dPrec)
       this.score += dPrec;
     if (depth == 0) {
-      if (type < parser5.minRepeatTerm && this.reducePos < this.pos)
+      if (type < parser6.minRepeatTerm && this.reducePos < this.pos)
         this.reducePos = this.pos;
-      this.pushState(parser5.getGoto(this.state, type, true), this.reducePos);
-      if (type < parser5.minRepeatTerm)
+      this.pushState(parser6.getGoto(this.state, type, true), this.reducePos);
+      if (type < parser6.minRepeatTerm)
         this.storeNode(type, this.reducePos, this.reducePos, lookaheadRecord ? 8 : 4, true);
       this.reduceContext(type, this.reducePos);
       return;
     }
     let base2 = this.stack.length - (depth - 1) * 3 - (action & 262144 ? 6 : 0);
     let start = base2 ? this.stack[base2 - 2] : this.p.ranges[0].from;
-    if (type < parser5.minRepeatTerm && start == this.reducePos && this.reducePos < this.pos)
+    if (type < parser6.minRepeatTerm && start == this.reducePos && this.reducePos < this.pos)
       this.reducePos = this.pos;
     let size = this.reducePos - start;
     if (size >= 2e3 && !((_a2 = this.p.parser.nodeSet.types[type]) === null || _a2 === void 0 ? void 0 : _a2.isAnonymous)) {
@@ -32052,8 +32052,8 @@ var Stack3 = class _Stack {
       }
     }
     let bufferBase = base2 ? this.stack[base2 - 1] : 0, count2 = this.bufferBase + this.buffer.length - bufferBase;
-    if (type < parser5.minRepeatTerm || action & 131072) {
-      let pos = parser5.stateFlag(
+    if (type < parser6.minRepeatTerm || action & 131072) {
+      let pos = parser6.stateFlag(
         this.state,
         1
         /* StateFlag.Skipped */
@@ -32064,7 +32064,7 @@ var Stack3 = class _Stack {
       this.state = this.stack[base2];
     } else {
       let baseStateID = this.stack[base2 - 3];
-      this.state = parser5.getGoto(baseStateID, type, true);
+      this.state = parser6.getGoto(baseStateID, type, true);
     }
     while (this.stack.length > base2)
       this.stack.pop();
@@ -32123,18 +32123,18 @@ var Stack3 = class _Stack {
     if (action & 131072) {
       this.pushState(action & 65535, this.pos);
     } else if ((action & 262144) == 0) {
-      let nextState = action, { parser: parser5 } = this.p;
+      let nextState = action, { parser: parser6 } = this.p;
       this.pos = end;
-      let skipped = parser5.stateFlag(
+      let skipped = parser6.stateFlag(
         nextState,
         1
         /* StateFlag.Skipped */
       );
-      if (!skipped && (end > start || type <= parser5.maxNode))
+      if (!skipped && (end > start || type <= parser6.maxNode))
         this.reducePos = end;
       this.pushState(nextState, skipped ? start : Math.min(start, this.reducePos));
       this.shiftContext(type, start);
-      if (type <= parser5.maxNode)
+      if (type <= parser6.maxNode)
         this.buffer.push(type, start, end, 4);
     } else {
       this.pos = end;
@@ -32270,18 +32270,18 @@ var Stack3 = class _Stack {
   @internal
   */
   forceReduce() {
-    let { parser: parser5 } = this.p;
-    let reduce = parser5.stateSlot(
+    let { parser: parser6 } = this.p;
+    let reduce = parser6.stateSlot(
       this.state,
       5
       /* ParseState.ForcedReduce */
     );
     if ((reduce & 65536) == 0)
       return false;
-    if (!parser5.validAction(this.state, reduce)) {
+    if (!parser6.validAction(this.state, reduce)) {
       let depth = reduce >> 19, term = reduce & 65535;
       let target = this.stack.length - depth * 3;
-      if (target < 0 || parser5.getGoto(this.stack[target], term, false) < 0) {
+      if (target < 0 || parser6.getGoto(this.stack[target], term, false) < 0) {
         let backup = this.findForcedReduction();
         if (backup == null)
           return false;
@@ -32300,18 +32300,18 @@ var Stack3 = class _Stack {
   isn't a valid action. @internal
   */
   findForcedReduction() {
-    let { parser: parser5 } = this.p, seen = [];
+    let { parser: parser6 } = this.p, seen = [];
     let explore = (state, depth) => {
       if (seen.includes(state))
         return;
       seen.push(state);
-      return parser5.allActions(state, (action) => {
+      return parser6.allActions(state, (action) => {
         if (action & (262144 | 131072)) ;
         else if (action & 65536) {
           let rDepth = (action >> 19) - depth;
           if (rDepth > 1) {
             let term = action & 65535, target = this.stack.length - rDepth * 3;
-            if (target >= 0 && parser5.getGoto(this.stack[target], term, false) >= 0)
+            if (target >= 0 && parser6.getGoto(this.stack[target], term, false) >= 0)
               return rDepth << 19 | 65536 | term;
           }
         } else {
@@ -32347,12 +32347,12 @@ var Stack3 = class _Stack {
   get deadEnd() {
     if (this.stack.length != 3)
       return false;
-    let { parser: parser5 } = this.p;
-    return parser5.data[parser5.stateSlot(
+    let { parser: parser6 } = this.p;
+    return parser6.data[parser6.stateSlot(
       this.state,
       1
       /* ParseState.Actions */
-    )] == 65535 && !parser5.stateSlot(
+    )] == 65535 && !parser6.stateSlot(
       this.state,
       4
       /* ParseState.DefaultReduce */
@@ -32775,8 +32775,8 @@ var TokenGroup3 = class {
     this.id = id3;
   }
   token(input, stack) {
-    let { parser: parser5 } = stack.p;
-    readToken3(this.data, input, stack, this.id, parser5.data, parser5.tokenPrecTable);
+    let { parser: parser6 } = stack.p;
+    readToken3(this.data, input, stack, this.id, parser6.data, parser6.tokenPrecTable);
   }
 };
 TokenGroup3.prototype.contextual = TokenGroup3.prototype.fallback = TokenGroup3.prototype.extend = false;
@@ -32977,18 +32977,18 @@ var FragmentCursor5 = class {
   }
 };
 var TokenCache3 = class {
-  constructor(parser5, stream) {
+  constructor(parser6, stream) {
     this.stream = stream;
     this.tokens = [];
     this.mainToken = null;
     this.actions = [];
-    this.tokens = parser5.tokenizers.map((_) => new CachedToken3());
+    this.tokens = parser6.tokenizers.map((_) => new CachedToken3());
   }
   getActions(stack) {
     let actionIndex = 0;
     let main = null;
-    let { parser: parser5 } = stack.p, { tokenizers } = parser5;
-    let mask = parser5.stateSlot(
+    let { parser: parser6 } = stack.p, { tokenizers } = parser6;
+    let mask = parser6.stateSlot(
       stack.state,
       3
       /* ParseState.TokenizerMask */
@@ -33046,10 +33046,10 @@ var TokenCache3 = class {
     let start = this.stream.clipPos(stack.pos);
     tokenizer.token(this.stream.reset(start, token), stack);
     if (token.value > -1) {
-      let { parser: parser5 } = stack.p;
-      for (let i = 0; i < parser5.specialized.length; i++)
-        if (parser5.specialized[i] == token.value) {
-          let result = parser5.specializers[i](this.stream.read(token.start, token.end), stack);
+      let { parser: parser6 } = stack.p;
+      for (let i = 0; i < parser6.specialized.length; i++)
+        if (parser6.specialized[i] == token.value) {
+          let result = parser6.specializers[i](this.stream.read(token.start, token.end), stack);
           if (result >= 0 && stack.p.parser.dialect.allows(result >> 1)) {
             if ((result & 1) == 0)
               token.value = result >> 1;
@@ -33073,9 +33073,9 @@ var TokenCache3 = class {
     return index;
   }
   addActions(stack, token, end, index) {
-    let { state } = stack, { parser: parser5 } = stack.p, { data: data2 } = parser5;
+    let { state } = stack, { parser: parser6 } = stack.p, { data: data2 } = parser6;
     for (let set = 0; set < 2; set++) {
-      for (let i = parser5.stateSlot(
+      for (let i = parser6.stateSlot(
         state,
         set ? 2 : 1
         /* ParseState.Actions */
@@ -33097,8 +33097,8 @@ var TokenCache3 = class {
   }
 };
 var Parse3 = class {
-  constructor(parser5, input, fragments, ranges) {
-    this.parser = parser5;
+  constructor(parser6, input, fragments, ranges) {
+    this.parser = parser6;
     this.input = input;
     this.ranges = ranges;
     this.recovering = 0;
@@ -33110,11 +33110,11 @@ var Parse3 = class {
     this.lastBigReductionSize = 0;
     this.bigReductionCount = 0;
     this.stream = new InputStream3(input, ranges);
-    this.tokens = new TokenCache3(parser5, this.stream);
-    this.topTerm = parser5.top[1];
+    this.tokens = new TokenCache3(parser6, this.stream);
+    this.topTerm = parser6.top[1];
     let { from } = ranges[0];
-    this.stacks = [Stack3.start(this, parser5.top[0], from)];
-    this.fragments = fragments.length && this.stream.end - from > parser5.bufferLength * 4 ? new FragmentCursor5(fragments, parser5.nodeSet) : null;
+    this.stacks = [Stack3.start(this, parser6.top[0], from)];
+    this.fragments = fragments.length && this.stream.end - from > parser6.bufferLength * 4 ? new FragmentCursor5(fragments, parser6.nodeSet) : null;
   }
   get parsedPos() {
     return this.minStackPos;
@@ -33227,18 +33227,18 @@ var Parse3 = class {
   // given, stacks split off by ambiguous operations will be pushed to
   // `split`, or added to `stacks` if they move `pos` forward.
   advanceStack(stack, stacks, split) {
-    let start = stack.pos, { parser: parser5 } = this;
+    let start = stack.pos, { parser: parser6 } = this;
     let base2 = verbose3 ? this.stackID(stack) + " -> " : "";
     if (this.stoppedAt != null && start > this.stoppedAt)
       return stack.forceReduce() ? stack : null;
     if (this.fragments) {
       let strictCx = stack.curContext && stack.curContext.tracker.strict, cxHash = strictCx ? stack.curContext.hash : 0;
       for (let cached = this.fragments.nodeAt(start); cached; ) {
-        let match = this.parser.nodeSet.types[cached.type.id] == cached.type ? parser5.getGoto(stack.state, cached.type.id) : -1;
+        let match = this.parser.nodeSet.types[cached.type.id] == cached.type ? parser6.getGoto(stack.state, cached.type.id) : -1;
         if (match > -1 && cached.length && (!strictCx || (cached.prop(NodeProp.contextHash) || 0) == cxHash)) {
           stack.useNode(cached, match);
           if (verbose3)
-            console.log(base2 + this.stackID(stack) + ` (via reuse of ${parser5.getName(cached.type.id)})`);
+            console.log(base2 + this.stackID(stack) + ` (via reuse of ${parser6.getName(cached.type.id)})`);
           return true;
         }
         if (!(cached instanceof Tree) || cached.children.length == 0 || cached.positions[0] > 0)
@@ -33250,7 +33250,7 @@ var Parse3 = class {
           break;
       }
     }
-    let defaultReduce = parser5.stateSlot(
+    let defaultReduce = parser6.stateSlot(
       stack.state,
       4
       /* ParseState.DefaultReduce */
@@ -33258,7 +33258,7 @@ var Parse3 = class {
     if (defaultReduce > 0) {
       stack.reduce(defaultReduce);
       if (verbose3)
-        console.log(base2 + this.stackID(stack) + ` (via always-reduce ${parser5.getName(
+        console.log(base2 + this.stackID(stack) + ` (via always-reduce ${parser6.getName(
           defaultReduce & 65535
           /* Action.ValueMask */
         )})`);
@@ -33276,10 +33276,10 @@ var Parse3 = class {
       let main = this.tokens.mainToken;
       localStack.apply(action, term, main ? main.start : localStack.pos, end);
       if (verbose3)
-        console.log(base2 + this.stackID(localStack) + ` (via ${(action & 65536) == 0 ? "shift" : `reduce of ${parser5.getName(
+        console.log(base2 + this.stackID(localStack) + ` (via ${(action & 65536) == 0 ? "shift" : `reduce of ${parser6.getName(
           action & 65535
           /* Action.ValueMask */
-        )}`} for ${parser5.getName(term)} @ ${start}${localStack == stack ? "" : ", split"})`);
+        )}`} for ${parser6.getName(term)} @ ${start}${localStack == stack ? "" : ", split"})`);
       if (last)
         return true;
       else if (localStack.pos > start)
@@ -33442,8 +33442,8 @@ var LRParser3 = class _LRParser extends Parser {
           }
         }
       }
-    this.nodeSet = new NodeSet(nodeNames.map((name8, i) => NodeType.define({
-      name: i >= this.minRepeatTerm ? void 0 : name8,
+    this.nodeSet = new NodeSet(nodeNames.map((name9, i) => NodeType.define({
+      name: i >= this.minRepeatTerm ? void 0 : name9,
       id: i,
       props: nodeProps[i],
       top: topTerms.indexOf(i) > -1,
@@ -33613,9 +33613,9 @@ var LRParser3 = class _LRParser extends Parser {
       copy.top = info;
     }
     if (config2.tokenizers)
-      copy.tokenizers = this.tokenizers.map((t8) => {
-        let found = config2.tokenizers.find((r) => r.from == t8);
-        return found ? found.to : t8;
+      copy.tokenizers = this.tokenizers.map((t9) => {
+        let found = config2.tokenizers.find((r) => r.from == t9);
+        return found ? found.to : t9;
       });
     if (config2.specializers) {
       copy.specializers = this.specializers.slice();
@@ -33733,31 +33733,31 @@ var Tag5 = class _Tag {
   /**
   @internal
   */
-  constructor(name8, set, base2, modified) {
-    this.name = name8;
+  constructor(name9, set, base2, modified) {
+    this.name = name9;
     this.set = set;
     this.base = base2;
     this.modified = modified;
     this.id = nextTagID5++;
   }
   toString() {
-    let { name: name8 } = this;
+    let { name: name9 } = this;
     for (let mod of this.modified)
       if (mod.name)
-        name8 = `${mod.name}(${name8})`;
-    return name8;
+        name9 = `${mod.name}(${name9})`;
+    return name9;
   }
   static define(nameOrParent, parent) {
-    let name8 = typeof nameOrParent == "string" ? nameOrParent : "?";
+    let name9 = typeof nameOrParent == "string" ? nameOrParent : "?";
     if (nameOrParent instanceof _Tag)
       parent = nameOrParent;
     if (parent === null || parent === void 0 ? void 0 : parent.base)
       throw new Error("Can not derive from a modified tag");
-    let tag = new _Tag(name8, [], null, []);
+    let tag = new _Tag(name9, [], null, []);
     tag.set.push(tag);
     if (parent)
-      for (let t8 of parent.set)
-        tag.set.push(t8);
+      for (let t9 of parent.set)
+        tag.set.push(t9);
     return tag;
   }
   /**
@@ -33772,8 +33772,8 @@ var Tag5 = class _Tag {
   example `m1(m2(m3(t1)))` is a subtype of `m1(m2(t1))`,
   `m1(m3(t1)`, and so on.
   */
-  static defineModifier(name8) {
-    let mod = new Modifier5(name8);
+  static defineModifier(name9) {
+    let mod = new Modifier5(name9);
     return (tag) => {
       if (tag.modified.indexOf(mod) > -1)
         return tag;
@@ -33783,15 +33783,15 @@ var Tag5 = class _Tag {
 };
 var nextModifierID5 = 0;
 var Modifier5 = class _Modifier {
-  constructor(name8) {
-    this.name = name8;
+  constructor(name9) {
+    this.name = name9;
     this.instances = [];
     this.id = nextModifierID5++;
   }
   static get(base2, mods) {
     if (!mods.length)
       return base2;
-    let exists = mods[0].instances.find((t8) => t8.base == base2 && sameArray6(mods, t8.modified));
+    let exists = mods[0].instances.find((t9) => t9.base == base2 && sameArray6(mods, t9.modified));
     if (exists)
       return exists;
     let set = [], tag = new Tag5(base2.name, set, base2, mods);
@@ -33820,9 +33820,9 @@ function powerSet5(array) {
 function styleTags5(spec) {
   let byName = /* @__PURE__ */ Object.create(null);
   for (let prop in spec) {
-    let tags9 = spec[prop];
-    if (!Array.isArray(tags9))
-      tags9 = [tags9];
+    let tags10 = spec[prop];
+    if (!Array.isArray(tags10))
+      tags10 = [tags10];
     for (let part of prop.split(" "))
       if (part) {
         let pieces = [], mode = 2, rest = part;
@@ -33850,7 +33850,7 @@ function styleTags5(spec) {
         let last = pieces.length - 1, inner = pieces[last];
         if (!inner)
           throw new RangeError("Invalid path: " + part);
-        let rule = new Rule5(tags9, mode, last > 0 ? pieces.slice(0, last) : null);
+        let rule = new Rule5(tags10, mode, last > 0 ? pieces.slice(0, last) : null);
         byName[inner] = rule.sort(byName[inner]);
       }
   }
@@ -33880,8 +33880,8 @@ var ruleNodeProp5 = new NodeProp({
   }
 });
 var Rule5 = class {
-  constructor(tags9, mode, context, next) {
-    this.tags = tags9;
+  constructor(tags10, mode, context, next) {
+    this.tags = tags10;
     this.mode = mode;
     this.context = context;
     this.next = next;
@@ -33905,9 +33905,9 @@ var Rule5 = class {
   }
 };
 Rule5.empty = new Rule5([], 2, null);
-function tagHighlighter5(tags9, options) {
+function tagHighlighter5(tags10, options) {
   let map = /* @__PURE__ */ Object.create(null);
-  for (let style of tags9) {
+  for (let style of tags10) {
     if (!Array.isArray(style.tag))
       map[style.tag.id] = style.class;
     else
@@ -33916,9 +33916,9 @@ function tagHighlighter5(tags9, options) {
   }
   let { scope, all = null } = options || {};
   return {
-    style: (tags10) => {
+    style: (tags11) => {
       let cls = all;
-      for (let tag of tags10) {
+      for (let tag of tags11) {
         for (let sub of tag.set) {
           let tagClass = map[sub.id];
           if (tagClass) {
@@ -34313,10 +34313,10 @@ var tags6 = {
   */
   special: Tag5.defineModifier("special")
 };
-for (let name8 in tags6) {
-  let val = tags6[name8];
+for (let name9 in tags6) {
+  let val = tags6[name9];
   if (val instanceof Tag5)
-    val.name = name8;
+    val.name = name9;
 }
 var classHighlighter5 = tagHighlighter5([
   { tag: tags6.link, class: "tok-link" },
@@ -34775,16 +34775,16 @@ var Snippet = class _Snippet {
     for (let line of template.split(/\r\n?|\n/)) {
       while (m = /[#$]\{(?:(\d+)(?::([^{}]*))?|((?:\\[{}]|[^{}])*))\}/.exec(line)) {
         let seq = m[1] ? +m[1] : null, rawName = m[2] || m[3] || "", found = -1;
-        let name8 = rawName.replace(/\\[{}]/g, (m2) => m2[1]);
+        let name9 = rawName.replace(/\\[{}]/g, (m2) => m2[1]);
         for (let i = 0; i < fields.length; i++) {
-          if (seq != null ? fields[i].seq == seq : name8 ? fields[i].name == name8 : false)
+          if (seq != null ? fields[i].seq == seq : name9 ? fields[i].name == name9 : false)
             found = i;
         }
         if (found < 0) {
           let i = 0;
           while (i < fields.length && (seq == null || fields[i].seq != null && fields[i].seq < seq))
             i++;
-          fields.splice(i, 0, { seq, name: name8 });
+          fields.splice(i, 0, { seq, name: name9 });
           found = i;
           for (let pos of positions)
             if (pos.field >= found)
@@ -34796,7 +34796,7 @@ var Snippet = class _Snippet {
             pos.from -= snip;
             pos.to -= snip;
           }
-        positions.push(new FieldPos(found, lines.length, m.index, m.index + name8.length));
+        positions.push(new FieldPos(found, lines.length, m.index, m.index + name9.length));
         line = line.slice(0, m.index) + rawName + line.slice(m.index + m[0].length);
       }
       line = line.replace(/\\([{}])/g, (_, brace, index) => {
@@ -35066,8 +35066,8 @@ function getScope(doc2, node) {
     return cached;
   let completions = [], top2 = true;
   function def(node2, type) {
-    let name8 = doc2.sliceString(node2.from, node2.to);
-    completions.push({ label: name8, type });
+    let name9 = doc2.sliceString(node2.from, node2.to);
+    completions.push({ label: name9, type });
   }
   node.cursor(IterMode.IncludeAnonymous).iterate((node2) => {
     if (top2) {
@@ -35167,10 +35167,10 @@ var javascriptLanguage = /* @__PURE__ */ LRLanguage.define({
         },
         "JSXSelfClosingTag JSXOpenTag"(tree) {
           var _a2;
-          let name8 = (_a2 = tree.firstChild) === null || _a2 === void 0 ? void 0 : _a2.nextSibling, close = tree.lastChild;
-          if (!name8 || name8.type.isError)
+          let name9 = (_a2 = tree.firstChild) === null || _a2 === void 0 ? void 0 : _a2.nextSibling, close = tree.lastChild;
+          if (!name9 || name9.type.isError)
             return null;
-          return { from: name8.to, to: close.type.isError ? tree.to : close.from };
+          return { from: name9.to, to: close.type.isError ? tree.to : close.from };
         }
       })
     ]
@@ -35195,7 +35195,7 @@ var tsxLanguage = /* @__PURE__ */ javascriptLanguage.configure({
   dialect: "jsx ts",
   props: [/* @__PURE__ */ sublanguageProp.add((n) => n.isTop ? [jsxSublanguage] : void 0)]
 }, "typescript");
-var kwCompletion = (name8) => ({ label: name8, type: "keyword" });
+var kwCompletion = (name9) => ({ label: name9, type: "keyword" });
 var keywords = /* @__PURE__ */ "break case const continue default delete export extends false finally in instanceof let new return static super switch this throw true typeof var yield".split(" ").map(kwCompletion);
 var typescriptKeywords = /* @__PURE__ */ keywords.concat(/* @__PURE__ */ ["declare", "implements", "private", "protected", "public"].map(kwCompletion));
 function javascript(config2 = {}) {
@@ -35234,7 +35234,7 @@ var autoCloseTags = /* @__PURE__ */ EditorView.inputHandler.of((view, from, to, 
   let base2 = defaultInsert(), { state } = base2;
   let closeTags = state.changeByRange((range) => {
     var _a2;
-    let { head } = range, around = syntaxTree(state).resolveInner(head - 1, -1), name8;
+    let { head } = range, around = syntaxTree(state).resolveInner(head - 1, -1), name9;
     if (around.name == "JSXStartTag")
       around = around.parent;
     if (state.doc.sliceString(head - 1, head) != text || around.name == "JSXAttributeValue" && around.to > head) ;
@@ -35242,14 +35242,14 @@ var autoCloseTags = /* @__PURE__ */ EditorView.inputHandler.of((view, from, to, 
       return { range, changes: { from: head, insert: `</>` } };
     } else if (text == "/" && around.name == "JSXStartCloseTag") {
       let empty2 = around.parent, base3 = empty2.parent;
-      if (base3 && empty2.from == head - 2 && ((name8 = elementName(state.doc, base3.firstChild, head)) || ((_a2 = base3.firstChild) === null || _a2 === void 0 ? void 0 : _a2.name) == "JSXFragmentTag")) {
-        let insert2 = `${name8}>`;
+      if (base3 && empty2.from == head - 2 && ((name9 = elementName(state.doc, base3.firstChild, head)) || ((_a2 = base3.firstChild) === null || _a2 === void 0 ? void 0 : _a2.name) == "JSXFragmentTag")) {
+        let insert2 = `${name9}>`;
         return { range: EditorSelection.cursor(head + insert2.length, -1), changes: { from: head, insert: insert2 } };
       }
     } else if (text == ">") {
       let openTag = findOpenTag(around);
-      if (openTag && openTag.name == "JSXOpenTag" && !/^\/?>|^<\//.test(state.doc.sliceString(head, head + 2)) && (name8 = elementName(state.doc, openTag, head)))
-        return { range, changes: { from: head, insert: `</${name8}>` } };
+      if (openTag && openTag.name == "JSXOpenTag" && !/^\/?>|^<\//.test(state.doc.sliceString(head, head + 2)) && (name9 = elementName(state.doc, openTag, head)))
+        return { range, changes: { from: head, insert: `</${name9}>` } };
     }
     return { range };
   });
@@ -35705,8 +35705,8 @@ function elementName2(doc2, tree, max = doc2.length) {
   if (!tree)
     return "";
   let tag = tree.firstChild;
-  let name8 = tag && tag.getChild("TagName");
-  return name8 ? doc2.sliceString(name8.from, Math.min(name8.to, max)) : "";
+  let name9 = tag && tag.getChild("TagName");
+  return name9 ? doc2.sliceString(name9.from, Math.min(name9.to, max)) : "";
 }
 function findParentElement(tree, skip = false) {
   for (; tree; tree = tree.parent)
@@ -35882,7 +35882,7 @@ var defaultAttrs = /* @__PURE__ */ [
     name: "style",
     parser: /* @__PURE__ */ cssLanguage.parser.configure({ top: "Styles" })
   }
-].concat(/* @__PURE__ */ eventAttributes.map((name8) => ({ name: name8, parser: javascriptLanguage.parser })));
+].concat(/* @__PURE__ */ eventAttributes.map((name9) => ({ name: name9, parser: javascriptLanguage.parser })));
 var htmlPlain = /* @__PURE__ */ LRLanguage.define({
   name: "html",
   parser: /* @__PURE__ */ parser2.configure({
@@ -35958,19 +35958,19 @@ var autoCloseTags2 = /* @__PURE__ */ EditorView.inputHandler.of((view, from, to,
   let closeTags = state.changeByRange((range) => {
     var _a2, _b, _c;
     let didType = state.doc.sliceString(range.from - 1, range.to) == text;
-    let { head } = range, after = syntaxTree(state).resolveInner(head, -1), name8;
+    let { head } = range, after = syntaxTree(state).resolveInner(head, -1), name9;
     if (didType && text == ">" && after.name == "EndTag") {
       let tag = after.parent;
-      if (((_b = (_a2 = tag.parent) === null || _a2 === void 0 ? void 0 : _a2.lastChild) === null || _b === void 0 ? void 0 : _b.name) != "CloseTag" && (name8 = elementName2(state.doc, tag.parent, head)) && !selfClosers2.has(name8)) {
+      if (((_b = (_a2 = tag.parent) === null || _a2 === void 0 ? void 0 : _a2.lastChild) === null || _b === void 0 ? void 0 : _b.name) != "CloseTag" && (name9 = elementName2(state.doc, tag.parent, head)) && !selfClosers2.has(name9)) {
         let to2 = head + (state.doc.sliceString(head, head + 1) === ">" ? 1 : 0);
-        let insert2 = `</${name8}>`;
+        let insert2 = `</${name9}>`;
         return { range, changes: { from: head, to: to2, insert: insert2 } };
       }
     } else if (didType && text == "/" && after.name == "IncompleteCloseTag") {
       let tag = after.parent;
-      if (after.from == head - 2 && ((_c = tag.lastChild) === null || _c === void 0 ? void 0 : _c.name) != "CloseTag" && (name8 = elementName2(state.doc, tag, head)) && !selfClosers2.has(name8)) {
+      if (after.from == head - 2 && ((_c = tag.lastChild) === null || _c === void 0 ? void 0 : _c.name) != "CloseTag" && (name9 = elementName2(state.doc, tag, head)) && !selfClosers2.has(name9)) {
         let to2 = head + (state.doc.sliceString(head, head + 1) === ">" ? 1 : 0);
-        let insert2 = `${name8}>`;
+        let insert2 = `${name9}>`;
         return {
           range: EditorSelection.cursor(head + insert2.length, -1),
           changes: { from: head, to: to2, insert: insert2 }
@@ -36018,8 +36018,8 @@ function isList(type) {
 function findSectionEnd(headerNode, level) {
   let last = headerNode;
   for (; ; ) {
-    let next = last.nextSibling, heading8;
-    if (!next || (heading8 = isHeading(next.type)) != null && heading8 <= level)
+    let next = last.nextSibling, heading9;
+    if (!next || (heading9 = isHeading(next.type)) != null && heading9 <= level)
       break;
     last = next;
   }
@@ -36029,17 +36029,17 @@ var headerIndent = /* @__PURE__ */ foldService.of((state, start, end) => {
   for (let node = syntaxTree(state).resolveInner(end, -1); node; node = node.parent) {
     if (node.from < start)
       break;
-    let heading8 = node.type.prop(headingProp);
-    if (heading8 == null)
+    let heading9 = node.type.prop(headingProp);
+    if (heading9 == null)
       continue;
-    let upto = findSectionEnd(node, heading8);
+    let upto = findSectionEnd(node, heading9);
     if (upto > end)
       return { from: end, to: upto };
   }
   return null;
 });
-function mkLang(parser5) {
-  return new Language(data, parser5, [], "markdown");
+function mkLang(parser6) {
+  return new Language(data, parser6, [], "markdown");
 }
 var commonmarkLanguage = /* @__PURE__ */ mkLang(commonmark);
 var extended = /* @__PURE__ */ commonmark.configure([GFM, Subscript, Superscript, Emoji, {
@@ -36090,8 +36090,8 @@ var Context = class {
     }
   }
   marker(doc2, add2) {
-    let number8 = this.node.name == "OrderedList" ? String(+itemNumber(this.item, doc2)[2] + add2) : "";
-    return this.spaceBefore + number8 + this.type + this.spaceAfter;
+    let number9 = this.node.name == "OrderedList" ? String(+itemNumber(this.item, doc2)[2] + add2) : "";
+    return this.spaceBefore + number9 + this.type + this.spaceAfter;
   }
 };
 function getContext(node, doc2) {
@@ -36135,13 +36135,13 @@ function renumberList(after, doc2, changes, offset = 0) {
   for (let prev = -1, node = after; ; ) {
     if (node.name == "ListItem") {
       let m = itemNumber(node, doc2);
-      let number8 = +m[2];
+      let number9 = +m[2];
       if (prev >= 0) {
-        if (number8 != prev + 1)
+        if (number9 != prev + 1)
           return;
         changes.push({ from: node.from + m[1].length, to: node.from + m[0].length, insert: String(prev + 2 + offset) });
       }
-      prev = number8;
+      prev = number9;
     }
     let next = node.nextSibling;
     if (!next)
@@ -36149,11 +36149,11 @@ function renumberList(after, doc2, changes, offset = 0) {
     node = next;
   }
 }
-function normalizeIndent(content8, state) {
-  let blank = /^[ \t]*/.exec(content8)[0].length;
+function normalizeIndent(content9, state) {
+  let blank = /^[ \t]*/.exec(content9)[0].length;
   if (!blank || state.facet(indentUnit) != "	")
-    return content8;
-  let col = countColumn(content8, 4, blank);
+    return content9;
+  let col = countColumn(content9, 4, blank);
   let space4 = "";
   for (let i = col; i > 0; ) {
     if (i >= 4) {
@@ -36164,7 +36164,7 @@ function normalizeIndent(content8, state) {
       i--;
     }
   }
-  return space4 + content8.slice(blank);
+  return space4 + content9.slice(blank);
 }
 var insertNewlineContinueMarkupCommand = (config2 = {}) => ({ state, dispatch }) => {
   let tree = syntaxTree(state), { doc: doc2 } = state;
@@ -36326,8 +36326,8 @@ var markdownKeymap = [
 ];
 var htmlNoMatch = /* @__PURE__ */ html({ matchClosingTags: false });
 function markdown(config2 = {}) {
-  let { codeLanguages, defaultCodeLanguage, addKeymap = true, base: { parser: parser5 } = commonmarkLanguage, completeHTMLTags = true, pasteURLAsLink: pasteURL = true, htmlTagLanguage = htmlNoMatch } = config2;
-  if (!(parser5 instanceof MarkdownParser))
+  let { codeLanguages, defaultCodeLanguage, addKeymap = true, base: { parser: parser6 } = commonmarkLanguage, completeHTMLTags = true, pasteURLAsLink: pasteURL = true, htmlTagLanguage = htmlNoMatch } = config2;
+  if (!(parser6 instanceof MarkdownParser))
     throw new RangeError("Base parser provided to `markdown` should be a Markdown parser");
   let extensions = config2.extensions ? [config2.extensions] : [];
   let support = [htmlTagLanguage.support, headerIndent], defaultCode;
@@ -36343,7 +36343,7 @@ function markdown(config2 = {}) {
   extensions.push(parseCode({ codeParser, htmlParser: htmlTagLanguage.language.parser }));
   if (addKeymap)
     support.push(Prec.high(keymap.of(markdownKeymap)));
-  let lang = mkLang(parser5.configure(extensions));
+  let lang = mkLang(parser6.configure(extensions));
   if (completeHTMLTags)
     support.push(lang.data.of({ autocomplete: htmlTagCompletion }));
   return new LanguageSupport(lang, support);
@@ -36410,37 +36410,1770 @@ var pasteURLAsLink = /* @__PURE__ */ EditorView.domEventHandlers({
   }
 });
 
-// node_modules/@codemirror/theme-one-dark/node_modules/@lezer/highlight/dist/index.js
+// node_modules/@lezer/json/node_modules/@lezer/lr/dist/index.js
+var Stack4 = class _Stack {
+  /**
+  @internal
+  */
+  constructor(p, stack, state, reducePos, pos, score2, buffer, bufferBase, curContext, lookAhead = 0, parent) {
+    this.p = p;
+    this.stack = stack;
+    this.state = state;
+    this.reducePos = reducePos;
+    this.pos = pos;
+    this.score = score2;
+    this.buffer = buffer;
+    this.bufferBase = bufferBase;
+    this.curContext = curContext;
+    this.lookAhead = lookAhead;
+    this.parent = parent;
+  }
+  /**
+  @internal
+  */
+  toString() {
+    return `[${this.stack.filter((_, i) => i % 3 == 0).concat(this.state)}]@${this.pos}${this.score ? "!" + this.score : ""}`;
+  }
+  // Start an empty stack
+  /**
+  @internal
+  */
+  static start(p, state, pos = 0) {
+    let cx = p.parser.context;
+    return new _Stack(p, [], state, pos, pos, 0, [], 0, cx ? new StackContext4(cx, cx.start) : null, 0, null);
+  }
+  /**
+  The stack's current [context](#lr.ContextTracker) value, if
+  any. Its type will depend on the context tracker's type
+  parameter, or it will be `null` if there is no context
+  tracker.
+  */
+  get context() {
+    return this.curContext ? this.curContext.context : null;
+  }
+  // Push a state onto the stack, tracking its start position as well
+  // as the buffer base at that point.
+  /**
+  @internal
+  */
+  pushState(state, start) {
+    this.stack.push(this.state, start, this.bufferBase + this.buffer.length);
+    this.state = state;
+  }
+  // Apply a reduce action
+  /**
+  @internal
+  */
+  reduce(action) {
+    var _a2;
+    let depth = action >> 19, type = action & 65535;
+    let { parser: parser6 } = this.p;
+    let lookaheadRecord = this.reducePos < this.pos - 25 && this.setLookAhead(this.pos);
+    let dPrec = parser6.dynamicPrecedence(type);
+    if (dPrec)
+      this.score += dPrec;
+    if (depth == 0) {
+      if (type < parser6.minRepeatTerm && this.reducePos < this.pos)
+        this.reducePos = this.pos;
+      this.pushState(parser6.getGoto(this.state, type, true), this.reducePos);
+      if (type < parser6.minRepeatTerm)
+        this.storeNode(type, this.reducePos, this.reducePos, lookaheadRecord ? 8 : 4, true);
+      this.reduceContext(type, this.reducePos);
+      return;
+    }
+    let base2 = this.stack.length - (depth - 1) * 3 - (action & 262144 ? 6 : 0);
+    let start = base2 ? this.stack[base2 - 2] : this.p.ranges[0].from;
+    if (type < parser6.minRepeatTerm && start == this.reducePos && this.reducePos < this.pos)
+      this.reducePos = this.pos;
+    let size = this.reducePos - start;
+    if (size >= 2e3 && !((_a2 = this.p.parser.nodeSet.types[type]) === null || _a2 === void 0 ? void 0 : _a2.isAnonymous)) {
+      if (start == this.p.lastBigReductionStart) {
+        this.p.bigReductionCount++;
+        this.p.lastBigReductionSize = size;
+      } else if (this.p.lastBigReductionSize < size) {
+        this.p.bigReductionCount = 1;
+        this.p.lastBigReductionStart = start;
+        this.p.lastBigReductionSize = size;
+      }
+    }
+    let bufferBase = base2 ? this.stack[base2 - 1] : 0, count2 = this.bufferBase + this.buffer.length - bufferBase;
+    if (type < parser6.minRepeatTerm || action & 131072) {
+      let pos = parser6.stateFlag(
+        this.state,
+        1
+        /* StateFlag.Skipped */
+      ) ? this.pos : this.reducePos;
+      this.storeNode(type, start, pos, count2 + 4, true);
+    }
+    if (action & 262144) {
+      this.state = this.stack[base2];
+    } else {
+      let baseStateID = this.stack[base2 - 3];
+      this.state = parser6.getGoto(baseStateID, type, true);
+    }
+    while (this.stack.length > base2)
+      this.stack.pop();
+    this.reduceContext(type, start);
+  }
+  // Shift a value into the buffer
+  /**
+  @internal
+  */
+  storeNode(term, start, end, size = 4, mustSink = false) {
+    if (term == 0 && (!this.stack.length || this.stack[this.stack.length - 1] < this.buffer.length + this.bufferBase)) {
+      let top2 = this.buffer.length;
+      if (top2 > 0 && this.buffer[top2 - 4] == 0 && this.buffer[top2 - 1] > -1) {
+        if (start == end)
+          return;
+        if (this.buffer[top2 - 2] >= start) {
+          this.buffer[top2 - 2] = end;
+          return;
+        }
+      }
+    }
+    if (!mustSink || this.pos == end) {
+      this.buffer.push(term, start, end, size);
+    } else {
+      let index = this.buffer.length;
+      if (index > 0 && (this.buffer[index - 4] != 0 || this.buffer[index - 1] < 0)) {
+        let mustMove = false;
+        for (let scan = index; scan > 0 && this.buffer[scan - 2] > end; scan -= 4) {
+          if (this.buffer[scan - 1] >= 0) {
+            mustMove = true;
+            break;
+          }
+        }
+        if (mustMove)
+          while (index > 0 && this.buffer[index - 2] > end) {
+            this.buffer[index] = this.buffer[index - 4];
+            this.buffer[index + 1] = this.buffer[index - 3];
+            this.buffer[index + 2] = this.buffer[index - 2];
+            this.buffer[index + 3] = this.buffer[index - 1];
+            index -= 4;
+            if (size > 4)
+              size -= 4;
+          }
+      }
+      this.buffer[index] = term;
+      this.buffer[index + 1] = start;
+      this.buffer[index + 2] = end;
+      this.buffer[index + 3] = size;
+    }
+  }
+  // Apply a shift action
+  /**
+  @internal
+  */
+  shift(action, type, start, end) {
+    if (action & 131072) {
+      this.pushState(action & 65535, this.pos);
+    } else if ((action & 262144) == 0) {
+      let nextState = action, { parser: parser6 } = this.p;
+      this.pos = end;
+      let skipped = parser6.stateFlag(
+        nextState,
+        1
+        /* StateFlag.Skipped */
+      );
+      if (!skipped && (end > start || type <= parser6.maxNode))
+        this.reducePos = end;
+      this.pushState(nextState, skipped ? start : Math.min(start, this.reducePos));
+      this.shiftContext(type, start);
+      if (type <= parser6.maxNode)
+        this.buffer.push(type, start, end, 4);
+    } else {
+      this.pos = end;
+      this.shiftContext(type, start);
+      if (type <= this.p.parser.maxNode)
+        this.buffer.push(type, start, end, 4);
+    }
+  }
+  // Apply an action
+  /**
+  @internal
+  */
+  apply(action, next, nextStart, nextEnd) {
+    if (action & 65536)
+      this.reduce(action);
+    else
+      this.shift(action, next, nextStart, nextEnd);
+  }
+  // Add a prebuilt (reused) node into the buffer.
+  /**
+  @internal
+  */
+  useNode(value, next) {
+    let index = this.p.reused.length - 1;
+    if (index < 0 || this.p.reused[index] != value) {
+      this.p.reused.push(value);
+      index++;
+    }
+    let start = this.pos;
+    this.reducePos = this.pos = start + value.length;
+    this.pushState(next, start);
+    this.buffer.push(
+      index,
+      start,
+      this.reducePos,
+      -1
+      /* size == -1 means this is a reused value */
+    );
+    if (this.curContext)
+      this.updateContext(this.curContext.tracker.reuse(this.curContext.context, value, this, this.p.stream.reset(this.pos - value.length)));
+  }
+  // Split the stack. Due to the buffer sharing and the fact
+  // that `this.stack` tends to stay quite shallow, this isn't very
+  // expensive.
+  /**
+  @internal
+  */
+  split() {
+    let parent = this;
+    let off = parent.buffer.length;
+    if (off && parent.buffer[off - 4] == 0)
+      off -= 4;
+    while (off > 0 && parent.buffer[off - 2] > parent.reducePos)
+      off -= 4;
+    let buffer = parent.buffer.slice(off), base2 = parent.bufferBase + off;
+    while (parent && base2 == parent.bufferBase)
+      parent = parent.parent;
+    return new _Stack(this.p, this.stack.slice(), this.state, this.reducePos, this.pos, this.score, buffer, base2, this.curContext, this.lookAhead, parent);
+  }
+  // Try to recover from an error by 'deleting' (ignoring) one token.
+  /**
+  @internal
+  */
+  recoverByDelete(next, nextEnd) {
+    let isNode = next <= this.p.parser.maxNode;
+    if (isNode)
+      this.storeNode(next, this.pos, nextEnd, 4);
+    this.storeNode(0, this.pos, nextEnd, isNode ? 8 : 4);
+    this.pos = this.reducePos = nextEnd;
+    this.score -= 190;
+  }
+  /**
+  Check if the given term would be able to be shifted (optionally
+  after some reductions) on this stack. This can be useful for
+  external tokenizers that want to make sure they only provide a
+  given token when it applies.
+  */
+  canShift(term) {
+    for (let sim = new SimulatedStack4(this); ; ) {
+      let action = this.p.parser.stateSlot(
+        sim.state,
+        4
+        /* ParseState.DefaultReduce */
+      ) || this.p.parser.hasAction(sim.state, term);
+      if (action == 0)
+        return false;
+      if ((action & 65536) == 0)
+        return true;
+      sim.reduce(action);
+    }
+  }
+  // Apply up to Recover.MaxNext recovery actions that conceptually
+  // inserts some missing token or rule.
+  /**
+  @internal
+  */
+  recoverByInsert(next) {
+    if (this.stack.length >= 300)
+      return [];
+    let nextStates = this.p.parser.nextStates(this.state);
+    if (nextStates.length > 4 << 1 || this.stack.length >= 120) {
+      let best = [];
+      for (let i = 0, s; i < nextStates.length; i += 2) {
+        if ((s = nextStates[i + 1]) != this.state && this.p.parser.hasAction(s, next))
+          best.push(nextStates[i], s);
+      }
+      if (this.stack.length < 120)
+        for (let i = 0; best.length < 4 << 1 && i < nextStates.length; i += 2) {
+          let s = nextStates[i + 1];
+          if (!best.some((v, i2) => i2 & 1 && v == s))
+            best.push(nextStates[i], s);
+        }
+      nextStates = best;
+    }
+    let result = [];
+    for (let i = 0; i < nextStates.length && result.length < 4; i += 2) {
+      let s = nextStates[i + 1];
+      if (s == this.state)
+        continue;
+      let stack = this.split();
+      stack.pushState(s, this.pos);
+      stack.storeNode(0, stack.pos, stack.pos, 4, true);
+      stack.shiftContext(nextStates[i], this.pos);
+      stack.reducePos = this.pos;
+      stack.score -= 200;
+      result.push(stack);
+    }
+    return result;
+  }
+  // Force a reduce, if possible. Return false if that can't
+  // be done.
+  /**
+  @internal
+  */
+  forceReduce() {
+    let { parser: parser6 } = this.p;
+    let reduce = parser6.stateSlot(
+      this.state,
+      5
+      /* ParseState.ForcedReduce */
+    );
+    if ((reduce & 65536) == 0)
+      return false;
+    if (!parser6.validAction(this.state, reduce)) {
+      let depth = reduce >> 19, term = reduce & 65535;
+      let target = this.stack.length - depth * 3;
+      if (target < 0 || parser6.getGoto(this.stack[target], term, false) < 0) {
+        let backup = this.findForcedReduction();
+        if (backup == null)
+          return false;
+        reduce = backup;
+      }
+      this.storeNode(0, this.pos, this.pos, 4, true);
+      this.score -= 100;
+    }
+    this.reducePos = this.pos;
+    this.reduce(reduce);
+    return true;
+  }
+  /**
+  Try to scan through the automaton to find some kind of reduction
+  that can be applied. Used when the regular ForcedReduce field
+  isn't a valid action. @internal
+  */
+  findForcedReduction() {
+    let { parser: parser6 } = this.p, seen = [];
+    let explore = (state, depth) => {
+      if (seen.includes(state))
+        return;
+      seen.push(state);
+      return parser6.allActions(state, (action) => {
+        if (action & (262144 | 131072)) ;
+        else if (action & 65536) {
+          let rDepth = (action >> 19) - depth;
+          if (rDepth > 1) {
+            let term = action & 65535, target = this.stack.length - rDepth * 3;
+            if (target >= 0 && parser6.getGoto(this.stack[target], term, false) >= 0)
+              return rDepth << 19 | 65536 | term;
+          }
+        } else {
+          let found = explore(action, depth + 1);
+          if (found != null)
+            return found;
+        }
+      });
+    };
+    return explore(this.state, 0);
+  }
+  /**
+  @internal
+  */
+  forceAll() {
+    while (!this.p.parser.stateFlag(
+      this.state,
+      2
+      /* StateFlag.Accepting */
+    )) {
+      if (!this.forceReduce()) {
+        this.storeNode(0, this.pos, this.pos, 4, true);
+        break;
+      }
+    }
+    return this;
+  }
+  /**
+  Check whether this state has no further actions (assumed to be a direct descendant of the
+  top state, since any other states must be able to continue
+  somehow). @internal
+  */
+  get deadEnd() {
+    if (this.stack.length != 3)
+      return false;
+    let { parser: parser6 } = this.p;
+    return parser6.data[parser6.stateSlot(
+      this.state,
+      1
+      /* ParseState.Actions */
+    )] == 65535 && !parser6.stateSlot(
+      this.state,
+      4
+      /* ParseState.DefaultReduce */
+    );
+  }
+  /**
+  Restart the stack (put it back in its start state). Only safe
+  when this.stack.length == 3 (state is directly below the top
+  state). @internal
+  */
+  restart() {
+    this.storeNode(0, this.pos, this.pos, 4, true);
+    this.state = this.stack[0];
+    this.stack.length = 0;
+  }
+  /**
+  @internal
+  */
+  sameState(other) {
+    if (this.state != other.state || this.stack.length != other.stack.length)
+      return false;
+    for (let i = 0; i < this.stack.length; i += 3)
+      if (this.stack[i] != other.stack[i])
+        return false;
+    return true;
+  }
+  /**
+  Get the parser used by this stack.
+  */
+  get parser() {
+    return this.p.parser;
+  }
+  /**
+  Test whether a given dialect (by numeric ID, as exported from
+  the terms file) is enabled.
+  */
+  dialectEnabled(dialectID) {
+    return this.p.parser.dialect.flags[dialectID];
+  }
+  shiftContext(term, start) {
+    if (this.curContext)
+      this.updateContext(this.curContext.tracker.shift(this.curContext.context, term, this, this.p.stream.reset(start)));
+  }
+  reduceContext(term, start) {
+    if (this.curContext)
+      this.updateContext(this.curContext.tracker.reduce(this.curContext.context, term, this, this.p.stream.reset(start)));
+  }
+  /**
+  @internal
+  */
+  emitContext() {
+    let last = this.buffer.length - 1;
+    if (last < 0 || this.buffer[last] != -3)
+      this.buffer.push(this.curContext.hash, this.pos, this.pos, -3);
+  }
+  /**
+  @internal
+  */
+  emitLookAhead() {
+    let last = this.buffer.length - 1;
+    if (last < 0 || this.buffer[last] != -4)
+      this.buffer.push(this.lookAhead, this.pos, this.pos, -4);
+  }
+  updateContext(context) {
+    if (context != this.curContext.context) {
+      let newCx = new StackContext4(this.curContext.tracker, context);
+      if (newCx.hash != this.curContext.hash)
+        this.emitContext();
+      this.curContext = newCx;
+    }
+  }
+  /**
+  @internal
+  */
+  setLookAhead(lookAhead) {
+    if (lookAhead <= this.lookAhead)
+      return false;
+    this.emitLookAhead();
+    this.lookAhead = lookAhead;
+    return true;
+  }
+  /**
+  @internal
+  */
+  close() {
+    if (this.curContext && this.curContext.tracker.strict)
+      this.emitContext();
+    if (this.lookAhead > 0)
+      this.emitLookAhead();
+  }
+};
+var StackContext4 = class {
+  constructor(tracker, context) {
+    this.tracker = tracker;
+    this.context = context;
+    this.hash = tracker.strict ? tracker.hash(context) : 0;
+  }
+};
+var SimulatedStack4 = class {
+  constructor(start) {
+    this.start = start;
+    this.state = start.state;
+    this.stack = start.stack;
+    this.base = this.stack.length;
+  }
+  reduce(action) {
+    let term = action & 65535, depth = action >> 19;
+    if (depth == 0) {
+      if (this.stack == this.start.stack)
+        this.stack = this.stack.slice();
+      this.stack.push(this.state, 0, 0);
+      this.base += 3;
+    } else {
+      this.base -= (depth - 1) * 3;
+    }
+    let goto = this.start.p.parser.getGoto(this.stack[this.base - 3], term, true);
+    this.state = goto;
+  }
+};
+var StackBufferCursor4 = class _StackBufferCursor {
+  constructor(stack, pos, index) {
+    this.stack = stack;
+    this.pos = pos;
+    this.index = index;
+    this.buffer = stack.buffer;
+    if (this.index == 0)
+      this.maybeNext();
+  }
+  static create(stack, pos = stack.bufferBase + stack.buffer.length) {
+    return new _StackBufferCursor(stack, pos, pos - stack.bufferBase);
+  }
+  maybeNext() {
+    let next = this.stack.parent;
+    if (next != null) {
+      this.index = this.stack.bufferBase - next.bufferBase;
+      this.stack = next;
+      this.buffer = next.buffer;
+    }
+  }
+  get id() {
+    return this.buffer[this.index - 4];
+  }
+  get start() {
+    return this.buffer[this.index - 3];
+  }
+  get end() {
+    return this.buffer[this.index - 2];
+  }
+  get size() {
+    return this.buffer[this.index - 1];
+  }
+  next() {
+    this.index -= 4;
+    this.pos -= 4;
+    if (this.index == 0)
+      this.maybeNext();
+  }
+  fork() {
+    return new _StackBufferCursor(this.stack, this.pos, this.index);
+  }
+};
+function decodeArray4(input, Type2 = Uint16Array) {
+  if (typeof input != "string")
+    return input;
+  let array = null;
+  for (let pos = 0, out = 0; pos < input.length; ) {
+    let value = 0;
+    for (; ; ) {
+      let next = input.charCodeAt(pos++), stop = false;
+      if (next == 126) {
+        value = 65535;
+        break;
+      }
+      if (next >= 92)
+        next--;
+      if (next >= 34)
+        next--;
+      let digit = next - 32;
+      if (digit >= 46) {
+        digit -= 46;
+        stop = true;
+      }
+      value += digit;
+      if (stop)
+        break;
+      value *= 46;
+    }
+    if (array)
+      array[out++] = value;
+    else
+      array = new Type2(value);
+  }
+  return array;
+}
+var CachedToken4 = class {
+  constructor() {
+    this.start = -1;
+    this.value = -1;
+    this.end = -1;
+    this.extended = -1;
+    this.lookAhead = 0;
+    this.mask = 0;
+    this.context = 0;
+  }
+};
+var nullToken4 = new CachedToken4();
+var InputStream4 = class {
+  /**
+  @internal
+  */
+  constructor(input, ranges) {
+    this.input = input;
+    this.ranges = ranges;
+    this.chunk = "";
+    this.chunkOff = 0;
+    this.chunk2 = "";
+    this.chunk2Pos = 0;
+    this.next = -1;
+    this.token = nullToken4;
+    this.rangeIndex = 0;
+    this.pos = this.chunkPos = ranges[0].from;
+    this.range = ranges[0];
+    this.end = ranges[ranges.length - 1].to;
+    this.readNext();
+  }
+  /**
+  @internal
+  */
+  resolveOffset(offset, assoc) {
+    let range = this.range, index = this.rangeIndex;
+    let pos = this.pos + offset;
+    while (pos < range.from) {
+      if (!index)
+        return null;
+      let next = this.ranges[--index];
+      pos -= range.from - next.to;
+      range = next;
+    }
+    while (assoc < 0 ? pos > range.to : pos >= range.to) {
+      if (index == this.ranges.length - 1)
+        return null;
+      let next = this.ranges[++index];
+      pos += next.from - range.to;
+      range = next;
+    }
+    return pos;
+  }
+  /**
+  @internal
+  */
+  clipPos(pos) {
+    if (pos >= this.range.from && pos < this.range.to)
+      return pos;
+    for (let range of this.ranges)
+      if (range.to > pos)
+        return Math.max(pos, range.from);
+    return this.end;
+  }
+  /**
+  Look at a code unit near the stream position. `.peek(0)` equals
+  `.next`, `.peek(-1)` gives you the previous character, and so
+  on.
+  
+  Note that looking around during tokenizing creates dependencies
+  on potentially far-away content, which may reduce the
+  effectiveness incremental parsing—when looking forward—or even
+  cause invalid reparses when looking backward more than 25 code
+  units, since the library does not track lookbehind.
+  */
+  peek(offset) {
+    let idx = this.chunkOff + offset, pos, result;
+    if (idx >= 0 && idx < this.chunk.length) {
+      pos = this.pos + offset;
+      result = this.chunk.charCodeAt(idx);
+    } else {
+      let resolved = this.resolveOffset(offset, 1);
+      if (resolved == null)
+        return -1;
+      pos = resolved;
+      if (pos >= this.chunk2Pos && pos < this.chunk2Pos + this.chunk2.length) {
+        result = this.chunk2.charCodeAt(pos - this.chunk2Pos);
+      } else {
+        let i = this.rangeIndex, range = this.range;
+        while (range.to <= pos)
+          range = this.ranges[++i];
+        this.chunk2 = this.input.chunk(this.chunk2Pos = pos);
+        if (pos + this.chunk2.length > range.to)
+          this.chunk2 = this.chunk2.slice(0, range.to - pos);
+        result = this.chunk2.charCodeAt(0);
+      }
+    }
+    if (pos >= this.token.lookAhead)
+      this.token.lookAhead = pos + 1;
+    return result;
+  }
+  /**
+  Accept a token. By default, the end of the token is set to the
+  current stream position, but you can pass an offset (relative to
+  the stream position) to change that.
+  */
+  acceptToken(token, endOffset = 0) {
+    let end = endOffset ? this.resolveOffset(endOffset, -1) : this.pos;
+    if (end == null || end < this.token.start)
+      throw new RangeError("Token end out of bounds");
+    this.token.value = token;
+    this.token.end = end;
+  }
+  /**
+  Accept a token ending at a specific given position.
+  */
+  acceptTokenTo(token, endPos) {
+    this.token.value = token;
+    this.token.end = endPos;
+  }
+  getChunk() {
+    if (this.pos >= this.chunk2Pos && this.pos < this.chunk2Pos + this.chunk2.length) {
+      let { chunk, chunkPos } = this;
+      this.chunk = this.chunk2;
+      this.chunkPos = this.chunk2Pos;
+      this.chunk2 = chunk;
+      this.chunk2Pos = chunkPos;
+      this.chunkOff = this.pos - this.chunkPos;
+    } else {
+      this.chunk2 = this.chunk;
+      this.chunk2Pos = this.chunkPos;
+      let nextChunk = this.input.chunk(this.pos);
+      let end = this.pos + nextChunk.length;
+      this.chunk = end > this.range.to ? nextChunk.slice(0, this.range.to - this.pos) : nextChunk;
+      this.chunkPos = this.pos;
+      this.chunkOff = 0;
+    }
+  }
+  readNext() {
+    if (this.chunkOff >= this.chunk.length) {
+      this.getChunk();
+      if (this.chunkOff == this.chunk.length)
+        return this.next = -1;
+    }
+    return this.next = this.chunk.charCodeAt(this.chunkOff);
+  }
+  /**
+  Move the stream forward N (defaults to 1) code units. Returns
+  the new value of [`next`](#lr.InputStream.next).
+  */
+  advance(n = 1) {
+    this.chunkOff += n;
+    while (this.pos + n >= this.range.to) {
+      if (this.rangeIndex == this.ranges.length - 1)
+        return this.setDone();
+      n -= this.range.to - this.pos;
+      this.range = this.ranges[++this.rangeIndex];
+      this.pos = this.range.from;
+    }
+    this.pos += n;
+    if (this.pos >= this.token.lookAhead)
+      this.token.lookAhead = this.pos + 1;
+    return this.readNext();
+  }
+  setDone() {
+    this.pos = this.chunkPos = this.end;
+    this.range = this.ranges[this.rangeIndex = this.ranges.length - 1];
+    this.chunk = "";
+    return this.next = -1;
+  }
+  /**
+  @internal
+  */
+  reset(pos, token) {
+    if (token) {
+      this.token = token;
+      token.start = pos;
+      token.lookAhead = pos + 1;
+      token.value = token.extended = -1;
+    } else {
+      this.token = nullToken4;
+    }
+    if (this.pos != pos) {
+      this.pos = pos;
+      if (pos == this.end) {
+        this.setDone();
+        return this;
+      }
+      while (pos < this.range.from)
+        this.range = this.ranges[--this.rangeIndex];
+      while (pos >= this.range.to)
+        this.range = this.ranges[++this.rangeIndex];
+      if (pos >= this.chunkPos && pos < this.chunkPos + this.chunk.length) {
+        this.chunkOff = pos - this.chunkPos;
+      } else {
+        this.chunk = "";
+        this.chunkOff = 0;
+      }
+      this.readNext();
+    }
+    return this;
+  }
+  /**
+  @internal
+  */
+  read(from, to) {
+    if (from >= this.chunkPos && to <= this.chunkPos + this.chunk.length)
+      return this.chunk.slice(from - this.chunkPos, to - this.chunkPos);
+    if (from >= this.chunk2Pos && to <= this.chunk2Pos + this.chunk2.length)
+      return this.chunk2.slice(from - this.chunk2Pos, to - this.chunk2Pos);
+    if (from >= this.range.from && to <= this.range.to)
+      return this.input.read(from, to);
+    let result = "";
+    for (let r of this.ranges) {
+      if (r.from >= to)
+        break;
+      if (r.to > from)
+        result += this.input.read(Math.max(r.from, from), Math.min(r.to, to));
+    }
+    return result;
+  }
+};
+var TokenGroup4 = class {
+  constructor(data2, id3) {
+    this.data = data2;
+    this.id = id3;
+  }
+  token(input, stack) {
+    let { parser: parser6 } = stack.p;
+    readToken4(this.data, input, stack, this.id, parser6.data, parser6.tokenPrecTable);
+  }
+};
+TokenGroup4.prototype.contextual = TokenGroup4.prototype.fallback = TokenGroup4.prototype.extend = false;
+var LocalTokenGroup4 = class {
+  constructor(data2, precTable, elseToken) {
+    this.precTable = precTable;
+    this.elseToken = elseToken;
+    this.data = typeof data2 == "string" ? decodeArray4(data2) : data2;
+  }
+  token(input, stack) {
+    let start = input.pos, skipped = 0;
+    for (; ; ) {
+      let atEof = input.next < 0, nextPos = input.resolveOffset(1, 1);
+      readToken4(this.data, input, stack, 0, this.data, this.precTable);
+      if (input.token.value > -1)
+        break;
+      if (this.elseToken == null)
+        return;
+      if (!atEof)
+        skipped++;
+      if (nextPos == null)
+        break;
+      input.reset(nextPos, input.token);
+    }
+    if (skipped) {
+      input.reset(start, input.token);
+      input.acceptToken(this.elseToken, skipped);
+    }
+  }
+};
+LocalTokenGroup4.prototype.contextual = TokenGroup4.prototype.fallback = TokenGroup4.prototype.extend = false;
+function readToken4(data2, input, stack, group, precTable, precOffset) {
+  let state = 0, groupMask = 1 << group, { dialect } = stack.p.parser;
+  scan: for (; ; ) {
+    if ((groupMask & data2[state]) == 0)
+      break;
+    let accEnd = data2[state + 1];
+    for (let i = state + 3; i < accEnd; i += 2)
+      if ((data2[i + 1] & groupMask) > 0) {
+        let term = data2[i];
+        if (dialect.allows(term) && (input.token.value == -1 || input.token.value == term || overrides4(term, input.token.value, precTable, precOffset))) {
+          input.acceptToken(term);
+          break;
+        }
+      }
+    let next = input.next, low = 0, high = data2[state + 2];
+    if (input.next < 0 && high > low && data2[accEnd + high * 3 - 3] == 65535) {
+      state = data2[accEnd + high * 3 - 1];
+      continue scan;
+    }
+    for (; low < high; ) {
+      let mid = low + high >> 1;
+      let index = accEnd + mid + (mid << 1);
+      let from = data2[index], to = data2[index + 1] || 65536;
+      if (next < from)
+        high = mid;
+      else if (next >= to)
+        low = mid + 1;
+      else {
+        state = data2[index + 2];
+        input.advance();
+        continue scan;
+      }
+    }
+    break;
+  }
+}
+function findOffset4(data2, start, term) {
+  for (let i = start, next; (next = data2[i]) != 65535; i++)
+    if (next == term)
+      return i - start;
+  return -1;
+}
+function overrides4(token, prev, tableData, tableOffset) {
+  let iPrev = findOffset4(tableData, tableOffset, prev);
+  return iPrev < 0 || findOffset4(tableData, tableOffset, token) < iPrev;
+}
+var verbose4 = typeof process != "undefined" && process.env && /\bparse\b/.test(process.env.LOG);
+var stackIDs4 = null;
+function cutAt4(tree, pos, side) {
+  let cursor2 = tree.cursor(IterMode.IncludeAnonymous);
+  cursor2.moveTo(pos);
+  for (; ; ) {
+    if (!(side < 0 ? cursor2.childBefore(pos) : cursor2.childAfter(pos)))
+      for (; ; ) {
+        if ((side < 0 ? cursor2.to < pos : cursor2.from > pos) && !cursor2.type.isError)
+          return side < 0 ? Math.max(0, Math.min(
+            cursor2.to - 1,
+            pos - 25
+            /* Lookahead.Margin */
+          )) : Math.min(tree.length, Math.max(
+            cursor2.from + 1,
+            pos + 25
+            /* Lookahead.Margin */
+          ));
+        if (side < 0 ? cursor2.prevSibling() : cursor2.nextSibling())
+          break;
+        if (!cursor2.parent())
+          return side < 0 ? 0 : tree.length;
+      }
+  }
+}
+var FragmentCursor6 = class {
+  constructor(fragments, nodeSet) {
+    this.fragments = fragments;
+    this.nodeSet = nodeSet;
+    this.i = 0;
+    this.fragment = null;
+    this.safeFrom = -1;
+    this.safeTo = -1;
+    this.trees = [];
+    this.start = [];
+    this.index = [];
+    this.nextFragment();
+  }
+  nextFragment() {
+    let fr = this.fragment = this.i == this.fragments.length ? null : this.fragments[this.i++];
+    if (fr) {
+      this.safeFrom = fr.openStart ? cutAt4(fr.tree, fr.from + fr.offset, 1) - fr.offset : fr.from;
+      this.safeTo = fr.openEnd ? cutAt4(fr.tree, fr.to + fr.offset, -1) - fr.offset : fr.to;
+      while (this.trees.length) {
+        this.trees.pop();
+        this.start.pop();
+        this.index.pop();
+      }
+      this.trees.push(fr.tree);
+      this.start.push(-fr.offset);
+      this.index.push(0);
+      this.nextStart = this.safeFrom;
+    } else {
+      this.nextStart = 1e9;
+    }
+  }
+  // `pos` must be >= any previously given `pos` for this cursor
+  nodeAt(pos) {
+    if (pos < this.nextStart)
+      return null;
+    while (this.fragment && this.safeTo <= pos)
+      this.nextFragment();
+    if (!this.fragment)
+      return null;
+    for (; ; ) {
+      let last = this.trees.length - 1;
+      if (last < 0) {
+        this.nextFragment();
+        return null;
+      }
+      let top2 = this.trees[last], index = this.index[last];
+      if (index == top2.children.length) {
+        this.trees.pop();
+        this.start.pop();
+        this.index.pop();
+        continue;
+      }
+      let next = top2.children[index];
+      let start = this.start[last] + top2.positions[index];
+      if (start > pos) {
+        this.nextStart = start;
+        return null;
+      }
+      if (next instanceof Tree) {
+        if (start == pos) {
+          if (start < this.safeFrom)
+            return null;
+          let end = start + next.length;
+          if (end <= this.safeTo) {
+            let lookAhead = next.prop(NodeProp.lookAhead);
+            if (!lookAhead || end + lookAhead < this.fragment.to)
+              return next;
+          }
+        }
+        this.index[last]++;
+        if (start + next.length >= Math.max(this.safeFrom, pos)) {
+          this.trees.push(next);
+          this.start.push(start);
+          this.index.push(0);
+        }
+      } else {
+        this.index[last]++;
+        this.nextStart = start + next.length;
+      }
+    }
+  }
+};
+var TokenCache4 = class {
+  constructor(parser6, stream) {
+    this.stream = stream;
+    this.tokens = [];
+    this.mainToken = null;
+    this.actions = [];
+    this.tokens = parser6.tokenizers.map((_) => new CachedToken4());
+  }
+  getActions(stack) {
+    let actionIndex = 0;
+    let main = null;
+    let { parser: parser6 } = stack.p, { tokenizers } = parser6;
+    let mask = parser6.stateSlot(
+      stack.state,
+      3
+      /* ParseState.TokenizerMask */
+    );
+    let context = stack.curContext ? stack.curContext.hash : 0;
+    let lookAhead = 0;
+    for (let i = 0; i < tokenizers.length; i++) {
+      if ((1 << i & mask) == 0)
+        continue;
+      let tokenizer = tokenizers[i], token = this.tokens[i];
+      if (main && !tokenizer.fallback)
+        continue;
+      if (tokenizer.contextual || token.start != stack.pos || token.mask != mask || token.context != context) {
+        this.updateCachedToken(token, tokenizer, stack);
+        token.mask = mask;
+        token.context = context;
+      }
+      if (token.lookAhead > token.end + 25)
+        lookAhead = Math.max(token.lookAhead, lookAhead);
+      if (token.value != 0) {
+        let startIndex = actionIndex;
+        if (token.extended > -1)
+          actionIndex = this.addActions(stack, token.extended, token.end, actionIndex);
+        actionIndex = this.addActions(stack, token.value, token.end, actionIndex);
+        if (!tokenizer.extend) {
+          main = token;
+          if (actionIndex > startIndex)
+            break;
+        }
+      }
+    }
+    while (this.actions.length > actionIndex)
+      this.actions.pop();
+    if (lookAhead)
+      stack.setLookAhead(lookAhead);
+    if (!main && stack.pos == this.stream.end) {
+      main = new CachedToken4();
+      main.value = stack.p.parser.eofTerm;
+      main.start = main.end = stack.pos;
+      actionIndex = this.addActions(stack, main.value, main.end, actionIndex);
+    }
+    this.mainToken = main;
+    return this.actions;
+  }
+  getMainToken(stack) {
+    if (this.mainToken)
+      return this.mainToken;
+    let main = new CachedToken4(), { pos, p } = stack;
+    main.start = pos;
+    main.end = Math.min(pos + 1, p.stream.end);
+    main.value = pos == p.stream.end ? p.parser.eofTerm : 0;
+    return main;
+  }
+  updateCachedToken(token, tokenizer, stack) {
+    let start = this.stream.clipPos(stack.pos);
+    tokenizer.token(this.stream.reset(start, token), stack);
+    if (token.value > -1) {
+      let { parser: parser6 } = stack.p;
+      for (let i = 0; i < parser6.specialized.length; i++)
+        if (parser6.specialized[i] == token.value) {
+          let result = parser6.specializers[i](this.stream.read(token.start, token.end), stack);
+          if (result >= 0 && stack.p.parser.dialect.allows(result >> 1)) {
+            if ((result & 1) == 0)
+              token.value = result >> 1;
+            else
+              token.extended = result >> 1;
+            break;
+          }
+        }
+    } else {
+      token.value = 0;
+      token.end = this.stream.clipPos(start + 1);
+    }
+  }
+  putAction(action, token, end, index) {
+    for (let i = 0; i < index; i += 3)
+      if (this.actions[i] == action)
+        return index;
+    this.actions[index++] = action;
+    this.actions[index++] = token;
+    this.actions[index++] = end;
+    return index;
+  }
+  addActions(stack, token, end, index) {
+    let { state } = stack, { parser: parser6 } = stack.p, { data: data2 } = parser6;
+    for (let set = 0; set < 2; set++) {
+      for (let i = parser6.stateSlot(
+        state,
+        set ? 2 : 1
+        /* ParseState.Actions */
+      ); ; i += 3) {
+        if (data2[i] == 65535) {
+          if (data2[i + 1] == 1) {
+            i = pair4(data2, i + 2);
+          } else {
+            if (index == 0 && data2[i + 1] == 2)
+              index = this.putAction(pair4(data2, i + 2), token, end, index);
+            break;
+          }
+        }
+        if (data2[i] == token)
+          index = this.putAction(pair4(data2, i + 1), token, end, index);
+      }
+    }
+    return index;
+  }
+};
+var Parse4 = class {
+  constructor(parser6, input, fragments, ranges) {
+    this.parser = parser6;
+    this.input = input;
+    this.ranges = ranges;
+    this.recovering = 0;
+    this.nextStackID = 9812;
+    this.minStackPos = 0;
+    this.reused = [];
+    this.stoppedAt = null;
+    this.lastBigReductionStart = -1;
+    this.lastBigReductionSize = 0;
+    this.bigReductionCount = 0;
+    this.stream = new InputStream4(input, ranges);
+    this.tokens = new TokenCache4(parser6, this.stream);
+    this.topTerm = parser6.top[1];
+    let { from } = ranges[0];
+    this.stacks = [Stack4.start(this, parser6.top[0], from)];
+    this.fragments = fragments.length && this.stream.end - from > parser6.bufferLength * 4 ? new FragmentCursor6(fragments, parser6.nodeSet) : null;
+  }
+  get parsedPos() {
+    return this.minStackPos;
+  }
+  // Move the parser forward. This will process all parse stacks at
+  // `this.pos` and try to advance them to a further position. If no
+  // stack for such a position is found, it'll start error-recovery.
+  //
+  // When the parse is finished, this will return a syntax tree. When
+  // not, it returns `null`.
+  advance() {
+    let stacks = this.stacks, pos = this.minStackPos;
+    let newStacks = this.stacks = [];
+    let stopped, stoppedTokens;
+    if (this.bigReductionCount > 300 && stacks.length == 1) {
+      let [s] = stacks;
+      while (s.forceReduce() && s.stack.length && s.stack[s.stack.length - 2] >= this.lastBigReductionStart) {
+      }
+      this.bigReductionCount = this.lastBigReductionSize = 0;
+    }
+    for (let i = 0; i < stacks.length; i++) {
+      let stack = stacks[i];
+      for (; ; ) {
+        this.tokens.mainToken = null;
+        if (stack.pos > pos) {
+          newStacks.push(stack);
+        } else if (this.advanceStack(stack, newStacks, stacks)) {
+          continue;
+        } else {
+          if (!stopped) {
+            stopped = [];
+            stoppedTokens = [];
+          }
+          stopped.push(stack);
+          let tok = this.tokens.getMainToken(stack);
+          stoppedTokens.push(tok.value, tok.end);
+        }
+        break;
+      }
+    }
+    if (!newStacks.length) {
+      let finished = stopped && findFinished4(stopped);
+      if (finished) {
+        if (verbose4)
+          console.log("Finish with " + this.stackID(finished));
+        return this.stackToTree(finished);
+      }
+      if (this.parser.strict) {
+        if (verbose4 && stopped)
+          console.log("Stuck with token " + (this.tokens.mainToken ? this.parser.getName(this.tokens.mainToken.value) : "none"));
+        throw new SyntaxError("No parse at " + pos);
+      }
+      if (!this.recovering)
+        this.recovering = 5;
+    }
+    if (this.recovering && stopped) {
+      let finished = this.stoppedAt != null && stopped[0].pos > this.stoppedAt ? stopped[0] : this.runRecovery(stopped, stoppedTokens, newStacks);
+      if (finished) {
+        if (verbose4)
+          console.log("Force-finish " + this.stackID(finished));
+        return this.stackToTree(finished.forceAll());
+      }
+    }
+    if (this.recovering) {
+      let maxRemaining = this.recovering == 1 ? 1 : this.recovering * 3;
+      if (newStacks.length > maxRemaining) {
+        newStacks.sort((a, b) => b.score - a.score);
+        while (newStacks.length > maxRemaining)
+          newStacks.pop();
+      }
+      if (newStacks.some((s) => s.reducePos > pos))
+        this.recovering--;
+    } else if (newStacks.length > 1) {
+      outer: for (let i = 0; i < newStacks.length - 1; i++) {
+        let stack = newStacks[i];
+        for (let j = i + 1; j < newStacks.length; j++) {
+          let other = newStacks[j];
+          if (stack.sameState(other) || stack.buffer.length > 500 && other.buffer.length > 500) {
+            if ((stack.score - other.score || stack.buffer.length - other.buffer.length) > 0) {
+              newStacks.splice(j--, 1);
+            } else {
+              newStacks.splice(i--, 1);
+              continue outer;
+            }
+          }
+        }
+      }
+      if (newStacks.length > 12) {
+        newStacks.sort((a, b) => b.score - a.score);
+        newStacks.splice(
+          12,
+          newStacks.length - 12
+          /* Rec.MaxStackCount */
+        );
+      }
+    }
+    this.minStackPos = newStacks[0].pos;
+    for (let i = 1; i < newStacks.length; i++)
+      if (newStacks[i].pos < this.minStackPos)
+        this.minStackPos = newStacks[i].pos;
+    return null;
+  }
+  stopAt(pos) {
+    if (this.stoppedAt != null && this.stoppedAt < pos)
+      throw new RangeError("Can't move stoppedAt forward");
+    this.stoppedAt = pos;
+  }
+  // Returns an updated version of the given stack, or null if the
+  // stack can't advance normally. When `split` and `stacks` are
+  // given, stacks split off by ambiguous operations will be pushed to
+  // `split`, or added to `stacks` if they move `pos` forward.
+  advanceStack(stack, stacks, split) {
+    let start = stack.pos, { parser: parser6 } = this;
+    let base2 = verbose4 ? this.stackID(stack) + " -> " : "";
+    if (this.stoppedAt != null && start > this.stoppedAt)
+      return stack.forceReduce() ? stack : null;
+    if (this.fragments) {
+      let strictCx = stack.curContext && stack.curContext.tracker.strict, cxHash = strictCx ? stack.curContext.hash : 0;
+      for (let cached = this.fragments.nodeAt(start); cached; ) {
+        let match = this.parser.nodeSet.types[cached.type.id] == cached.type ? parser6.getGoto(stack.state, cached.type.id) : -1;
+        if (match > -1 && cached.length && (!strictCx || (cached.prop(NodeProp.contextHash) || 0) == cxHash)) {
+          stack.useNode(cached, match);
+          if (verbose4)
+            console.log(base2 + this.stackID(stack) + ` (via reuse of ${parser6.getName(cached.type.id)})`);
+          return true;
+        }
+        if (!(cached instanceof Tree) || cached.children.length == 0 || cached.positions[0] > 0)
+          break;
+        let inner = cached.children[0];
+        if (inner instanceof Tree && cached.positions[0] == 0)
+          cached = inner;
+        else
+          break;
+      }
+    }
+    let defaultReduce = parser6.stateSlot(
+      stack.state,
+      4
+      /* ParseState.DefaultReduce */
+    );
+    if (defaultReduce > 0) {
+      stack.reduce(defaultReduce);
+      if (verbose4)
+        console.log(base2 + this.stackID(stack) + ` (via always-reduce ${parser6.getName(
+          defaultReduce & 65535
+          /* Action.ValueMask */
+        )})`);
+      return true;
+    }
+    if (stack.stack.length >= 8400) {
+      while (stack.stack.length > 6e3 && stack.forceReduce()) {
+      }
+    }
+    let actions = this.tokens.getActions(stack);
+    for (let i = 0; i < actions.length; ) {
+      let action = actions[i++], term = actions[i++], end = actions[i++];
+      let last = i == actions.length || !split;
+      let localStack = last ? stack : stack.split();
+      let main = this.tokens.mainToken;
+      localStack.apply(action, term, main ? main.start : localStack.pos, end);
+      if (verbose4)
+        console.log(base2 + this.stackID(localStack) + ` (via ${(action & 65536) == 0 ? "shift" : `reduce of ${parser6.getName(
+          action & 65535
+          /* Action.ValueMask */
+        )}`} for ${parser6.getName(term)} @ ${start}${localStack == stack ? "" : ", split"})`);
+      if (last)
+        return true;
+      else if (localStack.pos > start)
+        stacks.push(localStack);
+      else
+        split.push(localStack);
+    }
+    return false;
+  }
+  // Advance a given stack forward as far as it will go. Returns the
+  // (possibly updated) stack if it got stuck, or null if it moved
+  // forward and was given to `pushStackDedup`.
+  advanceFully(stack, newStacks) {
+    let pos = stack.pos;
+    for (; ; ) {
+      if (!this.advanceStack(stack, null, null))
+        return false;
+      if (stack.pos > pos) {
+        pushStackDedup4(stack, newStacks);
+        return true;
+      }
+    }
+  }
+  runRecovery(stacks, tokens, newStacks) {
+    let finished = null, restarted = false;
+    for (let i = 0; i < stacks.length; i++) {
+      let stack = stacks[i], token = tokens[i << 1], tokenEnd = tokens[(i << 1) + 1];
+      let base2 = verbose4 ? this.stackID(stack) + " -> " : "";
+      if (stack.deadEnd) {
+        if (restarted)
+          continue;
+        restarted = true;
+        stack.restart();
+        if (verbose4)
+          console.log(base2 + this.stackID(stack) + " (restarted)");
+        let done = this.advanceFully(stack, newStacks);
+        if (done)
+          continue;
+      }
+      let force = stack.split(), forceBase = base2;
+      for (let j = 0; j < 10 && force.forceReduce(); j++) {
+        if (verbose4)
+          console.log(forceBase + this.stackID(force) + " (via force-reduce)");
+        let done = this.advanceFully(force, newStacks);
+        if (done)
+          break;
+        if (verbose4)
+          forceBase = this.stackID(force) + " -> ";
+      }
+      for (let insert2 of stack.recoverByInsert(token)) {
+        if (verbose4)
+          console.log(base2 + this.stackID(insert2) + " (via recover-insert)");
+        this.advanceFully(insert2, newStacks);
+      }
+      if (this.stream.end > stack.pos) {
+        if (tokenEnd == stack.pos) {
+          tokenEnd++;
+          token = 0;
+        }
+        stack.recoverByDelete(token, tokenEnd);
+        if (verbose4)
+          console.log(base2 + this.stackID(stack) + ` (via recover-delete ${this.parser.getName(token)})`);
+        pushStackDedup4(stack, newStacks);
+      } else if (!finished || finished.score < force.score) {
+        finished = force;
+      }
+    }
+    return finished;
+  }
+  // Convert the stack's buffer to a syntax tree.
+  stackToTree(stack) {
+    stack.close();
+    return Tree.build({
+      buffer: StackBufferCursor4.create(stack),
+      nodeSet: this.parser.nodeSet,
+      topID: this.topTerm,
+      maxBufferLength: this.parser.bufferLength,
+      reused: this.reused,
+      start: this.ranges[0].from,
+      length: stack.pos - this.ranges[0].from,
+      minRepeatType: this.parser.minRepeatTerm
+    });
+  }
+  stackID(stack) {
+    let id3 = (stackIDs4 || (stackIDs4 = /* @__PURE__ */ new WeakMap())).get(stack);
+    if (!id3)
+      stackIDs4.set(stack, id3 = String.fromCodePoint(this.nextStackID++));
+    return id3 + stack;
+  }
+};
+function pushStackDedup4(stack, newStacks) {
+  for (let i = 0; i < newStacks.length; i++) {
+    let other = newStacks[i];
+    if (other.pos == stack.pos && other.sameState(stack)) {
+      if (newStacks[i].score < stack.score)
+        newStacks[i] = stack;
+      return;
+    }
+  }
+  newStacks.push(stack);
+}
+var Dialect4 = class {
+  constructor(source, flags, disabled) {
+    this.source = source;
+    this.flags = flags;
+    this.disabled = disabled;
+  }
+  allows(term) {
+    return !this.disabled || this.disabled[term] == 0;
+  }
+};
+var LRParser4 = class _LRParser extends Parser {
+  /**
+  @internal
+  */
+  constructor(spec) {
+    super();
+    this.wrappers = [];
+    if (spec.version != 14)
+      throw new RangeError(`Parser version (${spec.version}) doesn't match runtime version (${14})`);
+    let nodeNames = spec.nodeNames.split(" ");
+    this.minRepeatTerm = nodeNames.length;
+    for (let i = 0; i < spec.repeatNodeCount; i++)
+      nodeNames.push("");
+    let topTerms = Object.keys(spec.topRules).map((r) => spec.topRules[r][1]);
+    let nodeProps = [];
+    for (let i = 0; i < nodeNames.length; i++)
+      nodeProps.push([]);
+    function setProp(nodeID, prop, value) {
+      nodeProps[nodeID].push([prop, prop.deserialize(String(value))]);
+    }
+    if (spec.nodeProps)
+      for (let propSpec of spec.nodeProps) {
+        let prop = propSpec[0];
+        if (typeof prop == "string")
+          prop = NodeProp[prop];
+        for (let i = 1; i < propSpec.length; ) {
+          let next = propSpec[i++];
+          if (next >= 0) {
+            setProp(next, prop, propSpec[i++]);
+          } else {
+            let value = propSpec[i + -next];
+            for (let j = -next; j > 0; j--)
+              setProp(propSpec[i++], prop, value);
+            i++;
+          }
+        }
+      }
+    this.nodeSet = new NodeSet(nodeNames.map((name9, i) => NodeType.define({
+      name: i >= this.minRepeatTerm ? void 0 : name9,
+      id: i,
+      props: nodeProps[i],
+      top: topTerms.indexOf(i) > -1,
+      error: i == 0,
+      skipped: spec.skippedNodes && spec.skippedNodes.indexOf(i) > -1
+    })));
+    if (spec.propSources)
+      this.nodeSet = this.nodeSet.extend(...spec.propSources);
+    this.strict = false;
+    this.bufferLength = DefaultBufferLength;
+    let tokenArray = decodeArray4(spec.tokenData);
+    this.context = spec.context;
+    this.specializerSpecs = spec.specialized || [];
+    this.specialized = new Uint16Array(this.specializerSpecs.length);
+    for (let i = 0; i < this.specializerSpecs.length; i++)
+      this.specialized[i] = this.specializerSpecs[i].term;
+    this.specializers = this.specializerSpecs.map(getSpecializer4);
+    this.states = decodeArray4(spec.states, Uint32Array);
+    this.data = decodeArray4(spec.stateData);
+    this.goto = decodeArray4(spec.goto);
+    this.maxTerm = spec.maxTerm;
+    this.tokenizers = spec.tokenizers.map((value) => typeof value == "number" ? new TokenGroup4(tokenArray, value) : value);
+    this.topRules = spec.topRules;
+    this.dialects = spec.dialects || {};
+    this.dynamicPrecedences = spec.dynamicPrecedences || null;
+    this.tokenPrecTable = spec.tokenPrec;
+    this.termNames = spec.termNames || null;
+    this.maxNode = this.nodeSet.types.length - 1;
+    this.dialect = this.parseDialect();
+    this.top = this.topRules[Object.keys(this.topRules)[0]];
+  }
+  createParse(input, fragments, ranges) {
+    let parse = new Parse4(this, input, fragments, ranges);
+    for (let w of this.wrappers)
+      parse = w(parse, input, fragments, ranges);
+    return parse;
+  }
+  /**
+  Get a goto table entry @internal
+  */
+  getGoto(state, term, loose = false) {
+    let table = this.goto;
+    if (term >= table[0])
+      return -1;
+    for (let pos = table[term + 1]; ; ) {
+      let groupTag = table[pos++], last = groupTag & 1;
+      let target = table[pos++];
+      if (last && loose)
+        return target;
+      for (let end = pos + (groupTag >> 1); pos < end; pos++)
+        if (table[pos] == state)
+          return target;
+      if (last)
+        return -1;
+    }
+  }
+  /**
+  Check if this state has an action for a given terminal @internal
+  */
+  hasAction(state, terminal) {
+    let data2 = this.data;
+    for (let set = 0; set < 2; set++) {
+      for (let i = this.stateSlot(
+        state,
+        set ? 2 : 1
+        /* ParseState.Actions */
+      ), next; ; i += 3) {
+        if ((next = data2[i]) == 65535) {
+          if (data2[i + 1] == 1)
+            next = data2[i = pair4(data2, i + 2)];
+          else if (data2[i + 1] == 2)
+            return pair4(data2, i + 2);
+          else
+            break;
+        }
+        if (next == terminal || next == 0)
+          return pair4(data2, i + 1);
+      }
+    }
+    return 0;
+  }
+  /**
+  @internal
+  */
+  stateSlot(state, slot) {
+    return this.states[state * 6 + slot];
+  }
+  /**
+  @internal
+  */
+  stateFlag(state, flag) {
+    return (this.stateSlot(
+      state,
+      0
+      /* ParseState.Flags */
+    ) & flag) > 0;
+  }
+  /**
+  @internal
+  */
+  validAction(state, action) {
+    return !!this.allActions(state, (a) => a == action ? true : null);
+  }
+  /**
+  @internal
+  */
+  allActions(state, action) {
+    let deflt = this.stateSlot(
+      state,
+      4
+      /* ParseState.DefaultReduce */
+    );
+    let result = deflt ? action(deflt) : void 0;
+    for (let i = this.stateSlot(
+      state,
+      1
+      /* ParseState.Actions */
+    ); result == null; i += 3) {
+      if (this.data[i] == 65535) {
+        if (this.data[i + 1] == 1)
+          i = pair4(this.data, i + 2);
+        else
+          break;
+      }
+      result = action(pair4(this.data, i + 1));
+    }
+    return result;
+  }
+  /**
+  Get the states that can follow this one through shift actions or
+  goto jumps. @internal
+  */
+  nextStates(state) {
+    let result = [];
+    for (let i = this.stateSlot(
+      state,
+      1
+      /* ParseState.Actions */
+    ); ; i += 3) {
+      if (this.data[i] == 65535) {
+        if (this.data[i + 1] == 1)
+          i = pair4(this.data, i + 2);
+        else
+          break;
+      }
+      if ((this.data[i + 2] & 65536 >> 16) == 0) {
+        let value = this.data[i + 1];
+        if (!result.some((v, i2) => i2 & 1 && v == value))
+          result.push(this.data[i], value);
+      }
+    }
+    return result;
+  }
+  /**
+  Configure the parser. Returns a new parser instance that has the
+  given settings modified. Settings not provided in `config` are
+  kept from the original parser.
+  */
+  configure(config2) {
+    let copy = Object.assign(Object.create(_LRParser.prototype), this);
+    if (config2.props)
+      copy.nodeSet = this.nodeSet.extend(...config2.props);
+    if (config2.top) {
+      let info = this.topRules[config2.top];
+      if (!info)
+        throw new RangeError(`Invalid top rule name ${config2.top}`);
+      copy.top = info;
+    }
+    if (config2.tokenizers)
+      copy.tokenizers = this.tokenizers.map((t9) => {
+        let found = config2.tokenizers.find((r) => r.from == t9);
+        return found ? found.to : t9;
+      });
+    if (config2.specializers) {
+      copy.specializers = this.specializers.slice();
+      copy.specializerSpecs = this.specializerSpecs.map((s, i) => {
+        let found = config2.specializers.find((r) => r.from == s.external);
+        if (!found)
+          return s;
+        let spec = Object.assign(Object.assign({}, s), { external: found.to });
+        copy.specializers[i] = getSpecializer4(spec);
+        return spec;
+      });
+    }
+    if (config2.contextTracker)
+      copy.context = config2.contextTracker;
+    if (config2.dialect)
+      copy.dialect = this.parseDialect(config2.dialect);
+    if (config2.strict != null)
+      copy.strict = config2.strict;
+    if (config2.wrap)
+      copy.wrappers = copy.wrappers.concat(config2.wrap);
+    if (config2.bufferLength != null)
+      copy.bufferLength = config2.bufferLength;
+    return copy;
+  }
+  /**
+  Tells you whether any [parse wrappers](#lr.ParserConfig.wrap)
+  are registered for this parser.
+  */
+  hasWrappers() {
+    return this.wrappers.length > 0;
+  }
+  /**
+  Returns the name associated with a given term. This will only
+  work for all terms when the parser was generated with the
+  `--names` option. By default, only the names of tagged terms are
+  stored.
+  */
+  getName(term) {
+    return this.termNames ? this.termNames[term] : String(term <= this.maxNode && this.nodeSet.types[term].name || term);
+  }
+  /**
+  The eof term id is always allocated directly after the node
+  types. @internal
+  */
+  get eofTerm() {
+    return this.maxNode + 1;
+  }
+  /**
+  The type of top node produced by the parser.
+  */
+  get topNode() {
+    return this.nodeSet.types[this.top[1]];
+  }
+  /**
+  @internal
+  */
+  dynamicPrecedence(term) {
+    let prec2 = this.dynamicPrecedences;
+    return prec2 == null ? 0 : prec2[term] || 0;
+  }
+  /**
+  @internal
+  */
+  parseDialect(dialect) {
+    let values2 = Object.keys(this.dialects), flags = values2.map(() => false);
+    if (dialect)
+      for (let part of dialect.split(" ")) {
+        let id3 = values2.indexOf(part);
+        if (id3 >= 0)
+          flags[id3] = true;
+      }
+    let disabled = null;
+    for (let i = 0; i < values2.length; i++)
+      if (!flags[i]) {
+        for (let j = this.dialects[values2[i]], id3; (id3 = this.data[j++]) != 65535; )
+          (disabled || (disabled = new Uint8Array(this.maxTerm + 1)))[id3] = 1;
+      }
+    return new Dialect4(dialect, flags, disabled);
+  }
+  /**
+  Used by the output of the parser generator. Not available to
+  user code. @hide
+  */
+  static deserialize(spec) {
+    return new _LRParser(spec);
+  }
+};
+function pair4(data2, off) {
+  return data2[off] | data2[off + 1] << 16;
+}
+function findFinished4(stacks) {
+  let best = null;
+  for (let stack of stacks) {
+    let stopped = stack.p.stoppedAt;
+    if ((stack.pos == stack.p.stream.end || stopped != null && stack.pos > stopped) && stack.p.parser.stateFlag(
+      stack.state,
+      2
+      /* StateFlag.Accepting */
+    ) && (!best || best.score < stack.score))
+      best = stack;
+  }
+  return best;
+}
+function getSpecializer4(spec) {
+  if (spec.external) {
+    let mask = spec.extend ? 1 : 0;
+    return (value, stack) => spec.external(value, stack) << 1 | mask;
+  }
+  return spec.get;
+}
+
+// node_modules/@lezer/json/node_modules/@lezer/highlight/dist/index.js
 var nextTagID6 = 0;
 var Tag6 = class _Tag {
   /**
   @internal
   */
-  constructor(name8, set, base2, modified) {
-    this.name = name8;
+  constructor(name9, set, base2, modified) {
+    this.name = name9;
     this.set = set;
     this.base = base2;
     this.modified = modified;
     this.id = nextTagID6++;
   }
   toString() {
-    let { name: name8 } = this;
+    let { name: name9 } = this;
     for (let mod of this.modified)
       if (mod.name)
-        name8 = `${mod.name}(${name8})`;
-    return name8;
+        name9 = `${mod.name}(${name9})`;
+    return name9;
   }
   static define(nameOrParent, parent) {
-    let name8 = typeof nameOrParent == "string" ? nameOrParent : "?";
+    let name9 = typeof nameOrParent == "string" ? nameOrParent : "?";
     if (nameOrParent instanceof _Tag)
       parent = nameOrParent;
     if (parent === null || parent === void 0 ? void 0 : parent.base)
       throw new Error("Can not derive from a modified tag");
-    let tag = new _Tag(name8, [], null, []);
+    let tag = new _Tag(name9, [], null, []);
     tag.set.push(tag);
     if (parent)
-      for (let t8 of parent.set)
-        tag.set.push(t8);
+      for (let t9 of parent.set)
+        tag.set.push(t9);
     return tag;
   }
   /**
@@ -36455,8 +38188,8 @@ var Tag6 = class _Tag {
   example `m1(m2(m3(t1)))` is a subtype of `m1(m2(t1))`,
   `m1(m3(t1)`, and so on.
   */
-  static defineModifier(name8) {
-    let mod = new Modifier6(name8);
+  static defineModifier(name9) {
+    let mod = new Modifier6(name9);
     return (tag) => {
       if (tag.modified.indexOf(mod) > -1)
         return tag;
@@ -36466,15 +38199,15 @@ var Tag6 = class _Tag {
 };
 var nextModifierID6 = 0;
 var Modifier6 = class _Modifier {
-  constructor(name8) {
-    this.name = name8;
+  constructor(name9) {
+    this.name = name9;
     this.instances = [];
     this.id = nextModifierID6++;
   }
   static get(base2, mods) {
     if (!mods.length)
       return base2;
-    let exists = mods[0].instances.find((t8) => t8.base == base2 && sameArray7(mods, t8.modified));
+    let exists = mods[0].instances.find((t9) => t9.base == base2 && sameArray7(mods, t9.modified));
     if (exists)
       return exists;
     let set = [], tag = new Tag6(base2.name, set, base2, mods);
@@ -36500,6 +38233,45 @@ function powerSet6(array) {
   }
   return sets.sort((a, b) => b.length - a.length);
 }
+function styleTags6(spec) {
+  let byName = /* @__PURE__ */ Object.create(null);
+  for (let prop in spec) {
+    let tags10 = spec[prop];
+    if (!Array.isArray(tags10))
+      tags10 = [tags10];
+    for (let part of prop.split(" "))
+      if (part) {
+        let pieces = [], mode = 2, rest = part;
+        for (let pos = 0; ; ) {
+          if (rest == "..." && pos > 0 && pos + 3 == part.length) {
+            mode = 1;
+            break;
+          }
+          let m = /^"(?:[^"\\]|\\.)*?"|[^\/!]+/.exec(rest);
+          if (!m)
+            throw new RangeError("Invalid path: " + part);
+          pieces.push(m[0] == "*" ? "" : m[0][0] == '"' ? JSON.parse(m[0]) : m[0]);
+          pos += m[0].length;
+          if (pos == part.length)
+            break;
+          let next = part[pos++];
+          if (pos == part.length && next == "!") {
+            mode = 0;
+            break;
+          }
+          if (next != "/")
+            throw new RangeError("Invalid path: " + part);
+          rest = part.slice(pos);
+        }
+        let last = pieces.length - 1, inner = pieces[last];
+        if (!inner)
+          throw new RangeError("Invalid path: " + part);
+        let rule = new Rule6(tags10, mode, last > 0 ? pieces.slice(0, last) : null);
+        byName[inner] = rule.sort(byName[inner]);
+      }
+  }
+  return ruleNodeProp6.add(byName);
+}
 var ruleNodeProp6 = new NodeProp({
   combine(a, b) {
     let cur2, root, take;
@@ -36524,8 +38296,8 @@ var ruleNodeProp6 = new NodeProp({
   }
 });
 var Rule6 = class {
-  constructor(tags9, mode, context, next) {
-    this.tags = tags9;
+  constructor(tags10, mode, context, next) {
+    this.tags = tags10;
     this.mode = mode;
     this.context = context;
     this.next = next;
@@ -36549,9 +38321,9 @@ var Rule6 = class {
   }
 };
 Rule6.empty = new Rule6([], 2, null);
-function tagHighlighter6(tags9, options) {
+function tagHighlighter6(tags10, options) {
   let map = /* @__PURE__ */ Object.create(null);
-  for (let style of tags9) {
+  for (let style of tags10) {
     if (!Array.isArray(style.tag))
       map[style.tag.id] = style.class;
     else
@@ -36560,9 +38332,9 @@ function tagHighlighter6(tags9, options) {
   }
   let { scope, all = null } = options || {};
   return {
-    style: (tags10) => {
+    style: (tags11) => {
       let cls = all;
-      for (let tag of tags10) {
+      for (let tag of tags11) {
         for (let sub of tag.set) {
           let tagClass = map[sub.id];
           if (tagClass) {
@@ -36957,10 +38729,10 @@ var tags7 = {
   */
   special: Tag6.defineModifier("special")
 };
-for (let name8 in tags7) {
-  let val = tags7[name8];
+for (let name9 in tags7) {
+  let val = tags7[name9];
   if (val instanceof Tag6)
-    val.name = name8;
+    val.name = name9;
 }
 var classHighlighter6 = tagHighlighter6([
   { tag: tags7.link, class: "tok-link" },
@@ -36995,181 +38767,92 @@ var classHighlighter6 = tagHighlighter6([
   { tag: tags7.punctuation, class: "tok-punctuation" }
 ]);
 
-// node_modules/@codemirror/theme-one-dark/dist/index.js
-var chalky = "#e5c07b";
-var coral = "#e06c75";
-var cyan = "#56b6c2";
-var invalid = "#ffffff";
-var ivory = "#abb2bf";
-var stone = "#7d8799";
-var malibu = "#61afef";
-var sage = "#98c379";
-var whiskey = "#d19a66";
-var violet = "#c678dd";
-var darkBackground = "#21252b";
-var highlightBackground = "#2c313a";
-var background = "#282c34";
-var tooltipBackground = "#353a42";
-var selection = "#3E4451";
-var cursor = "#528bff";
-var oneDarkTheme = /* @__PURE__ */ EditorView.theme({
-  "&": {
-    color: ivory,
-    backgroundColor: background
-  },
-  ".cm-content": {
-    caretColor: cursor
-  },
-  ".cm-cursor, .cm-dropCursor": { borderLeftColor: cursor },
-  "&.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground, .cm-selectionBackground, .cm-content ::selection": { backgroundColor: selection },
-  ".cm-panels": { backgroundColor: darkBackground, color: ivory },
-  ".cm-panels.cm-panels-top": { borderBottom: "2px solid black" },
-  ".cm-panels.cm-panels-bottom": { borderTop: "2px solid black" },
-  ".cm-searchMatch": {
-    backgroundColor: "#72a1ff59",
-    outline: "1px solid #457dff"
-  },
-  ".cm-searchMatch.cm-searchMatch-selected": {
-    backgroundColor: "#6199ff2f"
-  },
-  ".cm-activeLine": { backgroundColor: "#6699ff0b" },
-  ".cm-selectionMatch": { backgroundColor: "#aafe661a" },
-  "&.cm-focused .cm-matchingBracket, &.cm-focused .cm-nonmatchingBracket": {
-    backgroundColor: "#bad0f847"
-  },
-  ".cm-gutters": {
-    backgroundColor: background,
-    color: stone,
-    border: "none"
-  },
-  ".cm-activeLineGutter": {
-    backgroundColor: highlightBackground
-  },
-  ".cm-foldPlaceholder": {
-    backgroundColor: "transparent",
-    border: "none",
-    color: "#ddd"
-  },
-  ".cm-tooltip": {
-    border: "none",
-    backgroundColor: tooltipBackground
-  },
-  ".cm-tooltip .cm-tooltip-arrow:before": {
-    borderTopColor: "transparent",
-    borderBottomColor: "transparent"
-  },
-  ".cm-tooltip .cm-tooltip-arrow:after": {
-    borderTopColor: tooltipBackground,
-    borderBottomColor: tooltipBackground
-  },
-  ".cm-tooltip-autocomplete": {
-    "& > ul > li[aria-selected]": {
-      backgroundColor: highlightBackground,
-      color: ivory
-    }
-  }
-}, { dark: true });
-var oneDarkHighlightStyle = /* @__PURE__ */ HighlightStyle.define([
-  {
-    tag: tags7.keyword,
-    color: violet
-  },
-  {
-    tag: [tags7.name, tags7.deleted, tags7.character, tags7.propertyName, tags7.macroName],
-    color: coral
-  },
-  {
-    tag: [/* @__PURE__ */ tags7.function(tags7.variableName), tags7.labelName],
-    color: malibu
-  },
-  {
-    tag: [tags7.color, /* @__PURE__ */ tags7.constant(tags7.name), /* @__PURE__ */ tags7.standard(tags7.name)],
-    color: whiskey
-  },
-  {
-    tag: [/* @__PURE__ */ tags7.definition(tags7.name), tags7.separator],
-    color: ivory
-  },
-  {
-    tag: [tags7.typeName, tags7.className, tags7.number, tags7.changed, tags7.annotation, tags7.modifier, tags7.self, tags7.namespace],
-    color: chalky
-  },
-  {
-    tag: [tags7.operator, tags7.operatorKeyword, tags7.url, tags7.escape, tags7.regexp, tags7.link, /* @__PURE__ */ tags7.special(tags7.string)],
-    color: cyan
-  },
-  {
-    tag: [tags7.meta, tags7.comment],
-    color: stone
-  },
-  {
-    tag: tags7.strong,
-    fontWeight: "bold"
-  },
-  {
-    tag: tags7.emphasis,
-    fontStyle: "italic"
-  },
-  {
-    tag: tags7.strikethrough,
-    textDecoration: "line-through"
-  },
-  {
-    tag: tags7.link,
-    color: stone,
-    textDecoration: "underline"
-  },
-  {
-    tag: tags7.heading,
-    fontWeight: "bold",
-    color: coral
-  },
-  {
-    tag: [tags7.atom, tags7.bool, /* @__PURE__ */ tags7.special(tags7.variableName)],
-    color: whiskey
-  },
-  {
-    tag: [tags7.processingInstruction, tags7.string, tags7.inserted],
-    color: sage
-  },
-  {
-    tag: tags7.invalid,
-    color: invalid
-  }
-]);
-var oneDark = [oneDarkTheme, /* @__PURE__ */ syntaxHighlighting(oneDarkHighlightStyle)];
+// node_modules/@lezer/json/dist/index.js
+var jsonHighlighting = styleTags6({
+  String: tags7.string,
+  Number: tags7.number,
+  "True False": tags7.bool,
+  PropertyName: tags7.propertyName,
+  Null: tags7.null,
+  ", :": tags7.separator,
+  "[ ]": tags7.squareBracket,
+  "{ }": tags7.brace
+});
+var parser5 = LRParser4.deserialize({
+  version: 14,
+  states: "$bOVQPOOOOQO'#Cb'#CbOnQPO'#CeOvQPO'#ClOOQO'#Cr'#CrQOQPOOOOQO'#Cg'#CgO}QPO'#CfO!SQPO'#CtOOQO,59P,59PO![QPO,59PO!aQPO'#CuOOQO,59W,59WO!iQPO,59WOVQPO,59QOqQPO'#CmO!nQPO,59`OOQO1G.k1G.kOVQPO'#CnO!vQPO,59aOOQO1G.r1G.rOOQO1G.l1G.lOOQO,59X,59XOOQO-E6k-E6kOOQO,59Y,59YOOQO-E6l-E6l",
+  stateData: "#O~OeOS~OQSORSOSSOTSOWQO_ROgPO~OVXOgUO~O^[O~PVO[^O~O]_OVhX~OVaO~O]bO^iX~O^dO~O]_OVha~O]bO^ia~O",
+  goto: "!kjPPPPPPkPPkqwPPPPk{!RPPP!XP!e!hXSOR^bQWQRf_TVQ_Q`WRg`QcZRicQTOQZRQe^RhbRYQR]R",
+  nodeNames: "\u26A0 JsonText True False Null Number String } { Object Property PropertyName : , ] [ Array",
+  maxTerm: 25,
+  nodeProps: [
+    ["isolate", -2, 6, 11, ""],
+    ["openedBy", 7, "{", 14, "["],
+    ["closedBy", 8, "}", 15, "]"]
+  ],
+  propSources: [jsonHighlighting],
+  skippedNodes: [0],
+  repeatNodeCount: 2,
+  tokenData: "(|~RaXY!WYZ!W]^!Wpq!Wrs!]|}$u}!O$z!Q!R%T!R![&c![!]&t!}#O&y#P#Q'O#Y#Z'T#b#c'r#h#i(Z#o#p(r#q#r(w~!]Oe~~!`Wpq!]qr!]rs!xs#O!]#O#P!}#P;'S!];'S;=`$o<%lO!]~!}Og~~#QXrs!]!P!Q!]#O#P!]#U#V!]#Y#Z!]#b#c!]#f#g!]#h#i!]#i#j#m~#pR!Q![#y!c!i#y#T#Z#y~#|R!Q![$V!c!i$V#T#Z$V~$YR!Q![$c!c!i$c#T#Z$c~$fR!Q![!]!c!i!]#T#Z!]~$rP;=`<%l!]~$zO]~~$}Q!Q!R%T!R![&c~%YRT~!O!P%c!g!h%w#X#Y%w~%fP!Q![%i~%nRT~!Q![%i!g!h%w#X#Y%w~%zR{|&T}!O&T!Q![&Z~&WP!Q![&Z~&`PT~!Q![&Z~&hST~!O!P%c!Q![&c!g!h%w#X#Y%w~&yO[~~'OO_~~'TO^~~'WP#T#U'Z~'^P#`#a'a~'dP#g#h'g~'jP#X#Y'm~'rOR~~'uP#i#j'x~'{P#`#a(O~(RP#`#a(U~(ZOS~~(^P#f#g(a~(dP#i#j(g~(jP#X#Y(m~(rOQ~~(wOW~~(|OV~",
+  tokenizers: [0],
+  topRules: { "JsonText": [0, 1] },
+  tokenPrec: 0
+});
 
-// node_modules/@codemirror/merge/node_modules/@lezer/highlight/dist/index.js
+// node_modules/@codemirror/lang-json/dist/index.js
+var jsonLanguage = /* @__PURE__ */ LRLanguage.define({
+  name: "json",
+  parser: /* @__PURE__ */ parser5.configure({
+    props: [
+      /* @__PURE__ */ indentNodeProp.add({
+        Object: /* @__PURE__ */ continuedIndent({ except: /^\s*\}/ }),
+        Array: /* @__PURE__ */ continuedIndent({ except: /^\s*\]/ })
+      }),
+      /* @__PURE__ */ foldNodeProp.add({
+        "Object Array": foldInside
+      })
+    ]
+  }),
+  languageData: {
+    closeBrackets: { brackets: ["[", "{", '"'] },
+    indentOnInput: /^\s*[\}\]]$/
+  }
+});
+function json() {
+  return new LanguageSupport(jsonLanguage);
+}
+
+// node_modules/@codemirror/theme-one-dark/node_modules/@lezer/highlight/dist/index.js
 var nextTagID7 = 0;
 var Tag7 = class _Tag {
   /**
   @internal
   */
-  constructor(name8, set, base2, modified) {
-    this.name = name8;
+  constructor(name9, set, base2, modified) {
+    this.name = name9;
     this.set = set;
     this.base = base2;
     this.modified = modified;
     this.id = nextTagID7++;
   }
   toString() {
-    let { name: name8 } = this;
+    let { name: name9 } = this;
     for (let mod of this.modified)
       if (mod.name)
-        name8 = `${mod.name}(${name8})`;
-    return name8;
+        name9 = `${mod.name}(${name9})`;
+    return name9;
   }
   static define(nameOrParent, parent) {
-    let name8 = typeof nameOrParent == "string" ? nameOrParent : "?";
+    let name9 = typeof nameOrParent == "string" ? nameOrParent : "?";
     if (nameOrParent instanceof _Tag)
       parent = nameOrParent;
     if (parent === null || parent === void 0 ? void 0 : parent.base)
       throw new Error("Can not derive from a modified tag");
-    let tag = new _Tag(name8, [], null, []);
+    let tag = new _Tag(name9, [], null, []);
     tag.set.push(tag);
     if (parent)
-      for (let t8 of parent.set)
-        tag.set.push(t8);
+      for (let t9 of parent.set)
+        tag.set.push(t9);
     return tag;
   }
   /**
@@ -37184,8 +38867,8 @@ var Tag7 = class _Tag {
   example `m1(m2(m3(t1)))` is a subtype of `m1(m2(t1))`,
   `m1(m3(t1)`, and so on.
   */
-  static defineModifier(name8) {
-    let mod = new Modifier7(name8);
+  static defineModifier(name9) {
+    let mod = new Modifier7(name9);
     return (tag) => {
       if (tag.modified.indexOf(mod) > -1)
         return tag;
@@ -37195,15 +38878,15 @@ var Tag7 = class _Tag {
 };
 var nextModifierID7 = 0;
 var Modifier7 = class _Modifier {
-  constructor(name8) {
-    this.name = name8;
+  constructor(name9) {
+    this.name = name9;
     this.instances = [];
     this.id = nextModifierID7++;
   }
   static get(base2, mods) {
     if (!mods.length)
       return base2;
-    let exists = mods[0].instances.find((t8) => t8.base == base2 && sameArray8(mods, t8.modified));
+    let exists = mods[0].instances.find((t9) => t9.base == base2 && sameArray8(mods, t9.modified));
     if (exists)
       return exists;
     let set = [], tag = new Tag7(base2.name, set, base2, mods);
@@ -37253,8 +38936,8 @@ var ruleNodeProp7 = new NodeProp({
   }
 });
 var Rule7 = class {
-  constructor(tags9, mode, context, next) {
-    this.tags = tags9;
+  constructor(tags10, mode, context, next) {
+    this.tags = tags10;
     this.mode = mode;
     this.context = context;
     this.next = next;
@@ -37278,9 +38961,9 @@ var Rule7 = class {
   }
 };
 Rule7.empty = new Rule7([], 2, null);
-function tagHighlighter7(tags9, options) {
+function tagHighlighter7(tags10, options) {
   let map = /* @__PURE__ */ Object.create(null);
-  for (let style of tags9) {
+  for (let style of tags10) {
     if (!Array.isArray(style.tag))
       map[style.tag.id] = style.class;
     else
@@ -37289,9 +38972,9 @@ function tagHighlighter7(tags9, options) {
   }
   let { scope, all = null } = options || {};
   return {
-    style: (tags10) => {
+    style: (tags11) => {
       let cls = all;
-      for (let tag of tags10) {
+      for (let tag of tags11) {
         for (let sub of tag.set) {
           let tagClass = map[sub.id];
           if (tagClass) {
@@ -37304,106 +38987,6 @@ function tagHighlighter7(tags9, options) {
     },
     scope
   };
-}
-function highlightTags2(highlighters, tags9) {
-  let result = null;
-  for (let highlighter of highlighters) {
-    let value = highlighter.style(tags9);
-    if (value)
-      result = result ? result + " " + value : value;
-  }
-  return result;
-}
-function highlightTree2(tree, highlighter, putStyle, from = 0, to = tree.length) {
-  let builder = new HighlightBuilder2(from, Array.isArray(highlighter) ? highlighter : [highlighter], putStyle);
-  builder.highlightRange(tree.cursor(), from, to, "", builder.highlighters);
-  builder.flush(to);
-}
-var HighlightBuilder2 = class {
-  constructor(at, highlighters, span) {
-    this.at = at;
-    this.highlighters = highlighters;
-    this.span = span;
-    this.class = "";
-  }
-  startSpan(at, cls) {
-    if (cls != this.class) {
-      this.flush(at);
-      if (at > this.at)
-        this.at = at;
-      this.class = cls;
-    }
-  }
-  flush(to) {
-    if (to > this.at && this.class)
-      this.span(this.at, to, this.class);
-  }
-  highlightRange(cursor2, from, to, inheritedClass, highlighters) {
-    let { type, from: start, to: end } = cursor2;
-    if (start >= to || end <= from)
-      return;
-    if (type.isTop)
-      highlighters = this.highlighters.filter((h) => !h.scope || h.scope(type));
-    let cls = inheritedClass;
-    let rule = getStyleTags2(cursor2) || Rule7.empty;
-    let tagCls = highlightTags2(highlighters, rule.tags);
-    if (tagCls) {
-      if (cls)
-        cls += " ";
-      cls += tagCls;
-      if (rule.mode == 1)
-        inheritedClass += (inheritedClass ? " " : "") + tagCls;
-    }
-    this.startSpan(Math.max(from, start), cls);
-    if (rule.opaque)
-      return;
-    let mounted = cursor2.tree && cursor2.tree.prop(NodeProp.mounted);
-    if (mounted && mounted.overlay) {
-      let inner = cursor2.node.enter(mounted.overlay[0].from + start, 1);
-      let innerHighlighters = this.highlighters.filter((h) => !h.scope || h.scope(mounted.tree.type));
-      let hasChild2 = cursor2.firstChild();
-      for (let i = 0, pos = start; ; i++) {
-        let next = i < mounted.overlay.length ? mounted.overlay[i] : null;
-        let nextPos = next ? next.from + start : end;
-        let rangeFrom2 = Math.max(from, pos), rangeTo2 = Math.min(to, nextPos);
-        if (rangeFrom2 < rangeTo2 && hasChild2) {
-          while (cursor2.from < rangeTo2) {
-            this.highlightRange(cursor2, rangeFrom2, rangeTo2, inheritedClass, highlighters);
-            this.startSpan(Math.min(rangeTo2, cursor2.to), cls);
-            if (cursor2.to >= nextPos || !cursor2.nextSibling())
-              break;
-          }
-        }
-        if (!next || nextPos > to)
-          break;
-        pos = next.to + start;
-        if (pos > from) {
-          this.highlightRange(inner.cursor(), Math.max(from, next.from + start), Math.min(to, pos), "", innerHighlighters);
-          this.startSpan(Math.min(to, pos), cls);
-        }
-      }
-      if (hasChild2)
-        cursor2.parent();
-    } else if (cursor2.firstChild()) {
-      if (mounted)
-        inheritedClass = "";
-      do {
-        if (cursor2.to <= from)
-          continue;
-        if (cursor2.from >= to)
-          break;
-        this.highlightRange(cursor2, from, to, inheritedClass, highlighters);
-        this.startSpan(Math.min(to, cursor2.to), cls);
-      } while (cursor2.nextSibling());
-      cursor2.parent();
-    }
-  }
-};
-function getStyleTags2(node) {
-  let rule = node.type.prop(ruleNodeProp7);
-  while (rule && rule.context && !node.matchContext(rule.context))
-    rule = rule.next;
-  return rule || null;
 }
 var t7 = Tag7.define;
 var comment7 = t7();
@@ -37786,10 +39369,10 @@ var tags8 = {
   */
   special: Tag7.defineModifier("special")
 };
-for (let name8 in tags8) {
-  let val = tags8[name8];
+for (let name9 in tags8) {
+  let val = tags8[name9];
   if (val instanceof Tag7)
-    val.name = name8;
+    val.name = name9;
 }
 var classHighlighter7 = tagHighlighter7([
   { tag: tags8.link, class: "tok-link" },
@@ -37822,6 +39405,835 @@ var classHighlighter7 = tagHighlighter7([
   { tag: tags8.meta, class: "tok-meta" },
   { tag: tags8.invalid, class: "tok-invalid" },
   { tag: tags8.punctuation, class: "tok-punctuation" }
+]);
+
+// node_modules/@codemirror/theme-one-dark/dist/index.js
+var chalky = "#e5c07b";
+var coral = "#e06c75";
+var cyan = "#56b6c2";
+var invalid = "#ffffff";
+var ivory = "#abb2bf";
+var stone = "#7d8799";
+var malibu = "#61afef";
+var sage = "#98c379";
+var whiskey = "#d19a66";
+var violet = "#c678dd";
+var darkBackground = "#21252b";
+var highlightBackground = "#2c313a";
+var background = "#282c34";
+var tooltipBackground = "#353a42";
+var selection = "#3E4451";
+var cursor = "#528bff";
+var oneDarkTheme = /* @__PURE__ */ EditorView.theme({
+  "&": {
+    color: ivory,
+    backgroundColor: background
+  },
+  ".cm-content": {
+    caretColor: cursor
+  },
+  ".cm-cursor, .cm-dropCursor": { borderLeftColor: cursor },
+  "&.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground, .cm-selectionBackground, .cm-content ::selection": { backgroundColor: selection },
+  ".cm-panels": { backgroundColor: darkBackground, color: ivory },
+  ".cm-panels.cm-panels-top": { borderBottom: "2px solid black" },
+  ".cm-panels.cm-panels-bottom": { borderTop: "2px solid black" },
+  ".cm-searchMatch": {
+    backgroundColor: "#72a1ff59",
+    outline: "1px solid #457dff"
+  },
+  ".cm-searchMatch.cm-searchMatch-selected": {
+    backgroundColor: "#6199ff2f"
+  },
+  ".cm-activeLine": { backgroundColor: "#6699ff0b" },
+  ".cm-selectionMatch": { backgroundColor: "#aafe661a" },
+  "&.cm-focused .cm-matchingBracket, &.cm-focused .cm-nonmatchingBracket": {
+    backgroundColor: "#bad0f847"
+  },
+  ".cm-gutters": {
+    backgroundColor: background,
+    color: stone,
+    border: "none"
+  },
+  ".cm-activeLineGutter": {
+    backgroundColor: highlightBackground
+  },
+  ".cm-foldPlaceholder": {
+    backgroundColor: "transparent",
+    border: "none",
+    color: "#ddd"
+  },
+  ".cm-tooltip": {
+    border: "none",
+    backgroundColor: tooltipBackground
+  },
+  ".cm-tooltip .cm-tooltip-arrow:before": {
+    borderTopColor: "transparent",
+    borderBottomColor: "transparent"
+  },
+  ".cm-tooltip .cm-tooltip-arrow:after": {
+    borderTopColor: tooltipBackground,
+    borderBottomColor: tooltipBackground
+  },
+  ".cm-tooltip-autocomplete": {
+    "& > ul > li[aria-selected]": {
+      backgroundColor: highlightBackground,
+      color: ivory
+    }
+  }
+}, { dark: true });
+var oneDarkHighlightStyle = /* @__PURE__ */ HighlightStyle.define([
+  {
+    tag: tags8.keyword,
+    color: violet
+  },
+  {
+    tag: [tags8.name, tags8.deleted, tags8.character, tags8.propertyName, tags8.macroName],
+    color: coral
+  },
+  {
+    tag: [/* @__PURE__ */ tags8.function(tags8.variableName), tags8.labelName],
+    color: malibu
+  },
+  {
+    tag: [tags8.color, /* @__PURE__ */ tags8.constant(tags8.name), /* @__PURE__ */ tags8.standard(tags8.name)],
+    color: whiskey
+  },
+  {
+    tag: [/* @__PURE__ */ tags8.definition(tags8.name), tags8.separator],
+    color: ivory
+  },
+  {
+    tag: [tags8.typeName, tags8.className, tags8.number, tags8.changed, tags8.annotation, tags8.modifier, tags8.self, tags8.namespace],
+    color: chalky
+  },
+  {
+    tag: [tags8.operator, tags8.operatorKeyword, tags8.url, tags8.escape, tags8.regexp, tags8.link, /* @__PURE__ */ tags8.special(tags8.string)],
+    color: cyan
+  },
+  {
+    tag: [tags8.meta, tags8.comment],
+    color: stone
+  },
+  {
+    tag: tags8.strong,
+    fontWeight: "bold"
+  },
+  {
+    tag: tags8.emphasis,
+    fontStyle: "italic"
+  },
+  {
+    tag: tags8.strikethrough,
+    textDecoration: "line-through"
+  },
+  {
+    tag: tags8.link,
+    color: stone,
+    textDecoration: "underline"
+  },
+  {
+    tag: tags8.heading,
+    fontWeight: "bold",
+    color: coral
+  },
+  {
+    tag: [tags8.atom, tags8.bool, /* @__PURE__ */ tags8.special(tags8.variableName)],
+    color: whiskey
+  },
+  {
+    tag: [tags8.processingInstruction, tags8.string, tags8.inserted],
+    color: sage
+  },
+  {
+    tag: tags8.invalid,
+    color: invalid
+  }
+]);
+var oneDark = [oneDarkTheme, /* @__PURE__ */ syntaxHighlighting(oneDarkHighlightStyle)];
+
+// node_modules/@codemirror/merge/node_modules/@lezer/highlight/dist/index.js
+var nextTagID8 = 0;
+var Tag8 = class _Tag {
+  /**
+  @internal
+  */
+  constructor(name9, set, base2, modified) {
+    this.name = name9;
+    this.set = set;
+    this.base = base2;
+    this.modified = modified;
+    this.id = nextTagID8++;
+  }
+  toString() {
+    let { name: name9 } = this;
+    for (let mod of this.modified)
+      if (mod.name)
+        name9 = `${mod.name}(${name9})`;
+    return name9;
+  }
+  static define(nameOrParent, parent) {
+    let name9 = typeof nameOrParent == "string" ? nameOrParent : "?";
+    if (nameOrParent instanceof _Tag)
+      parent = nameOrParent;
+    if (parent === null || parent === void 0 ? void 0 : parent.base)
+      throw new Error("Can not derive from a modified tag");
+    let tag = new _Tag(name9, [], null, []);
+    tag.set.push(tag);
+    if (parent)
+      for (let t9 of parent.set)
+        tag.set.push(t9);
+    return tag;
+  }
+  /**
+  Define a tag _modifier_, which is a function that, given a tag,
+  will return a tag that is a subtag of the original. Applying the
+  same modifier to a twice tag will return the same value (`m1(t1)
+  == m1(t1)`) and applying multiple modifiers will, regardless or
+  order, produce the same tag (`m1(m2(t1)) == m2(m1(t1))`).
+  
+  When multiple modifiers are applied to a given base tag, each
+  smaller set of modifiers is registered as a parent, so that for
+  example `m1(m2(m3(t1)))` is a subtype of `m1(m2(t1))`,
+  `m1(m3(t1)`, and so on.
+  */
+  static defineModifier(name9) {
+    let mod = new Modifier8(name9);
+    return (tag) => {
+      if (tag.modified.indexOf(mod) > -1)
+        return tag;
+      return Modifier8.get(tag.base || tag, tag.modified.concat(mod).sort((a, b) => a.id - b.id));
+    };
+  }
+};
+var nextModifierID8 = 0;
+var Modifier8 = class _Modifier {
+  constructor(name9) {
+    this.name = name9;
+    this.instances = [];
+    this.id = nextModifierID8++;
+  }
+  static get(base2, mods) {
+    if (!mods.length)
+      return base2;
+    let exists = mods[0].instances.find((t9) => t9.base == base2 && sameArray9(mods, t9.modified));
+    if (exists)
+      return exists;
+    let set = [], tag = new Tag8(base2.name, set, base2, mods);
+    for (let m of mods)
+      m.instances.push(tag);
+    let configs = powerSet8(mods);
+    for (let parent of base2.set)
+      if (!parent.modified.length)
+        for (let config2 of configs)
+          set.push(_Modifier.get(parent, config2));
+    return tag;
+  }
+};
+function sameArray9(a, b) {
+  return a.length == b.length && a.every((x, i) => x == b[i]);
+}
+function powerSet8(array) {
+  let sets = [[]];
+  for (let i = 0; i < array.length; i++) {
+    for (let j = 0, e = sets.length; j < e; j++) {
+      sets.push(sets[j].concat(array[i]));
+    }
+  }
+  return sets.sort((a, b) => b.length - a.length);
+}
+var ruleNodeProp8 = new NodeProp({
+  combine(a, b) {
+    let cur2, root, take;
+    while (a || b) {
+      if (!a || b && a.depth >= b.depth) {
+        take = b;
+        b = b.next;
+      } else {
+        take = a;
+        a = a.next;
+      }
+      if (cur2 && cur2.mode == take.mode && !take.context && !cur2.context)
+        continue;
+      let copy = new Rule8(take.tags, take.mode, take.context);
+      if (cur2)
+        cur2.next = copy;
+      else
+        root = copy;
+      cur2 = copy;
+    }
+    return root;
+  }
+});
+var Rule8 = class {
+  constructor(tags10, mode, context, next) {
+    this.tags = tags10;
+    this.mode = mode;
+    this.context = context;
+    this.next = next;
+  }
+  get opaque() {
+    return this.mode == 0;
+  }
+  get inherit() {
+    return this.mode == 1;
+  }
+  sort(other) {
+    if (!other || other.depth < this.depth) {
+      this.next = other;
+      return this;
+    }
+    other.next = this.sort(other.next);
+    return other;
+  }
+  get depth() {
+    return this.context ? this.context.length : 0;
+  }
+};
+Rule8.empty = new Rule8([], 2, null);
+function tagHighlighter8(tags10, options) {
+  let map = /* @__PURE__ */ Object.create(null);
+  for (let style of tags10) {
+    if (!Array.isArray(style.tag))
+      map[style.tag.id] = style.class;
+    else
+      for (let tag of style.tag)
+        map[tag.id] = style.class;
+  }
+  let { scope, all = null } = options || {};
+  return {
+    style: (tags11) => {
+      let cls = all;
+      for (let tag of tags11) {
+        for (let sub of tag.set) {
+          let tagClass = map[sub.id];
+          if (tagClass) {
+            cls = cls ? cls + " " + tagClass : tagClass;
+            break;
+          }
+        }
+      }
+      return cls;
+    },
+    scope
+  };
+}
+function highlightTags2(highlighters, tags10) {
+  let result = null;
+  for (let highlighter of highlighters) {
+    let value = highlighter.style(tags10);
+    if (value)
+      result = result ? result + " " + value : value;
+  }
+  return result;
+}
+function highlightTree2(tree, highlighter, putStyle, from = 0, to = tree.length) {
+  let builder = new HighlightBuilder2(from, Array.isArray(highlighter) ? highlighter : [highlighter], putStyle);
+  builder.highlightRange(tree.cursor(), from, to, "", builder.highlighters);
+  builder.flush(to);
+}
+var HighlightBuilder2 = class {
+  constructor(at, highlighters, span) {
+    this.at = at;
+    this.highlighters = highlighters;
+    this.span = span;
+    this.class = "";
+  }
+  startSpan(at, cls) {
+    if (cls != this.class) {
+      this.flush(at);
+      if (at > this.at)
+        this.at = at;
+      this.class = cls;
+    }
+  }
+  flush(to) {
+    if (to > this.at && this.class)
+      this.span(this.at, to, this.class);
+  }
+  highlightRange(cursor2, from, to, inheritedClass, highlighters) {
+    let { type, from: start, to: end } = cursor2;
+    if (start >= to || end <= from)
+      return;
+    if (type.isTop)
+      highlighters = this.highlighters.filter((h) => !h.scope || h.scope(type));
+    let cls = inheritedClass;
+    let rule = getStyleTags2(cursor2) || Rule8.empty;
+    let tagCls = highlightTags2(highlighters, rule.tags);
+    if (tagCls) {
+      if (cls)
+        cls += " ";
+      cls += tagCls;
+      if (rule.mode == 1)
+        inheritedClass += (inheritedClass ? " " : "") + tagCls;
+    }
+    this.startSpan(Math.max(from, start), cls);
+    if (rule.opaque)
+      return;
+    let mounted = cursor2.tree && cursor2.tree.prop(NodeProp.mounted);
+    if (mounted && mounted.overlay) {
+      let inner = cursor2.node.enter(mounted.overlay[0].from + start, 1);
+      let innerHighlighters = this.highlighters.filter((h) => !h.scope || h.scope(mounted.tree.type));
+      let hasChild2 = cursor2.firstChild();
+      for (let i = 0, pos = start; ; i++) {
+        let next = i < mounted.overlay.length ? mounted.overlay[i] : null;
+        let nextPos = next ? next.from + start : end;
+        let rangeFrom2 = Math.max(from, pos), rangeTo2 = Math.min(to, nextPos);
+        if (rangeFrom2 < rangeTo2 && hasChild2) {
+          while (cursor2.from < rangeTo2) {
+            this.highlightRange(cursor2, rangeFrom2, rangeTo2, inheritedClass, highlighters);
+            this.startSpan(Math.min(rangeTo2, cursor2.to), cls);
+            if (cursor2.to >= nextPos || !cursor2.nextSibling())
+              break;
+          }
+        }
+        if (!next || nextPos > to)
+          break;
+        pos = next.to + start;
+        if (pos > from) {
+          this.highlightRange(inner.cursor(), Math.max(from, next.from + start), Math.min(to, pos), "", innerHighlighters);
+          this.startSpan(Math.min(to, pos), cls);
+        }
+      }
+      if (hasChild2)
+        cursor2.parent();
+    } else if (cursor2.firstChild()) {
+      if (mounted)
+        inheritedClass = "";
+      do {
+        if (cursor2.to <= from)
+          continue;
+        if (cursor2.from >= to)
+          break;
+        this.highlightRange(cursor2, from, to, inheritedClass, highlighters);
+        this.startSpan(Math.min(to, cursor2.to), cls);
+      } while (cursor2.nextSibling());
+      cursor2.parent();
+    }
+  }
+};
+function getStyleTags2(node) {
+  let rule = node.type.prop(ruleNodeProp8);
+  while (rule && rule.context && !node.matchContext(rule.context))
+    rule = rule.next;
+  return rule || null;
+}
+var t8 = Tag8.define;
+var comment8 = t8();
+var name8 = t8();
+var typeName8 = t8(name8);
+var propertyName8 = t8(name8);
+var literal8 = t8();
+var string8 = t8(literal8);
+var number8 = t8(literal8);
+var content8 = t8();
+var heading8 = t8(content8);
+var keyword8 = t8();
+var operator8 = t8();
+var punctuation8 = t8();
+var bracket8 = t8(punctuation8);
+var meta8 = t8();
+var tags9 = {
+  /**
+  A comment.
+  */
+  comment: comment8,
+  /**
+  A line [comment](#highlight.tags.comment).
+  */
+  lineComment: t8(comment8),
+  /**
+  A block [comment](#highlight.tags.comment).
+  */
+  blockComment: t8(comment8),
+  /**
+  A documentation [comment](#highlight.tags.comment).
+  */
+  docComment: t8(comment8),
+  /**
+  Any kind of identifier.
+  */
+  name: name8,
+  /**
+  The [name](#highlight.tags.name) of a variable.
+  */
+  variableName: t8(name8),
+  /**
+  A type [name](#highlight.tags.name).
+  */
+  typeName: typeName8,
+  /**
+  A tag name (subtag of [`typeName`](#highlight.tags.typeName)).
+  */
+  tagName: t8(typeName8),
+  /**
+  A property or field [name](#highlight.tags.name).
+  */
+  propertyName: propertyName8,
+  /**
+  An attribute name (subtag of [`propertyName`](#highlight.tags.propertyName)).
+  */
+  attributeName: t8(propertyName8),
+  /**
+  The [name](#highlight.tags.name) of a class.
+  */
+  className: t8(name8),
+  /**
+  A label [name](#highlight.tags.name).
+  */
+  labelName: t8(name8),
+  /**
+  A namespace [name](#highlight.tags.name).
+  */
+  namespace: t8(name8),
+  /**
+  The [name](#highlight.tags.name) of a macro.
+  */
+  macroName: t8(name8),
+  /**
+  A literal value.
+  */
+  literal: literal8,
+  /**
+  A string [literal](#highlight.tags.literal).
+  */
+  string: string8,
+  /**
+  A documentation [string](#highlight.tags.string).
+  */
+  docString: t8(string8),
+  /**
+  A character literal (subtag of [string](#highlight.tags.string)).
+  */
+  character: t8(string8),
+  /**
+  An attribute value (subtag of [string](#highlight.tags.string)).
+  */
+  attributeValue: t8(string8),
+  /**
+  A number [literal](#highlight.tags.literal).
+  */
+  number: number8,
+  /**
+  An integer [number](#highlight.tags.number) literal.
+  */
+  integer: t8(number8),
+  /**
+  A floating-point [number](#highlight.tags.number) literal.
+  */
+  float: t8(number8),
+  /**
+  A boolean [literal](#highlight.tags.literal).
+  */
+  bool: t8(literal8),
+  /**
+  Regular expression [literal](#highlight.tags.literal).
+  */
+  regexp: t8(literal8),
+  /**
+  An escape [literal](#highlight.tags.literal), for example a
+  backslash escape in a string.
+  */
+  escape: t8(literal8),
+  /**
+  A color [literal](#highlight.tags.literal).
+  */
+  color: t8(literal8),
+  /**
+  A URL [literal](#highlight.tags.literal).
+  */
+  url: t8(literal8),
+  /**
+  A language keyword.
+  */
+  keyword: keyword8,
+  /**
+  The [keyword](#highlight.tags.keyword) for the self or this
+  object.
+  */
+  self: t8(keyword8),
+  /**
+  The [keyword](#highlight.tags.keyword) for null.
+  */
+  null: t8(keyword8),
+  /**
+  A [keyword](#highlight.tags.keyword) denoting some atomic value.
+  */
+  atom: t8(keyword8),
+  /**
+  A [keyword](#highlight.tags.keyword) that represents a unit.
+  */
+  unit: t8(keyword8),
+  /**
+  A modifier [keyword](#highlight.tags.keyword).
+  */
+  modifier: t8(keyword8),
+  /**
+  A [keyword](#highlight.tags.keyword) that acts as an operator.
+  */
+  operatorKeyword: t8(keyword8),
+  /**
+  A control-flow related [keyword](#highlight.tags.keyword).
+  */
+  controlKeyword: t8(keyword8),
+  /**
+  A [keyword](#highlight.tags.keyword) that defines something.
+  */
+  definitionKeyword: t8(keyword8),
+  /**
+  A [keyword](#highlight.tags.keyword) related to defining or
+  interfacing with modules.
+  */
+  moduleKeyword: t8(keyword8),
+  /**
+  An operator.
+  */
+  operator: operator8,
+  /**
+  An [operator](#highlight.tags.operator) that dereferences something.
+  */
+  derefOperator: t8(operator8),
+  /**
+  Arithmetic-related [operator](#highlight.tags.operator).
+  */
+  arithmeticOperator: t8(operator8),
+  /**
+  Logical [operator](#highlight.tags.operator).
+  */
+  logicOperator: t8(operator8),
+  /**
+  Bit [operator](#highlight.tags.operator).
+  */
+  bitwiseOperator: t8(operator8),
+  /**
+  Comparison [operator](#highlight.tags.operator).
+  */
+  compareOperator: t8(operator8),
+  /**
+  [Operator](#highlight.tags.operator) that updates its operand.
+  */
+  updateOperator: t8(operator8),
+  /**
+  [Operator](#highlight.tags.operator) that defines something.
+  */
+  definitionOperator: t8(operator8),
+  /**
+  Type-related [operator](#highlight.tags.operator).
+  */
+  typeOperator: t8(operator8),
+  /**
+  Control-flow [operator](#highlight.tags.operator).
+  */
+  controlOperator: t8(operator8),
+  /**
+  Program or markup punctuation.
+  */
+  punctuation: punctuation8,
+  /**
+  [Punctuation](#highlight.tags.punctuation) that separates
+  things.
+  */
+  separator: t8(punctuation8),
+  /**
+  Bracket-style [punctuation](#highlight.tags.punctuation).
+  */
+  bracket: bracket8,
+  /**
+  Angle [brackets](#highlight.tags.bracket) (usually `<` and `>`
+  tokens).
+  */
+  angleBracket: t8(bracket8),
+  /**
+  Square [brackets](#highlight.tags.bracket) (usually `[` and `]`
+  tokens).
+  */
+  squareBracket: t8(bracket8),
+  /**
+  Parentheses (usually `(` and `)` tokens). Subtag of
+  [bracket](#highlight.tags.bracket).
+  */
+  paren: t8(bracket8),
+  /**
+  Braces (usually `{` and `}` tokens). Subtag of
+  [bracket](#highlight.tags.bracket).
+  */
+  brace: t8(bracket8),
+  /**
+  Content, for example plain text in XML or markup documents.
+  */
+  content: content8,
+  /**
+  [Content](#highlight.tags.content) that represents a heading.
+  */
+  heading: heading8,
+  /**
+  A level 1 [heading](#highlight.tags.heading).
+  */
+  heading1: t8(heading8),
+  /**
+  A level 2 [heading](#highlight.tags.heading).
+  */
+  heading2: t8(heading8),
+  /**
+  A level 3 [heading](#highlight.tags.heading).
+  */
+  heading3: t8(heading8),
+  /**
+  A level 4 [heading](#highlight.tags.heading).
+  */
+  heading4: t8(heading8),
+  /**
+  A level 5 [heading](#highlight.tags.heading).
+  */
+  heading5: t8(heading8),
+  /**
+  A level 6 [heading](#highlight.tags.heading).
+  */
+  heading6: t8(heading8),
+  /**
+  A prose [content](#highlight.tags.content) separator (such as a horizontal rule).
+  */
+  contentSeparator: t8(content8),
+  /**
+  [Content](#highlight.tags.content) that represents a list.
+  */
+  list: t8(content8),
+  /**
+  [Content](#highlight.tags.content) that represents a quote.
+  */
+  quote: t8(content8),
+  /**
+  [Content](#highlight.tags.content) that is emphasized.
+  */
+  emphasis: t8(content8),
+  /**
+  [Content](#highlight.tags.content) that is styled strong.
+  */
+  strong: t8(content8),
+  /**
+  [Content](#highlight.tags.content) that is part of a link.
+  */
+  link: t8(content8),
+  /**
+  [Content](#highlight.tags.content) that is styled as code or
+  monospace.
+  */
+  monospace: t8(content8),
+  /**
+  [Content](#highlight.tags.content) that has a strike-through
+  style.
+  */
+  strikethrough: t8(content8),
+  /**
+  Inserted text in a change-tracking format.
+  */
+  inserted: t8(),
+  /**
+  Deleted text.
+  */
+  deleted: t8(),
+  /**
+  Changed text.
+  */
+  changed: t8(),
+  /**
+  An invalid or unsyntactic element.
+  */
+  invalid: t8(),
+  /**
+  Metadata or meta-instruction.
+  */
+  meta: meta8,
+  /**
+  [Metadata](#highlight.tags.meta) that applies to the entire
+  document.
+  */
+  documentMeta: t8(meta8),
+  /**
+  [Metadata](#highlight.tags.meta) that annotates or adds
+  attributes to a given syntactic element.
+  */
+  annotation: t8(meta8),
+  /**
+  Processing instruction or preprocessor directive. Subtag of
+  [meta](#highlight.tags.meta).
+  */
+  processingInstruction: t8(meta8),
+  /**
+  [Modifier](#highlight.Tag^defineModifier) that indicates that a
+  given element is being defined. Expected to be used with the
+  various [name](#highlight.tags.name) tags.
+  */
+  definition: Tag8.defineModifier("definition"),
+  /**
+  [Modifier](#highlight.Tag^defineModifier) that indicates that
+  something is constant. Mostly expected to be used with
+  [variable names](#highlight.tags.variableName).
+  */
+  constant: Tag8.defineModifier("constant"),
+  /**
+  [Modifier](#highlight.Tag^defineModifier) used to indicate that
+  a [variable](#highlight.tags.variableName) or [property
+  name](#highlight.tags.propertyName) is being called or defined
+  as a function.
+  */
+  function: Tag8.defineModifier("function"),
+  /**
+  [Modifier](#highlight.Tag^defineModifier) that can be applied to
+  [names](#highlight.tags.name) to indicate that they belong to
+  the language's standard environment.
+  */
+  standard: Tag8.defineModifier("standard"),
+  /**
+  [Modifier](#highlight.Tag^defineModifier) that indicates a given
+  [names](#highlight.tags.name) is local to some scope.
+  */
+  local: Tag8.defineModifier("local"),
+  /**
+  A generic variant [modifier](#highlight.Tag^defineModifier) that
+  can be used to tag language-specific alternative variants of
+  some common tag. It is recommended for themes to define special
+  forms of at least the [string](#highlight.tags.string) and
+  [variable name](#highlight.tags.variableName) tags, since those
+  come up a lot.
+  */
+  special: Tag8.defineModifier("special")
+};
+for (let name9 in tags9) {
+  let val = tags9[name9];
+  if (val instanceof Tag8)
+    val.name = name9;
+}
+var classHighlighter8 = tagHighlighter8([
+  { tag: tags9.link, class: "tok-link" },
+  { tag: tags9.heading, class: "tok-heading" },
+  { tag: tags9.emphasis, class: "tok-emphasis" },
+  { tag: tags9.strong, class: "tok-strong" },
+  { tag: tags9.keyword, class: "tok-keyword" },
+  { tag: tags9.atom, class: "tok-atom" },
+  { tag: tags9.bool, class: "tok-bool" },
+  { tag: tags9.url, class: "tok-url" },
+  { tag: tags9.labelName, class: "tok-labelName" },
+  { tag: tags9.inserted, class: "tok-inserted" },
+  { tag: tags9.deleted, class: "tok-deleted" },
+  { tag: tags9.literal, class: "tok-literal" },
+  { tag: tags9.string, class: "tok-string" },
+  { tag: tags9.number, class: "tok-number" },
+  { tag: [tags9.regexp, tags9.escape, tags9.special(tags9.string)], class: "tok-string2" },
+  { tag: tags9.variableName, class: "tok-variableName" },
+  { tag: tags9.local(tags9.variableName), class: "tok-variableName tok-local" },
+  { tag: tags9.definition(tags9.variableName), class: "tok-variableName tok-definition" },
+  { tag: tags9.special(tags9.variableName), class: "tok-variableName2" },
+  { tag: tags9.definition(tags9.propertyName), class: "tok-propertyName tok-definition" },
+  { tag: tags9.typeName, class: "tok-typeName" },
+  { tag: tags9.namespace, class: "tok-namespace" },
+  { tag: tags9.className, class: "tok-className" },
+  { tag: tags9.macroName, class: "tok-macroName" },
+  { tag: tags9.propertyName, class: "tok-propertyName" },
+  { tag: tags9.operator, class: "tok-operator" },
+  { tag: tags9.comment, class: "tok-comment" },
+  { tag: tags9.meta, class: "tok-meta" },
+  { tag: tags9.invalid, class: "tok-invalid" },
+  { tag: tags9.punctuation, class: "tok-punctuation" }
 ]);
 
 // node_modules/@codemirror/merge/dist/index.js
@@ -38785,7 +41197,7 @@ function deletionWidget(state, chunk, hideContent) {
     }
     if (lang && chunk.toA - chunk.fromA <= syntaxHighlightDeletionsMaxLength) {
       let tree = lang.parser.parse(text), pos = 0;
-      highlightTree2(tree, { style: (tags9) => highlightingFor(state, tags9) }, (from, to, cls) => {
+      highlightTree2(tree, { style: (tags10) => highlightingFor(state, tags10) }, (from, to, cls) => {
         if (from > pos)
           add2(pos, from, "");
         add2(from, to, cls);
@@ -38935,6 +41347,8 @@ export {
   basicSetup,
   findNext,
   findPrevious,
+  html,
+  json,
   keymap,
   markdown,
   markdownLanguage,

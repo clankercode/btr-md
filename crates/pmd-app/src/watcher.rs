@@ -281,7 +281,9 @@ fn build_tree_slot<R: Runtime>(app: AppHandle<R>, root: &Path) -> Option<Workspa
     )
     .ok()?;
 
-    watcher.watch(&watched_root, RecursiveMode::Recursive).ok()?;
+    watcher
+        .watch(&watched_root, RecursiveMode::Recursive)
+        .ok()?;
 
     let worker_root = watched_root.clone();
     std::thread::spawn(move || {

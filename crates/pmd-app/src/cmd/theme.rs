@@ -467,8 +467,7 @@ pub fn set_theme_from_roots(slug: &str, roots: &[PathBuf]) -> Result<ThemeBundle
     // in cascade, equal-or-higher specificity). Also cover `*::selection` so
     // descendant colour rules (links, code, syntax spans) inherit the
     // inverted ink.
-    if let (Some(sel_bg), Some(sel_fg)) =
-        (colours.get("selection_bg"), colours.get("selection_fg"))
+    if let (Some(sel_bg), Some(sel_fg)) = (colours.get("selection_bg"), colours.get("selection_fg"))
     {
         css_vars.push_str(&format!(
             "/* Selection highlight (concrete; do not use var() here — WebKitGTK) */\n\

@@ -8,6 +8,8 @@ import {
   basicSetup,
   markdown,
   markdownLanguage,
+  html,
+  json,
   GFM,
   unifiedMergeView,
   keymap,
@@ -25,6 +27,7 @@ import {
 import { listEnter } from './editor_list.js';
 import { editorIndent, editorDedent } from './editor_indent.js';
 import { diffViewConfig } from './editor_diff.js';
+import type { DocumentKind } from './document_kind.js';
 export type { DiffViewConfig } from './editor_diff.js';
 export { diffViewConfig } from './editor_diff.js';
 
@@ -36,13 +39,14 @@ export { diffViewConfig } from './editor_diff.js';
 export interface EditorHandle {
   view: EditorView;
   /** Build a fresh state with the full extension set, seeded with `doc`. */
-  createState: (doc: string) => EditorState;
+  createState: (doc: string, kind?: DocumentKind) => EditorState;
   /** Snapshot the live state (to stash on a tab being switched away from). */
   snapshot: () => EditorState;
   /** Swap to a tab's state (programmatic — does not fire the edit callback). */
   activateState: (state: EditorState) => void;
   /** Replace the whole document in the current state programmatically. */
   setValueProgrammatic: (md: string) => void;
+  setLanguage: (kind: DocumentKind) => void;
   getValue: () => string;
   focus: () => void;
   /** Toggle soft word wrap; returns the new enabled state. */
@@ -185,6 +189,25 @@ let userEditCb: (doc: string) => void = () => {};
 const wrapCompartment = new Compartment();
 const diffCompartment = new Compartment();
 const searchCompartment = new Compartment();
+const languageCompartment = new Compartment();
+
+/** Language + markdown-only decorations for a document kind. */
+export function languageExtensions(kind: DocumentKind): any[] {
+  switch (kind) {
+    case 'html':
+      return [html()];
+    case 'json':
+      return [json()];
+    case 'markdown':
+      return [
+        markdown({ base: markdownLanguage, extensions: [GFM] }),
+        markdownDecorations,
+      ];
+    // yaml / toml / ini: plain text until a dedicated lang package is vendored.
+    default:
+      return [];
+  }
+}
 
 /** Build the CodeMirror extension list for a show-changes mode. */
 export function buildDiffExtension(mode: string, baseline: string): any[] {
@@ -324,15 +347,14 @@ function formattingKeymap() {
   );
 }
 
-function buildExtensions() {
+function buildExtensions(kind: DocumentKind = 'markdown') {
   return [
     formattingKeymap(),
     basicSetup,
-    markdown({ base: markdownLanguage, extensions: [GFM] }),
+    languageCompartment.of(languageExtensions(kind)),
     wrapCompartment.of(wrapEnabled ? EditorView.lineWrapping : []),
     diffCompartment.of([]),
     searchCompartment.of(searchExtension()),
-    markdownDecorations,
     selectionTextDecorations,
     EditorView.updateListener.of((update: any) => {
       // Fire only for genuine user edits — never for programmatic sets
@@ -344,8 +366,8 @@ function buildExtensions() {
   ];
 }
 
-function createState(doc: string): EditorState {
-  return EditorState.create({ doc, extensions: buildExtensions() });
+function createState(doc: string, kind: DocumentKind = 'markdown'): EditorState {
+  return EditorState.create({ doc, extensions: buildExtensions(kind) });
 }
 
 export async function mountEditor(
@@ -377,6 +399,13 @@ export async function mountEditor(
       programmatic(() =>
         view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: md } })
       ),
+    setLanguage: (kind: DocumentKind) => {
+      programmatic(() =>
+        view.dispatch({
+          effects: languageCompartment.reconfigure(languageExtensions(kind)),
+        })
+      );
+    },
     getValue: () => view.state.doc.toString(),
     focus: () => view.focus(),
     toggleWrap: () => {
