@@ -159,6 +159,8 @@ async fn set_theme_emits_css_variables_used_by_stylesheets() {
         // the sidebar re-themes with the active theme instead of keeping the
         // static design-system value keyed only on [data-theme].
         "--pmd-surface",
+        // Menu hover uses --pmd-bg-muted against elevated panels; must be emitted.
+        "--pmd-bg-muted",
         "--pmd-inline-code-bg",
         "--pmd-code-block-fg",
         "--pmd-mermaid-edge-label-bg",
@@ -171,6 +173,41 @@ async fn set_theme_emits_css_variables_used_by_stylesheets() {
         !bundle.css.contains("--pmd-bg_elevated"),
         "theme CSS should use hyphenated custom property names"
     );
+}
+
+/// Menu/dropdown hover paints with `--pmd-bg-muted` on an elevated panel. When
+/// a theme omits `bg_muted`, emission must derive a colour distinct from
+/// `bg_elevated` — otherwise hover is invisible.
+#[tokio::test]
+async fn set_theme_derives_bg_muted_distinct_from_bg_elevated() {
+    for slug in ["github-light", "github-dark", "grok-night", "grok-day"] {
+        let bundle =
+            set_theme_from_roots(slug, &workspace_theme_roots()).expect("set_theme should succeed");
+        let elevated = extract_css_var(&bundle.css, "--pmd-bg-elevated")
+            .unwrap_or_else(|| panic!("{slug}: missing --pmd-bg-elevated"));
+        let muted = extract_css_var(&bundle.css, "--pmd-bg-muted")
+            .unwrap_or_else(|| panic!("{slug}: missing --pmd-bg-muted"));
+        assert_ne!(
+            muted, elevated,
+            "{slug}: --pmd-bg-muted ({muted}) must differ from --pmd-bg-elevated ({elevated}) for visible menu hover"
+        );
+    }
+}
+
+fn extract_css_var(css: &str, name: &str) -> Option<String> {
+    for line in css.lines() {
+        let line = line.trim();
+        if let Some(rest) = line.strip_prefix(name) {
+            let rest = rest.trim_start();
+            if let Some(rest) = rest.strip_prefix(':') {
+                let value = rest.trim().trim_end_matches(';').trim();
+                if !value.is_empty() {
+                    return Some(value.to_string());
+                }
+            }
+        }
+    }
+    None
 }
 
 /// Preview selection relies on native `::selection`. Theme palettes use solid

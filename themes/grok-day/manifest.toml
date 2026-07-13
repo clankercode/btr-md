@@ -1,0 +1,59 @@
+[meta]
+name = "Grok Day"
+slug = "grok-day"
+author = "Grok Build"
+mode = "light"
+version = "1.0.0"
+
+[palette]
+# Surfaces — light grey canvas with magenta/lilac brand accent (Grok TUI day)
+bg = "#f5f5f5"
+bg_elevated = "#ffffff"
+fg = "#333333"
+fg_muted = "#5e646c"
+accent = "#7d4bc6"
+link = "#7d4bc6"
+border = "#8a8a8a"
+
+# Editor
+selection_bg = "#333333"
+selection_fg = "#ffffff"
+focus_ring = "#7d4bc6"
+caret = "#333333"
+scrollbar_thumb = "#c8c8c8"
+scrollbar_track = "#eaeaea"
+
+# Markdown
+inline_code_bg = "#eaeaea"
+inline_code_fg = "#333333"
+code_block_bg = "#eaeaea"
+code_block_fg = "#333333"
+code_block_border = "#c8c8c8"
+blockquote_bar = "#9b7ece"
+blockquote_fg = "#5e646c"
+hr = "#c8c8c8"
+
+# Tables
+table_header_bg = "#eaeaea"
+table_row_alt = "#f0f0f0"
+table_border = "#c8c8c8"
+
+# Admonitions
+admonition_note = "#7d4bc6"
+admonition_warn = "#b8860b"
+admonition_tip = "#2d7a3e"
+
+# Kbd
+kbd_bg = "#eaeaea"
+kbd_fg = "#333333"
+kbd_border = "#8a8a8a"
+
+# Links
+link_hover = "#5a2f99"
+link_visited = "#9b7ece"
+image_caption = "#5e646c"
+
+# Mermaid
+
+# Syntax — purple brand family on light surfaces
+syntax = { keyword = "#7d4bc6", string = "#0a7a3e", number = "#b45309", function = "#5a2f99", type = "#0b6e99", comment = "#6e7781", operator = "#333333", punctuation = "#333333", variable = "#9a3412", constant = "#b45309" }

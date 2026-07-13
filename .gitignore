@@ -15,6 +15,11 @@ tests/screenshots/playwright/
 .playwright-mcp/
 .review-screens/
 
+# Theme styleguide PNGs/HTML from `just theme-previews` (regenerate locally).
+# Keep index.md if committed; ignore bulk binary output.
+/reviews/theme-previews/*.png
+/reviews/theme-previews/*.html
+
 # Claude Code agent worktrees (transient)
 .claude/worktrees/
 
