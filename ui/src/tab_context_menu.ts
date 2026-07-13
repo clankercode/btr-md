@@ -10,7 +10,11 @@ export function buildTabContextItems(handlers: {
   onClose: () => void;
   onRevealInFolder?: () => void;
   onCopyPath?: () => void;
+  /** Switch the sidebar workspace root to the document's git/worktree root. */
+  onReRootToGit?: () => void;
   filePath?: string | null;
+  /** Resolved git/worktree root for the tab's file, when known. */
+  gitRoot?: string | null;
 }): MenuEntry[] {
   const entries: MenuEntry[] = [];
 
@@ -27,6 +31,13 @@ export function buildTabContextItems(handlers: {
       label: 'Copy Path',
       icon: '📋',
       onSelect: handlers.onCopyPath,
+    });
+  }
+  if (handlers.filePath && handlers.gitRoot && handlers.onReRootToGit) {
+    entries.push({
+      label: 'Re-root to git',
+      icon: '🌲',
+      onSelect: handlers.onReRootToGit,
     });
   }
 

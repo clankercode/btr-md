@@ -29,6 +29,7 @@ use tauri::{AppHandle, Emitter, Manager, Runtime};
 
 use crate::doc::registry::DiskEvent;
 use crate::doc::state::{Digest, DocId, FileState};
+use crate::workspace_ignore::all_paths_ignored;
 
 /// Coalescing window for inotify bursts (atomic-replace saves fire several
 /// events in quick succession; we only want to hash once).
@@ -290,14 +291,26 @@ fn build_tree_slot<R: Runtime>(app: AppHandle<R>, root: &Path) -> Option<Workspa
             if !affects_tree_structure(&event.kind) {
                 continue;
             }
+            // High-churn dirs (node_modules, target/, .git, …) must not refresh
+            // the sidebar. Keep a flag across the coalesced burst: emit only if
+            // at least one non-ignored structural path was seen.
+            let mut any_relevant = !all_paths_ignored(&event.paths, &worker_root);
+
             // Drain the rest of the burst so a mass create/delete becomes one emit.
             loop {
                 match rx.recv_timeout(Duration::from_millis(TREE_COALESCE_MS)) {
-                    Ok(Ok(ev)) if affects_tree_structure(&ev.kind) => {}
+                    Ok(Ok(ev)) if affects_tree_structure(&ev.kind) => {
+                        if !all_paths_ignored(&ev.paths, &worker_root) {
+                            any_relevant = true;
+                        }
+                    }
                     Ok(_) => {}
                     Err(RecvTimeoutError::Timeout) => break,
                     Err(RecvTimeoutError::Disconnected) => return,
                 }
+            }
+            if !any_relevant {
+                continue;
             }
             let _ = app.emit(
                 "workspace_tree_changed",

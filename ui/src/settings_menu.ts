@@ -18,6 +18,8 @@ export interface SettingsSnapshot {
   gist_enabled: boolean;
   diff_mode: DiffMode;
   mono_font: string | null;
+  /** When true, top-bar path label shows the full path (basename chip hidden). */
+  show_full_path: boolean;
 }
 
 /** Default-handler status mirrored from the backend `HandlerStatus`. */
@@ -34,6 +36,7 @@ export interface SettingsMenuDeps {
   getDefaultHandlerStatus: () => Promise<HandlerStatus>;
   setAsDefaultHandler: () => Promise<void>;
   setMonoFont: (font: string | null) => Promise<void>;
+  setShowFullPath: (enabled: boolean) => Promise<void>;
   listTrustRoots: () => Promise<TrustRootDecision[]>;
   forgetTrustRoot: (root: string) => Promise<void>;
   onAutosaveChange: (m: AutosaveMode) => void;
@@ -42,6 +45,7 @@ export interface SettingsMenuDeps {
   onGistChange: (enabled: boolean) => void;
   onDiffModeChange: (m: DiffMode) => void;
   onMonoFontChange: (font: string | null) => void;
+  onShowFullPathChange: (enabled: boolean) => void;
 }
 
 export interface SettingsMenuInstance {
@@ -207,6 +211,12 @@ export function createSettingsMenu(
   baseRow.appendChild(baseBtn);
   menu.appendChild(baseRow);
 
+  const fullPath = makeToggle('pmd-set-full-path', 'Show full path in title bar', (checked) => {
+    deps.setShowFullPath(checked).catch((e) => console.error('set_show_full_path failed:', e));
+    deps.onShowFullPathChange(checked);
+  });
+  menu.appendChild(fullPath.row);
+
   const divider2 = document.createElement('div');
   divider2.className = MenuClass.dropdownSeparator;
   menu.appendChild(divider2);
@@ -306,6 +316,7 @@ export function createSettingsMenu(
       merge.select.value = s.merge_strategy;
       basePath.textContent = s.browser_base_dir ?? '(none)';
       basePath.title = s.browser_base_dir ?? '';
+      fullPath.input.checked = s.show_full_path === true;
       diff.select.value = s.diff_mode;
       gist.input.checked = s.gist_enabled;
       fontInput.value = s.mono_font ?? '';

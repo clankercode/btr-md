@@ -8,6 +8,7 @@ import {
   attachMenuHoverHighlight,
   createMenuItem,
   createMenuSeparator,
+  handleMenuKeydown,
 } from './menu.js';
 
 export type AlertType = 'note' | 'tip' | 'important' | 'warning' | 'caution';
@@ -88,6 +89,20 @@ export function createInsertMenu(toolbar: HTMLElement, deps: InsertMenuDeps): In
     e.stopPropagation();
     if (btn.disabled) return;
     menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+  });
+  wrapper.addEventListener('keydown', (e) => {
+    if (menu.style.display === 'none') return;
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      e.stopPropagation();
+      close();
+      btn.focus();
+      return;
+    }
+    if (handleMenuKeydown(menu, e)) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
   });
   document.addEventListener('click', (e) => {
     if (!wrapper.contains(e.target as Node)) close();

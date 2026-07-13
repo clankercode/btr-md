@@ -275,8 +275,8 @@
   width: 100%;
 }
 
-/* Hover + keyboard highlight: must contrast with elevated surface (bg-muted).
-   Previously dropdown used bg-elevated on hover → invisible. */
+/* Hover + keyboard highlight: accent wash so items stay visible on elevated
+   surfaces (plain bg-muted was too close to the menu panel on some themes). */
 .pmd-menu-item:hover,
 .pmd-menu-item:focus-visible,
 .pmd-menu-item[data-highlighted],
@@ -289,7 +289,7 @@
 .pmd-context-menu-item:focus-visible,
 .pmd-context-menu-item[data-highlighted],
 .pmd-context-menu-item[data-active] {
-  background: var(--pmd-bg-muted);
+  background: color-mix(in srgb, var(--pmd-accent) 18%, var(--pmd-bg-elevated));
 }
 
 .pmd-menu-item:focus-visible,
@@ -314,11 +314,19 @@
 .pmd-menu-item:disabled:hover,
 .pmd-menu-item[aria-disabled="true"]:hover,
 .pmd-menu-item[data-disabled]:hover,
+.pmd-menu-item:disabled[data-highlighted],
+.pmd-menu-item[aria-disabled="true"][data-highlighted],
+.pmd-menu-item[data-disabled][data-highlighted],
 .pmd-dropdown-item[data-disabled]:hover,
 .pmd-dropdown-item[aria-disabled="true"]:hover,
+.pmd-dropdown-item[data-disabled][data-highlighted],
+.pmd-dropdown-item[aria-disabled="true"][data-highlighted],
 .pmd-context-menu-item:disabled:hover,
 .pmd-context-menu-item[aria-disabled="true"]:hover,
-.pmd-context-menu-item[data-disabled]:hover {
+.pmd-context-menu-item[data-disabled]:hover,
+.pmd-context-menu-item:disabled[data-highlighted],
+.pmd-context-menu-item[aria-disabled="true"][data-highlighted],
+.pmd-context-menu-item[data-disabled][data-highlighted] {
   background: transparent;
 }
 

@@ -36,6 +36,8 @@ export interface TabBarHandlers {
   onNewTab: (shiftKey: boolean) => void;
   onRevealInFolder?: (path: string) => void;
   onCopyPath?: (path: string) => void;
+  /** Re-root the sidebar workspace to the document's git/worktree root. */
+  onReRootToGit?: (gitRoot: string, filePath: string) => void;
 }
 
 export interface TabBarInstance {
@@ -147,18 +149,25 @@ export function createTabBar(store: TabStore, handlers: TabBarHandlers): TabBarI
     tabEl.addEventListener('contextmenu', (e) => {
       e.preventDefault();
       const filePath = tab.kind === 'doc' ? tab.filePath : null;
+      const gitRoot =
+        tab.kind === 'doc' ? tab.trustContext?.git_root ?? null : null;
       openContextMenu(
         e.clientX,
         e.clientY,
         buildTabContextItems({
           onClose: () => handlers.onClose(tab.id),
           filePath,
+          gitRoot,
           onRevealInFolder: filePath && handlers.onRevealInFolder
             ? () => handlers.onRevealInFolder!(filePath)
             : undefined,
           onCopyPath: filePath && handlers.onCopyPath
             ? () => handlers.onCopyPath!(filePath)
             : undefined,
+          onReRootToGit:
+            filePath && gitRoot && handlers.onReRootToGit
+              ? () => handlers.onReRootToGit!(gitRoot, filePath)
+              : undefined,
         })
       );
     });

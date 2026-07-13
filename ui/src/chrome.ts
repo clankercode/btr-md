@@ -5,6 +5,7 @@ import {
   attachMenuHoverHighlight,
   createMenuItem,
   createMenuSeparator,
+  handleMenuKeydown,
 } from './menu.js';
 import { abbreviatePath, formatPathDisplay } from './path_display.js';
 export type { Mode };
@@ -521,6 +522,37 @@ export function createChrome(parent: HTMLElement): ChromeInstance {
     toggleDropdown();
   });
 
+  // Arrow-key navigation while the File menu (or its button) has focus.
+  fileMenuWrapper.addEventListener('keydown', (e) => {
+    if (fileDropdown.style.display === 'none') return;
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      e.stopPropagation();
+      closeDropdown();
+      fileMenuBtn.focus();
+      return;
+    }
+    if (handleMenuKeydown(fileDropdown, e)) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  });
+
+  historyMenuWrapper.addEventListener('keydown', (e) => {
+    if (historyDropdown.style.display === 'none') return;
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      e.stopPropagation();
+      closeHistoryDropdown();
+      historyMenuBtn.focus();
+      return;
+    }
+    if (handleMenuKeydown(historyDropdown, e)) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  });
+
   let recentFileHandlers: ((path: string) => void)[] = [];
   let clearHandlers: (() => void)[] = [];
 
@@ -604,6 +636,8 @@ export function createChrome(parent: HTMLElement): ChromeInstance {
       pathLabelEl.hidden = true;
       pathLabelEl.removeAttribute('data-full');
       pathLabelEl.setAttribute('aria-pressed', 'false');
+      // No full path: keep basename/title chip visible (e.g. Untitled).
+      filenameEl.hidden = false;
       return;
     }
     pathLabelEl.hidden = false;
@@ -615,6 +649,9 @@ export function createChrome(parent: HTMLElement): ChromeInstance {
     else pathLabelEl.removeAttribute('data-full');
     // aria-pressed reflects "full path mode is on".
     pathLabelEl.setAttribute('aria-pressed', showFullPath ? 'true' : 'false');
+    // Full-path mode already includes the basename in the path label — hide the
+    // separate filename chip so the title bar is not redundant.
+    filenameEl.hidden = showFullPath;
   }
 
   pathLabelEl.addEventListener('click', () => {

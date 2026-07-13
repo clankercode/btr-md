@@ -230,6 +230,30 @@ async function setWorkspaceRoot(path: string): Promise<boolean> {
   }
 }
 
+/**
+ * Tab context-menu "Re-root to git": switch the sidebar base to the document's
+ * git/worktree root when it is already listable (granted). Never widens grants;
+ * on rejection, surface a clear status/console message.
+ */
+async function reRootWorkspaceToGit(gitRoot: string, filePath: string): Promise<void> {
+  if (workspace.root() === gitRoot) {
+    chrome.setStatus(`Workspace already at git root: ${gitRoot}`);
+    await workspace.revealFile(filePath).catch(() => {});
+    return;
+  }
+  const ok = await setWorkspaceRoot(gitRoot);
+  if (ok) {
+    chrome.setStatus(`Workspace root → ${gitRoot}`);
+    await workspace.revealFile(filePath).catch(() => {});
+    return;
+  }
+  const msg =
+    `Cannot re-root to git root (not listable / not granted): ${gitRoot}. ` +
+    'Open or grant that folder first (Settings → Choose base folder…).';
+  console.warn(msg);
+  chrome.setStatus(msg);
+}
+
 // Keep the workspace's active-file highlight mirroring the active document.
 // When the document is under the current root, expand ancestors + select/scroll.
 // When it is outside (or there is no root), re-root to the best listable base
@@ -396,6 +420,9 @@ const tabBar: TabBarInstance = createTabBar(store, {
   onCopyPath: (path) => {
     void copyToClipboard(path, 'path');
   },
+  onReRootToGit: (gitRoot, filePath) => {
+    void reRootWorkspaceToGit(gitRoot, filePath);
+  },
 });
 // Tab strip lives inside `.pmd-chrome`, below the toolbar.
 chrome.el.appendChild(tabBar.el);
@@ -470,6 +497,7 @@ if (toolbarEl instanceof HTMLElement) {
     getDefaultHandlerStatus: () => settingsApi.defaultHandlerStatus().then((r) => r.status),
     setAsDefaultHandler: () => settingsApi.setAsDefaultHandler(),
     setMonoFont: (f) => settingsApi.setMonoFont(f),
+    setShowFullPath: (enabled) => setPathDisplayFull(enabled),
     listTrustRoots,
     forgetTrustRoot: forgetTrustRootFromSettings,
     onAutosaveChange: (m) => {
@@ -495,6 +523,12 @@ if (toolbarEl instanceof HTMLElement) {
       applyDiffMode();
     },
     onMonoFontChange: (f) => applyMonoFont(f),
+    onShowFullPathChange: (enabled) => {
+      // setPathDisplayFull already updates chrome + persisted setting; keep the
+      // local mirror in sync when the Settings toggle fires the change callback
+      // after its own setter (which is also setPathDisplayFull).
+      showFullPath = enabled;
+    },
   });
   insertMenu = createInsertMenu(toolbarEl, {
     insertAlert,

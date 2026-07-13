@@ -38,3 +38,29 @@ test('tab context menu omits file ops when no filePath', () => {
   const copyPath = items.find((i) => !isSeparator(i) && i.label === 'Copy Path');
   assert.equal(copyPath, undefined, 'no Copy Path without filePath');
 });
+
+test('tab context menu includes Re-root to git when filePath and gitRoot set', () => {
+  let reRooted = false;
+  const items = buildTabContextItems({
+    onClose: () => {},
+    filePath: '/repo/docs/a.md',
+    gitRoot: '/repo',
+    onReRootToGit: () => {
+      reRooted = true;
+    },
+  });
+  const reRoot = items.find((i) => !isSeparator(i) && i.label === 'Re-root to git');
+  assert.ok(reRoot, 'Re-root to git present');
+  (reRoot as { onSelect: () => void }).onSelect();
+  assert.equal(reRooted, true);
+});
+
+test('tab context menu omits Re-root to git without gitRoot', () => {
+  const items = buildTabContextItems({
+    onClose: () => {},
+    filePath: '/tmp/a.md',
+    onReRootToGit: () => {},
+  });
+  const reRoot = items.find((i) => !isSeparator(i) && i.label === 'Re-root to git');
+  assert.equal(reRoot, undefined);
+});

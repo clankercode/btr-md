@@ -6,6 +6,7 @@ pub mod path_scope;
 pub mod preview;
 pub mod state;
 pub mod watcher;
+pub mod workspace_ignore;
 
 use std::path::PathBuf;
 use std::sync::Arc;
