@@ -28,6 +28,11 @@ import {
   type AutoreloadMode,
   type DiffMode,
 } from './doc_state.js';
+import {
+  shouldAutosaveOnDefocus,
+  createDefocusSaveCoalescer,
+  DEFOCUS_AUTOSAVE_DEBOUNCE_MS,
+} from './autosave_defocus.js';
 import { createTabStore, type DocTab } from './tabs.js';
 import { createTabBar, type TabBarInstance } from './tabbar.js';
 import { createFileBrowser, type FileBrowserInstance, type DirListing } from './file_browser.js';
@@ -1896,8 +1901,39 @@ function maybeAutosave(): void {
   saveCurrentDoc().catch(() => {});
 }
 
+/** Eligibility snapshot for on_defocus (window blur or leaving a doc tab). */
+function defocusEligible(tab: DocTab): boolean {
+  return shouldAutosaveOnDefocus({
+    mode: autosaveMode,
+    filePath: tab.filePath,
+    stateKind: tab.fileState.kind,
+    bufferDiffersFromBase: tabBuffer(tab) !== tab.baseContent,
+  });
+}
+
+/** Per-doc trailing coalescer: rapid tab switches must not stampede saves. */
+const defocusAutosave = createDefocusSaveCoalescer({
+  delayMs: DEFOCUS_AUTOSAVE_DEBOUNCE_MS,
+  stillEligible: (docId) => {
+    const tab = docTabByDocId(docId);
+    return tab ? defocusEligible(tab) : false;
+  },
+  save: async (docId) => {
+    const tab = docTabByDocId(docId);
+    if (!tab || !defocusEligible(tab)) return;
+    await saveTab(tab);
+  },
+});
+
+function scheduleDefocusAutosaveForTab(tab: DocTab): void {
+  if (!defocusEligible(tab)) return;
+  defocusAutosave.schedule(tab.docId);
+}
+
+// Window focus loss (alt-tab, other app, OS workspace switch).
 window.addEventListener('blur', () => {
-  if (autosaveMode === 'on_defocus') maybeAutosave();
+  const tab = store.activeDoc();
+  if (tab) scheduleDefocusAutosaveForTab(tab);
 });
 window.setInterval(() => {
   if (autosaveMode === 'on_interval') maybeAutosave();
@@ -1920,6 +1956,12 @@ store.onActivate((prev, next) => {
     prev.editorState = editor.snapshot();
     prev.scrollEditor = editor.view.scrollDOM.scrollTop;
     prev.scrollPreview = previewPane.scrollTop;
+  }
+  // Document focus loss: switching tabs never fires window `blur`, so
+  // on_defocus must save the *previous* dirty doc here (after snapshot so
+  // tabBuffer can read the stashed editor state).
+  if (prev && prev.kind === 'doc') {
+    scheduleDefocusAutosaveForTab(prev);
   }
   // A non-doc tab (empty/browser) hides the lock button; a doc tab in split
   // mode shows it. Mode/active-tab changes also need the lock button
@@ -2341,6 +2383,7 @@ function tabNeedsSaveConfirmation(tab: DocTab): boolean {
 function doCloseTab(id: number): void {
   const tab = store.get(id);
   if (tab && tab.kind === 'doc') {
+    defocusAutosave.cancel(tab.docId);
     docsApi.dropDoc(tab.docId).catch(() => {});
   }
   store.close(id);
