@@ -575,6 +575,16 @@ async function setSplitScrollLock(enabled: boolean): Promise<void> {
   }
 }
 
+async function setPathDisplayFull(enabled: boolean): Promise<void> {
+  showFullPath = enabled;
+  chrome.setShowFullPath(enabled);
+  try {
+    await settingsApi.setShowFullPath(enabled);
+  } catch (e) {
+    console.error('set_show_full_path failed:', e);
+  }
+}
+
 function setZoom(value: number): void {
   zoom = Math.max(0.5, Math.min(2, value));
   previewContent.style.fontSize = `${zoom}rem`;
@@ -622,6 +632,8 @@ let splitLockBtn: HTMLButtonElement | null = null;
 let shortcutOverrides: ShortcutOverrides = {};
 let zoom = 1;
 let splitScrollLocked = false;
+/** Top-bar path label: full path vs compressed. Persisted as `show_full_path`. */
+let showFullPath = false;
 
 function enabledActionIds(): Set<ActionId> {
   return new Set(defaultActionSpecs.map((action) => action.id));
@@ -1424,6 +1436,9 @@ chrome.onThemePickerClick(() => showThemePicker());
 chrome.onReloadClick(() => doReload());
 chrome.onSaveClick(() => saveCurrentDoc());
 chrome.onMergeClick(() => doMerge());
+chrome.onPathDisplayToggle(() => {
+  void setPathDisplayFull(!showFullPath);
+});
 chrome.onFrontmatterClick(() => {
   const rect = document.querySelector('.pmd-status-frontmatter')?.getBoundingClientRect();
   openFrontmatterInspector(rect?.left ?? 80, rect?.top ?? 80);
@@ -2064,7 +2079,7 @@ async function activateDocTab(tab: DocTab): Promise<void> {
   trustPolicyPanel.setTrustContext(tab.trustContext);
   void refreshActiveAssetGrants();
   docsApi.setActiveDoc(tab.docId).catch(() => {});
-  chrome.setFilename(tab.filePath ? basename(tab.filePath) : 'Untitled', tab.filePath ?? 'Untitled');
+  chrome.setFilename(tab.filePath ? basename(tab.filePath) : 'Untitled', tab.filePath);
   applyMode(tab.mode);
   refreshChrome(tab.fileState);
   await coordinator.schedule();
@@ -2636,6 +2651,8 @@ async function bootstrap(): Promise<void> {
     if (settings.diff_mode) diffMode = settings.diff_mode;
     shortcutOverrides = settings.shortcut_overrides ?? {};
     splitScrollLocked = settings.split_scroll_locked === true;
+    showFullPath = settings.show_full_path === true;
+    chrome.setShowFullPath(showFullPath);
     applyGistVisibility();
     applySplitLockVisibility();
     if (settings.mono_font) applyMonoFont(settings.mono_font);

@@ -45,6 +45,11 @@ pub struct Settings {
     /// same source line. UI-only state; no other behaviour depends on it.
     #[serde(default)]
     pub split_scroll_locked: bool,
+    /// When `true`, the top-bar path label shows the full file path; when
+    /// `false` (default) it shows the compressed form (`/h/u/d/file.md`).
+    /// Toggled by clicking the path label. UI-only display preference.
+    #[serde(default)]
+    pub show_full_path: bool,
 }
 
 /// Read the current settings from disk, falling back to defaults if the file is

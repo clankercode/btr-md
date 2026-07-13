@@ -1,6 +1,7 @@
 use pmd_app_lib::{
     cmd::settings::{
-        get_settings, set_active_theme, set_shortcut_overrides_for_test, set_theme_pair,
+        get_settings, set_active_theme, set_shortcut_overrides_for_test, set_show_full_path,
+        set_theme_pair,
     },
     state::settings,
 };
@@ -170,4 +171,32 @@ fn settings_rmw_recovers_from_corrupt_toml_and_overwrites_on_next_write() {
     let content = std::fs::read_to_string(settings::path()).expect("read rewritten settings");
     let parsed: settings::Settings = toml::from_str(&content).expect("settings rewritten as TOML");
     assert_eq!(parsed.active_theme.as_deref(), Some("github-dark"));
+}
+
+#[test]
+fn set_show_full_path_persists_and_defaults_false() {
+    let _lock = config_env_lock();
+    let _home = ConfigHomeGuard::new();
+
+    let defaults = get_settings().expect("defaults");
+    assert!(
+        !defaults.show_full_path,
+        "missing key must default to compressed path (false)"
+    );
+
+    let updated = set_show_full_path(true).expect("enable full path");
+    assert!(updated.show_full_path);
+
+    let reread = get_settings().expect("reread");
+    assert!(reread.show_full_path);
+
+    let content = std::fs::read_to_string(settings::path()).expect("read state.toml");
+    assert!(
+        content.contains("show_full_path = true"),
+        "preference must land in state.toml: {content}"
+    );
+
+    let cleared = set_show_full_path(false).expect("disable full path");
+    assert!(!cleared.show_full_path);
+    assert!(!get_settings().expect("reread after clear").show_full_path);
 }

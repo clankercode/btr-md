@@ -67,6 +67,8 @@ export interface Settings {
   mono_font: string | null;
   shortcut_overrides: ShortcutOverrides;
   split_scroll_locked: boolean;
+  /** When true, top-bar path label shows the full path; otherwise compressed. */
+  show_full_path: boolean;
 }
 
 /** A document opened by the backend (`open_dialog` / `request_open_file`). */
@@ -122,6 +124,7 @@ export interface CommandMap {
   set_as_default_handler: { args: void; result: void };
   set_mono_font: { args: { font: string | null }; result: void };
   set_split_scroll_locked: { args: { enabled: boolean }; result: void };
+  set_show_full_path: { args: { enabled: boolean }; result: void };
   set_shortcut_overrides: { args: { overrides: ShortcutOverrides }; result: Settings };
   set_dont_ask_default_handler: { args: { value: boolean }; result: void };
   get_open_dialog_on_start: { args: void; result: boolean };

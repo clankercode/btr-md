@@ -666,12 +666,32 @@
 }
 
 .pmd-abbrev-path {
+  /* Button reset — path label is clickable to toggle full ↔ compressed. */
+  appearance: none;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
   font-size: var(--pmd-text-xs);
   color: var(--pmd-fg-subtle);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   min-width: 0;
+  max-width: 100%;
+}
+
+.pmd-abbrev-path:hover {
+  color: var(--pmd-fg-muted, var(--pmd-fg));
+}
+
+.pmd-abbrev-path:focus-visible {
+  outline: 2px solid var(--pmd-accent);
+  outline-offset: 2px;
+  border-radius: 2px;
 }
 
 .pmd-modified-dot {

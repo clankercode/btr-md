@@ -14,7 +14,7 @@ export type { Mode };
  * first two characters. The filename itself is always shown in full.
  *
  * Examples:
- *   ~/src/preview-md/.worktrees/feature/foo.md → ~/s/p/.wo/f/foo.md
+ *   ~/src/preview-md/.worktrees/feature/foo.md → ~/s/p/.w/f/foo.md
  *   /home/user/documents/report.md → /h/u/d/report.md
  */
 export function abbreviatePath(path: string): string {
@@ -32,6 +32,11 @@ export function abbreviatePath(path: string): string {
   return abbreviated.join('/') + '/' + file;
 }
 
+/** Format a path for the top-bar label: full or compressed. */
+export function formatPathDisplay(path: string, showFull: boolean): string {
+  return showFull ? path : abbreviatePath(path);
+}
+
 export interface ChromeState {
   mode: Mode;
   filename: string | null;
@@ -46,7 +51,9 @@ export interface ClosedWindowSummary {
 export interface ChromeInstance {
   el: HTMLElement;
   setMode: (mode: Mode) => void;
-  setFilename: (filename: string | null, tooltip?: string | null) => void;
+  setFilename: (filename: string | null, fullPath?: string | null) => void;
+  /** Whether the path label shows the full path (`true`) or compressed form. */
+  setShowFullPath: (showFull: boolean) => void;
   setModified: (modified: boolean) => void;
   setStatus: (text: string) => void;
   setCounts: (counts: Counts | null) => void;
@@ -74,6 +81,8 @@ export interface ChromeInstance {
   onRestoreClosedWindow: (handler: (index: number) => void) => void;
   onClearRecentlyClosed: (handler: () => void) => void;
   onHistoryMenuOpen: (handler: () => void) => void;
+  /** Fired when the user clicks the path label to toggle full ↔ compressed. */
+  onPathDisplayToggle: (handler: () => void) => void;
   setReloadVisible: (visible: boolean) => void;
   onReloadClick: (handler: () => void) => void;
   setSaveEnabled: (enabled: boolean) => void;
@@ -229,12 +238,16 @@ export function createChrome(parent: HTMLElement): ChromeInstance {
   const filenameEl = document.createElement('span');
   filenameEl.className = 'pmd-filename';
 
-  const abbrevPathEl = document.createElement('span');
-  abbrevPathEl.className = 'pmd-abbrev-path';
+  // Path label: click toggles full ↔ compressed (preference persisted in settings).
+  const pathLabelEl = document.createElement('button');
+  pathLabelEl.type = 'button';
+  pathLabelEl.className = 'pmd-abbrev-path';
+  pathLabelEl.setAttribute('aria-label', 'Toggle full or compressed path');
+  pathLabelEl.hidden = true;
 
   titleSection.appendChild(modifiedDot);
   titleSection.appendChild(filenameEl);
-  titleSection.appendChild(abbrevPathEl);
+  titleSection.appendChild(pathLabelEl);
 
   const modeGroup = document.createElement('div');
   modeGroup.className = 'pmd-segmented';
@@ -605,20 +618,52 @@ export function createChrome(parent: HTMLElement): ChromeInstance {
   let mergeHandlers: (() => void)[] = [];
   let countsClickHandlers: (() => void)[] = [];
   let frontmatterClickHandlers: (() => void)[] = [];
+  let pathDisplayToggleHandlers: (() => void)[] = [];
+
+  // Path-label display state. `currentFullPath` is null for untitled/no path.
+  let currentFullPath: string | null = null;
+  let showFullPath = false;
+
+  function refreshPathLabel(): void {
+    if (!currentFullPath) {
+      pathLabelEl.textContent = '';
+      pathLabelEl.title = '';
+      pathLabelEl.hidden = true;
+      pathLabelEl.removeAttribute('data-full');
+      pathLabelEl.setAttribute('aria-pressed', 'false');
+      return;
+    }
+    pathLabelEl.hidden = false;
+    pathLabelEl.textContent = formatPathDisplay(currentFullPath, showFullPath);
+    pathLabelEl.title = showFullPath
+      ? `${currentFullPath} (click for compressed path)`
+      : `${currentFullPath} (click for full path)`;
+    if (showFullPath) pathLabelEl.setAttribute('data-full', '');
+    else pathLabelEl.removeAttribute('data-full');
+    // aria-pressed reflects "full path mode is on".
+    pathLabelEl.setAttribute('aria-pressed', showFullPath ? 'true' : 'false');
+  }
+
+  pathLabelEl.addEventListener('click', () => {
+    // Always fire the toggle so the preference can flip even when the label is
+    // empty (defensive); the button is hidden when there is no path.
+    pathDisplayToggleHandlers.forEach((h) => h());
+  });
 
   return {
     el: container,
     setMode,
-    setFilename: (filename: string | null, tooltip?: string | null) => {
+    setFilename: (filename: string | null, fullPath?: string | null) => {
       filenameEl.textContent = filename || '';
-      filenameEl.title = tooltip || filename || '';
-      // Compute abbreviated path: ~/s/b/.w/f/f/filename.md
-      if (tooltip) {
-        abbrevPathEl.textContent = abbreviatePath(tooltip);
-        abbrevPathEl.title = tooltip;
-      } else {
-        abbrevPathEl.textContent = '';
-      }
+      filenameEl.title = fullPath || filename || '';
+      // Only treat real filesystem paths as path-label content. Untitled /
+      // special labels (no path) hide the path button entirely.
+      currentFullPath = fullPath && fullPath.length > 0 ? fullPath : null;
+      refreshPathLabel();
+    },
+    setShowFullPath: (showFull: boolean) => {
+      showFullPath = showFull;
+      refreshPathLabel();
     },
     setModified: (modified: boolean) => {
       modifiedDot.toggleAttribute('data-modified', modified);
@@ -732,6 +777,9 @@ export function createChrome(parent: HTMLElement): ChromeInstance {
     },
     onClearRecentFiles: (handler: () => void) => {
       clearHandlers.push(handler);
+    },
+    onPathDisplayToggle: (handler: () => void) => {
+      pathDisplayToggleHandlers.push(handler);
     },
     setReloadVisible: (visible: boolean) => {
       reloadBtn.toggleAttribute('data-visible', visible);
