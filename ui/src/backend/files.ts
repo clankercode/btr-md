@@ -12,6 +12,11 @@ export function setWorkspaceRoot(path: string): Promise<string> {
   return call('set_workspace_root', { path });
 }
 
+/** Best listable sidebar root for an admitted document (git/home/parent with grant fallback). */
+export function resolveDocumentWorkspaceRoot(path: string): Promise<string> {
+  return call('resolve_document_workspace_root', { path });
+}
+
 export function pickBaseDir(): Promise<string | null> {
   return call('pick_base_dir');
 }

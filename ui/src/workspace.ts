@@ -152,10 +152,17 @@ export function createWorkspaceModel(deps: WorkspaceDeps): WorkspaceModel {
       // A file outside the current root can never be the workspace's active
       // file; clear any stale highlight rather than leaving the previous one.
       if (!root || !isUnder(root, path)) {
+        let changed = false;
         if (activeFile !== null) {
           activeFile = null;
-          emit();
+          changed = true;
         }
+        // Drop selection only when it would point outside the tree.
+        if (selected && (!root || !isUnder(root, selected))) {
+          selected = null;
+          changed = true;
+        }
+        if (changed) emit();
         return;
       }
       // Expand each ancestor between root and the file's directory.
@@ -172,6 +179,7 @@ export function createWorkspaceModel(deps: WorkspaceDeps): WorkspaceModel {
       }
       persistExpanded(expanded);
       activeFile = path;
+      selected = path;
       emit();
     },
 

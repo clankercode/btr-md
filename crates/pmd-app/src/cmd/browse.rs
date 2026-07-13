@@ -142,6 +142,49 @@ pub fn set_workspace_root(
     Ok(canon)
 }
 
+/// Resolve the best listable sidebar workspace root for an already-admitted
+/// document (in the file scope or under an allowed directory).
+///
+/// Preferred base order (see [`crate::preview::git_root::resolve_document_base`]):
+/// git worktree/repo root → `$HOME` if under home → document parent. The
+/// preferred base is returned only when it is already within a granted
+/// directory (this command never widens authority). Otherwise falls back to the
+/// deepest granted directory that still contains the document.
+#[tauri::command]
+pub fn resolve_document_workspace_root(
+    state: tauri::State<'_, crate::AppState>,
+    path: PathBuf,
+) -> Result<PathBuf, String> {
+    resolve_document_workspace_root_in_scope(&state.scope, &path)
+}
+
+/// Core of [`resolve_document_workspace_root`], unit-testable without Tauri.
+pub(crate) fn resolve_document_workspace_root_in_scope(
+    scope: &crate::path_scope::PathScope,
+    path: &std::path::Path,
+) -> Result<PathBuf, String> {
+    let canon = std::fs::canonicalize(path).map_err(|e| e.to_string())?;
+    if !scope.check_canonical(&canon) && !scope.is_within_allowed_dir(&canon) {
+        return Err(format!(
+            "resolve_document_workspace_root: {} is not in scope or an allowed folder",
+            canon.display()
+        ));
+    }
+
+    let preferred = crate::preview::git_root::resolve_document_base(&canon)?;
+    // Preferred is listable when it sits at or under a granted dir (or is one).
+    if scope.is_within_allowed_dir(&preferred) {
+        return Ok(preferred);
+    }
+    if let Some(granted) = scope.deepest_allowed_containing(&canon) {
+        return Ok(granted);
+    }
+    Err(format!(
+        "resolve_document_workspace_root: no granted directory contains {}",
+        canon.display()
+    ))
+}
+
 /// Reject a proposed new file name: it must be a bare file name (no path
 /// separators, no `.`/`..`, non-empty) so a rename can never escape the file's
 /// own directory.
@@ -288,5 +331,51 @@ mod tests {
         let err = rename_in_scope(&scope, &src, "../evil.md").expect_err("must reject");
         assert!(err.contains("invalid file name"), "{err}");
         assert!(src.exists());
+    }
+
+    #[test]
+    fn resolve_workspace_root_returns_preferred_when_granted() {
+        let temp = tempfile::tempdir().expect("tempdir");
+        let repo = temp.path().join("repo");
+        let docs = repo.join("docs");
+        std::fs::create_dir_all(repo.join(".git")).expect("git");
+        let doc = docs.join("a.md");
+        std::fs::create_dir_all(&docs).expect("docs");
+        std::fs::write(&doc, "x").expect("write");
+        let scope = PathScope::new();
+        scope.allow_dir(&repo).expect("grant repo");
+        scope.allow(&doc).expect("admit file");
+
+        let root = resolve_document_workspace_root_in_scope(&scope, &doc).expect("resolve");
+        assert_eq!(root, repo.canonicalize().unwrap());
+    }
+
+    #[test]
+    fn resolve_workspace_root_falls_back_to_deepest_grant() {
+        let temp = tempfile::tempdir().expect("tempdir");
+        let repo = temp.path().join("repo");
+        let docs = repo.join("docs");
+        std::fs::create_dir_all(repo.join(".git")).expect("git");
+        let doc = docs.join("a.md");
+        std::fs::create_dir_all(&docs).expect("docs");
+        std::fs::write(&doc, "x").expect("write");
+        // Only the file's parent is granted — not the git root.
+        let scope = PathScope::new();
+        scope.allow_dir(&docs).expect("grant docs");
+        scope.allow(&doc).expect("admit file");
+
+        let root = resolve_document_workspace_root_in_scope(&scope, &doc).expect("resolve");
+        assert_eq!(root, docs.canonicalize().unwrap());
+    }
+
+    #[test]
+    fn resolve_workspace_root_rejects_unknown_paths() {
+        let temp = tempfile::tempdir().expect("tempdir");
+        let doc = temp.path().join("solo.md");
+        std::fs::write(&doc, "x").expect("write");
+        let scope = PathScope::new();
+
+        let err = resolve_document_workspace_root_in_scope(&scope, &doc).expect_err("reject");
+        assert!(err.contains("not in scope"), "{err}");
     }
 }

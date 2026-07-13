@@ -233,6 +233,19 @@ impl PathScope {
             .clone()
     }
 
+    /// Deepest admitted directory that contains `canon` (component-wise).
+    /// Prefer this when a preferred workspace base is not itself listable.
+    pub fn deepest_allowed_containing(&self, canon: &Path) -> Option<PathBuf> {
+        let dirs = self
+            .allowed_dirs
+            .lock()
+            .unwrap_or_else(|p| p.into_inner());
+        dirs.iter()
+            .filter(|dir| is_within(dir, canon))
+            .max_by_key(|dir| dir.components().count())
+            .cloned()
+    }
+
     /// Test-visible wrapper over the root guard predicate.
     #[cfg(test)]
     pub fn grants_parent_dir(dir: &Path) -> bool {
@@ -569,6 +582,34 @@ mod tests {
         let sibling = dir.path().join("other.md");
         std::fs::write(&sibling, "y").expect("write sibling");
         assert!(scope.is_within_allowed_dir(&sibling.canonicalize().unwrap()));
+    }
+
+    #[test]
+    fn deepest_allowed_containing_picks_nested_grant() {
+        let outer = tempfile::tempdir().expect("outer");
+        let inner = outer.path().join("proj");
+        let file = inner.join("docs").join("a.md");
+        std::fs::create_dir_all(file.parent().unwrap()).expect("mkdir");
+        std::fs::write(&file, "x").expect("write");
+        let scope = PathScope::new();
+        scope.allow_dir(outer.path()).expect("outer grant");
+        scope.allow_dir(&inner).expect("inner grant");
+
+        let got = scope
+            .deepest_allowed_containing(&file.canonicalize().unwrap())
+            .expect("containing grant");
+        assert_eq!(got, inner.canonicalize().unwrap());
+    }
+
+    #[test]
+    fn deepest_allowed_containing_none_when_outside_all_grants() {
+        let dir = tempfile::tempdir().expect("dir");
+        let file = dir.path().join("a.md");
+        std::fs::write(&file, "x").expect("write");
+        let scope = PathScope::new();
+        assert!(scope
+            .deepest_allowed_containing(&file.canonicalize().unwrap())
+            .is_none());
     }
 
     #[test]

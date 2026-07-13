@@ -77,11 +77,31 @@ test("select and setActiveFile are independent highlights", () => {
   assert.equal(model.activeFile(), "/r/b.md");
 });
 
-test("revealFile sets activeFile for a file under the root", async () => {
+test("revealFile sets activeFile and selected for a file under the root", async () => {
   const model = createWorkspaceModel({ listDir: async (d) => fakeListing(d, ["a/", "x.md"]) });
   await model.setRoot("/r");
   await model.revealFile("/r/x.md");
   assert.equal(model.activeFile(), "/r/x.md");
+  assert.equal(model.selected(), "/r/x.md");
+});
+
+test("revealFile expands intermediate folders so the file is reachable", async () => {
+  const model = createWorkspaceModel({
+    listDir: async (dir) => {
+      if (dir === "/r") return fakeListing(dir, ["a/"]);
+      if (dir === "/r/a") return fakeListing(dir, ["b/"]);
+      if (dir === "/r/a/b") return fakeListing(dir, ["c.md"]);
+      return fakeListing(dir, []);
+    },
+  });
+  await model.setRoot("/r");
+  await model.revealFile("/r/a/b/c.md");
+  assert.equal(model.activeFile(), "/r/a/b/c.md");
+  assert.equal(model.selected(), "/r/a/b/c.md");
+  assert.equal(model.expanded().has("/r"), true);
+  assert.equal(model.expanded().has("/r/a"), true);
+  assert.equal(model.expanded().has("/r/a/b"), true);
+  assert.deepEqual(model.entriesOf("/r/a/b")?.map((e) => e.name), ["c.md"]);
 });
 
 test("revealFile clears a stale activeFile when the file is outside the root", async () => {
