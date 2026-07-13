@@ -3,7 +3,7 @@
 // unit-testable under `node --test`, which cannot resolve the `.js` runtime
 // imports in `tabbar.ts`. `tabbar.ts` re-exports `buildTabContextItems`.
 
-import type { MenuEntry } from './context_menu.js';
+import type { MenuEntry } from './menu.js';
 
 /** Build the context-menu entries for a tab. */
 export function buildTabContextItems(handlers: {
