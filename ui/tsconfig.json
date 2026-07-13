@@ -57,6 +57,7 @@
     "src/command_overlay.ts",
     "src/shortcut_editor.ts",
     "src/menu.ts",
+    "src/path_display.ts",
     "src/context_menu.ts",
     "src/tab_context_menu.ts",
     "src/find_query.ts",

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { abbreviatePath, formatPathDisplay } from './chrome.ts';
+import { abbreviatePath, formatPathDisplay } from './path_display.ts';
 
 test('abbreviatePath shortens each directory component', () => {
   assert.equal(abbreviatePath('/home/user/documents/report.md'), '/h/u/d/report.md');
