@@ -50,6 +50,6 @@ ideas:
       file: I006-theme-audit-grok-schemes-theme.todo
       id: I006
       priority: high
-      status: in_progress
+      status: done
       tags: []
       title: Theme audit, Grok schemes, theme PNG preview tool
