@@ -248,9 +248,13 @@ fn build_with_nonce(render_nonce: Option<String>, export: bool) -> ammonia::Buil
         "table",
         "thead",
         "tbody",
+        "tfoot",
         "tr",
         "th",
         "td",
+        "caption",
+        "colgroup",
+        "col",
         "code",
         "pre",
         "kbd",
@@ -259,6 +263,18 @@ fn build_with_nonce(render_nonce: Option<String>, export: bool) -> ammonia::Buil
         "figure",
         "figcaption",
         "section",
+        "article",
+        "aside",
+        "nav",
+        "header",
+        "footer",
+        "main",
+        "details",
+        "summary",
+        "mark",
+        "small",
+        "time",
+        "abbr",
         "input",
     ]
     .into_iter()
@@ -274,6 +290,7 @@ fn build_with_nonce(render_nonce: Option<String>, export: bool) -> ammonia::Buil
         "role",
         "tabindex",
         "aria-label",
+        "aria-hidden",
         "title",
     ]
     .into_iter()
@@ -302,6 +319,33 @@ fn build_with_nonce(render_nonce: Option<String>, export: bool) -> ammonia::Buil
         .get_mut("input")
         .unwrap()
         .extend(["type", "checked", "disabled"]);
+    allowed_attrs
+        .get_mut("col")
+        .unwrap()
+        .extend(["span"]);
+    allowed_attrs
+        .get_mut("colgroup")
+        .unwrap()
+        .extend(["span"]);
+    allowed_attrs
+        .get_mut("time")
+        .unwrap()
+        .extend(["datetime"]);
+    allowed_attrs
+        .get_mut("abbr")
+        .unwrap()
+        .extend(["title"]);
+    // Safe presentation-only inline CSS for rich HTML documents (and KaTeX
+    // export). Filtered by `is_safe_inline_style` below — no urls, expression(),
+    // or breakout sequences.
+    for t in [
+        "span", "div", "p", "section", "article", "aside", "nav", "header", "footer", "main",
+        "table", "td", "th", "tr", "h1", "h2", "h3", "h4", "h5", "h6",
+    ] {
+        if let Some(attrs) = allowed_attrs.get_mut(t) {
+            attrs.insert("style");
+        }
+    }
 
     // Export mode additionally permits the passive SVG/MathML presentation
     // markup the trusted Mermaid/KaTeX renderers emit (see `build_for_export`).
@@ -317,14 +361,6 @@ fn build_with_nonce(render_nonce: Option<String>, export: bool) -> ammonia::Buil
             .get_mut("use")
             .unwrap()
             .extend(["xlink:href", "href"]);
-        // KaTeX positions its glyphs with inline `style` on spans; without it
-        // exported math collapses. The attribute filter below applies a local
-        // CSS sink policy and refuses URL-bearing or legacy executable CSS.
-        for t in ["span", "div", "p", "section"] {
-            if let Some(attrs) = allowed_attrs.get_mut(t) {
-                attrs.insert("style");
-            }
-        }
     }
 
     let mut b = ammonia::Builder::new();
@@ -355,13 +391,6 @@ fn build_with_nonce(render_nonce: Option<String>, export: bool) -> ammonia::Buil
             b.attribute_filter(|element, attribute, value| {
                 if element == "img" && attribute.eq_ignore_ascii_case("src") {
                     return if is_safe_export_img_src(value) {
-                        Some(Cow::Borrowed(value))
-                    } else {
-                        None
-                    };
-                }
-                if attribute.eq_ignore_ascii_case("style") {
-                    return if is_safe_inline_style(value) {
                         Some(Cow::Borrowed(value))
                     } else {
                         None
@@ -425,6 +454,13 @@ fn filter_attribute<'a>(
             return Some(Cow::Borrowed(value));
         }
         return None;
+    }
+    if attribute.eq_ignore_ascii_case("style") {
+        return if is_safe_inline_style(value) {
+            Some(Cow::Borrowed(value))
+        } else {
+            None
+        };
     }
     match (element, attribute) {
         ("a", "href") => filter_href(value, render_nonce.is_some()),

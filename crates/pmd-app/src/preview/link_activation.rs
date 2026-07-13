@@ -508,6 +508,7 @@ fn resolve_local_target(link: &StoredLink) -> Result<PathBuf, String> {
     Ok(canonical)
 }
 
+/// Open a linked document (markdown or HTML) inside the app.
 fn open_markdown_from_backend(
     app: &tauri::AppHandle,
     state: &crate::AppState,
@@ -515,8 +516,8 @@ fn open_markdown_from_backend(
     path: &str,
 ) -> Result<OpenedDoc, String> {
     let path = PathBuf::from(path);
-    if !crate::path_scope::is_markdown_path(&path) {
-        return Err("Linked document is not Markdown.".to_string());
+    if !crate::path_scope::is_document_path(&path) {
+        return Err("Linked document is not an openable document.".to_string());
     }
     let canon = crate::path_scope::PathScope::canonicalise(&path).map_err(|e| e.to_string())?;
     let canon = state.scope.allow_canonical(&canon);

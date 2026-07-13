@@ -27,13 +27,22 @@ pub fn classify_target(target: Option<&str>, is_reference: bool) -> LinkKind {
         LinkKind::ExternalUrl
     } else if has_unknown_scheme(target) {
         LinkKind::UnknownScheme
-    } else if target_without_fragment_or_query(&lower).ends_with(".md")
-        || target_without_fragment_or_query(&lower).ends_with(".markdown")
-    {
+    } else if is_openable_document_target(target_without_fragment_or_query(&lower)) {
+        // "LocalMarkdown" historically means "open in-app as a document"; pure
+        // HTML docs use the same activation path.
         LinkKind::LocalMarkdown
     } else {
         LinkKind::LocalFile
     }
+}
+
+fn is_openable_document_target(path: &str) -> bool {
+    path.ends_with(".md")
+        || path.ends_with(".markdown")
+        || path.ends_with(".mdown")
+        || path.ends_with(".mkd")
+        || path.ends_with(".html")
+        || path.ends_with(".htm")
 }
 
 pub fn normalize_reference_label(label: &str) -> String {

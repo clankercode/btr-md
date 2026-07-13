@@ -1,5 +1,6 @@
 use pmd_app_lib::cmd::render::render_cmd_for_test;
 use pmd_app_lib::doc::DocRegistry;
+use std::path::Path;
 
 #[tokio::test]
 async fn render_returns_versioned_html() {
@@ -134,4 +135,51 @@ async fn malformed_frontmatter_returns_diagnostic_without_blank_preview() {
             && issue.severity.as_str() == "warning"
             && issue.message.contains("Frontmatter could not be parsed")
     }));
+}
+
+#[tokio::test]
+async fn html_document_uses_html_preview_path_not_markdown() {
+    let temp = tempfile::tempdir().unwrap();
+    let doc_path = temp.path().join("page.html");
+    let source = r##"<!DOCTYPE html><html><head><script>evil()</script></head>
+<body>
+<nav class="toc"><a href="#sec">Sec</a></nav>
+<h1 id="sec">Section</h1>
+<p>use_snake_case and #not-md</p>
+</body></html>"##;
+    std::fs::write(&doc_path, source).unwrap();
+
+    let result = render_cmd_for_test(9, 1, Some(Path::new(&doc_path)), source.into())
+        .await
+        .expect("render html");
+
+    assert!(result.html.contains("<nav"), "structure kept: {}", result.html);
+    assert!(result.html.contains(r#"class="toc""#), "{}", result.html);
+    assert!(result.html.contains("use_snake_case"), "{}", result.html);
+    assert!(result.html.contains("#not-md"), "{}", result.html);
+    assert!(!result.html.contains("<script"), "script stripped: {}", result.html);
+    assert!(!result.html.contains("evil"), "{}", result.html);
+    assert!(result.html.contains("data-pmd-link-id="), "link markers: {}", result.html);
+    assert!(result.blocks.is_empty(), "HTML is full-replace, not block-incremental");
+    assert!(
+        result.facts.core.headings.iter().any(|h| h.text == "Section"),
+        "outline headings: {:?}",
+        result.facts.core.headings
+    );
+}
+
+#[tokio::test]
+async fn html_extension_htm_also_uses_html_path() {
+    let temp = tempfile::tempdir().unwrap();
+    let doc_path = temp.path().join("page.HTM");
+    let source = "<article><h2>Hi</h2><p>body</p></article>";
+    std::fs::write(&doc_path, source).unwrap();
+
+    let result = render_cmd_for_test(3, 2, Some(&doc_path), source.into())
+        .await
+        .expect("render htm");
+
+    assert!(result.html.contains("<article"), "{}", result.html);
+    assert!(result.html.contains("<h2"), "{}", result.html);
+    assert!(!result.html.contains("<em>"), "no md emphasis: {}", result.html);
 }

@@ -2,8 +2,10 @@ use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 
+use pmd_core::html::render_html_document;
 use pmd_core::incremental::render_incremental;
 
+use crate::path_scope::is_html_path;
 use crate::preview::contracts::RenderResult;
 use crate::preview::resource_policy::{resolve_resources, ResourcePolicyContext};
 use crate::preview::validation::{ValidationEngine, ValidationLimits, ValidationRequest};
@@ -13,15 +15,22 @@ pub fn render_preview(
     version: u64,
     doc_path: Option<&Path>,
     allowed_roots: Vec<std::path::PathBuf>,
-    markdown: &str,
+    source: &str,
 ) -> Result<RenderResult, String> {
-    let mut core = render_incremental(markdown);
+    // Pure HTML documents skip the markdown pipeline so structure/classes and
+    // basic styling survive; security still goes through ammonia + resource
+    // policy (no free script execution).
+    let mut core = if doc_path.is_some_and(is_html_path) {
+        render_html_document(source)
+    } else {
+        render_incremental(source)
+    };
     core.version = version;
     let policy = resolve_resources(ResourcePolicyContext {
         doc_id,
         version,
         doc_path,
-        markdown,
+        markdown: source,
         facts: &core.facts,
         rendered_html: &core.html,
         allowed_roots,

@@ -43,9 +43,9 @@ export function isImageFileName(name: string): boolean {
 /**
  * Decide what a dropped/pasted file should do:
  *  - `'embed'` for an image (by MIME or extension),
- *  - `'open'` for a markdown file,
+ *  - `'open'` for an openable document (markdown or HTML),
  *  - `'ignore'` for anything else.
- * Markdown detection mirrors `drag_overlay.ts` (extension-based on drop).
+ * Document detection mirrors `drag_overlay.ts` (extension-based on drop).
  */
 export function classifyDroppedFile(
   name: string,
@@ -55,7 +55,7 @@ export function classifyDroppedFile(
   const dot = name.lastIndexOf('.');
   if (dot >= 0) {
     const ext = name.slice(dot + 1).toLowerCase();
-    if (['md', 'markdown', 'mdown', 'mkd'].includes(ext)) return 'open';
+    if (['md', 'markdown', 'mdown', 'mkd', 'html', 'htm'].includes(ext)) return 'open';
   }
   return 'ignore';
 }
