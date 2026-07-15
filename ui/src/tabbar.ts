@@ -33,6 +33,8 @@ export function triggerTabHighlight(el: HTMLElement): void {
 export interface TabBarHandlers {
   onSelect: (id: TabId) => void;
   onClose: (id: TabId) => void;
+  /** Promote a sidebar-preview tab to a normal, persistent document tab. */
+  onPin: (id: TabId) => void;
   onNewTab: (shiftKey: boolean) => void;
   onRevealInFolder?: (path: string) => void;
   onCopyPath?: (path: string) => void;
@@ -144,6 +146,12 @@ export function createTabBar(store: TabStore, handlers: TabBarHandlers): TabBarI
     tabEl.appendChild(close);
 
     tabEl.addEventListener('click', () => handlers.onSelect(tab.id));
+    tabEl.addEventListener('dblclick', (event) => {
+      // Preserve the close button's own gesture semantics. A preview tab is
+      // promoted exactly once; double-clicking an already normal tab is inert.
+      if (event.target instanceof Element && event.target.closest('button')) return;
+      if (tab.kind === 'doc' && !tab.pinned) handlers.onPin(tab.id);
+    });
     // Right-click context menu: close this tab, plus a disabled Move-to-New-Window
     // affordance (functional move lands in a later phase).
     tabEl.addEventListener('contextmenu', (e) => {

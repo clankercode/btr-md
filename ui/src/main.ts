@@ -411,6 +411,10 @@ const store = createTabStore();
 const tabBar: TabBarInstance = createTabBar(store, {
   onSelect: (id) => store.setActive(id),
   onClose: (id) => closeTab(id),
+  onPin: (id) => {
+    const tab = store.get(id);
+    if (tab?.kind === 'doc' && !tab.pinned) store.updateDoc(id, { pinned: true });
+  },
   onNewTab: (shift) => {
     void newFile({ background: shift });
   },
