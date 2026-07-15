@@ -58,7 +58,7 @@ test('double-clicking empty tab-strip space opens a blank untitled document', as
   await expect(page.locator('#pmd-welcome')).not.toBeVisible();
 });
 
-test('sidebar single-click opens an italic preview tab and double-click pins it', async ({ page }) => {
+test('sidebar single-click opens an italic preview tab and double-clicking its tab pins it', async ({ page }) => {
   await buildWorkspace(page);
 
   const sidebar = page.locator('#pmd-sidebar');
@@ -76,7 +76,7 @@ test('sidebar single-click opens an italic preview tab and double-click pins it'
   const guideTab = page.getByRole('tab', { name: /guide\.md/ });
   await expect(guideTab).toHaveAttribute('data-pinned', 'false');
 
-  await sidebar.getByRole('treeitem', { name: 'guide.md' }).dblclick();
+  await guideTab.dblclick();
 
   await expect(guideTab).toHaveAttribute('data-pinned', 'true');
   await expect(guideTab.locator('.pmd-tab-label')).toHaveCSS('font-style', 'normal');
