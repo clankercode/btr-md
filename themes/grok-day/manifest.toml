@@ -6,54 +6,54 @@ mode = "light"
 version = "1.0.0"
 
 [palette]
-# Surfaces — light grey canvas with magenta/lilac brand accent (Grok TUI day)
-bg = "#f5f5f5"
+# GrokDay — neutral light surfaces with the Grok Build magenta signal.
+bg = "#fafafa"
 bg_elevated = "#ffffff"
-fg = "#333333"
-fg_muted = "#5e646c"
-accent = "#7d4bc6"
-link = "#7d4bc6"
-border = "#8a8a8a"
+fg = "#1d1d1f"
+fg_muted = "#62626a"
+accent = "#b000b5"
+link = "#9d009f"
+border = "#767680"
 
 # Editor
-selection_bg = "#333333"
+selection_bg = "#1d1d1f"
 selection_fg = "#ffffff"
-focus_ring = "#7d4bc6"
-caret = "#333333"
-scrollbar_thumb = "#c8c8c8"
-scrollbar_track = "#eaeaea"
+focus_ring = "#b000b5"
+caret = "#1d1d1f"
+scrollbar_thumb = "#c7c7cc"
+scrollbar_track = "#eeeeef"
 
 # Markdown
-inline_code_bg = "#eaeaea"
-inline_code_fg = "#333333"
-code_block_bg = "#eaeaea"
-code_block_fg = "#333333"
-code_block_border = "#c8c8c8"
-blockquote_bar = "#9b7ece"
-blockquote_fg = "#5e646c"
-hr = "#c8c8c8"
+inline_code_bg = "#eeeeef"
+inline_code_fg = "#1d1d1f"
+code_block_bg = "#f1f1f2"
+code_block_fg = "#1d1d1f"
+code_block_border = "#c7c7cc"
+blockquote_bar = "#b000b5"
+blockquote_fg = "#62626a"
+hr = "#c7c7cc"
 
 # Tables
-table_header_bg = "#eaeaea"
-table_row_alt = "#f0f0f0"
-table_border = "#c8c8c8"
+table_header_bg = "#eeeeef"
+table_row_alt = "#f5f5f6"
+table_border = "#c7c7cc"
 
 # Admonitions
-admonition_note = "#7d4bc6"
-admonition_warn = "#b8860b"
-admonition_tip = "#2d7a3e"
+admonition_note = "#b000b5"
+admonition_warn = "#8a5b00"
+admonition_tip = "#147a42"
 
 # Kbd
-kbd_bg = "#eaeaea"
-kbd_fg = "#333333"
-kbd_border = "#8a8a8a"
+kbd_bg = "#eeeeef"
+kbd_fg = "#1d1d1f"
+kbd_border = "#767680"
 
 # Links
-link_hover = "#5a2f99"
-link_visited = "#9b7ece"
-image_caption = "#5e646c"
+link_hover = "#78007b"
+link_visited = "#7a397b"
+image_caption = "#62626a"
 
 # Mermaid
 
-# Syntax — purple brand family on light surfaces
-syntax = { keyword = "#7d4bc6", string = "#0a7a3e", number = "#b45309", function = "#5a2f99", type = "#0b6e99", comment = "#6e7781", operator = "#333333", punctuation = "#333333", variable = "#9a3412", constant = "#b45309" }
+# Syntax — the magenta accent stays for control flow; content tokens remain legible.
+syntax = { keyword = "#a000a3", string = "#08733c", number = "#9a4f00", function = "#8a008c", type = "#006b8f", comment = "#6b6b73", operator = "#1d1d1f", punctuation = "#1d1d1f", variable = "#a33a00", constant = "#9a4f00" }
