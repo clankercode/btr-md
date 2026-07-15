@@ -7,7 +7,7 @@ import * as windowsApi from './backend/windows.js';
 import * as sessionApi from './backend/session.js';
 import { linkActivationInvoke } from './backend/links.js';
 import * as recentApi from './backend/recent.js';
-import { listen } from '@tauri-apps/api/event';
+import { subscribe } from './backend/events.js';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { mountEditor, type EditorHandle } from './editor.js';
 import { detectDocumentKind } from './document_kind.js';
@@ -24,7 +24,6 @@ import {
   uiForState,
   assertNever,
   type FileState,
-  type DocStateChanged,
   type AutosaveMode,
   type AutoreloadMode,
   type DiffMode,
@@ -2575,19 +2574,18 @@ async function confirmCloseWindow(): Promise<boolean> {
 }
 
 // ---------------------------------------------------------------------------
-// Event listeners.
+// Event listeners (typed via backend/events.ts EventMap + subscribe).
 // ---------------------------------------------------------------------------
 
-listen<string>('open-file', (event) => openFile(event.payload)).catch(() => {});
+subscribe('open-file', (path) => openFile(path)).catch(() => {});
 
-listen<string>('activate-doc', (event) => {
-  const tab = store.findDocByPath(event.payload);
+subscribe('activate-doc', (path) => {
+  const tab = store.findDocByPath(path);
   if (tab) store.setActive(tab.id);
-  else void openFile(event.payload);
+  else void openFile(path);
 }).catch(() => {});
 
-listen<DocStateChanged>('doc_state_changed', (event) => {
-  const { doc_id, state } = event.payload;
+subscribe('doc_state_changed', ({ doc_id, state }) => {
   setStateByDocId(doc_id, state);
   const active = store.activeDoc();
   if (active && active.docId === doc_id) maybeAutoreload(state);
@@ -2599,13 +2597,13 @@ listen<DocStateChanged>('doc_state_changed', (event) => {
 const scheduleWorkspaceTreeRefresh = debounce(() => {
   void workspace.refresh();
 }, 150);
-listen('workspace_tree_changed', () => {
+subscribe('workspace_tree_changed', () => {
   scheduleWorkspaceTreeRefresh();
 }).catch(() => {});
 
-listen<DocumentDiagnostics>('pmd://diagnostics-enriched', (event) => {
-  if (!factsStore.acceptDiagnostics(event.payload)) return;
-  applyDocumentDiagnostics(event.payload);
+subscribe('pmd://diagnostics-enriched', (payload) => {
+  if (!factsStore.acceptDiagnostics(payload)) return;
+  applyDocumentDiagnostics(payload);
 })
   .then((unlisten) => {
     unlistenDiagnostics = unlisten;
@@ -2614,9 +2612,9 @@ listen<DocumentDiagnostics>('pmd://diagnostics-enriched', (event) => {
     console.error('Failed to listen for enriched diagnostics', error);
   });
 
-listen<string>('pmd://download-denied', (event) => {
+subscribe('pmd://download-denied', (url) => {
   document.dispatchEvent(new CustomEvent('pmd-download-denied', {
-    detail: { url: event.payload },
+    detail: { url },
   }));
 }).catch(() => {});
 
@@ -2624,10 +2622,11 @@ window.addEventListener('beforeunload', () => {
   unlistenDiagnostics?.();
 });
 
-listen('system_theme_changed', handleSystemThemeChange).catch(() => {});
+subscribe('system_theme_changed', () => {
+  handleSystemThemeChange();
+}).catch(() => {});
 
-listen<string>('mode-change', (event) => {
-  const mode = event.payload as Mode;
+subscribe('mode-change', (mode) => {
   if (isMode(mode)) applyMode(mode);
 }).catch(() => {});
 

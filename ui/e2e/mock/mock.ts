@@ -23,6 +23,7 @@ import type {
   OpenedDoc,
   RegisteredDoc,
 } from '../../src/backend/commands.js';
+import type { EventMap } from '../../src/backend/event_map.js';
 import type { DirListing } from '../../src/file_browser.js';
 import type { ThemeInfo } from '../../src/picker.js';
 import type { ShortcutOverrides } from '../../src/keybindings.js';
@@ -106,10 +107,16 @@ declare global {
     __pmdInvocations?: Array<{ cmd: string; args: Record<string, unknown> }>;
     __pmdE2eActions?: string[];
     __pmdNextGrantFolder?: string | null;
-    __pmdEmitEvent?: (name: string, payload: unknown) => void;
+    /** Emit a backend event to `subscribe()`/`listen()` handlers (typed EventMap). */
+    __pmdEmitEvent?: <K extends keyof EventMap>(
+      name: K,
+      payload: EventMap[K],
+    ) => void;
     __TAURI_INTERNALS__?: TauriInternals;
-    __TAURI_EVENT_PLUGIN_INTERNALS__?: {
-      unregisterListener(event: string, id: number): void;
+    // Required + shape must match `@tauri-apps/api/event`'s global (events.ts
+    // is typechecked in the same project, so the declarations merge).
+    __TAURI_EVENT_PLUGIN_INTERNALS__: {
+      unregisterListener: (event: string, eventId: number) => void;
     };
     __TAURI__?: unknown;
   }
@@ -749,11 +756,16 @@ function installMock(config: MockConfig): void {
   };
   window.__TAURI_INTERNALS__ = internals;
 
-  // Emit a backend event to any `listen()` subscribers. This is how the mock
-  // delivers `open-file` (prod only `listen`s it — it is NOT an invoke), plus
-  // `activate-doc`, `doc_state_changed`, etc. Payload shape matches Tauri's
+  // Emit a backend event to any `subscribe()`/`listen()` handlers. This is how
+  // the mock delivers `open-file` (prod only listens — it is NOT an invoke),
+  // plus `activate-doc`, `doc_state_changed`, etc. Payload shape matches Tauri's
   // `{ event, id, payload }` envelope that `listen()` unwraps to `event.payload`.
-  window.__pmdEmitEvent = (name, payload) => {
+  // Typed against `EventMap` so a wrong event name/payload is a tsc error at
+  // call sites that import this typing (the runtime still accepts any string).
+  window.__pmdEmitEvent = <K extends keyof EventMap>(
+    name: K,
+    payload: EventMap[K],
+  ) => {
     const set = eventListeners.get(name);
     if (!set) return;
     for (const id of [...set]) {

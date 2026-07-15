@@ -6,6 +6,8 @@ Considered options: single `backend.ts` module; generated TS contract from Rust;
 
 ## Follow-up notes
 
-- **`listen()` event sites are deferred.** The seven `listen()` subscriptions in main.ts (`open-file`, `activate-doc`, `doc_state_changed`, `pmd://diagnostics-enriched`, `pmd://download-denied`, `system_theme_changed`, `mode-change`) are NOT request/response invokes — they have a different shape (payload types plus subscription teardown), so they are out of scope for the `CommandMap`/`call()` seam. Fold them into a later `backend/events.ts` typed against an `EventMap`. Consequently the typed e2e mock (`ui/e2e/mock/mock.ts`) does not treat `open-file` as an invoke (prod only `listen`s `open-file`); it exposes an event-emit path (`window.__pmdEmitEvent`) instead, matching production.
+- **`listen()` event sites are on the typed seam.** `backend/events.ts` owns `EventMap` (event name → payload) and `subscribe()`, the sole importer of raw Tauri `listen`. Production call sites in `main.ts` use `subscribe('…', (payload) => …)` so payload shapes are checked at compile time. The e2e mock exposes `window.__pmdEmitEvent` typed against the same `EventMap` (prod only listens for `open-file`; it is not an invoke).
 
-- **`just check` grep guard.** A guard in the `check` recipe enforces the seam's single-importer rule: only `ui/src/backend/invoke.ts` may import the raw `@tauri-apps/api/core` `invoke`. Any other `ui/src/**/*.ts` file importing it fails `just check`.
+- **`just check` grep guards.** Guards in the `check` recipe enforce the seam's single-importer rules:
+  - only `ui/src/backend/invoke.ts` may import the raw `@tauri-apps/api/core` `invoke`;
+  - only `ui/src/backend/events.ts` may import the raw `@tauri-apps/api/event` `listen` (and the rest of that module).

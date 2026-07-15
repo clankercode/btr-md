@@ -109,6 +109,8 @@ check:
     cargo check -p pmd-e2e --tests -j 2
     # Seam guard: only ui/src/backend/invoke.ts may import raw Tauri invoke.
     ! grep -rnE "from ['\"]@tauri-apps/api/core['\"]" ui/src --include="*.ts" | grep -v "backend/invoke.ts"
+    # Seam guard: only ui/src/backend/events.ts may import raw Tauri listen.
+    ! grep -rnE "from ['\"]@tauri-apps/api/event['\"]" ui/src --include="*.ts" | grep -v "backend/events.ts"
     cd ui && npm run typecheck
     cd ui && npm run test:unit
     cd ui && npm run build
