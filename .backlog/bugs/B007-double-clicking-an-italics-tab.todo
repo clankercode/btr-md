@@ -1,18 +1,19 @@
 ---
 claimed_at: "2026-07-15T04:55:46Z"
 claimed_by: cli-user
-completed_at: null
+completed_at: "2026-07-15T05:03:20Z"
 complexity: medium
 created_at: "2026-07-15T04:55:14Z"
 depends_on: []
+duration_minutes: 7.570477317766667
 estimate_hours: 1
 id: B007
 priority: high
 started_at: "2026-07-15T04:55:46Z"
-status: in_progress
+status: done
 tags: []
 title: double clicking an italics tab doesn't make it a normal tab (should work like vscode)
-updated_at: "2026-07-15T04:55:46Z"
+updated_at: "2026-07-15T05:03:20Z"
 ---
 
 double clicking an italics tab doesn't make it a normal tab (should work like vscode)
