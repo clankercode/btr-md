@@ -13,7 +13,7 @@ fg = "#f2f2f3"
 fg_muted = "#aaaab2"
 accent = "#e600e6"
 link = "#ff79ff"
-border = "#55555c"
+border = "#606067"
 
 # Editor
 selection_bg = "#f2f2f3"
@@ -46,7 +46,7 @@ admonition_tip = "#6fdb98"
 # Kbd
 kbd_bg = "#1b1b1d"
 kbd_fg = "#f2f2f3"
-kbd_border = "#55555c"
+kbd_border = "#606067"
 
 # Links
 link_hover = "#ffb0ff"
