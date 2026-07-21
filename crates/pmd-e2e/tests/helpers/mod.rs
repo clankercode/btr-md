@@ -770,18 +770,23 @@ fn http_response_complete(bytes: &[u8]) -> bool {
     false
 }
 
-/// Remove persisted window session so the next app launch uses CLI argv.
+/// Wipe persisted app state so each WebDriver session starts clean
+/// (CLI argv honored, default mode/settings not polluted by prior tests).
 fn clear_e2e_session_state() {
     let Ok(container_id) = std::env::var("PMD_E2E_CONTAINER_ID") else {
         return;
     };
     let script = r#"
-rm -f \
-  "${XDG_DATA_HOME:-$HOME/.local/share}/btr-md/session.json" \
-  "${XDG_STATE_HOME:-$HOME/.local/state}/btr-md/session.json" \
-  "$HOME/.local/share/btr-md/session.json" \
-  "$HOME/.local/state/btr-md/session.json" \
-  2>/dev/null || true
+for base in \
+  "${XDG_DATA_HOME:-$HOME/.local/share}/btr-md" \
+  "${XDG_STATE_HOME:-$HOME/.local/state}/btr-md" \
+  "${XDG_CONFIG_HOME:-$HOME/.config}/btr-md" \
+  "$HOME/.local/share/btr-md" \
+  "$HOME/.local/state/btr-md" \
+  "$HOME/.config/btr-md"
+do
+  rm -rf "$base" 2>/dev/null || true
+done
 "#;
     let _ = Command::new("docker")
         .args(["exec", &container_id, "bash", "-lc", script])
