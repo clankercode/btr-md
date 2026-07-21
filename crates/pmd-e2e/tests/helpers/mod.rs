@@ -547,11 +547,14 @@ impl WebDriverSession {
         self.wait_for_selector("#preview-pane", timeout)?;
         // CodeMirror mounts only after a doc tab is activated (CLI open or
         // session restore). Give the async bootstrap path time to finish.
-        self.wait_for_selector(".cm-editor", timeout).map_err(|err| {
-            let source = self.source().unwrap_or_else(|e| format!("<source failed: {e}>"));
-            let snippet: String = source.chars().take(800).collect();
-            err.context(format!("page source prefix: {snippet}"))
-        })
+        self.wait_for_selector(".cm-editor", timeout)
+            .map_err(|err| {
+                let source = self
+                    .source()
+                    .unwrap_or_else(|e| format!("<source failed: {e}>"));
+                let snippet: String = source.chars().take(800).collect();
+                err.context(format!("page source prefix: {snippet}"))
+            })
     }
 
     pub fn execute_script(&self, script: &str, args: &[Value]) -> Result<Value> {
