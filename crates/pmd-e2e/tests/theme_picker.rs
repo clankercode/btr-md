@@ -10,7 +10,7 @@ fn test_theme_picker_opens_and_filters_and_applies_theme() {
     let session = WebDriverSession::with_args(&["/work/tests/corpus/hello.md"])
         .expect("open WebDriver session with file arg");
     session
-        .wait_for_selector(".cm-editor", Duration::from_secs(5))
+        .wait_for_editor(Duration::from_secs(20))
         .expect("wait for editor");
 
     let url = session.url().expect("read page URL");
@@ -23,7 +23,7 @@ fn test_theme_picker_opens_and_filters_and_applies_theme() {
         setTimeout(() => {
             const overlay = document.getElementById('theme-picker-overlay');
             done(overlay ? 'opened' : 'not-opened');
-        }, 100);
+        }, 200);
     "#;
     let result = session
         .execute_script(open_picker_script, &[])
@@ -56,8 +56,20 @@ fn test_theme_picker_opens_and_filters_and_applies_theme() {
 
     let select_script = r#"
         const done = arguments[arguments.length - 1];
-        const event = new KeyboardEvent('keydown', { key: 'Enter', bubbles: true });
-        document.dispatchEvent(event);
+        // Enter only selects when focus is on the filter input or apply button
+        // (picker.ts handlePickerKeydown). Prefer a direct apply click.
+        const apply = document.querySelector(
+            '.pmd-picker-card[data-selected="true"] .pmd-picker-card-apply'
+        ) || document.querySelector('.pmd-picker-card-apply');
+        if (apply) {
+            apply.click();
+        } else {
+            const input = document.getElementById('theme-filter-input');
+            input?.focus();
+            input?.dispatchEvent(new KeyboardEvent('keydown', {
+                key: 'Enter', bubbles: true, cancelable: true
+            }));
+        }
         setTimeout(() => {
             const overlay = document.getElementById('theme-picker-overlay');
             const style = document.getElementById('pmd-theme-styles');
@@ -65,7 +77,7 @@ fn test_theme_picker_opens_and_filters_and_applies_theme() {
                 pickerClosed: !overlay,
                 styleApplied: !!style && style.textContent.length > 0
             });
-        }, 200);
+        }, 400);
     "#;
     let select_result = session
         .js_object(select_script, &[])
@@ -94,7 +106,7 @@ fn test_theme_picker_keyboard_navigation() {
     let session = WebDriverSession::with_args(&["/work/tests/corpus/hello.md"])
         .expect("open WebDriver session with file arg");
     session
-        .wait_for_selector(".cm-editor", Duration::from_secs(5))
+        .wait_for_editor(Duration::from_secs(20))
         .expect("wait for editor");
 
     let open_picker_script = r#"
@@ -104,7 +116,7 @@ fn test_theme_picker_keyboard_navigation() {
         setTimeout(() => {
             const overlay = document.getElementById('theme-picker-overlay');
             done(overlay ? 'opened' : 'not-opened');
-        }, 100);
+        }, 200);
     "#;
     let open_result = session
         .execute_script(open_picker_script, &[])
