@@ -125,7 +125,12 @@ export async function handleLinkActivationResponse(options: {
         version: options.version,
         actionToken: response.action_token,
       });
-      emitE2e('pmd-external-open', { url: response.normalized_url ?? '' });
+      emitE2e('pmd-external-open', {
+        url: response.normalized_url
+          ?? response.host
+          ?? response.scheme
+          ?? 'external',
+      });
     });
   }
 }

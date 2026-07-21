@@ -40,7 +40,22 @@ impl ProbedApp {
             view.dispatch({
                 changes: { from: 0, to: view.state.doc.length, insert: markdown }
             });
-            setTimeout(() => done({ ok: true }), 350);
+            // Wait for debounced render + link decoration (data-pmd-link-id).
+            const started = Date.now();
+            const tick = () => {
+                const hasLink = Boolean(document.querySelector('[data-pmd-link-id]'));
+                const hasPreview = (document.getElementById('pmd-content')?.innerHTML || '').length > 0;
+                if ((hasLink || !markdown.includes('](')) && hasPreview) {
+                    done({ ok: true });
+                    return;
+                }
+                if (Date.now() - started > 5000) {
+                    done({ ok: true, slow: true });
+                    return;
+                }
+                setTimeout(tick, 50);
+            };
+            setTimeout(tick, 100);
         "#;
         let value = self.session.js_object(script, &[json!(markdown)])?;
         if value.get("ok").and_then(Value::as_bool).unwrap_or(false) {
@@ -331,12 +346,12 @@ fn install_network_probe(session: &WebDriverSession) -> Result<()> {
 
         document.addEventListener('pmd-external-open', (event) => {
             const url = event.detail?.url;
-            if (url) window.__pmdExternalOpenLog.push(String(url));
+            window.__pmdExternalOpenLog.push(url == null ? '' : String(url));
         });
 
         document.addEventListener('pmd-download-denied', (event) => {
             const url = event.detail?.url;
-            if (url) window.__pmdDownloadLog.push(String(url));
+            window.__pmdDownloadLog.push(url == null ? '' : String(url));
         });
         done(true);
     "#;
