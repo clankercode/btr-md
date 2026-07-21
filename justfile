@@ -99,11 +99,15 @@ install:
 fmt:
     cargo fmt --all
 
+# CI-matching check (no rewrite). Prefer this before push; use `just fmt` to fix.
+fmt-check:
+    cargo fmt --all -- --check
+
 lint:
     cargo clippy --workspace --all-targets -j 2 -- -D warnings
 
 check:
-    just fmt
+    just fmt-check
     cargo test --workspace --exclude pmd-e2e -j 2
     cargo clippy --workspace --all-targets -j 2 -- -D warnings
     cargo check -p pmd-e2e --tests -j 2

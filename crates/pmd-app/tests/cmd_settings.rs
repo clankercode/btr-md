@@ -226,5 +226,9 @@ fn set_show_hidden_files_persists_and_defaults_false() {
 
     let cleared = set_show_hidden_files(false).expect("disable hidden files");
     assert!(!cleared.show_hidden_files);
-    assert!(!get_settings().expect("reread after clear").show_hidden_files);
+    assert!(
+        !get_settings()
+            .expect("reread after clear")
+            .show_hidden_files
+    );
 }

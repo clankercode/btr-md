@@ -22,9 +22,19 @@ land independently.
 ## Build & test
 
 Use the `justfile`. Common targets: `just run` (build UI + run app), `just test`
-(Rust, excludes e2e), `just check` (full pre-PR gate: fmt, Rust tests, clippy, UI
-typecheck/unit/build, theme + package smoke). UI unit tests: `cd ui && npm run
-test:unit`. Limit Rust builds/tests to 2 threads (`-j 2`).
+(Rust, excludes e2e), `just check` (full pre-PR gate: fmt-check, Rust tests,
+clippy, UI typecheck/unit/build, theme + package smoke). UI unit tests: `cd ui &&
+npm run test:unit`. Limit Rust builds/tests to 2 threads (`-j 2`).
+
+## Format before push (CI fast-fail)
+
+CI runs a lightweight **`fmt` job first** (`cargo fmt --all -- --check`, no
+webkit/apt). Unformatted Rust fails the pipeline before clippy/tests/e2e.
+
+- **Before every push:** `just fmt` (rewrite) then `just fmt-check` (must pass).
+- `just check` starts with `fmt-check` (does not auto-format). If it fails on
+  fmt, run `just fmt`, stage the diffs, and re-check.
+- Do not push with dirty rustfmt; it is the most common avoidable CI failure.
 
 ## What the e2e suite can NOT verify (verify on a real `just run`)
 

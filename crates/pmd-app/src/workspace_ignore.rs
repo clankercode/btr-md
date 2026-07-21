@@ -82,9 +82,7 @@ fn is_cargo_target_segment(segment_parent: &Path, workspace_root: &Path) -> bool
 pub fn should_ignore_workspace_event_path(path: &Path, workspace_root: &Path) -> bool {
     // Prefer the portion under the workspace root; if not under it, still scan
     // the full path's components for always-ignored names.
-    let scan = path
-        .strip_prefix(workspace_root)
-        .unwrap_or(path);
+    let scan = path.strip_prefix(workspace_root).unwrap_or(path);
 
     let mut prefix = workspace_root.to_path_buf();
     for component in scan.components() {
@@ -166,7 +164,10 @@ mod tests {
 
         touch(&cargo);
         assert!(should_ignore_workspace_event_path(&target_file, root));
-        assert!(!should_ignore_workspace_event_path(&root.join("src/lib.rs"), root));
+        assert!(!should_ignore_workspace_event_path(
+            &root.join("src/lib.rs"),
+            root
+        ));
     }
 
     #[test]
@@ -199,7 +200,10 @@ mod tests {
         let empty: &[&Path] = &[];
         assert!(!all_paths_ignored(empty, root), "empty paths stay relevant");
         assert!(all_paths_ignored(
-            &[Path::new("/proj/node_modules/a"), Path::new("/proj/.git/HEAD")],
+            &[
+                Path::new("/proj/node_modules/a"),
+                Path::new("/proj/.git/HEAD")
+            ],
             root
         ));
         assert!(!all_paths_ignored(
