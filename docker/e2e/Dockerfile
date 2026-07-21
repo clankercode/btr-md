@@ -11,6 +11,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         pkg-config build-essential \
         libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev \
         ca-certificates curl imagemagick socat xz-utils \
+        nodejs npm \
     && rm -rf /var/lib/apt/lists/*
 
 # Pin fontconfig for screenshot determinism
@@ -25,6 +26,10 @@ RUN mkdir -p /tmp/.X11-unix && chmod 1777 /tmp/.X11-unix
 # Build inputs
 WORKDIR /work
 COPY . /work
+# ui/dist is gitignored — CI checkouts have no bundle.js. Build the frontend
+# before embedding it into the release binary (frontendDist = ../../ui).
+RUN cd ui && npm ci && npm run build \
+    && test -s dist/bundle.js
 RUN cargo build --release -p pmd-app -j 2
 
 # Determinism env (applied at runtime via cmd, but kept here for clarity)
