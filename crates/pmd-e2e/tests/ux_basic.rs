@@ -251,8 +251,9 @@ fn test_editor_accepts_input_in_source_mode() {
         )
         .expect("wait for source mode");
 
-    let editor_result = session.execute_script(
-        r#"
+    let editor_result = session
+        .execute_script(
+            r#"
         const done = arguments[arguments.length - 1];
         const view = window.__pmdGetEditorViewForTest?.()
             ?? document.querySelector('.cm-editor')?.cmView?.view
@@ -263,8 +264,9 @@ fn test_editor_accepts_input_in_source_mode() {
         });
         setTimeout(() => done('ok:' + view.state.doc.toString().slice(0, 50)), 100);
         "#,
-        &[],
-    ).expect("execute script");
+            &[],
+        )
+        .expect("execute script");
     let editor_text = editor_result.as_str().unwrap_or("");
     assert!(
         editor_text.starts_with("ok:"),
