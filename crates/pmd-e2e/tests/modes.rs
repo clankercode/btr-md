@@ -10,7 +10,7 @@ fn test_modes_editor_renders_and_accepts_input() {
     let session = WebDriverSession::with_args(&["/work/tests/corpus/hello.md"])
         .expect("open WebDriver session with file arg");
     session
-        .wait_for_selector(".cm-editor", Duration::from_secs(5))
+        .wait_for_editor(Duration::from_secs(20))
         .expect("wait for editor");
 
     let url = session.url().expect("read page URL");
@@ -28,7 +28,7 @@ fn test_split_mode_preview_updates_within_100ms() {
     let session = WebDriverSession::with_args(&["/work/tests/corpus/hello.md"])
         .expect("open WebDriver session with file arg");
     session
-        .wait_for_selector(".cm-editor", Duration::from_secs(5))
+        .wait_for_editor(Duration::from_secs(20))
         .expect("wait for editor");
 
     let script = r#"
@@ -61,7 +61,7 @@ fn test_version_drop_discards_stale_responses() {
     let session = WebDriverSession::with_args(&["/work/tests/corpus/hello.md"])
         .expect("open WebDriver session with file arg");
     session
-        .wait_for_selector(".cm-editor", Duration::from_secs(5))
+        .wait_for_editor(Duration::from_secs(20))
         .expect("wait for editor");
 
     let script = r#"

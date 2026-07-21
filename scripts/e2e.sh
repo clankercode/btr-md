@@ -66,6 +66,6 @@ for attempt in $(seq 1 60); do
 done
 
 echo "[e2e] running pmd-e2e test suite"
-# Serialize tests: tauri-driver / WebKitWebDriver do not tolerate concurrent sessions
-# (parallel modes tests fail with invalid session id).
-PMD_E2E_CONTAINER_ID="$CID" cargo test -p pmd-e2e -j 2 -- --nocapture --test-threads=1
+# Serialize hard: tauri-driver allows only one active session. Use cargo -j 1 so
+# integration test binaries do not overlap, and --test-threads=1 within each.
+PMD_E2E_CONTAINER_ID="$CID" cargo test -p pmd-e2e -j 1 -- --nocapture --test-threads=1

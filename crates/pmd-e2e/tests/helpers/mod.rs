@@ -21,7 +21,7 @@ pub struct ProbedApp {
 #[allow(dead_code)]
 pub async fn spawn_app_with_network_probe() -> Result<ProbedApp> {
     let session = WebDriverSession::with_args(&["/work/tests/corpus/hello.md"])?;
-    session.wait_for_selector(".cm-editor", Duration::from_secs(5))?;
+    session.wait_for_editor(Duration::from_secs(20))?;
     install_network_probe(&session)?;
     let app_url = session.url()?;
     Ok(ProbedApp { session, app_url })
@@ -255,11 +255,7 @@ impl ProbedApp {
     }
 }
 
-impl Drop for ProbedApp {
-    fn drop(&mut self) {
-        let _ = webdriver_request("DELETE", &format!("/session/{}", self.session.id), None);
-    }
-}
+// Session cleanup is owned by `WebDriverSession::Drop`.
 
 fn install_network_probe(session: &WebDriverSession) -> Result<()> {
     let script = r#"
@@ -368,6 +364,19 @@ fn read_string_array(session: &WebDriverSession, expression: &str) -> Result<Vec
 #[allow(dead_code)]
 pub struct WebDriverSession {
     pub id: String,
+    /// Set after a successful explicit close so Drop does not DELETE twice.
+    closed: bool,
+}
+
+impl Drop for WebDriverSession {
+    fn drop(&mut self) {
+        if self.closed {
+            return;
+        }
+        // Best-effort: panic paths must not leak the single tauri-driver session.
+        let _ = webdriver_request("DELETE", &format!("/session/{}", self.id), None);
+        self.closed = true;
+    }
 }
 
 #[allow(dead_code)]
@@ -406,7 +415,10 @@ impl WebDriverSession {
             .ok_or_else(|| {
                 anyhow!("WebDriver new session response missing sessionId: {response}")
             })?;
-        Ok(Self { id: id.to_owned() })
+        Ok(Self {
+            id: id.to_owned(),
+            closed: false,
+        })
     }
 
     pub fn source(&self) -> Result<String> {
@@ -519,9 +531,17 @@ impl WebDriverSession {
         Ok(csp)
     }
 
-    pub fn close(self) -> Result<()> {
-        webdriver_request("DELETE", &self.path(""), None)?;
+    pub fn close(mut self) -> Result<()> {
+        let result = webdriver_request("DELETE", &self.path(""), None);
+        self.closed = true;
+        result?;
         Ok(())
+    }
+
+    /// Wait until the app shell and CodeMirror editor are present (doc open).
+    pub fn wait_for_editor(&self, timeout: Duration) -> Result<()> {
+        self.wait_for_selector("#preview-pane", timeout)?;
+        self.wait_for_selector(".cm-editor", timeout)
     }
 
     pub fn execute_script(&self, script: &str, args: &[Value]) -> Result<Value> {
