@@ -43,10 +43,11 @@ pub fn resolve_resources(
     for (index, image) in facts.images.iter().enumerate() {
         decisions.push(decide_image(&context, &roots, index, image)?);
     }
-    let mut next_image_index = facts.images.len();
-    for image in scan_unresolved_reference_images(context.markdown, &facts.reference_definitions) {
+    for (next_image_index, image) in (facts.images.len()..).zip(scan_unresolved_reference_images(
+        context.markdown,
+        &facts.reference_definitions,
+    )) {
         decisions.push(decide_image(&context, &roots, next_image_index, &image)?);
-        next_image_index += 1;
     }
 
     for link in &facts.links {

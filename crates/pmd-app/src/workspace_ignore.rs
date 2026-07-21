@@ -39,7 +39,7 @@ fn is_always_ignored_name(name: &OsStr) -> bool {
     let Some(s) = name.to_str() else {
         return false;
     };
-    if ALWAYS_IGNORE_BASENAMES.iter().any(|n| *n == s) {
+    if ALWAYS_IGNORE_BASENAMES.contains(&s) {
         return true;
     }
     // Python egg-info dirs: `foo.egg-info`
