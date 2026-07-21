@@ -438,30 +438,33 @@ impl WebDriverSession {
             std::fs::create_dir_all(parent)
                 .with_context(|| format!("create screenshot dir {}", parent.display()))?;
         }
-        match webdriver_request_with_read_timeout(
-            "GET",
-            &self.path("screenshot"),
-            None,
-            Duration::from_secs(5),
-        ) {
-            Ok(response) => {
-                let encoded = response
-                    .get("value")
-                    .and_then(Value::as_str)
-                    .ok_or_else(|| {
-                        anyhow!("screenshot response missing base64 value: {response}")
-                    })?;
-                let png = base64::engine::general_purpose::STANDARD
-                    .decode(encoded)
-                    .context("decode screenshot png")?;
-                std::fs::write(path, png).with_context(|| format!("write screenshot to {path}"))?;
+
+        // CI WebDriver screenshot can flake with EAGAIN; retry before ImageMagick fallback.
+        const ATTEMPTS: u32 = 3;
+        let mut last_error: Option<anyhow::Error> = None;
+        for attempt in 1..=ATTEMPTS {
+            match webdriver_request_with_read_timeout(
+                "GET",
+                &self.path("screenshot"),
+                None,
+                Duration::from_secs(10),
+            ) {
+                Ok(response) => match write_webdriver_screenshot_png(path, &response) {
+                    Ok(()) => return Ok(()),
+                    Err(err) => last_error = Some(err),
+                },
+                Err(err) => last_error = Some(err),
             }
-            Err(webdriver_error) => {
-                capture_container_screenshot(path).with_context(|| {
-                    format!("WebDriver screenshot failed first: {webdriver_error:#}")
-                })?;
+            if attempt < ATTEMPTS {
+                std::thread::sleep(Duration::from_millis(250 * u64::from(attempt)));
             }
         }
+
+        let webdriver_error =
+            last_error.unwrap_or_else(|| anyhow!("unknown WebDriver screenshot failure"));
+        capture_container_screenshot(path).with_context(|| {
+            format!("WebDriver screenshot failed after {ATTEMPTS} attempts: {webdriver_error:#}")
+        })?;
         Ok(())
     }
 
@@ -652,10 +655,36 @@ fn webdriver_request_with_read_timeout(
         .with_context(|| format!("parse WebDriver JSON response for {method} {path}: {body}"))
 }
 
+fn write_webdriver_screenshot_png(path: &str, response: &Value) -> Result<()> {
+    let encoded = response
+        .get("value")
+        .and_then(Value::as_str)
+        .ok_or_else(|| anyhow!("screenshot response missing base64 value: {response}"))?;
+    let png = base64::engine::general_purpose::STANDARD
+        .decode(encoded)
+        .context("decode screenshot png")?;
+    std::fs::write(path, png).with_context(|| format!("write screenshot to {path}"))?;
+    Ok(())
+}
+
 fn capture_container_screenshot(path: &str) -> Result<()> {
     let container_id = std::env::var("PMD_E2E_CONTAINER_ID")
         .context("PMD_E2E_CONTAINER_ID must be set for screenshot fallback")?;
     let container_path = format!("/work/{path}");
+    if let Some(parent) = std::path::Path::new(path).parent() {
+        let container_parent = format!("/work/{}", parent.display());
+        let mkdir = Command::new("docker")
+            .args(["exec", &container_id, "mkdir", "-p", &container_parent])
+            .output()
+            .context("create screenshot dir inside e2e container")?;
+        if !mkdir.status.success() {
+            return Err(anyhow!(
+                "mkdir -p {container_parent} in container failed (status {:?}): {}",
+                mkdir.status.code(),
+                String::from_utf8_lossy(&mkdir.stderr)
+            ));
+        }
+    }
     let output = Command::new("docker")
         .args([
             "exec",
