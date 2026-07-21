@@ -33,8 +33,9 @@ impl ProbedApp {
         let script = r#"
             const markdown = arguments[0];
             const done = arguments[arguments.length - 1];
-            const view = document.querySelector('.cm-editor')?.view
-                ?? document.querySelector('.cm-editor')?.cmView?.view;
+            const view = window.__pmdGetEditorViewForTest?.()
+                ?? document.querySelector('.cm-editor')?.cmView?.view
+                ?? document.querySelector('.cm-editor')?.view;
             if (!view) { done({ ok: false, error: 'no-editor' }); return; }
             view.dispatch({
                 changes: { from: 0, to: view.state.doc.length, insert: markdown }

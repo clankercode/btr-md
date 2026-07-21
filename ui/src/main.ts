@@ -123,6 +123,8 @@ declare global {
     __pmdE2e?: boolean;
     __pmdE2eActions?: string[];
     __pmdOpenPathForTest?: (path: string) => Promise<void>;
+    __pmdGetEditorViewForTest?: () => unknown;
+    __pmdGetAppliedVersionForTest?: () => number;
   }
 }
 
@@ -2332,9 +2334,11 @@ async function openFile(
   }
 }
 
-if (window.__pmdE2e !== undefined) {
-  window.__pmdOpenPathForTest = (path: string) => openFile(path);
-}
+// E2E / WebDriver hooks (always registered; only used by pmd-e2e).
+// Do not gate on window.__pmdE2e at module load — that flag is set later.
+window.__pmdOpenPathForTest = (path: string) => openFile(path);
+window.__pmdGetEditorViewForTest = () => editor?.view ?? null;
+window.__pmdGetAppliedVersionForTest = () => coordinator.appliedVersion();
 
 async function saveCurrentDocAs(): Promise<void> {
   const tab = store.activeDoc();
