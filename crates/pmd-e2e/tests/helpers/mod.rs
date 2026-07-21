@@ -440,15 +440,15 @@ impl WebDriverSession {
                 .with_context(|| format!("create screenshot dir {}", parent.display()))?;
         }
 
-        // Screenshots can be large and flaky under CI load; retry then fall back to Xvfb capture.
-        const ATTEMPTS: u32 = 3;
+        // WebDriver screenshot often hangs under tauri-driver; try briefly, then Xvfb import.
+        const ATTEMPTS: u32 = 2;
         let mut last_error: Option<anyhow::Error> = None;
         for attempt in 1..=ATTEMPTS {
             match webdriver_request_with_read_timeout(
                 "GET",
                 &self.path("screenshot"),
                 None,
-                Duration::from_secs(30),
+                Duration::from_secs(8),
             ) {
                 Ok(response) => match write_webdriver_screenshot_png(path, &response) {
                     Ok(()) => return Ok(()),
@@ -457,7 +457,7 @@ impl WebDriverSession {
                 Err(err) => last_error = Some(err),
             }
             if attempt < ATTEMPTS {
-                std::thread::sleep(Duration::from_millis(400 * u64::from(attempt)));
+                std::thread::sleep(Duration::from_millis(300 * u64::from(attempt)));
             }
         }
 

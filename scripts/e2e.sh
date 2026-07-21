@@ -66,4 +66,6 @@ for attempt in $(seq 1 60); do
 done
 
 echo "[e2e] running pmd-e2e test suite"
-PMD_E2E_CONTAINER_ID="$CID" cargo test -p pmd-e2e -j 2 -- --nocapture
+# Serialize tests: tauri-driver / WebKitWebDriver do not tolerate concurrent sessions
+# (parallel modes tests fail with invalid session id).
+PMD_E2E_CONTAINER_ID="$CID" cargo test -p pmd-e2e -j 2 -- --nocapture --test-threads=1
