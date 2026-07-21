@@ -386,6 +386,10 @@ impl WebDriverSession {
     }
 
     pub fn with_args(args: &[&str]) -> Result<Self> {
+        // Each WebDriver session must honour CLI launch intent. Leftover
+        // session.json from a prior session causes restore-and-skip-initial-path.
+        clear_e2e_session_state();
+
         let mut tauri_opts = serde_json::Map::new();
         tauri_opts.insert(
             "application".to_string(),
@@ -541,7 +545,13 @@ impl WebDriverSession {
     /// Wait until the app shell and CodeMirror editor are present (doc open).
     pub fn wait_for_editor(&self, timeout: Duration) -> Result<()> {
         self.wait_for_selector("#preview-pane", timeout)?;
-        self.wait_for_selector(".cm-editor", timeout)
+        // CodeMirror mounts only after a doc tab is activated (CLI open or
+        // session restore). Give the async bootstrap path time to finish.
+        self.wait_for_selector(".cm-editor", timeout).map_err(|err| {
+            let source = self.source().unwrap_or_else(|e| format!("<source failed: {e}>"));
+            let snippet: String = source.chars().take(800).collect();
+            err.context(format!("page source prefix: {snippet}"))
+        })
     }
 
     pub fn execute_script(&self, script: &str, args: &[Value]) -> Result<Value> {
@@ -739,6 +749,24 @@ fn http_response_complete(bytes: &[u8]) -> bool {
         }
     }
     false
+}
+
+/// Remove persisted window session so the next app launch uses CLI argv.
+fn clear_e2e_session_state() {
+    let Ok(container_id) = std::env::var("PMD_E2E_CONTAINER_ID") else {
+        return;
+    };
+    let script = r#"
+rm -f \
+  "${XDG_DATA_HOME:-$HOME/.local/share}/btr-md/session.json" \
+  "${XDG_STATE_HOME:-$HOME/.local/state}/btr-md/session.json" \
+  "$HOME/.local/share/btr-md/session.json" \
+  "$HOME/.local/state/btr-md/session.json" \
+  2>/dev/null || true
+"#;
+    let _ = Command::new("docker")
+        .args(["exec", &container_id, "bash", "-lc", script])
+        .output();
 }
 
 fn write_webdriver_screenshot_png(path: &str, response: &Value) -> Result<()> {
