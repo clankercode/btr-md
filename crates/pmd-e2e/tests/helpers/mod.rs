@@ -651,17 +651,21 @@ fn webdriver_request_with_read_timeout(
         .with_context(|| format!("parse WebDriver JSON response for {method} {path}: {body}"))
 }
 
-/// Read an HTTP response until EOF or deadline.
+/// Read an HTTP response until EOF, a complete Content-Length body, or deadline.
 ///
 /// Linux SO_RCVTIMEO reports mid-transfer timeouts as `EAGAIN`/`WouldBlock`; a
 /// single `read_to_string` then aborts even when more data is still coming
 /// (common for large WebDriver screenshot payloads). Loop with short timeouts
-/// and an overall deadline instead.
+/// and an overall deadline instead. Once headers + Content-Length body are
+/// present, return immediately so FIN lag does not stall every request.
 fn read_http_response(stream: &mut TcpStream, overall_timeout: Duration) -> Result<String> {
     let deadline = Instant::now() + overall_timeout;
     let mut buf = [0u8; 16 * 1024];
     let mut bytes = Vec::new();
     loop {
+        if http_response_complete(&bytes) {
+            break;
+        }
         let remaining = deadline.saturating_duration_since(Instant::now());
         if remaining.is_zero() {
             if bytes.is_empty() {
@@ -683,13 +687,38 @@ fn read_http_response(stream: &mut TcpStream, overall_timeout: Duration) -> Resu
                 if matches!(err.kind(), ErrorKind::WouldBlock | ErrorKind::TimedOut)
                     || err.raw_os_error() == Some(11) =>
             {
-                // Timeout/EAGAIN: keep waiting until overall deadline if more data may arrive.
+                // Body already complete → stop; otherwise keep waiting for more.
+                if http_response_complete(&bytes) {
+                    break;
+                }
                 continue;
             }
             Err(err) => return Err(err).context("read WebDriver socket"),
         }
     }
     String::from_utf8(bytes).context("WebDriver response was not valid UTF-8")
+}
+
+fn http_response_complete(bytes: &[u8]) -> bool {
+    let Ok(text) = std::str::from_utf8(bytes) else {
+        return false;
+    };
+    let Some((head, body)) = text.split_once("\r\n\r\n") else {
+        return false;
+    };
+    for line in head.lines().skip(1) {
+        let (name, value) = match line.split_once(':') {
+            Some(parts) => parts,
+            None => continue,
+        };
+        if name.eq_ignore_ascii_case("content-length") {
+            let Ok(len) = value.trim().parse::<usize>() else {
+                return false;
+            };
+            return body.len() >= len;
+        }
+    }
+    false
 }
 
 fn write_webdriver_screenshot_png(path: &str, response: &Value) -> Result<()> {
