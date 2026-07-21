@@ -20,6 +20,8 @@ export interface SettingsSnapshot {
   mono_font: string | null;
   /** When true, top-bar path label shows the full path (basename chip hidden). */
   show_full_path: boolean;
+  /** When true, the file browser lists dotfiles and dot-folders. */
+  show_hidden_files: boolean;
 }
 
 /** Default-handler status mirrored from the backend `HandlerStatus`. */
@@ -37,6 +39,7 @@ export interface SettingsMenuDeps {
   setAsDefaultHandler: () => Promise<void>;
   setMonoFont: (font: string | null) => Promise<void>;
   setShowFullPath: (enabled: boolean) => Promise<void>;
+  setShowHiddenFiles: (enabled: boolean) => Promise<void>;
   listTrustRoots: () => Promise<TrustRootDecision[]>;
   forgetTrustRoot: (root: string) => Promise<void>;
   onAutosaveChange: (m: AutosaveMode) => void;
@@ -46,6 +49,7 @@ export interface SettingsMenuDeps {
   onDiffModeChange: (m: DiffMode) => void;
   onMonoFontChange: (font: string | null) => void;
   onShowFullPathChange: (enabled: boolean) => void;
+  onShowHiddenFilesChange: (enabled: boolean) => void;
 }
 
 export interface SettingsMenuInstance {
@@ -217,6 +221,15 @@ export function createSettingsMenu(
   });
   menu.appendChild(fullPath.row);
 
+  const hiddenFiles = makeToggle('pmd-set-hidden-files', 'Show hidden files in sidebar', (checked) => {
+    // Await persist before refresh: list_dir reads show_hidden_files from disk.
+    void deps
+      .setShowHiddenFiles(checked)
+      .then(() => deps.onShowHiddenFilesChange(checked))
+      .catch((e) => console.error('set_show_hidden_files failed:', e));
+  });
+  menu.appendChild(hiddenFiles.row);
+
   const divider2 = document.createElement('div');
   divider2.className = MenuClass.dropdownSeparator;
   menu.appendChild(divider2);
@@ -317,6 +330,7 @@ export function createSettingsMenu(
       basePath.textContent = s.browser_base_dir ?? '(none)';
       basePath.title = s.browser_base_dir ?? '';
       fullPath.input.checked = s.show_full_path === true;
+      hiddenFiles.input.checked = s.show_hidden_files === true;
       diff.select.value = s.diff_mode;
       gist.input.checked = s.gist_enabled;
       fontInput.value = s.mono_font ?? '';

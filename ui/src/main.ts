@@ -502,6 +502,7 @@ if (toolbarEl instanceof HTMLElement) {
     setAsDefaultHandler: () => settingsApi.setAsDefaultHandler(),
     setMonoFont: (f) => settingsApi.setMonoFont(f),
     setShowFullPath: (enabled) => setPathDisplayFull(enabled),
+    setShowHiddenFiles: (enabled) => settingsApi.setShowHiddenFiles(enabled),
     listTrustRoots,
     forgetTrustRoot: forgetTrustRootFromSettings,
     onAutosaveChange: (m) => {
@@ -532,6 +533,14 @@ if (toolbarEl instanceof HTMLElement) {
       // local mirror in sync when the Settings toggle fires the change callback
       // after its own setter (which is also setPathDisplayFull).
       showFullPath = enabled;
+    },
+    onShowHiddenFilesChange: () => {
+      // list_dir reads the setting from disk; refresh so the tree re-lists with
+      // the new filter. revealFile re-injects the active path if still hidden.
+      void workspace.refresh().then(() => {
+        const active = workspace.activeFile();
+        if (active) return workspace.revealFile(active);
+      });
     },
   });
   insertMenu = createInsertMenu(toolbarEl, {

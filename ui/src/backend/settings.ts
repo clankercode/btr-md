@@ -59,6 +59,10 @@ export function setShowFullPath(enabled: boolean): Promise<void> {
   return call('set_show_full_path', { enabled });
 }
 
+export function setShowHiddenFiles(enabled: boolean): Promise<void> {
+  return call('set_show_hidden_files', { enabled });
+}
+
 export function setShortcutOverrides(overrides: ShortcutOverrides): Promise<Settings> {
   return call('set_shortcut_overrides', { overrides });
 }

@@ -21,6 +21,7 @@ pub struct Settings {
     pub shortcut_overrides: BTreeMap<String, Vec<String>>,
     pub split_scroll_locked: bool,
     pub show_full_path: bool,
+    pub show_hidden_files: bool,
 }
 
 impl From<settings::Settings> for Settings {
@@ -42,6 +43,7 @@ impl From<settings::Settings> for Settings {
             shortcut_overrides: s.shortcut_overrides,
             split_scroll_locked: s.split_scroll_locked,
             show_full_path: s.show_full_path,
+            show_hidden_files: s.show_hidden_files,
         }
     }
 }
@@ -192,6 +194,16 @@ pub fn set_split_scroll_locked(enabled: bool) -> Result<Settings, String> {
 pub fn set_show_full_path(enabled: bool) -> Result<Settings, String> {
     settings::rmw(|s| settings::Settings {
         show_full_path: enabled,
+        ..s
+    })
+    .map_err(|e| e.to_string())?;
+    get_settings()
+}
+
+#[tauri::command]
+pub fn set_show_hidden_files(enabled: bool) -> Result<Settings, String> {
+    settings::rmw(|s| settings::Settings {
+        show_hidden_files: enabled,
         ..s
     })
     .map_err(|e| e.to_string())?;

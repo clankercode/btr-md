@@ -50,6 +50,12 @@ pub struct Settings {
     /// Toggled by clicking the path label. UI-only display preference.
     #[serde(default)]
     pub show_full_path: bool,
+    /// When `true`, the sidebar / file browser lists dotfiles and dot-folders
+    /// (names starting with `.`). Default `false` matches common file trees.
+    /// Opening a document under a hidden path still reveals that path in the
+    /// tree even when this is off (frontend injects the active path chain).
+    #[serde(default)]
+    pub show_hidden_files: bool,
 }
 
 /// Read the current settings from disk, falling back to defaults if the file is

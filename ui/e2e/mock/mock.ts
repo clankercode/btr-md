@@ -461,6 +461,7 @@ function installMock(config: MockConfig): void {
   };
 
   let showFullPath = config.settings?.show_full_path === true;
+  let showHiddenFiles = config.settings?.show_hidden_files === true;
 
   function settingsPayload(): Settings {
     return {
@@ -480,6 +481,7 @@ function installMock(config: MockConfig): void {
       shortcut_overrides: shortcutOverrides,
       split_scroll_locked: false,
       show_full_path: showFullPath,
+      show_hidden_files: showHiddenFiles,
     };
   }
 
@@ -527,6 +529,10 @@ function installMock(config: MockConfig): void {
     set_split_scroll_locked: () => undefined,
     set_show_full_path: (args) => {
       showFullPath = args.enabled === true;
+      return undefined;
+    },
+    set_show_hidden_files: (args) => {
+      showHiddenFiles = args.enabled === true;
       return undefined;
     },
     set_shortcut_overrides: (args) => {

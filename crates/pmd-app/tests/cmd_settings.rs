@@ -1,7 +1,7 @@
 use pmd_app_lib::{
     cmd::settings::{
         get_settings, set_active_theme, set_shortcut_overrides_for_test, set_show_full_path,
-        set_theme_pair,
+        set_show_hidden_files, set_theme_pair,
     },
     state::settings,
 };
@@ -199,4 +199,32 @@ fn set_show_full_path_persists_and_defaults_false() {
     let cleared = set_show_full_path(false).expect("disable full path");
     assert!(!cleared.show_full_path);
     assert!(!get_settings().expect("reread after clear").show_full_path);
+}
+
+#[test]
+fn set_show_hidden_files_persists_and_defaults_false() {
+    let _lock = config_env_lock();
+    let _home = ConfigHomeGuard::new();
+
+    let defaults = get_settings().expect("defaults");
+    assert!(
+        !defaults.show_hidden_files,
+        "missing key must default to hiding dotfiles (false)"
+    );
+
+    let updated = set_show_hidden_files(true).expect("enable hidden files");
+    assert!(updated.show_hidden_files);
+
+    let reread = get_settings().expect("reread");
+    assert!(reread.show_hidden_files);
+
+    let content = std::fs::read_to_string(settings::path()).expect("read state.toml");
+    assert!(
+        content.contains("show_hidden_files = true"),
+        "preference must land in state.toml: {content}"
+    );
+
+    let cleared = set_show_hidden_files(false).expect("disable hidden files");
+    assert!(!cleared.show_hidden_files);
+    assert!(!get_settings().expect("reread after clear").show_hidden_files);
 }

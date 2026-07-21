@@ -25,6 +25,67 @@ export function prunedExpanded(expanded: Set<string>, root: string): Set<string>
   return new Set([...expanded].filter((p) => isUnder(root, p)));
 }
 
+/** Basename of a path (last segment), or empty for root. */
+export function baseName(path: string): string {
+  const trimmed = path.length > 1 && path.endsWith("/") ? path.slice(0, -1) : path;
+  if (trimmed === "/" || trimmed === "") return "";
+  const idx = trimmed.lastIndexOf("/");
+  return idx < 0 ? trimmed : trimmed.slice(idx + 1);
+}
+
+/** True when a path segment is a "hidden" (dot) name — matches backend filter. */
+export function isHiddenName(name: string): boolean {
+  return name.startsWith(".");
+}
+
+/**
+ * Ensure every ancestor of `path` (and the file itself) appears in the
+ * corresponding parent listing. Used so opening a document under a hidden
+ * folder still expands in the sidebar even when `list_dir` omits dot entries.
+ *
+ * Injected entries are merged with the real listing (if any) without removing
+ * other entries. Directory-ness is inferred from whether the path is a strict
+ * ancestor of the target file.
+ */
+export function ensurePathVisible(
+  cache: Map<string, DirEntry[]>,
+  root: string,
+  path: string,
+  isMarkdown: (name: string) => boolean = (n) => /\.(md|markdown|mdown|mkd|html?)$/i.test(n),
+): void {
+  if (!isUnder(root, path) || path === root) return;
+
+  // Walk root → file, injecting each segment into its parent listing.
+  const rootParts = root.replace(/\/+$/, "").split("/");
+  const pathParts = path.replace(/\/+$/, "").split("/");
+  if (pathParts.length <= rootParts.length) return;
+
+  for (let i = rootParts.length; i < pathParts.length; i++) {
+    const parent = pathParts.slice(0, i).join("/") || "/";
+    const name = pathParts[i]!;
+    const childPath = pathParts.slice(0, i + 1).join("/") || "/";
+    const isDir = i < pathParts.length - 1;
+    const existing = cache.get(parent) ?? [];
+    if (existing.some((e) => e.path === childPath || e.name === name)) {
+      // Keep going — deeper segments may still be missing.
+      if (!cache.has(parent)) cache.set(parent, existing);
+      continue;
+    }
+    const entry: DirEntry = {
+      name,
+      path: childPath,
+      is_dir: isDir,
+      is_markdown: !isDir && isMarkdown(name),
+    };
+    // Insert dirs first-ish, then sort like the backend (dirs, case-insensitive).
+    const next = [...existing, entry].sort((a, b) => {
+      if (a.is_dir !== b.is_dir) return a.is_dir ? -1 : 1;
+      return a.name.toLowerCase().localeCompare(b.name.toLowerCase());
+    });
+    cache.set(parent, next);
+  }
+}
+
 const EXPANDED_KEY = "pmd:browser:expanded";
 
 function loadExpanded(): Set<string> {
@@ -180,6 +241,10 @@ export function createWorkspaceModel(deps: WorkspaceDeps): WorkspaceModel {
         expanded.add(d);
         await ensureLoaded(d);
       }
+      // When list_dir hides dot entries, the open file (and any hidden
+      // ancestor folders) will be missing from the cache. Inject them so the
+      // tree can still expand and highlight the active document.
+      ensurePathVisible(cache, root, path);
       persistExpanded(expanded);
       activeFile = path;
       selected = path;
@@ -220,6 +285,11 @@ export function createWorkspaceModel(deps: WorkspaceDeps): WorkspaceModel {
       if (gen !== refreshGen) return;
       cache.clear();
       for (const [d, entries] of next) cache.set(d, entries);
+      // Re-inject the active path chain after a refresh so a hidden open file
+      // is not dropped when list_dir still omits dot entries.
+      if (activeFile && root && isUnder(root, activeFile)) {
+        ensurePathVisible(cache, root, activeFile);
+      }
       emit();
     },
   };

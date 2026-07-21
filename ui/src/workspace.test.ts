@@ -1,6 +1,14 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { parentOf, isUnder, prunedExpanded, createWorkspaceModel } from "./workspace.ts";
+import {
+  parentOf,
+  isUnder,
+  prunedExpanded,
+  createWorkspaceModel,
+  ensurePathVisible,
+  baseName,
+  isHiddenName,
+} from "./workspace.ts";
 import type { DirListing } from "./file_browser.ts";
 
 test("parentOf returns the parent path or null at root", () => {
@@ -103,6 +111,54 @@ test("revealFile expands intermediate folders so the file is reachable", async (
   assert.deepEqual(model.entriesOf("/r/a/b")?.map((e) => e.name), ["c.md"]);
 });
 
+test("revealFile injects hidden (dot) path segments omitted by list_dir", async () => {
+  // Backend hides `.agents` when show_hidden_files is false, so list_dir never
+  // returns it — yet opening a file under that folder must still expand the tree.
+  const model = createWorkspaceModel({
+    listDir: async (dir) => {
+      if (dir === "/home/u") return fakeListing(dir, ["docs/", "src/"]); // no .agents
+      if (dir === "/home/u/.agents") return fakeListing(dir, ["skills/"]);
+      if (dir === "/home/u/.agents/skills") return fakeListing(dir, ["SKILL.md"]);
+      return fakeListing(dir, []);
+    },
+  });
+  await model.setRoot("/home/u");
+  await model.revealFile("/home/u/.agents/skills/SKILL.md");
+  assert.equal(model.activeFile(), "/home/u/.agents/skills/SKILL.md");
+  assert.equal(model.selected(), "/home/u/.agents/skills/SKILL.md");
+  assert.equal(model.expanded().has("/home/u"), true);
+  assert.equal(model.expanded().has("/home/u/.agents"), true);
+  assert.equal(model.expanded().has("/home/u/.agents/skills"), true);
+  // Injected into the root listing even though list_dir omitted it.
+  assert.ok(
+    model.entriesOf("/home/u")?.some((e) => e.name === ".agents" && e.is_dir),
+    "hidden folder must appear after reveal",
+  );
+  assert.deepEqual(
+    model.entriesOf("/home/u/.agents/skills")?.map((e) => e.name),
+    ["SKILL.md"],
+  );
+});
+
+test("ensurePathVisible merges without clobbering existing entries", () => {
+  const cache = new Map([
+    ["/r", fakeListing("/r", ["a/", "z.md"]).entries],
+  ]);
+  ensurePathVisible(cache, "/r", "/r/.hidden/file.md");
+  const names = cache.get("/r")!.map((e) => e.name);
+  assert.ok(names.includes("a"));
+  assert.ok(names.includes("z.md"));
+  assert.ok(names.includes(".hidden"));
+  assert.ok(cache.get("/r/.hidden")?.some((e) => e.name === "file.md"));
+});
+
+test("baseName and isHiddenName helpers", () => {
+  assert.equal(baseName("/a/b/.c"), ".c");
+  assert.equal(baseName("/"), "");
+  assert.equal(isHiddenName(".agents"), true);
+  assert.equal(isHiddenName("agents"), false);
+});
+
 test("revealFile clears a stale activeFile when the file is outside the root", async () => {
   const model = createWorkspaceModel({ listDir: async (d) => fakeListing(d, ["x.md"]) });
   await model.setRoot("/r");
@@ -127,6 +183,28 @@ test("onChange fires on mutations", async () => {
   await model.setRoot("/r");
   model.select("/r/a");
   assert.ok(n >= 2);
+});
+
+test("refresh re-injects the active hidden path after re-list", async () => {
+  const model = createWorkspaceModel({
+    listDir: async (dir) => {
+      // Never returns .agents — simulates show_hidden_files=false.
+      if (dir === "/r") return fakeListing(dir, ["visible.md"]);
+      if (dir === "/r/.agents") return fakeListing(dir, ["SKILL.md"]);
+      return fakeListing(dir, []);
+    },
+  });
+  await model.setRoot("/r");
+  await model.revealFile("/r/.agents/SKILL.md");
+  assert.ok(model.entriesOf("/r")?.some((e) => e.name === ".agents"));
+
+  await model.refresh();
+  // Injection must survive refresh so the open file stays reachable.
+  assert.ok(
+    model.entriesOf("/r")?.some((e) => e.name === ".agents"),
+    "refresh must re-inject active hidden path",
+  );
+  assert.equal(model.activeFile(), "/r/.agents/SKILL.md");
 });
 
 test("refresh re-lists root and expanded subdirs, picking up new entries", async () => {

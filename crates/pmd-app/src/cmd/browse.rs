@@ -43,16 +43,22 @@ fn is_openable_document_name(name: &str) -> bool {
         .unwrap_or(false)
 }
 
-/// List a directory's children. Refuses directories outside the allowlist and
-/// silently drops entries (typically symlinks) that resolve outside it. Hides
-/// dotfiles; sorts directories first, then case-insensitively by name.
-#[tauri::command]
-pub fn list_dir(
-    state: tauri::State<'_, crate::AppState>,
-    dir: PathBuf,
+/// Whether a directory entry name should be omitted from listings when hidden
+/// files are not shown. Dot-names (`.git`, `.agents`, `.env`) are hidden unless
+/// `show_hidden` is true. `.` / `..` are never listed.
+pub(crate) fn is_hidden_entry_name(name: &str) -> bool {
+    name.starts_with('.')
+}
+
+/// Core of [`list_dir`], unit-testable without Tauri. When `show_hidden` is
+/// false, entries whose basename starts with `.` are omitted.
+fn list_dir_in_scope(
+    scope: &crate::path_scope::PathScope,
+    dir: &std::path::Path,
+    show_hidden: bool,
 ) -> Result<DirListing, String> {
-    let canon = std::fs::canonicalize(&dir).map_err(|e| e.to_string())?;
-    if !state.scope.check_dir_access(&canon) {
+    let canon = std::fs::canonicalize(dir).map_err(|e| e.to_string())?;
+    if !scope.check_dir_access(&canon) {
         return Err(format!(
             "list_dir: {} is not within an allowed directory",
             canon.display()
@@ -63,15 +69,18 @@ pub fn list_dir(
     for entry in std::fs::read_dir(&canon).map_err(|e| e.to_string())? {
         let Ok(entry) = entry else { continue };
         let name = entry.file_name().to_string_lossy().to_string();
-        if name.starts_with('.') {
-            continue; // hide dotfiles
+        if name == "." || name == ".." {
+            continue;
+        }
+        if !show_hidden && is_hidden_entry_name(&name) {
+            continue;
         }
         // Canonicalise the entry; a symlink that escapes the admitted base
         // resolves outside it and is refused.
         let Ok(entry_canon) = std::fs::canonicalize(entry.path()) else {
             continue;
         };
-        if !state.scope.is_within_allowed_dir(&entry_canon) {
+        if !scope.is_within_allowed_dir(&entry_canon) {
             continue;
         }
         let Ok(meta) = std::fs::metadata(&entry_canon) else {
@@ -96,6 +105,19 @@ pub fn list_dir(
         dir: canon,
         entries,
     })
+}
+
+/// List a directory's children. Refuses directories outside the allowlist and
+/// silently drops entries (typically symlinks) that resolve outside it. Hides
+/// dotfiles unless Settings → Show hidden files is on; sorts directories first,
+/// then case-insensitively by name.
+#[tauri::command]
+pub fn list_dir(
+    state: tauri::State<'_, crate::AppState>,
+    dir: PathBuf,
+) -> Result<DirListing, String> {
+    let show_hidden = settings::load().show_hidden_files;
+    list_dir_in_scope(&state.scope, &dir, show_hidden)
 }
 
 /// Open the OS folder picker and admit the chosen directory as the browser's
@@ -384,5 +406,46 @@ mod tests {
 
         let err = resolve_document_workspace_root_in_scope(&scope, &doc).expect_err("reject");
         assert!(err.contains("not in scope"), "{err}");
+    }
+
+    #[test]
+    fn is_hidden_entry_name_detects_dotfiles() {
+        assert!(is_hidden_entry_name(".agents"));
+        assert!(is_hidden_entry_name(".env"));
+        assert!(is_hidden_entry_name(".git"));
+        assert!(!is_hidden_entry_name("agents"));
+        assert!(!is_hidden_entry_name("SKILL.md"));
+    }
+
+    #[test]
+    fn list_dir_hides_dot_entries_by_default() {
+        let temp = tempfile::tempdir().expect("tempdir");
+        let root = temp.path();
+        std::fs::create_dir_all(root.join(".agents/skills")).expect("mkdir");
+        std::fs::write(root.join("visible.md"), "x").expect("write visible");
+        std::fs::write(root.join(".hidden.md"), "y").expect("write hidden");
+        let scope = PathScope::new();
+        scope.allow_dir(root).expect("grant");
+
+        let listing = list_dir_in_scope(&scope, root, false).expect("list");
+        let names: Vec<_> = listing.entries.iter().map(|e| e.name.as_str()).collect();
+        assert_eq!(names, vec!["visible.md"]);
+    }
+
+    #[test]
+    fn list_dir_includes_dot_entries_when_show_hidden() {
+        let temp = tempfile::tempdir().expect("tempdir");
+        let root = temp.path();
+        std::fs::create_dir_all(root.join(".agents")).expect("mkdir");
+        std::fs::write(root.join("visible.md"), "x").expect("write visible");
+        std::fs::write(root.join(".hidden.md"), "y").expect("write hidden");
+        let scope = PathScope::new();
+        scope.allow_dir(root).expect("grant");
+
+        let listing = list_dir_in_scope(&scope, root, true).expect("list");
+        let names: Vec<_> = listing.entries.iter().map(|e| e.name.as_str()).collect();
+        assert!(names.contains(&".agents"), "{names:?}");
+        assert!(names.contains(&".hidden.md"), "{names:?}");
+        assert!(names.contains(&"visible.md"), "{names:?}");
     }
 }
