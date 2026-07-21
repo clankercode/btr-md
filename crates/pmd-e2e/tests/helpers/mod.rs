@@ -3,8 +3,9 @@
 use anyhow::{anyhow, Context, Result};
 use base64::Engine;
 use serde_json::{json, Value};
-use std::io::{Read, Write};
+use std::io::{ErrorKind, Read, Write};
 use std::net::TcpStream;
+use std::path::Path;
 use std::process::Command;
 use std::time::{Duration, Instant};
 
@@ -439,7 +440,7 @@ impl WebDriverSession {
                 .with_context(|| format!("create screenshot dir {}", parent.display()))?;
         }
 
-        // CI WebDriver screenshot can flake with EAGAIN; retry before ImageMagick fallback.
+        // Screenshots can be large and flaky under CI load; retry then fall back to Xvfb capture.
         const ATTEMPTS: u32 = 3;
         let mut last_error: Option<anyhow::Error> = None;
         for attempt in 1..=ATTEMPTS {
@@ -447,7 +448,7 @@ impl WebDriverSession {
                 "GET",
                 &self.path("screenshot"),
                 None,
-                Duration::from_secs(10),
+                Duration::from_secs(30),
             ) {
                 Ok(response) => match write_webdriver_screenshot_png(path, &response) {
                     Ok(()) => return Ok(()),
@@ -456,7 +457,7 @@ impl WebDriverSession {
                 Err(err) => last_error = Some(err),
             }
             if attempt < ATTEMPTS {
-                std::thread::sleep(Duration::from_millis(250 * u64::from(attempt)));
+                std::thread::sleep(Duration::from_millis(400 * u64::from(attempt)));
             }
         }
 
@@ -624,9 +625,6 @@ fn webdriver_request_with_read_timeout(
     let mut stream = TcpStream::connect(WEBDRIVER_ADDR)
         .with_context(|| format!("connect WebDriver at {WEBDRIVER_ADDR}"))?;
     stream
-        .set_read_timeout(Some(read_timeout))
-        .context("set WebDriver read timeout")?;
-    stream
         .set_write_timeout(Some(Duration::from_secs(5)))
         .context("set WebDriver write timeout")?;
 
@@ -638,9 +636,7 @@ fn webdriver_request_with_read_timeout(
     )
     .with_context(|| format!("write WebDriver request {method} {path}"))?;
 
-    let mut response = String::new();
-    stream
-        .read_to_string(&mut response)
+    let response = read_http_response(&mut stream, read_timeout)
         .with_context(|| format!("read WebDriver response {method} {path}"))?;
     let (head, body) = response
         .split_once("\r\n\r\n")
@@ -653,6 +649,47 @@ fn webdriver_request_with_read_timeout(
     }
     serde_json::from_str(body)
         .with_context(|| format!("parse WebDriver JSON response for {method} {path}: {body}"))
+}
+
+/// Read an HTTP response until EOF or deadline.
+///
+/// Linux SO_RCVTIMEO reports mid-transfer timeouts as `EAGAIN`/`WouldBlock`; a
+/// single `read_to_string` then aborts even when more data is still coming
+/// (common for large WebDriver screenshot payloads). Loop with short timeouts
+/// and an overall deadline instead.
+fn read_http_response(stream: &mut TcpStream, overall_timeout: Duration) -> Result<String> {
+    let deadline = Instant::now() + overall_timeout;
+    let mut buf = [0u8; 16 * 1024];
+    let mut bytes = Vec::new();
+    loop {
+        let remaining = deadline.saturating_duration_since(Instant::now());
+        if remaining.is_zero() {
+            if bytes.is_empty() {
+                return Err(anyhow!(
+                    "timed out after {}s reading WebDriver HTTP response (0 bytes)",
+                    overall_timeout.as_secs()
+                ));
+            }
+            // May already hold a complete body if FIN lagged; try parse below.
+            break;
+        }
+        stream
+            .set_read_timeout(Some(remaining.min(Duration::from_secs(2))))
+            .context("set WebDriver read timeout")?;
+        match stream.read(&mut buf) {
+            Ok(0) => break,
+            Ok(n) => bytes.extend_from_slice(&buf[..n]),
+            Err(err)
+                if matches!(err.kind(), ErrorKind::WouldBlock | ErrorKind::TimedOut)
+                    || err.raw_os_error() == Some(11) =>
+            {
+                // Timeout/EAGAIN: keep waiting until overall deadline if more data may arrive.
+                continue;
+            }
+            Err(err) => return Err(err).context("read WebDriver socket"),
+        }
+    }
+    String::from_utf8(bytes).context("WebDriver response was not valid UTF-8")
 }
 
 fn write_webdriver_screenshot_png(path: &str, response: &Value) -> Result<()> {
@@ -670,22 +707,11 @@ fn write_webdriver_screenshot_png(path: &str, response: &Value) -> Result<()> {
 fn capture_container_screenshot(path: &str) -> Result<()> {
     let container_id = std::env::var("PMD_E2E_CONTAINER_ID")
         .context("PMD_E2E_CONTAINER_ID must be set for screenshot fallback")?;
-    let container_path = format!("/work/{path}");
-    if let Some(parent) = std::path::Path::new(path).parent() {
-        let container_parent = format!("/work/{}", parent.display());
-        let mkdir = Command::new("docker")
-            .args(["exec", &container_id, "mkdir", "-p", &container_parent])
-            .output()
-            .context("create screenshot dir inside e2e container")?;
-        if !mkdir.status.success() {
-            return Err(anyhow!(
-                "mkdir -p {container_parent} in container failed (status {:?}): {}",
-                mkdir.status.code(),
-                String::from_utf8_lossy(&mkdir.stderr)
-            ));
-        }
-    }
-    let output = Command::new("docker")
+
+    // Container user is `pmd`; host-owned bind mounts under /work/tests may not
+    // be writable. Capture to /tmp inside the container, then docker-cp out.
+    const CONTAINER_TMP: &str = "/tmp/pmd-e2e-screenshot.png";
+    let import = Command::new("docker")
         .args([
             "exec",
             "-e",
@@ -694,16 +720,47 @@ fn capture_container_screenshot(path: &str) -> Result<()> {
             "import",
             "-window",
             "root",
-            &container_path,
+            CONTAINER_TMP,
         ])
         .output()
         .context("run ImageMagick screenshot fallback in e2e container")?;
-    if !output.status.success() {
+    if !import.status.success() {
         return Err(anyhow!(
             "container screenshot fallback failed with status {:?}\nstdout:\n{}\nstderr:\n{}",
-            output.status.code(),
-            String::from_utf8_lossy(&output.stdout),
-            String::from_utf8_lossy(&output.stderr)
+            import.status.code(),
+            String::from_utf8_lossy(&import.stdout),
+            String::from_utf8_lossy(&import.stderr)
+        ));
+    }
+
+    let host_path = Path::new(path);
+    if let Some(parent) = host_path.parent() {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("create host screenshot dir {}", parent.display()))?;
+    }
+    let host_abs = if host_path.is_absolute() {
+        host_path.to_path_buf()
+    } else {
+        std::env::current_dir()
+            .context("resolve cwd for screenshot host path")?
+            .join(host_path)
+    };
+    let cp = Command::new("docker")
+        .args([
+            "cp",
+            &format!("{container_id}:{CONTAINER_TMP}"),
+            host_abs
+                .to_str()
+                .ok_or_else(|| anyhow!("screenshot host path is not valid UTF-8"))?,
+        ])
+        .output()
+        .context("docker cp screenshot from e2e container")?;
+    if !cp.status.success() {
+        return Err(anyhow!(
+            "docker cp screenshot failed with status {:?}\nstdout:\n{}\nstderr:\n{}",
+            cp.status.code(),
+            String::from_utf8_lossy(&cp.stdout),
+            String::from_utf8_lossy(&cp.stderr)
         ));
     }
     Ok(())
