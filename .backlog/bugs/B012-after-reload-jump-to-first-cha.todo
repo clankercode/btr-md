@@ -1,0 +1,29 @@
+---
+complexity: medium
+created_at: "2026-07-22T08:04:45Z"
+depends_on:
+    - B009
+estimate_hours: 1
+id: B012
+priority: high
+status: pending
+tags: []
+title: 'After reload: jump to first change; next/prev change navigation'
+updated_at: "2026-07-22T08:04:45Z"
+---
+## Problem
+
+B009 adds green/red flash (grow/shrink) so change *locations* are somewhat obvious after an on-disk reload. For larger edits or multi-hunk reloads, users still need a fast way to land on and walk the changes.
+
+## Expected
+
+1. After a successful Reload from disk (B009), optionally **jump the source editor to the first change** (first added/removed hunk vs previous buffer).
+2. Provide **next change** / **previous change** navigation (command palette and/or shortcuts; VS Code-style “go to next/prev change” is fine).
+3. Works with B009 flash highlights: navigation should target the same change regions the flash marks.
+4. Compatible with **B010** minimap if present (markers and jump targets stay in sync); not blocked on B010.
+5. If there are zero diffs after reload (content identical), no jump / no-op quietly.
+
+## Related
+
+- **B009** — Reload + green/red flash
+- **B010** — minimap markers (optional synergy)
