@@ -7,7 +7,12 @@ import {
   rememberFlashHunks,
   getLastFlashHunks,
   clearRememberedFlashHunks,
+  hunkJumpLine,
+  stepChangeIndex,
+  advanceChangeJump,
+  getChangeJumpIndex,
   FLASH_DURATION_MS,
+  type FlashHunk,
 } from './reload_flash.ts';
 
 test('FLASH_DURATION_MS is a short ephemeral window', () => {
@@ -162,4 +167,119 @@ test('remember / get / clear last flash hunks', () => {
   assert.equal(getLastFlashHunks()[0].kind, 'add');
   clearRememberedFlashHunks();
   assert.deepEqual(getLastFlashHunks(), []);
+});
+
+// ---------------------------------------------------------------------------
+// B012: jump-to-change helpers
+// ---------------------------------------------------------------------------
+
+test('hunkJumpLine: add lands on afterFrom', () => {
+  const hunk: FlashHunk = {
+    kind: 'add',
+    beforeFrom: 1,
+    beforeTo: 1,
+    afterFrom: 1,
+    afterTo: 3,
+  };
+  assert.equal(hunkJumpLine(hunk, 5), 1);
+});
+
+test('hunkJumpLine: pure remove clamps locus into doc', () => {
+  // afterFrom === afterTo (pure remove); locus past EOF clamps to last line.
+  const hunk: FlashHunk = {
+    kind: 'remove',
+    beforeFrom: 2,
+    beforeTo: 4,
+    afterFrom: 2,
+    afterTo: 2,
+  };
+  assert.equal(hunkJumpLine(hunk, 2), 1);
+  assert.equal(hunkJumpLine(hunk, 1), 0);
+});
+
+test('hunkJumpLine: replace lands on start of after span', () => {
+  const hunk: FlashHunk = {
+    kind: 'replace',
+    beforeFrom: 0,
+    beforeTo: 1,
+    afterFrom: 0,
+    afterTo: 2,
+  };
+  assert.equal(hunkJumpLine(hunk, 3), 0);
+});
+
+test('stepChangeIndex: empty → null; wraps at ends', () => {
+  assert.equal(stepChangeIndex(0, 0, 1), null);
+  assert.equal(stepChangeIndex(0, -1, -1), null);
+  assert.equal(stepChangeIndex(3, 0, 1), 1);
+  assert.equal(stepChangeIndex(3, 2, 1), 0); // wrap forward
+  assert.equal(stepChangeIndex(3, 0, -1), 2); // wrap backward
+  assert.equal(stepChangeIndex(3, 2, -1), 1);
+});
+
+test('stepChangeIndex: out-of-range seeds first (next) or last (prev)', () => {
+  assert.equal(stepChangeIndex(3, -1, 1), 0);
+  assert.equal(stepChangeIndex(3, -1, -1), 2);
+  assert.equal(stepChangeIndex(3, 99, 1), 0);
+  assert.equal(stepChangeIndex(3, 99, -1), 2);
+});
+
+test('rememberFlashHunks resets jump index to first change', () => {
+  clearRememberedFlashHunks();
+  assert.equal(getChangeJumpIndex(), -1);
+  rememberFlashHunks([
+    { kind: 'add', beforeFrom: 0, beforeTo: 0, afterFrom: 0, afterTo: 1 },
+    { kind: 'remove', beforeFrom: 2, beforeTo: 3, afterFrom: 2, afterTo: 2 },
+  ]);
+  assert.equal(getChangeJumpIndex(), 0);
+  rememberFlashHunks([]);
+  assert.equal(getChangeJumpIndex(), -1);
+});
+
+test('advanceChangeJump: stay re-targets current; next/prev wrap', () => {
+  clearRememberedFlashHunks();
+  assert.equal(advanceChangeJump(1), null);
+
+  const hunks: FlashHunk[] = [
+    { kind: 'add', beforeFrom: 0, beforeTo: 0, afterFrom: 0, afterTo: 1 },
+    { kind: 'replace', beforeFrom: 2, beforeTo: 3, afterFrom: 2, afterTo: 3 },
+    { kind: 'remove', beforeFrom: 5, beforeTo: 6, afterFrom: 4, afterTo: 4 },
+  ];
+  rememberFlashHunks(hunks);
+  assert.equal(getChangeJumpIndex(), 0);
+
+  const stay = advanceChangeJump(1, { stay: true });
+  assert.equal(stay?.index, 0);
+  assert.equal(stay?.hunk, hunks[0]);
+  assert.equal(getChangeJumpIndex(), 0);
+
+  const next = advanceChangeJump(1);
+  assert.equal(next?.index, 1);
+  assert.deepEqual(next?.hunk, hunks[1]);
+
+  const next2 = advanceChangeJump(1);
+  assert.equal(next2?.index, 2);
+
+  const wrap = advanceChangeJump(1);
+  assert.equal(wrap?.index, 0);
+
+  const prev = advanceChangeJump(-1);
+  assert.equal(prev?.index, 2);
+
+  clearRememberedFlashHunks();
+  assert.equal(advanceChangeJump(-1), null);
+});
+
+test('hunkJumpLine matches flashLineMarks locus for pure remove', () => {
+  // Jump target for a remove should be the same line flash marks red.
+  const hunk: FlashHunk = {
+    kind: 'remove',
+    beforeFrom: 1,
+    beforeTo: 2,
+    afterFrom: 1,
+    afterTo: 1,
+  };
+  const marks = flashLineMarks([hunk], 3);
+  assert.equal(marks.length, 1);
+  assert.equal(hunkJumpLine(hunk, 3), marks[0]!.line);
 });
