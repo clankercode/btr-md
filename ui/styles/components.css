@@ -1502,6 +1502,23 @@ body[data-state="welcome"] #split-resizer {
   line-height: 1;
 }
 
+/* Disk-change tab badges (B013). Distinct from .pmd-tab-dot (accent ●). */
+.pmd-tab-badge {
+  font-size: 0.65em;
+  line-height: 1;
+  flex: 0 0 auto;
+}
+
+/* Clean buffer + disk change — warning amber (readable light/dark via tokens). */
+.pmd-tab-disk {
+  color: var(--pmd-warning);
+}
+
+/* Dirty buffer + disk change — error red; pairs with modified dot. */
+.pmd-tab-conflict {
+  color: var(--pmd-error);
+}
+
 .pmd-tab-close {
   display: inline-flex;
   align-items: center;

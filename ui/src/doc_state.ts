@@ -96,3 +96,43 @@ export function uiForState(s: FileState): DocUi {
       return assertNever(s);
   }
 }
+
+/** Tab-level disk-change indicator (orthogonal to the unsaved/modified dot). */
+export type DiskChangeBadge = 'none' | 'disk' | 'conflict';
+
+/**
+ * Pure mapping from lifecycle state → tab badge kind.
+ * - `disk`: buffer clean, file changed on disk (`disk_changed_clean`)
+ * - `conflict`: unsaved buffer + disk change (`disk_changed_dirty`)
+ * - `none`: every other state (clears after reload/merge/save)
+ */
+export function diskChangeBadge(s: FileState): DiskChangeBadge {
+  switch (s.kind) {
+    case 'disk_changed_clean':
+      return 'disk';
+    case 'disk_changed_dirty':
+      return 'conflict';
+    case 'untitled':
+    case 'clean':
+    case 'dirty':
+    case 'removed':
+    case 'save_in_progress':
+      return 'none';
+    default:
+      return assertNever(s);
+  }
+}
+
+/** Hover text for a disk-change badge; null when no badge is shown. */
+export function diskChangeTooltip(badge: DiskChangeBadge): string | null {
+  switch (badge) {
+    case 'disk':
+      return 'Changed on disk';
+    case 'conflict':
+      return 'Conflict: disk + unsaved';
+    case 'none':
+      return null;
+    default:
+      return assertNever(badge);
+  }
+}
