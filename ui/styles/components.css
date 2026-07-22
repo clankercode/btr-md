@@ -1970,6 +1970,66 @@ body[data-state="welcome"] #split-resizer {
   color: var(--pmd-fg);
 }
 
+/* --------------------------------------------
+   22a. Conflict banner (B011): disk_changed_dirty
+   Lives inside `.pmd-chrome` (after the tab strip)
+   so chrome-height measurement includes it.
+   High-visibility warning tokens — hard to miss.
+   -------------------------------------------- */
+
+.pmd-conflict-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--pmd-space-3);
+  flex-wrap: wrap;
+  padding: var(--pmd-space-2) var(--pmd-space-4);
+  background: var(--pmd-warning-bg);
+  border-top: 1px solid var(--pmd-warning);
+  border-bottom: 2px solid var(--pmd-warning);
+  color: var(--pmd-fg);
+  font-size: var(--pmd-text-sm);
+  font-weight: var(--pmd-font-medium);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--pmd-warning) 35%, transparent),
+    var(--pmd-shadow-sm);
+}
+
+.pmd-conflict-banner[hidden] {
+  display: none !important;
+}
+
+.pmd-conflict-banner-icon {
+  flex-shrink: 0;
+  font-size: var(--pmd-text-base);
+  color: var(--pmd-warning);
+  line-height: 1;
+}
+
+.pmd-conflict-banner-msg {
+  flex: 1 1 12rem;
+  min-width: 0;
+  color: var(--pmd-fg);
+}
+
+.pmd-conflict-banner-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--pmd-space-2);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+/* Destructive take-disk: warning fill so Reload is unmistakable. */
+.pmd-conflict-banner-reload {
+  background: var(--pmd-warning);
+  color: #1a1200;
+  border-color: color-mix(in srgb, var(--pmd-warning) 70%, #000);
+}
+
+.pmd-conflict-banner-reload:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--pmd-warning) 85%, #000);
+  color: #1a1200;
+}
+
 .pmd-settings-toggle {
   width: 16px;
   height: 16px;
