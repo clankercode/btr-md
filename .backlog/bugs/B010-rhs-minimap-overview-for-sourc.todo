@@ -1,0 +1,29 @@
+---
+complexity: medium
+created_at: "2026-07-22T07:59:30Z"
+depends_on:
+    - B009
+estimate_hours: 1
+id: B010
+priority: high
+status: pending
+tags: []
+title: RHS minimap overview for source editors (compatible with B009)
+updated_at: "2026-07-22T07:59:30Z"
+---
+## Problem
+
+Source editors lack a minimap-style zoomed-out overview of the document (similar to VS Code, Sublime, etc.). This makes it harder to navigate large files and to see where edits landed.
+
+## Expected
+
+1. Add a **minimap** on the **RHS** of source editors: a zoomed-out overview of the full document that tracks scroll position and allows click/drag navigation to jump within the file.
+2. Behavior and look should be familiar to users of VS Code-style minimaps (scaled text/render, viewport indicator, click-to-scroll).
+3. **Must be compatible with B009** (on-disk change Reload + green/red flash for added/removed diffs):
+   - Minimap should reflect or surface the same change locations after reload (e.g. green/red markers or flashes on the minimap for added/removed regions).
+   - Reload flow and diff highlighting must remain usable when the minimap is present (no layout collision, no swallowing of highlight signals, no broken scroll/sync).
+4. Scope is source editors (code/markdown source pane), not necessarily preview-only surfaces unless natural.
+
+## Related
+
+- Depends on / must coordinate with **B009** (reload + green/red grow-shrink flash for on-disk diffs).
