@@ -83,6 +83,12 @@ import {
 } from './link_activation.js';
 import { showConfirmCloseDialog } from './confirm_close_dialog.js';
 import {
+  createConflictBanner,
+  conflictEpisodeKey,
+  isConflictBannerVisible,
+  type ConflictEpisodeKey,
+} from './conflict_banner.js';
+import {
   type DocumentDiagnostics,
   type AssetGrant,
   type DocumentTrustContext,
@@ -432,6 +438,12 @@ const tabBar: TabBarInstance = createTabBar(store, {
 });
 // Tab strip lives inside `.pmd-chrome`, below the toolbar.
 chrome.el.appendChild(tabBar.el);
+
+// B011: prominent conflict banner under the tab strip when disk+buffer are both
+// dirty. Soft-dismiss ("Keep mine") is per (docId, disk digest) episode only.
+const conflictBanner = createConflictBanner(chrome.el);
+/** Soft-dismiss for the current conflict episode; null when none dismissed. */
+let conflictDismissed: ConflictEpisodeKey | null = null;
 
 const factsStore = createDocumentFactsStore();
 const outlinePanel = createOutlinePanel({
@@ -1485,6 +1497,23 @@ chrome.onThemePickerClick(() => showThemePicker());
 chrome.onReloadClick(() => doReload());
 chrome.onSaveClick(() => saveCurrentDoc());
 chrome.onMergeClick(() => doMerge());
+conflictBanner.onAction((action) => {
+  if (action === 'reload') {
+    void doReload();
+    return;
+  }
+  if (action === 'merge') {
+    void doMerge();
+    return;
+  }
+  // keep_mine: dismiss banner for this episode only — do not take disk / change FileState.
+  const tab = store.activeDoc();
+  if (tab) {
+    conflictDismissed = conflictEpisodeKey(tab.docId, tab.fileState);
+  }
+  conflictBanner.setVisible(false);
+  chrome.setStatus('Keeping your edits — conflict still pending until save, merge, or reload');
+});
 chrome.onPathDisplayToggle(() => {
   void setPathDisplayFull(!showFullPath);
 });
@@ -1997,6 +2026,11 @@ function refreshChrome(state: FileState): void {
   chrome.setReloadVisible(ui.showReload);
   chrome.setMergeVisible(ui.showMerge);
   chrome.setStatus(ui.status);
+  // Conflict banner: only for disk_changed_dirty, and only if not soft-dismissed
+  // for this (docId, disk) episode. Toolbar Reload/Merge remain available.
+  const active = store.activeDoc();
+  const docId = active ? active.docId : null;
+  conflictBanner.setVisible(isConflictBannerVisible(state, docId, conflictDismissed));
   updateTitle();
 }
 
@@ -2417,6 +2451,14 @@ async function saveTab(tab: DocTab, forceSaveAs = false): Promise<FileState | nu
 async function doReload(): Promise<void> {
   const tab = store.activeDoc();
   if (!tab || !editor) return;
+  // Destructive when the buffer has unsaved edits that would be discarded.
+  if (tab.fileState.kind === 'disk_changed_dirty') {
+    const ok = window.confirm(
+      'Reload from disk and discard your unsaved edits?\n\n' +
+        'Choose Cancel to keep editing, or use Merge to combine both versions.',
+    );
+    if (!ok) return;
+  }
   try {
     // Capture pre-reload buffer so we can flash green/red for the delta (B009).
     const previous = editor.getValue();
@@ -2426,6 +2468,8 @@ async function doReload(): Promise<void> {
     const max = editor.view.state.doc.length;
     editor.view.dispatch({ selection: { anchor: Math.min(cursor, max) } });
     store.updateDoc(tab.id, { fileState: res.state, baseContent: res.contents });
+    // Episode resolved — clear soft-dismiss so a future conflict shows again.
+    conflictDismissed = null;
     refreshChrome(res.state);
     await coordinator.schedule();
     applyDiffMode();
@@ -2449,6 +2493,7 @@ async function doMerge(): Promise<void> {
     });
     editor.setValueProgrammatic(res.merged);
     store.updateDoc(tab.id, { fileState: res.state });
+    conflictDismissed = null;
     refreshChrome(res.state);
     await coordinator.schedule();
     chrome.setStatus(
