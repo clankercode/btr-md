@@ -1,0 +1,24 @@
+---
+complexity: medium
+created_at: "2026-07-22T07:57:33Z"
+depends_on: []
+estimate_hours: 1
+id: B008
+priority: high
+status: pending
+tags: []
+title: 'Top bar: long paths hide path-renderer toggle; filename should also toggle'
+updated_at: "2026-07-22T07:57:33Z"
+---
+## Problem
+
+In the middle of the top bar, long filenames and paths can overflow/obscure the path renderer control on the RHS of the filename. When that happens, clicking to toggle the path renderer becomes impossible.
+
+## Expected
+
+1. The path-renderer toggle (RHS of the filename) remains reachable even with long paths/filenames (e.g. truncate/ellipsize the path/filename so the toggle stays visible and clickable).
+2. Clicking the filename itself should also toggle the path renderer (same action as the RHS control).
+
+## Location
+
+Top bar, center — filename / path display area.
