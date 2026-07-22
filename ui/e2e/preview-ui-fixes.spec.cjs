@@ -122,14 +122,19 @@ test('path label toggles full vs compressed and persists via settings', async ({
   await openSavedMarkdown(page, filePath, '# Hello\n');
 
   const pathLabel = page.locator('.pmd-abbrev-path');
+  const filename = page.locator('.pmd-filename');
   await expect(pathLabel).toBeVisible();
   // Compressed: /h/u/d/p/readme.md
   await expect(pathLabel).toHaveText('/h/u/d/p/readme.md');
   await expect(pathLabel).not.toHaveAttribute('data-full', '');
+  await expect(filename).toBeVisible();
+  await expect(filename).toHaveAttribute('data-toggle-path', '');
 
   await pathLabel.click();
   await expect(pathLabel).toHaveText(filePath);
   await expect(pathLabel).toHaveAttribute('data-full', '');
+  // Full-path mode hides the redundant filename chip.
+  await expect(filename).toBeHidden();
 
   const invocations = await page.evaluate(() =>
     (window.__pmdInvocations || []).filter((i) => i.cmd === 'set_show_full_path')
@@ -140,6 +145,17 @@ test('path label toggles full vs compressed and persists via settings', async ({
   await pathLabel.click();
   await expect(pathLabel).toHaveText('/h/u/d/p/readme.md');
   await expect(pathLabel).not.toHaveAttribute('data-full', '');
+  await expect(filename).toBeVisible();
+
+  // Filename is an alternate toggle target (same set_show_full_path path).
+  await filename.click();
+  await expect(pathLabel).toHaveText(filePath);
+  await expect(pathLabel).toHaveAttribute('data-full', '');
+  const afterFilename = await page.evaluate(() =>
+    (window.__pmdInvocations || []).filter((i) => i.cmd === 'set_show_full_path')
+  );
+  expect(afterFilename.length).toBeGreaterThan(invocations.length);
+  expect(afterFilename[afterFilename.length - 1].args).toEqual({ enabled: true });
 });
 
 test('untitled documents hide the path label (no toggle errors)', async ({ page }) => {

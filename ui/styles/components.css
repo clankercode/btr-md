@@ -666,11 +666,39 @@
 }
 
 .pmd-filename {
+  /* Button reset — filename also toggles full ↔ compressed path when set. */
+  appearance: none;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  text-align: left;
   font-size: var(--pmd-text-sm);
   color: var(--pmd-fg);
   font-weight: var(--pmd-font-medium);
   white-space: nowrap;
-  flex-shrink: 0;
+  /* Truncate long basenames so the path toggle on the RHS stays reachable. */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+  flex: 0 1 auto;
+  max-width: 50%;
+  cursor: default;
+}
+
+.pmd-filename[data-toggle-path] {
+  cursor: pointer;
+}
+
+.pmd-filename[data-toggle-path]:hover {
+  color: var(--pmd-fg-muted, var(--pmd-fg));
+}
+
+.pmd-filename:focus-visible {
+  outline: 2px solid var(--pmd-accent);
+  outline-offset: 2px;
+  border-radius: 2px;
 }
 
 .pmd-abbrev-path {
@@ -688,7 +716,10 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  min-width: 0;
+  /* Take remaining title-section space; never shrink below a usable hit target
+     so long paths cannot push this control off-screen / to zero width. */
+  flex: 1 1 0%;
+  min-width: 2.5rem;
   max-width: 100%;
 }
 

@@ -209,8 +209,13 @@ export function createChrome(parent: HTMLElement): ChromeInstance {
   modifiedDot.setAttribute('aria-hidden', 'true');
   modifiedDot.textContent = '●';
 
-  const filenameEl = document.createElement('span');
+  // Filename chip: also toggles full ↔ compressed path when a file path is set
+  // (same action as the path label on the RHS). Button so long names stay
+  // keyboard-focusable and the control matches the path label's semantics.
+  const filenameEl = document.createElement('button');
+  filenameEl.type = 'button';
   filenameEl.className = 'pmd-filename';
+  filenameEl.tabIndex = -1;
 
   // Path label: click toggles full ↔ compressed (preference persisted in settings).
   const pathLabelEl = document.createElement('button');
@@ -629,6 +634,12 @@ export function createChrome(parent: HTMLElement): ChromeInstance {
   let currentFullPath: string | null = null;
   let showFullPath = false;
 
+  function firePathDisplayToggle(): void {
+    // Always fire so the preference can flip even when the label is empty
+    // (defensive); callers gate on path presence where needed.
+    pathDisplayToggleHandlers.forEach((h) => h());
+  }
+
   function refreshPathLabel(): void {
     if (!currentFullPath) {
       pathLabelEl.textContent = '';
@@ -636,8 +647,13 @@ export function createChrome(parent: HTMLElement): ChromeInstance {
       pathLabelEl.hidden = true;
       pathLabelEl.removeAttribute('data-full');
       pathLabelEl.setAttribute('aria-pressed', 'false');
-      // No full path: keep basename/title chip visible (e.g. Untitled).
+      // No full path: keep basename/title chip visible (e.g. Untitled) but not
+      // interactive — there is nothing to toggle.
       filenameEl.hidden = false;
+      filenameEl.removeAttribute('data-toggle-path');
+      filenameEl.removeAttribute('aria-label');
+      filenameEl.removeAttribute('aria-pressed');
+      filenameEl.tabIndex = -1;
       return;
     }
     pathLabelEl.hidden = false;
@@ -652,12 +668,20 @@ export function createChrome(parent: HTMLElement): ChromeInstance {
     // Full-path mode already includes the basename in the path label — hide the
     // separate filename chip so the title bar is not redundant.
     filenameEl.hidden = showFullPath;
+    // Filename is an alternate hit target for the same toggle (when visible).
+    // Keep `title` as the full path (set in setFilename) so truncated basenames
+    // still reveal the path on hover; the path label owns the click-hint title.
+    filenameEl.setAttribute('data-toggle-path', '');
+    filenameEl.setAttribute('aria-label', 'Toggle full or compressed path');
+    filenameEl.setAttribute('aria-pressed', showFullPath ? 'true' : 'false');
+    filenameEl.tabIndex = 0;
   }
 
-  pathLabelEl.addEventListener('click', () => {
-    // Always fire the toggle so the preference can flip even when the label is
-    // empty (defensive); the button is hidden when there is no path.
-    pathDisplayToggleHandlers.forEach((h) => h());
+  pathLabelEl.addEventListener('click', firePathDisplayToggle);
+
+  filenameEl.addEventListener('click', () => {
+    if (!currentFullPath) return;
+    firePathDisplayToggle();
   });
 
   return {
