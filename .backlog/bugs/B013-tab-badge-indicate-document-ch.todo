@@ -1,0 +1,31 @@
+---
+complexity: medium
+created_at: "2026-07-22T08:04:46Z"
+depends_on:
+    - B009
+estimate_hours: 1
+id: B013
+priority: high
+status: pending
+tags: []
+title: 'Tab badge: indicate document changed on disk'
+updated_at: "2026-07-22T08:04:46Z"
+---
+## Problem
+
+With multiple tabs open, an external disk change is easy to miss if only the active document’s status text updates. Users need a glanceable signal on each tab.
+
+## Expected
+
+1. When a document’s lifecycle state is `disk_changed_clean` or `disk_changed_dirty`, show a **tab-level indicator** (dot, badge, or icon) that the file has changed on disk.
+2. Distinguish if useful:
+   - changed on disk (clean buffer) vs **conflict** (dirty buffer + disk) — e.g. different color or dual indicators with the existing modified/unsaved dot
+3. Indicator clears when the user Reloads, Merges, or otherwise leaves the disk-changed states.
+4. Compatible with B009 Reload flow and existing modified-dot chrome (no layout thrash; readable on light/dark themes).
+5. Optional: tooltip on hover with short status (“Changed on disk” / “Conflict: disk + unsaved”).
+
+## Related
+
+- **B009** — Reload + flash
+- Conflict banner item for dirty+disk (companion chrome)
+- `ui/src/doc_state.ts` — `disk_changed_*` states

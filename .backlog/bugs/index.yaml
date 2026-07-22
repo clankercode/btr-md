@@ -11,3 +11,4 @@ bugs:
     - file: B010-rhs-minimap-overview-for-sourc.todo
     - file: B011-conflict-banner-reload-merge-k.todo
     - file: B012-after-reload-jump-to-first-cha.todo
+    - file: B013-tab-badge-indicate-document-ch.todo
