@@ -1,0 +1,30 @@
+---
+complexity: medium
+created_at: "2026-07-22T07:58:49Z"
+depends_on: []
+estimate_hours: 1
+id: B009
+priority: high
+status: pending
+tags: []
+title: 'On-disk change: show Reload button; flash green/red for added/removed diffs'
+updated_at: "2026-07-22T07:58:49Z"
+---
+## Problem
+
+When the open document is changed on disk (externally), the app should surface a clear recovery path and make the resulting content diffs easy to spot after reload.
+
+## Expected
+
+1. Detect when the open document has changed on disk.
+2. Show a **Reload** button that lets the user manually refresh/reload the document from disk (do not force-overwrite without an explicit action if the buffer may be dirty — at minimum expose a manual reload control).
+3. After reload (or when applying the on-disk version), differences vs the previous in-editor content should be visually highlighted:
+   - **Added** regions flash **green**
+   - **Removed** regions flash **red**
+   - Animation should **grow/shrink** so the location of changes is somewhat obvious even when the exact text delta is large
+4. Goal is location awareness of the edit, not a full diff UI (unless that already exists).
+
+## Notes
+
+- Covers external editors, `git checkout`, formatters, sync tools, etc.
+- Prefer ephemeral flash (fade out) over permanent decoration unless permanent markers already fit the product.

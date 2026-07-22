@@ -7,3 +7,4 @@ bugs:
     - file: B006-the-grok-theme-is-totally-wron.todo
     - file: B007-double-clicking-an-italics-tab.todo
     - file: B008-top-bar-long-paths-hide-path-r.todo
+    - file: B009-on-disk-change-show-reload-but.todo
