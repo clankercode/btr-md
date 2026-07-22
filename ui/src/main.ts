@@ -2083,6 +2083,9 @@ function maybeAutoreload(state: FileState): void {
 
 store.onActivate((prev, next) => {
   if (prev && prev.kind === 'doc' && editor) {
+    // Don't snapshot ephemeral reload-flash decorations into the tab state
+    // (they would otherwise stick until the next flash). Hunk list is kept.
+    editor.clearFlash();
     prev.editorState = editor.snapshot();
     prev.scrollEditor = editor.view.scrollDOM.scrollTop;
     prev.scrollPreview = previewPane.scrollTop;
@@ -2415,6 +2418,8 @@ async function doReload(): Promise<void> {
   const tab = store.activeDoc();
   if (!tab || !editor) return;
   try {
+    // Capture pre-reload buffer so we can flash green/red for the delta (B009).
+    const previous = editor.getValue();
     const res = await docsApi.pullFromDisk(tab.docId);
     const cursor = editor.view.state.selection.main.head;
     editor.setValueProgrammatic(res.contents);
@@ -2424,6 +2429,8 @@ async function doReload(): Promise<void> {
     refreshChrome(res.state);
     await coordinator.schedule();
     applyDiffMode();
+    // Ephemeral location flash; quiet when on-disk content matches the buffer.
+    editor.flashContentChange(previous);
     chrome.setStatus('Reloaded from disk');
   } catch (e) {
     showError(`Reload failed: ${String(e)}`);

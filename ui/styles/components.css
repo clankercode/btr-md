@@ -1268,6 +1268,82 @@ body[data-state="welcome"] #split-resizer {
   pointer-events: auto;
 }
 
+/* --------------------------------------------
+   16a. Reload flash (B009): ephemeral green/red
+   grow-shrink pulse on changed lines after a
+   pull-from-disk. Classes are applied to
+   `.cm-line` via CodeMirror line decorations.
+   -------------------------------------------- */
+
+@keyframes pmd-flash-add {
+  0% {
+    background-color: color-mix(in srgb, #2b2 55%, transparent);
+    box-shadow: inset 0 0 0 0 transparent;
+    transform: scaleY(1.12);
+  }
+  35% {
+    background-color: color-mix(in srgb, #2b2 35%, transparent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, #2b2 40%, transparent);
+    transform: scaleY(1.04);
+  }
+  100% {
+    background-color: transparent;
+    box-shadow: none;
+    transform: scaleY(1);
+  }
+}
+
+@keyframes pmd-flash-remove {
+  0% {
+    background-color: color-mix(in srgb, #e43 50%, transparent);
+    box-shadow: inset 4px 0 0 #e43;
+    transform: scaleY(1.12);
+  }
+  35% {
+    background-color: color-mix(in srgb, #e43 30%, transparent);
+    box-shadow: inset 6px 0 0 #e43, 0 0 0 3px color-mix(in srgb, #e43 35%, transparent);
+    transform: scaleY(1.04);
+  }
+  100% {
+    background-color: transparent;
+    box-shadow: none;
+    transform: scaleY(1);
+  }
+}
+
+@keyframes pmd-flash-replace {
+  0% {
+    background-color: color-mix(in srgb, #2b2 45%, transparent);
+    box-shadow: inset 4px 0 0 #e43;
+    transform: scaleY(1.12);
+  }
+  35% {
+    background-color: color-mix(in srgb, #2b2 28%, transparent);
+    box-shadow: inset 5px 0 0 #e43, 0 0 0 3px color-mix(in srgb, #2b2 30%, transparent);
+    transform: scaleY(1.04);
+  }
+  100% {
+    background-color: transparent;
+    box-shadow: none;
+    transform: scaleY(1);
+  }
+}
+
+.cm-line.pmd-flash-add {
+  animation: pmd-flash-add 1.4s ease-out;
+  transform-origin: center left;
+}
+
+.cm-line.pmd-flash-remove {
+  animation: pmd-flash-remove 1.4s ease-out;
+  transform-origin: center left;
+}
+
+.cm-line.pmd-flash-replace {
+  animation: pmd-flash-replace 1.4s ease-out;
+  transform-origin: center left;
+}
+
 /* Save button: always present; `:disabled` (no unsaved changes) is styled by
    the shared `.pmd-btn:disabled` rule. */
 .pmd-save-btn {

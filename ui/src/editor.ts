@@ -27,9 +27,25 @@ import {
 import { listEnter } from './editor_list.js';
 import { editorIndent, editorDedent } from './editor_indent.js';
 import { diffViewConfig } from './editor_diff.js';
+import {
+  computeFlashHunks,
+  flashLineMarks,
+  rememberFlashHunks,
+  clearRememberedFlashHunks,
+  getLastFlashHunks,
+  FLASH_DURATION_MS,
+  type FlashHunk,
+} from './reload_flash.js';
 import type { DocumentKind } from './document_kind.js';
 export type { DiffViewConfig } from './editor_diff.js';
 export { diffViewConfig } from './editor_diff.js';
+export type { FlashHunk } from './reload_flash.js';
+export {
+  computeFlashHunks,
+  getLastFlashHunks,
+  clearRememberedFlashHunks,
+  FLASH_DURATION_MS,
+} from './reload_flash.js';
 
 // One EditorView is reused across all document tabs; each tab owns a live
 // `EditorState` (held in memory by the tab store, never serialized). Switching
@@ -53,6 +69,16 @@ export interface EditorHandle {
   toggleWrap: () => boolean;
   /** Show/hide a unified diff of the buffer against `baseline` (last saved). */
   setDiff: (mode: string, baseline: string) => void;
+  /**
+   * Flash green/red line decorations for the delta from `previous` text to the
+   * current document (B009 reload flash). Returns the computed hunks (also
+   * stored for `getLastFlashHunks` / B010 / B012). No-op when identical.
+   */
+  flashContentChange: (previous: string) => FlashHunk[];
+  /** Clear any active reload-flash decorations immediately. */
+  clearFlash: () => void;
+  /** Last flash hunks from the most recent `flashContentChange` (may be empty). */
+  getLastFlashHunks: () => readonly FlashHunk[];
   /** Open CodeMirror's source find panel. */
   openSearch: () => void;
   /** Advance to the next source search match. */
@@ -188,8 +214,11 @@ let wrapEnabled = true;
 let userEditCb: (doc: string) => void = () => {};
 const wrapCompartment = new Compartment();
 const diffCompartment = new Compartment();
+const flashCompartment = new Compartment();
 const searchCompartment = new Compartment();
 const languageCompartment = new Compartment();
+/** Timer that clears the ephemeral reload flash decorations. */
+let flashClearTimer: ReturnType<typeof setTimeout> | null = null;
 
 /** Language + markdown-only decorations for a document kind. */
 export function languageExtensions(kind: DocumentKind): any[] {
@@ -223,6 +252,19 @@ export function buildDiffExtension(mode: string, baseline: string): any[] {
     }),
     EditorView.editorAttributes.of({ class: cfg.editorClass }),
   ];
+}
+
+/** Build ephemeral line decorations for a reload flash. */
+function buildFlashDecorations(doc: { lines: number; line: (n: number) => { from: number } }, hunks: readonly FlashHunk[]) {
+  if (hunks.length === 0) return Decoration.none;
+  const marks = flashLineMarks(hunks, doc.lines);
+  const ranges: any[] = [];
+  for (const m of marks) {
+    // CodeMirror line numbers are 1-based.
+    const ln = doc.line(m.line + 1);
+    ranges.push(Decoration.line({ class: m.className }).range(ln.from));
+  }
+  return ranges.length > 0 ? Decoration.set(ranges, true) : Decoration.none;
 }
 
 const editorTheme = EditorView.theme({
@@ -354,6 +396,7 @@ function buildExtensions(kind: DocumentKind = 'markdown') {
     languageCompartment.of(languageExtensions(kind)),
     wrapCompartment.of(wrapEnabled ? EditorView.lineWrapping : []),
     diffCompartment.of([]),
+    flashCompartment.of([]),
     searchCompartment.of(searchExtension()),
     selectionTextDecorations,
     EditorView.updateListener.of((update: any) => {
@@ -428,6 +471,51 @@ export async function mountEditor(
         view.dispatch({ effects: diffCompartment.reconfigure(ext) });
       }
     },
+    flashContentChange: (previous: string): FlashHunk[] => {
+      const current = view.state.doc.toString();
+      const hunks = computeFlashHunks(previous, current);
+      rememberFlashHunks(hunks);
+      if (flashClearTimer !== null) {
+        clearTimeout(flashClearTimer);
+        flashClearTimer = null;
+      }
+      if (hunks.length === 0) {
+        view.dispatch({ effects: flashCompartment.reconfigure([]) });
+        return hunks;
+      }
+      const decos = buildFlashDecorations(view.state.doc, hunks);
+      // Facet-provided decorations for the flash layer only. Separate from the
+      // show-changes merge view so the two do not fight over StateFields.
+      view.dispatch({
+        effects: flashCompartment.reconfigure([
+          EditorView.decorations.of(decos),
+        ]),
+      });
+      flashClearTimer = setTimeout(() => {
+        flashClearTimer = null;
+        // View may already be destroyed (tab/window close) — ignore.
+        try {
+          view.dispatch({ effects: flashCompartment.reconfigure([]) });
+        } catch {
+          /* ignore */
+        }
+      }, FLASH_DURATION_MS);
+      return hunks;
+    },
+    clearFlash: () => {
+      // Drop decorations only — remembered hunks stay available for B010/B012
+      // until the next flashContentChange (or explicit clearRememberedFlashHunks).
+      if (flashClearTimer !== null) {
+        clearTimeout(flashClearTimer);
+        flashClearTimer = null;
+      }
+      try {
+        view.dispatch({ effects: flashCompartment.reconfigure([]) });
+      } catch {
+        /* ignore */
+      }
+    },
+    getLastFlashHunks: () => getLastFlashHunks(),
     openSearch: () => openSourceFind(view),
     searchNext: () => sourceFindNext(view),
     searchPrevious: () => sourceFindPrevious(view),
