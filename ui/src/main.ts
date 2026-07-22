@@ -10,6 +10,11 @@ import * as recentApi from './backend/recent.js';
 import { subscribe } from './backend/events.js';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { mountEditor, type EditorHandle } from './editor.js';
+import {
+  computeFlashHunks,
+  rememberFlashHunks,
+  setActiveFlashDocId,
+} from './reload_flash.js';
 import { detectDocumentKind } from './document_kind.js';
 import { createChrome, type Mode, type ClosedWindowSummary } from './chrome.js';
 import { attachScrollSync, type ScrollSyncHandle } from './scroll_sync.js';
@@ -440,10 +445,11 @@ const tabBar: TabBarInstance = createTabBar(store, {
 chrome.el.appendChild(tabBar.el);
 
 // B011: prominent conflict banner under the tab strip when disk+buffer are both
-// dirty. Soft-dismiss ("Keep mine") is per (docId, disk digest) episode only.
+// dirty. Soft-dismiss ("Keep mine") is per (docId, disk digest) episode only,
+// and stored per doc so multi-tab dismissals do not clobber each other.
 const conflictBanner = createConflictBanner(chrome.el);
-/** Soft-dismiss for the current conflict episode; null when none dismissed. */
-let conflictDismissed: ConflictEpisodeKey | null = null;
+/** Soft-dismiss keys by backend docId. */
+const conflictDismissedByDoc = new Map<number, ConflictEpisodeKey>();
 
 const factsStore = createDocumentFactsStore();
 const outlinePanel = createOutlinePanel({
@@ -1515,7 +1521,8 @@ conflictBanner.onAction((action) => {
   // keep_mine: dismiss banner for this episode only — do not take disk / change FileState.
   const tab = store.activeDoc();
   if (tab) {
-    conflictDismissed = conflictEpisodeKey(tab.docId, tab.fileState);
+    const key = conflictEpisodeKey(tab.docId, tab.fileState);
+    if (key) conflictDismissedByDoc.set(tab.docId, key);
   }
   conflictBanner.setVisible(false);
   chrome.setStatus('Keeping your edits — conflict still pending until save, merge, or reload');
@@ -2036,7 +2043,8 @@ function refreshChrome(state: FileState): void {
   // for this (docId, disk) episode. Toolbar Reload/Merge remain available.
   const active = store.activeDoc();
   const docId = active ? active.docId : null;
-  conflictBanner.setVisible(isConflictBannerVisible(state, docId, conflictDismissed));
+  const dismissed = docId != null ? conflictDismissedByDoc.get(docId) ?? null : null;
+  conflictBanner.setVisible(isConflictBannerVisible(state, docId, dismissed));
   updateTitle();
 }
 
@@ -2124,7 +2132,7 @@ function maybeAutoreload(state: FileState): void {
 store.onActivate((prev, next) => {
   if (prev && prev.kind === 'doc' && editor) {
     // Don't snapshot ephemeral reload-flash decorations into the tab state
-    // (they would otherwise stick until the next flash). Hunk list is kept.
+    // (they would otherwise stick until the next flash). Per-doc hunk list is kept.
     editor.clearFlash();
     prev.editorState = editor.snapshot();
     prev.scrollEditor = editor.view.scrollDOM.scrollTop;
@@ -2142,6 +2150,7 @@ store.onActivate((prev, next) => {
   applySplitLockVisibility();
   if (!next) {
     document.body.dataset.tabkind = 'empty';
+    setActiveFlashDocId(null);
     factsStore.setActiveDoc(null);
     outlinePanel.setHeadings([]);
     outlinePanel.setMode('collapsed');
@@ -2160,6 +2169,7 @@ store.onActivate((prev, next) => {
       else workspace.setActiveFile(null);
       break;
     case 'empty':
+      setActiveFlashDocId(null);
       workspace.setActiveFile(null);
       chrome.setCounts(null);
       factsStore.setActiveDoc(null);
@@ -2169,6 +2179,7 @@ store.onActivate((prev, next) => {
       renderEmptyBody();
       break;
     case 'browser':
+      setActiveFlashDocId(null);
       workspace.setActiveFile(null);
       chrome.setCounts(null);
       factsStore.setActiveDoc(null);
@@ -2186,6 +2197,8 @@ store.onActivate((prev, next) => {
 async function activateDocTab(tab: DocTab): Promise<void> {
   await ensureEditor();
   if (!editor) return;
+  // Scope minimap markers / goto-change to this document before state swap.
+  setActiveFlashDocId(tab.docId);
   if (tab.editorState) editor.activateState(tab.editorState);
   factsStore.setActiveDoc(tab.docId);
   clearDocumentIntelligenceUi();
@@ -2454,11 +2467,43 @@ async function saveTab(tab: DocTab, forceSaveAs = false): Promise<FileState | nu
   }
 }
 
+/** True when reload would discard in-memory edits (confirm before pull). */
+function reloadWouldDiscardEdits(tab: DocTab): boolean {
+  const k = tab.fileState.kind;
+  if (k === 'disk_changed_dirty' || k === 'dirty') return true;
+  // State lag / edge paths: buffer still differs from last load/save baseline.
+  return tabBuffer(tab) !== tab.baseContent;
+}
+
+/**
+ * After an await, apply pulled/merged buffer into `tab`.
+ * If the user switched away, never mutate the currently displayed editor —
+ * update the inactive tab's stored `editorState` / baseContent instead.
+ * Returns whether the tab is still the live editor target.
+ */
+function applyBufferToTab(
+  tab: DocTab,
+  contents: string,
+  patch: Partial<DocTab>,
+): boolean {
+  const stillActive = store.activeId() === tab.id && !!editor;
+  if (stillActive && editor) {
+    store.updateDoc(tab.id, patch);
+    return true;
+  }
+  // Inactive (or editor gone): keep offline buffer consistent for reactivation.
+  const kind = detectDocumentKind(tab.filePath, contents);
+  const editorState = editor ? editor.createState(contents, kind) : null;
+  store.updateDoc(tab.id, { ...patch, editorState });
+  return false;
+}
+
 async function doReload(): Promise<void> {
   const tab = store.activeDoc();
   if (!tab || !editor) return;
   // Destructive when the buffer has unsaved edits that would be discarded.
-  if (tab.fileState.kind === 'disk_changed_dirty') {
+  // Covers conflict, plain dirty, and buffer≠base (palette reloadFromDisk too).
+  if (reloadWouldDiscardEdits(tab)) {
     const ok = window.confirm(
       'Reload from disk and discard your unsaved edits?\n\n' +
         'Choose Cancel to keep editing, or use Merge to combine both versions.',
@@ -2468,24 +2513,42 @@ async function doReload(): Promise<void> {
   try {
     // Capture pre-reload buffer so we can flash green/red for the delta (B009).
     const previous = editor.getValue();
-    const res = await docsApi.pullFromDisk(tab.docId);
-    const cursor = editor.view.state.selection.main.head;
-    editor.setValueProgrammatic(res.contents);
-    const max = editor.view.state.doc.length;
-    editor.view.dispatch({ selection: { anchor: Math.min(cursor, max) } });
-    store.updateDoc(tab.id, { fileState: res.state, baseContent: res.contents });
-    // Episode resolved — clear soft-dismiss so a future conflict shows again.
-    conflictDismissed = null;
-    refreshChrome(res.state);
-    await coordinator.schedule();
-    applyDiffMode();
-    // Ephemeral location flash; quiet when on-disk content matches the buffer.
-    const hunks = editor.flashContentChange(previous);
-    // B012: land on the first change (same hunk list as the flash). No-op if none.
-    if (hunks.length > 0) {
-      editor.gotoChange(1, { stay: true });
+    const tabId = tab.id;
+    const docId = tab.docId;
+    const res = await docsApi.pullFromDisk(docId);
+    // Re-read tab after await — store entry may still exist under same id.
+    const tabNow = store.get(tabId);
+    if (!tabNow || tabNow.kind !== 'doc') return;
+
+    const stillActive = applyBufferToTab(tabNow, res.contents, {
+      fileState: res.state,
+      baseContent: res.contents,
+    });
+    // Episode resolved for this doc — future conflicts on it show again.
+    conflictDismissedByDoc.delete(docId);
+    // Always scope hunks to this doc (even if the user switches mid-await/render).
+    const hunks = computeFlashHunks(previous, res.contents);
+    rememberFlashHunks(hunks, docId);
+
+    if (stillActive && editor && store.activeId() === tabId) {
+      const cursor = editor.view.state.selection.main.head;
+      editor.setValueProgrammatic(res.contents);
+      const max = editor.view.state.doc.length;
+      editor.view.dispatch({ selection: { anchor: Math.min(cursor, max) } });
+      refreshChrome(res.state);
+      await coordinator.schedule();
+      // Bail editor mutations if the user switched tabs during schedule/render.
+      if (store.activeId() !== tabId || !editor) return;
+      applyDiffMode();
+      // Ephemeral location flash; quiet when on-disk content matches the buffer.
+      // Re-applies decorations + re-remembers (same hunks) for the active view.
+      editor.flashContentChange(previous, docId);
+      // B012: land on the first change (same hunk list as the flash). No-op if none.
+      if (hunks.length > 0) {
+        editor.gotoChange(1, { stay: true, docId });
+      }
+      chrome.setStatus('Reloaded from disk');
     }
-    chrome.setStatus('Reloaded from disk');
   } catch (e) {
     showError(`Reload failed: ${String(e)}`);
   }
@@ -2495,22 +2558,41 @@ async function doMerge(): Promise<void> {
   const tab = store.activeDoc();
   if (!tab || !editor) return;
   const diskDigestSeen = 'disk' in tab.fileState ? tab.fileState.disk : '';
+  const previous = editor.getValue();
+  const tabId = tab.id;
+  const docId = tab.docId;
   try {
     const res = await docsApi.resolveDiskChange({
-      docId: tab.docId,
-      oursText: editor.getValue(),
+      docId,
+      oursText: previous,
       diskDigestSeen,
     });
-    editor.setValueProgrammatic(res.merged);
-    store.updateDoc(tab.id, { fileState: res.state });
-    conflictDismissed = null;
-    refreshChrome(res.state);
-    await coordinator.schedule();
-    chrome.setStatus(
-      res.conflicted
-        ? 'Merged with conflicts — resolve the markers, then save'
-        : 'Merged disk changes into the editor'
-    );
+    const tabNow = store.get(tabId);
+    if (!tabNow || tabNow.kind !== 'doc') return;
+
+    const stillActive = applyBufferToTab(tabNow, res.merged, {
+      fileState: res.state,
+    });
+    conflictDismissedByDoc.delete(docId);
+    const hunks = computeFlashHunks(previous, res.merged);
+    rememberFlashHunks(hunks, docId);
+
+    if (stillActive && editor && store.activeId() === tabId) {
+      editor.setValueProgrammatic(res.merged);
+      refreshChrome(res.state);
+      await coordinator.schedule();
+      if (store.activeId() !== tabId || !editor) return;
+      // Flash merge delta like reload (B009 parity for merge).
+      editor.flashContentChange(previous, docId);
+      if (hunks.length > 0) {
+        editor.gotoChange(1, { stay: true, docId });
+      }
+      chrome.setStatus(
+        res.conflicted
+          ? 'Merged with conflicts — resolve the markers, then save'
+          : 'Merged disk changes into the editor',
+      );
+    }
   } catch (e) {
     showError(`Merge failed: ${String(e)}`);
   }

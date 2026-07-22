@@ -36,6 +36,8 @@ import {
   hunkJumpLine,
   advanceChangeJump,
   getChangeJumpIndex,
+  setActiveFlashDocId,
+  getActiveFlashDocId,
   FLASH_DURATION_MS,
   type FlashHunk,
 } from './reload_flash.js';
@@ -51,6 +53,8 @@ export {
   hunkJumpLine,
   advanceChangeJump,
   getChangeJumpIndex,
+  setActiveFlashDocId,
+  getActiveFlashDocId,
   FLASH_DURATION_MS,
 } from './reload_flash.js';
 
@@ -79,13 +83,16 @@ export interface EditorHandle {
   /**
    * Flash green/red line decorations for the delta from `previous` text to the
    * current document (B009 reload flash). Returns the computed hunks (also
-   * stored for `getLastFlashHunks` / B010 / B012). No-op when identical.
+   * stored per-doc for `getLastFlashHunks` / B010 / B012). No-op when identical.
+   * Pass `docId` to scope remembered hunks to that document (defaults to active).
    */
-  flashContentChange: (previous: string) => FlashHunk[];
+  flashContentChange: (previous: string, docId?: number) => FlashHunk[];
   /** Clear any active reload-flash decorations immediately. */
   clearFlash: () => void;
-  /** Last flash hunks from the most recent `flashContentChange` (may be empty). */
-  getLastFlashHunks: () => readonly FlashHunk[];
+  /**
+   * Last flash hunks for `docId` (or the active flash doc). Empty when none.
+   */
+  getLastFlashHunks: (docId?: number) => readonly FlashHunk[];
   /**
    * Jump to a flash hunk (B012). Scrolls/selects the hunk's after-doc line.
    * Returns the 0-based line landed on, or `null` if no-op.
@@ -94,9 +101,12 @@ export interface EditorHandle {
   /**
    * Jump to the current remembered change (index 0 after flash), or advance
    * next/prev with wrap. Quiet no-op when there are no remembered hunks.
-   * Returns the landed 0-based line, or `null`.
+   * Returns the landed 0-based line, or `null`. Optional `docId` scopes the jump.
    */
-  gotoChange: (direction: 1 | -1, options?: { stay?: boolean }) => number | null;
+  gotoChange: (
+    direction: 1 | -1,
+    options?: { stay?: boolean; docId?: number },
+  ) => number | null;
   /** Open CodeMirror's source find panel. */
   openSearch: () => void;
   /** Advance to the next source search match. */
@@ -460,6 +470,7 @@ export async function mountEditor(
   });
 
   minimap = attachMinimap(view, minimapEl, {
+    // Always paint markers for the *active* document's remembered hunks.
     getFlashHunks: () => getLastFlashHunks(),
   });
 
@@ -478,7 +489,7 @@ export async function mountEditor(
     snapshot: () => view.state,
     activateState: (state: EditorState) => {
       programmatic(() => view.setState(state));
-      // Full state swap (tab switch) — repaint density + viewport.
+      // Full state swap (tab switch) — repaint density + viewport + this doc's markers.
       minimap?.redraw();
     },
     setValueProgrammatic: (md: string) =>
@@ -514,10 +525,10 @@ export async function mountEditor(
         view.dispatch({ effects: diffCompartment.reconfigure(ext) });
       }
     },
-    flashContentChange: (previous: string): FlashHunk[] => {
+    flashContentChange: (previous: string, docId?: number): FlashHunk[] => {
       const current = view.state.doc.toString();
       const hunks = computeFlashHunks(previous, current);
-      rememberFlashHunks(hunks);
+      rememberFlashHunks(hunks, docId);
       if (flashClearTimer !== null) {
         clearTimeout(flashClearTimer);
         flashClearTimer = null;
@@ -562,7 +573,7 @@ export async function mountEditor(
         /* ignore */
       }
     },
-    getLastFlashHunks: () => getLastFlashHunks(),
+    getLastFlashHunks: (docId?: number) => getLastFlashHunks(docId),
     jumpToFlashHunk: (hunk: FlashHunk): number | null => {
       const line0 = hunkJumpLine(hunk, view.state.doc.lines);
       const n = line0 + 1; // CodeMirror line numbers are 1-based
@@ -570,7 +581,10 @@ export async function mountEditor(
       view.dispatch({ selection: { anchor: pos }, scrollIntoView: true });
       return line0;
     },
-    gotoChange: (direction: 1 | -1, options?: { stay?: boolean }): number | null => {
+    gotoChange: (
+      direction: 1 | -1,
+      options?: { stay?: boolean; docId?: number },
+    ): number | null => {
       const target = advanceChangeJump(direction, options);
       if (!target) return null;
       const line0 = hunkJumpLine(target.hunk, view.state.doc.lines);

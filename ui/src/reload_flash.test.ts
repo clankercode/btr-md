@@ -7,16 +7,21 @@ import {
   rememberFlashHunks,
   getLastFlashHunks,
   clearRememberedFlashHunks,
+  clearAllRememberedFlashHunks,
   hunkJumpLine,
   stepChangeIndex,
   advanceChangeJump,
   getChangeJumpIndex,
+  setActiveFlashDocId,
+  getActiveFlashDocId,
   FLASH_DURATION_MS,
   type FlashHunk,
 } from './reload_flash.ts';
 
-test('FLASH_DURATION_MS is a short ephemeral window', () => {
+test('FLASH_DURATION_MS matches CSS flash animation (~1.4s)', () => {
   assert.ok(FLASH_DURATION_MS >= 800 && FLASH_DURATION_MS <= 2500);
+  // Keep in lockstep with `.cm-line.pmd-flash-*` in components.css (1.4s).
+  assert.equal(FLASH_DURATION_MS, 1400);
 });
 
 test('splitDocLines: empty is one empty line', () => {
@@ -282,4 +287,54 @@ test('hunkJumpLine matches flashLineMarks locus for pure remove', () => {
   const marks = flashLineMarks([hunk], 3);
   assert.equal(marks.length, 1);
   assert.equal(hunkJumpLine(hunk, 3), marks[0]!.line);
+});
+
+// ---------------------------------------------------------------------------
+// Multi-doc isolation (tab switch must not leak hunks / jump index)
+// ---------------------------------------------------------------------------
+
+test('flash hunks and jump index are isolated per docId', () => {
+  clearAllRememberedFlashHunks();
+  setActiveFlashDocId(null);
+
+  const hunksA: FlashHunk[] = [
+    { kind: 'add', beforeFrom: 0, beforeTo: 0, afterFrom: 0, afterTo: 1 },
+  ];
+  const hunksB: FlashHunk[] = [
+    { kind: 'remove', beforeFrom: 2, beforeTo: 3, afterFrom: 2, afterTo: 2 },
+    { kind: 'replace', beforeFrom: 5, beforeTo: 6, afterFrom: 4, afterTo: 5 },
+  ];
+
+  rememberFlashHunks(hunksA, 1);
+  rememberFlashHunks(hunksB, 2);
+
+  assert.deepEqual(getLastFlashHunks(1), hunksA);
+  assert.deepEqual(getLastFlashHunks(2), hunksB);
+  assert.equal(getChangeJumpIndex(1), 0);
+  assert.equal(getChangeJumpIndex(2), 0);
+
+  // Advance jumps on doc 2 only.
+  const stepped = advanceChangeJump(1, { docId: 2 });
+  assert.equal(stepped?.index, 1);
+  assert.equal(getChangeJumpIndex(2), 1);
+  assert.equal(getChangeJumpIndex(1), 0);
+
+  // Active-doc APIs follow setActiveFlashDocId.
+  setActiveFlashDocId(1);
+  assert.equal(getActiveFlashDocId(), 1);
+  assert.deepEqual(getLastFlashHunks(), hunksA);
+  assert.equal(getChangeJumpIndex(), 0);
+
+  setActiveFlashDocId(2);
+  assert.deepEqual(getLastFlashHunks(), hunksB);
+  assert.equal(getChangeJumpIndex(), 1);
+
+  // Clearing one doc leaves the other intact.
+  clearRememberedFlashHunks(1);
+  assert.deepEqual(getLastFlashHunks(1), []);
+  assert.deepEqual(getLastFlashHunks(2), hunksB);
+
+  clearAllRememberedFlashHunks();
+  setActiveFlashDocId(null);
+  assert.deepEqual(getLastFlashHunks(2), []);
 });

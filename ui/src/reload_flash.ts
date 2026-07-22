@@ -33,8 +33,12 @@ export interface FlashLineMark {
   className: FlashLineClass;
 }
 
-/** Ephemeral flash duration (ms). Decorations auto-clear after this. */
-export const FLASH_DURATION_MS = 1600;
+/**
+ * Ephemeral flash duration (ms). Decorations auto-clear after this.
+ * Keep in sync with `.cm-line.pmd-flash-*` animation length in components.css
+ * (currently 1.4s).
+ */
+export const FLASH_DURATION_MS = 1400;
 
 /**
  * Cap on `n * m` for full LCS. Larger middles collapse to a single replace
@@ -43,36 +47,78 @@ export const FLASH_DURATION_MS = 1600;
  */
 const LCS_CELL_BUDGET = 1_500_000;
 
-/** Last computed flash hunks (for B010 / B012 consumers). */
-let lastFlashHunks: FlashHunk[] = [];
-
 /**
- * Index into `lastFlashHunks` for next/prev change navigation (B012).
- * `-1` means "no current change" (empty hunk list, or never jumped).
- * Reset to `0` when a non-empty flash is remembered (land on first change).
+ * Per-document flash / jump state (B010 / B012).
  *
- * Navigation **wraps** around the list (VS Code-style go-to-next/prev change).
+ * Scoped by backend `docId` so tab switches cannot paint another doc's
+ * minimap markers or jump to another tab's change hunks.
+ *
+ * When APIs omit `docId`, they use the active flash doc (set on tab activate).
+ * Unit tests that never set an active doc fall back to {@link FALLBACK_FLASH_DOC_ID}.
  */
-let changeJumpIndex = -1;
+const FALLBACK_FLASH_DOC_ID = -1;
 
-export function getLastFlashHunks(): readonly FlashHunk[] {
-  return lastFlashHunks;
+interface FlashDocState {
+  hunks: FlashHunk[];
+  /** Index into `hunks` for next/prev navigation; `-1` when empty / never jumped. */
+  jumpIndex: number;
 }
 
-export function rememberFlashHunks(hunks: readonly FlashHunk[]): void {
-  lastFlashHunks = hunks.slice();
-  // New flash: land index on first change (or clear when empty).
-  changeJumpIndex = lastFlashHunks.length > 0 ? 0 : -1;
+const flashByDocId = new Map<number, FlashDocState>();
+
+/** Backend docId of the currently displayed document, or null when none. */
+let activeFlashDocId: number | null = null;
+
+/** Record which document is active so omit-docId APIs target the right store. */
+export function setActiveFlashDocId(docId: number | null): void {
+  activeFlashDocId = docId;
 }
 
-export function clearRememberedFlashHunks(): void {
-  lastFlashHunks = [];
-  changeJumpIndex = -1;
+export function getActiveFlashDocId(): number | null {
+  return activeFlashDocId;
+}
+
+function resolveFlashDocId(docId?: number): number {
+  if (docId !== undefined) return docId;
+  return activeFlashDocId ?? FALLBACK_FLASH_DOC_ID;
+}
+
+function flashState(docId: number): FlashDocState {
+  let s = flashByDocId.get(docId);
+  if (!s) {
+    s = { hunks: [], jumpIndex: -1 };
+    flashByDocId.set(docId, s);
+  }
+  return s;
+}
+
+export function getLastFlashHunks(docId?: number): readonly FlashHunk[] {
+  return flashState(resolveFlashDocId(docId)).hunks;
+}
+
+export function rememberFlashHunks(hunks: readonly FlashHunk[], docId?: number): void {
+  const id = resolveFlashDocId(docId);
+  const copy = hunks.slice();
+  flashByDocId.set(id, {
+    hunks: copy,
+    // New flash: land index on first change (or clear when empty).
+    jumpIndex: copy.length > 0 ? 0 : -1,
+  });
+}
+
+export function clearRememberedFlashHunks(docId?: number): void {
+  const id = resolveFlashDocId(docId);
+  flashByDocId.set(id, { hunks: [], jumpIndex: -1 });
+}
+
+/** Drop all per-doc flash state (tests / full reset). */
+export function clearAllRememberedFlashHunks(): void {
+  flashByDocId.clear();
 }
 
 /** Current next/prev change index into `getLastFlashHunks()` (`-1` if none). */
-export function getChangeJumpIndex(): number {
-  return changeJumpIndex;
+export function getChangeJumpIndex(docId?: number): number {
+  return flashState(resolveFlashDocId(docId)).jumpIndex;
 }
 
 /**
@@ -114,22 +160,27 @@ export function stepChangeIndex(
  * Pass `stay = true` to re-target the current index without stepping (used
  * after reload to jump to the first change already selected by
  * `rememberFlashHunks`).
+ *
+ * Optional `docId` scopes the jump to that document; defaults to the active
+ * flash doc (or the test fallback bucket).
  */
 export function advanceChangeJump(
   direction: 1 | -1,
-  options?: { stay?: boolean },
+  options?: { stay?: boolean; docId?: number },
 ): { index: number; hunk: FlashHunk } | null {
-  const hunks = lastFlashHunks;
+  const id = resolveFlashDocId(options?.docId);
+  const state = flashState(id);
+  const hunks = state.hunks;
   if (hunks.length === 0) return null;
   if (options?.stay) {
     const index =
-      changeJumpIndex >= 0 && changeJumpIndex < hunks.length ? changeJumpIndex : 0;
-    changeJumpIndex = index;
+      state.jumpIndex >= 0 && state.jumpIndex < hunks.length ? state.jumpIndex : 0;
+    state.jumpIndex = index;
     return { index, hunk: hunks[index]! };
   }
-  const next = stepChangeIndex(hunks.length, changeJumpIndex, direction);
+  const next = stepChangeIndex(hunks.length, state.jumpIndex, direction);
   if (next === null) return null;
-  changeJumpIndex = next;
+  state.jumpIndex = next;
   return { index: next, hunk: hunks[next]! };
 }
 
