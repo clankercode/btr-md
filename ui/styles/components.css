@@ -994,8 +994,53 @@ body[data-tabkind='browser'] #pmd-tab-body {
   min-width: 0;
 }
 
+/* B010: editor host + RHS minimap sit in a row inside the pane. */
+#editor-pane.pmd-editor-with-minimap {
+  flex-direction: row;
+  align-items: stretch;
+}
+
+#editor-pane .pmd-editor-host {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 100%;
+  overflow: hidden;
+  position: relative;
+}
+
 #editor-pane .cm-editor {
   height: 100%;
+}
+
+/* Source-editor minimap (B010): fixed-width overview strip on the RHS. */
+.pmd-minimap {
+  flex: 0 0 64px;
+  width: 64px;
+  max-width: 80px;
+  height: 100%;
+  box-sizing: border-box;
+  border-left: 1px solid var(--pmd-border);
+  background: color-mix(in srgb, var(--pmd-bg-elevated) 88%, var(--pmd-bg));
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  user-select: none;
+  touch-action: none;
+}
+
+.pmd-minimap-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* Stay usable in a narrow split without colliding with the editor. */
+@media (max-width: 720px) {
+  .pmd-minimap {
+    flex-basis: 48px;
+    width: 48px;
+  }
 }
 
 #preview-pane {
@@ -1010,11 +1055,11 @@ body[data-tabkind='browser'] #pmd-tab-body {
 }
 
 body[data-mode="source"] #editor-pane {
-  display: block;
+  display: flex;
 }
 
 body[data-mode="split"] #editor-pane {
-  display: block;
+  display: flex;
   flex: 0 0 calc(var(--pmd-split-ratio, 0.4) * 100%);
   min-width: 0;
   width: auto;
