@@ -710,7 +710,8 @@ function recordActionForE2e(actionId: ActionId): boolean {
   if (!window.__pmdE2e) return false;
   window.__pmdE2eActions = window.__pmdE2eActions ?? [];
   window.__pmdE2eActions.push(actionId);
-  return actionId === 'app.quit';
+  // These would tear down or relaunch the process; stub them in e2e.
+  return actionId === 'app.quit' || actionId === 'app.restart';
 }
 
 async function runAction(id: ActionId): Promise<void> {
@@ -753,6 +754,22 @@ async function runAction(id: ActionId): Promise<void> {
       }
       const { getAllWindows } = await import('@tauri-apps/api/window');
       for (const w of await getAllWindows()) await w.close();
+      return;
+    }
+    case 'app.restart': {
+      if (!(await confirmCloseWindow())) return;
+      // Flush this window's live buffers so the session snapshot is current,
+      // then hand off to the backend which persists + spawns a fresh process.
+      try {
+        await sessionManager.flushSessionNow();
+      } catch (e) {
+        console.error('session flush before restart failed:', e);
+      }
+      try {
+        await windowsApi.restartApp();
+      } catch (e) {
+        showError(`Restart failed: ${String(e)}`);
+      }
       return;
     }
     case 'view.zoomIn':
@@ -1631,6 +1648,9 @@ chrome.onCloseWindow(() => {
 });
 chrome.onCloseAllWindows(() => {
   void runAction('window.closeAll');
+});
+chrome.onRestartApp(() => {
+  void runAction('app.restart');
 });
 chrome.onCopyPath(() => {
   const p = activeFilePath();

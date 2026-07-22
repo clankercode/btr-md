@@ -50,7 +50,7 @@ test("all no-default actions are registered searchable and unbound", () => {
     assert.equal(searchActions(defaultActionSpecs, action.label)[0].id, id);
     assert.equal(typeof action.run, "function");
   }
-  assert.equal(NO_DEFAULT_ACTION_IDS.length, 25);
+  assert.equal(NO_DEFAULT_ACTION_IDS.length, 26);
 });
 
 test("refresh sidebar defaults to F5", () => {

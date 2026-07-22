@@ -200,6 +200,7 @@ export interface CommandMap {
   open_url: { args: { url: string }; result: void };
   new_window: { args: void; result: void };
   begin_quit: { args: void; result: void };
+  restart_app: { args: void; result: void };
   set_window_title: { args: { title: string }; result: void };
 
   // --- session ---

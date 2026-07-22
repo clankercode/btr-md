@@ -629,6 +629,7 @@ function installMock(config: MockConfig): void {
     open_url: () => undefined,
     new_window: () => undefined,
     begin_quit: () => undefined,
+    restart_app: () => undefined,
     set_window_title: () => undefined,
 
     // --- session ---

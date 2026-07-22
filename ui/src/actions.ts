@@ -22,6 +22,7 @@ export type ActionId =
   | "window.reopenLastClosed"
   | "window.closeAll"
   | "app.quit"
+  | "app.restart"
   | "edit.find"
   | "edit.replace"
   | "edit.pasteAsMarkdown"
@@ -124,6 +125,7 @@ export const DEFAULT_ACTION_SHORTCUTS: Record<string, string[]> = {
 
 export const NO_DEFAULT_ACTION_IDS: ActionId[] = [
   "window.closeAll",
+  "app.restart",
   "file.revealInFolder",
   "file.openDefaultApp",
   "file.copyPath",
@@ -179,6 +181,7 @@ export const defaultActionSpecs: ActionSpec[] = [
   spec("window.reopenLastClosed", "Reopen Last Closed Window", "History", "Restore the most recently closed window"),
   spec("window.closeAll", "Close All Windows", "File", "Close every open window (restored next launch)"),
   spec("app.quit", "Quit", "File", "Quit preview-md"),
+  spec("app.restart", "Restart btr-md", "File", "Relaunch the app and restore the current workspace"),
   spec("edit.find", "Find", "Edit", "Find text in the editor"),
   spec("edit.replace", "Find and replace", "Edit", "Find and replace text in the source editor"),
   spec("edit.pasteAsMarkdown", "Paste as Markdown", "Edit", "Convert clipboard HTML to Markdown and insert it"),

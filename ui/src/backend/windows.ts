@@ -15,6 +15,11 @@ export function beginQuit(): Promise<void> {
   return call('begin_quit');
 }
 
+/** Persist the workspace session and relaunch the process (does not return). */
+export function restartApp(): Promise<void> {
+  return call('restart_app');
+}
+
 export function setWindowTitle(title: string): Promise<void> {
   return call('set_window_title', { title });
 }

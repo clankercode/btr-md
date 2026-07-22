@@ -1,7 +1,7 @@
 use std::sync::atomic::{AtomicU64, Ordering};
 
 use serde::{Deserialize, Serialize};
-use tauri::{AppHandle, Window};
+use tauri::{AppHandle, Manager, Window};
 
 use crate::cmd::session::{build_session_doc, SaveDocInput};
 use crate::state::session::{ActiveTab, SessionWindow, WindowGeometry};
@@ -294,6 +294,83 @@ pub fn clear_recently_closed_windows(state: tauri::State<'_, crate::AppState>) {
 pub fn begin_quit(state: tauri::State<'_, crate::AppState>) -> Result<(), String> {
     state.sessions.begin_quit();
     state.sessions.persist().map_err(|e| e.to_string())
+}
+
+/// Schedule a fresh process of `exe` to start after this process exits.
+///
+/// Required because `tauri-plugin-single-instance` holds a D-Bus name (Linux)
+/// / socket (macOS) while we are alive: spawning *before* exit makes the child
+/// treat us as the primary instance, forward empty argv, and exit itself.
+#[cfg(unix)]
+fn schedule_restart_after_exit(exe: &std::path::Path) -> Result<(), String> {
+    use std::os::unix::process::CommandExt;
+
+    let parent = std::process::id();
+    // Single-quote for the shell; escape any embedded `'`.
+    let quoted = exe.to_string_lossy().replace('\'', "'\\''");
+    // - `trap '' HUP` + new process group: survive SIGHUP when the parent was
+    //   started from a terminal (common with `just run`).
+    // - Wait until the parent PID is gone so the single-instance D-Bus name is
+    //   released before we `exec`.
+    // - Cap the wait (~20s) so a stuck parent cannot leave a zombie waiter.
+    let script = format!(
+        "trap '' HUP; \
+         n=0; \
+         while kill -0 {parent} 2>/dev/null; do \
+           sleep 0.05; \
+           n=$((n+1)); \
+           if [ \"$n\" -gt 400 ]; then break; fi; \
+         done; \
+         exec '{quoted}'"
+    );
+    std::process::Command::new("sh")
+        .arg("-c")
+        .arg(script)
+        .stdin(std::process::Stdio::null())
+        .stdout(std::process::Stdio::null())
+        .stderr(std::process::Stdio::null())
+        .process_group(0)
+        .spawn()
+        .map_err(|e| format!("failed to schedule restart: {e}"))?;
+    Ok(())
+}
+
+#[cfg(not(unix))]
+fn schedule_restart_after_exit(exe: &std::path::Path) -> Result<(), String> {
+    // Best-effort fallback (Linux is the primary target). Immediate spawn may
+    // race the single-instance lock if the parent has not exited yet.
+    std::process::Command::new(exe)
+        .spawn()
+        .map_err(|e| format!("failed to spawn restart process: {e}"))?;
+    Ok(())
+}
+
+/// Restart the app process while preserving the full workspace session.
+///
+/// Schedules a fresh binary **without** the original CLI args (restore comes
+/// only from the session, not a re-applied launch path), marks the session as
+/// a deliberate quit, persists it, then exits. The frontend should flush this
+/// window's live buffers first.
+///
+/// Multi-window note: only the initiating window is flushed by the frontend
+/// before this command runs. Peer windows keep their last debounced
+/// `save_window_session` snapshot (same ~300ms window as a crash).
+#[tauri::command]
+pub fn restart_app(app: AppHandle, state: tauri::State<'_, crate::AppState>) -> Result<(), String> {
+    let path = tauri::process::current_binary(&app.env()).map_err(|e| e.to_string())?;
+    // Arm the relaunch *before* begin_quit so a schedule failure does not leave
+    // the session store stuck in quitting mode.
+    schedule_restart_after_exit(&path)?;
+
+    state.sessions.begin_quit();
+    if let Err(e) = state.sessions.persist() {
+        // Relaunch is already armed; still exit so the child can start.
+        eprintln!("[btr-md] restart: session persist failed: {e}");
+    }
+
+    // Hard exit so the single-instance lock drops and the scheduled child can
+    // become the new primary instance.
+    std::process::exit(0);
 }
 
 #[cfg(test)]

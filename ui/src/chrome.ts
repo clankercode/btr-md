@@ -39,6 +39,7 @@ export interface ChromeInstance {
   focusMenu: () => void;
   onCloseWindow: (handler: () => void) => void;
   onCloseAllWindows: (handler: () => void) => void;
+  onRestartApp: (handler: () => void) => void;
   onCopyPath: (handler: () => void) => void;
   onCopyFilename: (handler: () => void) => void;
   onCopyUrl: (handler: () => void) => void;
@@ -134,9 +135,11 @@ export function createChrome(parent: HTMLElement): ChromeInstance {
   // Window controls — separate from the path-based file ops so they stay
   // enabled even for unsaved buffers (no file path). "Close Window" closes the
   // current window; "Close All Windows" quits the app, preserving the whole
-  // workspace for next launch.
+  // workspace for next launch. "Restart btr-md" relaunches the process with the
+  // same preserved workspace.
   const closeWindowHandlers: (() => void)[] = [];
   const closeAllWindowsHandlers: (() => void)[] = [];
+  const restartAppHandlers: (() => void)[] = [];
   const closeItem = createMenuItem({
     label: 'Close Window',
     as: 'li',
@@ -154,6 +157,15 @@ export function createChrome(parent: HTMLElement): ChromeInstance {
     onSelect: () => closeAllWindowsHandlers.forEach((h) => h()),
   });
   fileOpsList.appendChild(closeAllItem);
+
+  const restartItem = createMenuItem({
+    label: 'Restart btr-md',
+    as: 'li',
+    variant: 'dropdown',
+    beforeSelect: () => closeDropdown(),
+    onSelect: () => restartAppHandlers.forEach((h) => h()),
+  });
+  fileOpsList.appendChild(restartItem);
 
   fileOpsList.appendChild(createMenuSeparator({ variant: 'dropdown', as: 'li' }));
 
@@ -778,6 +790,9 @@ export function createChrome(parent: HTMLElement): ChromeInstance {
     },
     onCloseAllWindows: (handler: () => void) => {
       closeAllWindowsHandlers.push(handler);
+    },
+    onRestartApp: (handler: () => void) => {
+      restartAppHandlers.push(handler);
     },
     onCopyPath: (handler: () => void) => {
       fileOpHandlers.copyPath.push(handler);
