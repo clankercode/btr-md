@@ -9,3 +9,4 @@ bugs:
     - file: B008-top-bar-long-paths-hide-path-r.todo
     - file: B009-on-disk-change-show-reload-but.todo
     - file: B010-rhs-minimap-overview-for-sourc.todo
+    - file: B011-conflict-banner-reload-merge-k.todo

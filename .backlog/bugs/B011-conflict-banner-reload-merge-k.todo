@@ -1,0 +1,33 @@
+---
+complexity: medium
+created_at: "2026-07-22T08:04:45Z"
+depends_on:
+    - B009
+estimate_hours: 1
+id: B011
+priority: high
+status: pending
+tags: []
+title: 'Conflict banner: Reload / Merge / Keep mine when disk+buffer both dirty'
+updated_at: "2026-07-22T08:04:45Z"
+---
+## Problem
+
+When a document is both edited in-memory and changed on disk (`disk_changed_dirty`), the lifecycle model already exposes Reload and Merge (`showReload` / `showMerge` in `uiForState`), but the chrome may not surface a clear, actionable conflict path.
+
+B009 covers the clean “changed on disk → Reload + flash diffs” case. This item completes the **conflict** half of the story.
+
+## Expected
+
+1. When state is `disk_changed_dirty`, show a prominent conflict banner/affordance (status bar and/or top chrome) that is hard to miss.
+2. Offer clear actions, e.g.:
+   - **Reload** — take disk (discard or confirm overwrite of in-memory edits; confirm if destructive)
+   - **Merge** — run the configured merge strategy / open merge UI
+   - **Keep mine** (or dismiss) — continue editing without taking disk; remain in conflict-aware state until resolved
+3. Must stay compatible with B009 post-reload green/red flash when the user chooses Reload (or a merge that lands a new buffer).
+4. Copy/status should distinguish “changed on disk (clean)” vs “conflict (disk + editor)”.
+
+## Related
+
+- **B009** — Reload button + green/red flash for on-disk diffs
+- `ui/src/doc_state.ts` — `disk_changed_dirty`, `showReload`, `showMerge`
