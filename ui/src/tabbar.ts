@@ -3,13 +3,20 @@
 // chrome height into `--pmd-chrome-h`, and exposes the reusable tab-highlight
 // effect.
 
-import { uiForState, assertNever } from './doc_state.js';
+import {
+  uiForState,
+  diskChangeBadge,
+  diskChangeTooltip,
+  assertNever,
+} from './doc_state.js';
 import { openContextMenu } from './context_menu.js';
 import { buildTabContextItems } from './tab_context_menu.js';
 import type { Tab, TabId, TabStore } from './tabs.js';
 
 // Re-exported for callers/tests that reach the builder via the tab-bar module.
 export { buildTabContextItems };
+// Pure disk-badge helpers live in doc_state; re-export for tab-bar consumers.
+export { diskChangeBadge, diskChangeTooltip };
 
 const HIGHLIGHT_CLASS = 'pmd-tab-highlight';
 
@@ -65,6 +72,10 @@ function isModifiedTab(tab: Tab): boolean {
   return tab.kind === 'doc' ? uiForState(tab.fileState).modified : false;
 }
 
+function diskBadgeForTab(tab: Tab): ReturnType<typeof diskChangeBadge> {
+  return tab.kind === 'doc' ? diskChangeBadge(tab.fileState) : 'none';
+}
+
 export function createTabBar(store: TabStore, handlers: TabBarHandlers): TabBarInstance {
   const el = document.createElement('div');
   el.className = 'pmd-tabbar';
@@ -118,8 +129,27 @@ export function createTabBar(store: TabStore, handlers: TabBarHandlers): TabBarI
       const dot = document.createElement('span');
       dot.className = 'pmd-tab-dot';
       dot.setAttribute('aria-hidden', 'true');
+      // Unsaved-buffer indicator (accent). Stays for dirty + conflict states.
+      dot.title = 'Unsaved changes';
       dot.textContent = '●';
       tabEl.appendChild(dot);
+    }
+
+    // Disk-change signal (amber clean / red conflict). Orthogonal to the
+    // modified dot so conflict shows both; cleared when leaving those states
+    // because render rebuilds tabs from store.fileState.
+    const diskBadge = diskBadgeForTab(tab);
+    if (diskBadge !== 'none') {
+      const badge = document.createElement('span');
+      badge.className =
+        diskBadge === 'conflict' ? 'pmd-tab-badge pmd-tab-conflict' : 'pmd-tab-badge pmd-tab-disk';
+      badge.setAttribute('aria-hidden', 'true');
+      badge.dataset.diskBadge = diskBadge;
+      const tip = diskChangeTooltip(diskBadge);
+      if (tip) badge.title = tip;
+      // Diamond distinguishes from the ● modified dot at a glance.
+      badge.textContent = '◆';
+      tabEl.appendChild(badge);
     }
 
     const close = document.createElement('button');
