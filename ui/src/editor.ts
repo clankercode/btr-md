@@ -36,6 +36,7 @@ import {
   FLASH_DURATION_MS,
   type FlashHunk,
 } from './reload_flash.js';
+import { attachMinimap, type MinimapHandle } from './minimap.js';
 import type { DocumentKind } from './document_kind.js';
 export type { DiffViewConfig } from './editor_diff.js';
 export { diffViewConfig } from './editor_diff.js';
@@ -212,6 +213,8 @@ const selectionTextDecorations = ViewPlugin.fromClass(
 let programmaticDepth = 0;
 let wrapEnabled = true;
 let userEditCb: (doc: string) => void = () => {};
+/** RHS minimap for the single reused EditorView (B010); null until mount. */
+let minimap: MinimapHandle | null = null;
 const wrapCompartment = new Compartment();
 const diffCompartment = new Compartment();
 const flashCompartment = new Compartment();
@@ -400,6 +403,9 @@ function buildExtensions(kind: DocumentKind = 'markdown') {
     searchCompartment.of(searchExtension()),
     selectionTextDecorations,
     EditorView.updateListener.of((update: any) => {
+      // Keep the RHS minimap in sync (doc / viewport / geometry). Safe when
+      // unmounted — `minimap` is null until `mountEditor` attaches it.
+      minimap?.onViewUpdate(update);
       // Fire only for genuine user edits — never for programmatic sets
       // (open/reload/merge/`setValueProgrammatic`) or full state swaps.
       if (!update.docChanged || programmaticDepth > 0) return;
@@ -419,9 +425,25 @@ export async function mountEditor(
 ): Promise<EditorHandle> {
   userEditCb = onUserEdit;
 
+  // Flex row: editor host (flex 1) + RHS minimap strip (fixed width). The
+  // CodeMirror view mounts into the host so the minimap never overlaps the
+  // scroller or B009 line-flash decorations.
+  el.classList.add('pmd-editor-with-minimap');
+  const host = document.createElement('div');
+  host.className = 'pmd-editor-host';
+  const minimapEl = document.createElement('div');
+  // class `pmd-minimap` is applied by attachMinimap; keep a stable hook for CSS.
+  minimapEl.className = 'pmd-minimap';
+  el.appendChild(host);
+  el.appendChild(minimapEl);
+
   const view = new EditorView({
-    parent: el,
+    parent: host,
     state: createState(''),
+  });
+
+  minimap = attachMinimap(view, minimapEl, {
+    getFlashHunks: () => getLastFlashHunks(),
   });
 
   const programmatic = <T>(fn: () => T): T => {
@@ -437,7 +459,11 @@ export async function mountEditor(
     view,
     createState,
     snapshot: () => view.state,
-    activateState: (state: EditorState) => programmatic(() => view.setState(state)),
+    activateState: (state: EditorState) => {
+      programmatic(() => view.setState(state));
+      // Full state swap (tab switch) — repaint density + viewport.
+      minimap?.redraw();
+    },
     setValueProgrammatic: (md: string) =>
       programmatic(() =>
         view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: md } })
@@ -481,6 +507,7 @@ export async function mountEditor(
       }
       if (hunks.length === 0) {
         view.dispatch({ effects: flashCompartment.reconfigure([]) });
+        minimap?.refreshMarkers();
         return hunks;
       }
       const decos = buildFlashDecorations(view.state.doc, hunks);
@@ -491,6 +518,8 @@ export async function mountEditor(
           EditorView.decorations.of(decos),
         ]),
       });
+      // Surface the same hunks on the minimap (green/red/amber ticks).
+      minimap?.refreshMarkers();
       flashClearTimer = setTimeout(() => {
         flashClearTimer = null;
         // View may already be destroyed (tab/window close) — ignore.
@@ -499,6 +528,7 @@ export async function mountEditor(
         } catch {
           /* ignore */
         }
+        // Markers stay subtle until the next flash/reload (not cleared here).
       }, FLASH_DURATION_MS);
       return hunks;
     },
@@ -525,6 +555,10 @@ export async function mountEditor(
       const pos = view.state.doc.line(n).from;
       view.dispatch({ selection: { anchor: pos }, scrollIntoView: true });
     },
-    destroy: () => view.destroy(),
+    destroy: () => {
+      minimap?.destroy();
+      minimap = null;
+      view.destroy();
+    },
   };
 }
