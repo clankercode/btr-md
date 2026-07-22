@@ -814,6 +814,12 @@ async function runAction(id: ActionId): Promise<void> {
     case 'document.mergeDiskChanges':
       await doMerge();
       return;
+    case 'document.gotoNextChange':
+      editor?.gotoChange(1);
+      return;
+    case 'document.gotoPrevChange':
+      editor?.gotoChange(-1);
+      return;
     case 'document.editFrontmatter': {
       const rect = document.querySelector('.pmd-status-frontmatter')?.getBoundingClientRect();
       openFrontmatterInspector(rect?.left ?? 80, rect?.top ?? 80);
@@ -2430,7 +2436,11 @@ async function doReload(): Promise<void> {
     await coordinator.schedule();
     applyDiffMode();
     // Ephemeral location flash; quiet when on-disk content matches the buffer.
-    editor.flashContentChange(previous);
+    const hunks = editor.flashContentChange(previous);
+    // B012: land on the first change (same hunk list as the flash). No-op if none.
+    if (hunks.length > 0) {
+      editor.gotoChange(1, { stay: true });
+    }
     chrome.setStatus('Reloaded from disk');
   } catch (e) {
     showError(`Reload failed: ${String(e)}`);

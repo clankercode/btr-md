@@ -46,16 +46,91 @@ const LCS_CELL_BUDGET = 1_500_000;
 /** Last computed flash hunks (for B010 / B012 consumers). */
 let lastFlashHunks: FlashHunk[] = [];
 
+/**
+ * Index into `lastFlashHunks` for next/prev change navigation (B012).
+ * `-1` means "no current change" (empty hunk list, or never jumped).
+ * Reset to `0` when a non-empty flash is remembered (land on first change).
+ *
+ * Navigation **wraps** around the list (VS Code-style go-to-next/prev change).
+ */
+let changeJumpIndex = -1;
+
 export function getLastFlashHunks(): readonly FlashHunk[] {
   return lastFlashHunks;
 }
 
 export function rememberFlashHunks(hunks: readonly FlashHunk[]): void {
   lastFlashHunks = hunks.slice();
+  // New flash: land index on first change (or clear when empty).
+  changeJumpIndex = lastFlashHunks.length > 0 ? 0 : -1;
 }
 
 export function clearRememberedFlashHunks(): void {
   lastFlashHunks = [];
+  changeJumpIndex = -1;
+}
+
+/** Current next/prev change index into `getLastFlashHunks()` (`-1` if none). */
+export function getChangeJumpIndex(): number {
+  return changeJumpIndex;
+}
+
+/**
+ * 0-based line in the *after* document to place the caret for a flash hunk.
+ *
+ * - add / replace → start of the after span (`afterFrom`)
+ * - pure remove (`afterFrom === afterTo`) → deletion locus; clamped into doc
+ *
+ * `afterLineCount` must be ≥ 1 (CodeMirror always has at least one line).
+ */
+export function hunkJumpLine(hunk: FlashHunk, afterLineCount: number): number {
+  const n = Math.max(1, afterLineCount);
+  return Math.max(0, Math.min(n - 1, hunk.afterFrom));
+}
+
+/**
+ * Pure: next/prev index into a hunk list. **Wraps** at ends (VS Code style).
+ * Returns `null` when `hunkCount === 0`.
+ *
+ * If `currentIndex` is out of range (`-1` or past the end), `direction +1`
+ * seeds at the first hunk and `-1` seeds at the last.
+ */
+export function stepChangeIndex(
+  hunkCount: number,
+  currentIndex: number,
+  direction: 1 | -1,
+): number | null {
+  if (hunkCount <= 0) return null;
+  if (currentIndex < 0 || currentIndex >= hunkCount) {
+    return direction === 1 ? 0 : hunkCount - 1;
+  }
+  return (currentIndex + direction + hunkCount) % hunkCount;
+}
+
+/**
+ * Advance the remembered change-jump index and return the target hunk, or
+ * `null` when there are no remembered flash hunks (quiet no-op for commands).
+ *
+ * Pass `stay = true` to re-target the current index without stepping (used
+ * after reload to jump to the first change already selected by
+ * `rememberFlashHunks`).
+ */
+export function advanceChangeJump(
+  direction: 1 | -1,
+  options?: { stay?: boolean },
+): { index: number; hunk: FlashHunk } | null {
+  const hunks = lastFlashHunks;
+  if (hunks.length === 0) return null;
+  if (options?.stay) {
+    const index =
+      changeJumpIndex >= 0 && changeJumpIndex < hunks.length ? changeJumpIndex : 0;
+    changeJumpIndex = index;
+    return { index, hunk: hunks[index]! };
+  }
+  const next = stepChangeIndex(hunks.length, changeJumpIndex, direction);
+  if (next === null) return null;
+  changeJumpIndex = next;
+  return { index: next, hunk: hunks[next]! };
 }
 
 /**

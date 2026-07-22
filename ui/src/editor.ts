@@ -33,6 +33,9 @@ import {
   rememberFlashHunks,
   clearRememberedFlashHunks,
   getLastFlashHunks,
+  hunkJumpLine,
+  advanceChangeJump,
+  getChangeJumpIndex,
   FLASH_DURATION_MS,
   type FlashHunk,
 } from './reload_flash.js';
@@ -44,6 +47,9 @@ export {
   computeFlashHunks,
   getLastFlashHunks,
   clearRememberedFlashHunks,
+  hunkJumpLine,
+  advanceChangeJump,
+  getChangeJumpIndex,
   FLASH_DURATION_MS,
 } from './reload_flash.js';
 
@@ -79,6 +85,17 @@ export interface EditorHandle {
   clearFlash: () => void;
   /** Last flash hunks from the most recent `flashContentChange` (may be empty). */
   getLastFlashHunks: () => readonly FlashHunk[];
+  /**
+   * Jump to a flash hunk (B012). Scrolls/selects the hunk's after-doc line.
+   * Returns the 0-based line landed on, or `null` if no-op.
+   */
+  jumpToFlashHunk: (hunk: FlashHunk) => number | null;
+  /**
+   * Jump to the current remembered change (index 0 after flash), or advance
+   * next/prev with wrap. Quiet no-op when there are no remembered hunks.
+   * Returns the landed 0-based line, or `null`.
+   */
+  gotoChange: (direction: 1 | -1, options?: { stay?: boolean }) => number | null;
   /** Open CodeMirror's source find panel. */
   openSearch: () => void;
   /** Advance to the next source search match. */
@@ -516,6 +533,22 @@ export async function mountEditor(
       }
     },
     getLastFlashHunks: () => getLastFlashHunks(),
+    jumpToFlashHunk: (hunk: FlashHunk): number | null => {
+      const line0 = hunkJumpLine(hunk, view.state.doc.lines);
+      const n = line0 + 1; // CodeMirror line numbers are 1-based
+      const pos = view.state.doc.line(n).from;
+      view.dispatch({ selection: { anchor: pos }, scrollIntoView: true });
+      return line0;
+    },
+    gotoChange: (direction: 1 | -1, options?: { stay?: boolean }): number | null => {
+      const target = advanceChangeJump(direction, options);
+      if (!target) return null;
+      const line0 = hunkJumpLine(target.hunk, view.state.doc.lines);
+      const n = line0 + 1;
+      const pos = view.state.doc.line(n).from;
+      view.dispatch({ selection: { anchor: pos }, scrollIntoView: true });
+      return line0;
+    },
     openSearch: () => openSourceFind(view),
     searchNext: () => sourceFindNext(view),
     searchPrevious: () => sourceFindPrevious(view),

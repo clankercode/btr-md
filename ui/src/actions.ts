@@ -49,6 +49,8 @@ export type ActionId =
   | "file.clearRecent"
   | "document.reloadFromDisk"
   | "document.mergeDiskChanges"
+  | "document.gotoNextChange"
+  | "document.gotoPrevChange"
   | "document.editFrontmatter"
   | "document.export.pdf"
   | "document.export.html"
@@ -115,6 +117,9 @@ export const DEFAULT_ACTION_SHORTCUTS: Record<string, string[]> = {
   "menu.focus": ["F10"],
   "navigate.tabNext": ["Ctrl+PageDown"],
   "navigate.tabPrevious": ["Ctrl+PageUp"],
+  // VS Code-style go-to-next/prev change (Alt+F5 free; bare F5 is sidebar refresh).
+  "document.gotoNextChange": ["Alt+F5"],
+  "document.gotoPrevChange": ["Shift+Alt+F5"],
 };
 
 export const NO_DEFAULT_ACTION_IDS: ActionId[] = [
@@ -201,6 +206,18 @@ export const defaultActionSpecs: ActionSpec[] = [
   spec("file.clearRecent", "Clear recent files", "File", "Clear the recent file list"),
   spec("document.reloadFromDisk", "Reload from disk", "Document", "Reload the active document"),
   spec("document.mergeDiskChanges", "Merge disk changes", "Document", "Merge disk changes into the active document"),
+  spec(
+    "document.gotoNextChange",
+    "Go to next change",
+    "Document",
+    "Jump to the next reload change hunk (wraps; no-op when none)"
+  ),
+  spec(
+    "document.gotoPrevChange",
+    "Go to previous change",
+    "Document",
+    "Jump to the previous reload change hunk (wraps; no-op when none)"
+  ),
   spec("document.editFrontmatter", "Edit frontmatter", "Document", "Inspect and edit document frontmatter", []),
   spec("document.export.pdf", "Export to PDF", "Document", "Print the rendered document (Save as PDF)", []),
   spec("document.export.html", "Export to HTML", "Document", "Export the rendered document as a self-contained HTML file", []),
