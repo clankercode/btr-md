@@ -1,18 +1,19 @@
 ---
 claimed_at: "2026-07-22T08:06:24Z"
 claimed_by: cli-user
-completed_at: null
+completed_at: "2026-07-22T08:14:08Z"
 complexity: medium
 created_at: "2026-07-22T07:57:33Z"
 depends_on: []
+duration_minutes: 7.736839976733333
 estimate_hours: 1
 id: B008
 priority: high
 started_at: "2026-07-22T08:06:24Z"
-status: in_progress
+status: done
 tags: []
 title: 'Top bar: long paths hide path-renderer toggle; filename should also toggle'
-updated_at: "2026-07-22T08:06:24Z"
+updated_at: "2026-07-22T08:14:08Z"
 ---
 ## Problem
 

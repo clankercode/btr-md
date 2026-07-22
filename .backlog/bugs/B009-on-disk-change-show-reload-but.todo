@@ -1,18 +1,19 @@
 ---
 claimed_at: "2026-07-22T08:06:24Z"
 claimed_by: cli-user
-completed_at: null
+completed_at: "2026-07-22T08:14:08Z"
 complexity: medium
 created_at: "2026-07-22T07:58:49Z"
 depends_on: []
+duration_minutes: 7.7368488524
 estimate_hours: 1
 id: B009
 priority: high
 started_at: "2026-07-22T08:06:24Z"
-status: in_progress
+status: done
 tags: []
 title: 'On-disk change: show Reload button; flash green/red for added/removed diffs'
-updated_at: "2026-07-22T08:06:24Z"
+updated_at: "2026-07-22T08:14:08Z"
 ---
 ## Problem
 
